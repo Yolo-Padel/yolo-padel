@@ -9,7 +9,7 @@ export default function WelcomeEmail({ userName, email }: WelcomeEmailProps) {
   return (
     <Html>
       <Head>
-        <title>Selamat Datang di Yolo Padel!</title>
+        <title>Welcome to Yolo Padel!</title>
       </Head>
       <Body className="bg-gray-100 font-sans">
         <Container className="max-w-2xl mx-auto bg-white p-8">
