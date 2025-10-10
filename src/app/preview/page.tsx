@@ -1,10 +1,13 @@
 import React from "react";
-import WelcomeEmail from "@/components/emails/welcome-email";
+
+import BookingConfirmationEmail from "@/components/emails/booking-confirmation";
 
 export default function page() {
   return (
     <div>
-      <WelcomeEmail email="johndoe@examples.com" userName="John Doe" />
+      
+      <BookingConfirmationEmail email="johndoe@examples.com" customerName="John Doe" court="Court 1" date={new Date()} time="10:00" player={2} location="Yolo Padel Lebak Bulus" />
+      
     </div>
   );
 }
