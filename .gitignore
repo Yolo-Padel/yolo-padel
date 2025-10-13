@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+# opennext cloudflare
+/.open-next/
+
 # next.js
 /.next/
 /out/
