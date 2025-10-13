@@ -6,12 +6,12 @@ interface BookingRescheduleEmailProps {
   court: string;
   date: Date;
   time: string;
-  player: number;
+  bookingId: string;
   location: string;
   status: string;
 }
 
-export default function BookingRescheduleEmail({ customerName, email, court, date, time, player, location, status }: BookingRescheduleEmailProps) {
+export default function BookingRescheduleEmail({ customerName, email, court, date, time, bookingId, location, status }: BookingRescheduleEmailProps) {
   return (
     <Html>
       <Head>
@@ -42,9 +42,9 @@ export default function BookingRescheduleEmail({ customerName, email, court, dat
               <li> Court     : {court}</li>
               <li> Date      : {date.toLocaleDateString()}</li>
               <li> Time      : {time}</li>
-              <li> Players   : {player}</li>
+              <li> Booking ID: {bookingId}</li>
               <li> Location  : {location}</li>
-              <li> Location  : {status}</li>
+              <li> Status    : {status}</li>
             </ul>
             
             <Text className="text-base leading-6 text-gray-700 mb-4">

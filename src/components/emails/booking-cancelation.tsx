@@ -6,12 +6,12 @@ interface BookingCancelationEmailProps {
   court: string;
   date: Date;
   time: string;
-  player: number;
+  bookingId: string;
   location: string;
   status: string;
 }
 
-export default function BookingCancelationEmail({ customerName, email, court, date, time, player, location, status }: BookingCancelationEmailProps) {
+export default function BookingCancelationEmail({ customerName, email, court, date, time, bookingId, location, status }: BookingCancelationEmailProps) {
   return (
     <Html>
       <Head>
@@ -35,20 +35,20 @@ export default function BookingCancelationEmail({ customerName, email, court, da
           {/* Content */}
           <div className="flex flex-col items-left justify-center">
             <Text className="text-base leading-6 text-gray-700 mb-1">
-              We’ve processed your booking cancellation. Here are your booking details :
+              We've processed your booking cancellation. Here are your booking details :
             </Text>
             
             <ul style={{ listStyleType: 'none', padding: 1, fontSize: '16px', fontWeight: 'bold' }}>
               <li> Court     : {court}</li>
               <li> Date      : {date.toLocaleDateString()}</li>
               <li> Time      : {time}</li>
-              <li> Players   : {player}</li>
+              <li> Booking ID: {bookingId}</li>
               <li> Location  : {location}</li>
-              <li> Location  : {status}</li>
+              <li> Status    : {status}</li>
             </ul>
             
             <Text className="text-base leading-6 text-gray-700 mb-4">
-              We’re sorry to see you cancel — but we hope to have you back on court soon!
+              We're sorry to see you cancel — but we hope to have you back on court soon!
               If you cancelled by mistake, you can make a new booking anytime
               <br/>
               Thanks for choosing Yolo Padel 💚
@@ -65,7 +65,7 @@ export default function BookingCancelationEmail({ customerName, email, court, da
                 <a href="https://instagram.com/yolo-padel" style={{ margin: '0 8px' }}>Instagram</a>
                 <a href="https://facebook.com/yolo-padel" style={{ margin: '0 8px' }}>Facebook</a>
                 <a href="https://twitter.com/yolo-padel" style={{ margin: '0 8px' }}>Twitter</a>
-              </div>
+            </div>
               
               <Text className="text-xs text-gray-500">
                 © 2023 Yolo Padel. All rights reserved.

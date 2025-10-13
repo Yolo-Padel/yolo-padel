@@ -1,13 +1,17 @@
 import React from "react";
 
 import BookingConfirmationEmail from "@/components/emails/booking-confirmation";
+import BookingRescheduleEmail from "@/components/emails/booking-reschedule";
+import BookingCancelationEmail from "@/components/emails/booking-cancelation";
+import ResetPasswordEmail from "@/components/emails/reset-password";
 
 export default function page() {
   return (
     <div>
-      
-      <BookingConfirmationEmail email="johndoe@examples.com" customerName="John Doe" court="Court 1" date={new Date()} time="10:00" player={2} location="Yolo Padel Lebak Bulus" />
-      
+      <BookingCancelationEmail email="johndoe@examples.com" customerName="John Doe" court="Court 1" date={new Date()} time="10:00" bookingId="6879xbfury" location="Yolo Padel Lebak Bulus" status="Canceled" />
+      <BookingConfirmationEmail email="johndoe@examples.com" customerName="John Doe" court="Court 1" date={new Date()} time="10:00" bookingId="6879xbfury" location="Yolo Padel Lebak Bulus" />
+      <BookingRescheduleEmail email="johndoe@examples.com" customerName="John Doe" court="Court 1" date={new Date()} time="10:00" bookingId="6879xbfury" location="Yolo Padel Lebak Bulus" status="Rescheduled" />
+      <ResetPasswordEmail customerName="John Doe" email="johndoe@examples.com" resetToken="123456" resetUrl="https://yolo-padel.vercel.app/reset-password" />
     </div>
   );
 }

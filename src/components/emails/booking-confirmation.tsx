@@ -6,11 +6,11 @@ interface BookingConfirmationEmailProps {
   court: string;
   date: Date;
   time: string;
-  player: number;
+  bookingId: string;
   location: string;
 }
 
-export default function BookingConfirmationEmail({ customerName, email, court, date, time, player, location }: BookingConfirmationEmailProps) {
+export default function BookingConfirmationEmail({ customerName, email, court, date, time, bookingId, location }: BookingConfirmationEmailProps) {
   return (
     <Html>
       <Head>
@@ -41,7 +41,7 @@ export default function BookingConfirmationEmail({ customerName, email, court, d
               <li> Court     : {court}</li>
               <li> Date      : {date.toLocaleDateString()}</li>
               <li> Time      : {time}</li>
-              <li> Players   : {player}</li>
+              <li> Booking ID: {bookingId}</li>
               <li> Location  : {location}</li>
             </ul>
             
