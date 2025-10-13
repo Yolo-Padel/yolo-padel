@@ -12,7 +12,8 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table"
-import { Search, X } from "lucide-react"
+import { Search, X, Pencil } from "lucide-react"
+import { UsersEditSheet } from "@/components/users-edit-sheet"
 
 // Types mengikuti prisma/schema.prisma
 type Role = "ADMIN" | "MEMBER"
@@ -93,6 +94,8 @@ const PAGE_SIZE = 10
 export function UsersTable() {
   const [query, setQuery] = React.useState("")
   const [page, setPage] = React.useState(1)
+  const [sheetOpen, setSheetOpen] = React.useState(false)
+  const [selected, setSelected] = React.useState<UserRow | null>(null)
 
   const filtered = React.useMemo(() => {
     const q = query.toLowerCase().trim()
@@ -117,6 +120,11 @@ export function UsersTable() {
   React.useEffect(() => {
     setPage(1)
   }, [query])
+
+  async function handleSubmit(values: any) {
+    // Dummy submit: console log value
+    console.log("submit values", values)
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -152,6 +160,7 @@ export function UsersTable() {
             <TableHead>Status</TableHead>
             <TableHead>Email Verified</TableHead>
             <TableHead>Created</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -184,6 +193,16 @@ export function UsersTable() {
                   )}
                 </TableCell>
                 <TableCell>{new Date(u.createdAt).toLocaleDateString()}</TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setSelected(u); setSheetOpen(true) }}
+                  >
+                    <Pencil className="mr-2 size-4" />
+                    Edit
+                  </Button>
+                </TableCell>
               </TableRow>
             )
           })}
@@ -204,6 +223,13 @@ export function UsersTable() {
           </Button>
         </div>
       </div>
+
+      <UsersEditSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        user={selected}
+        onSubmit={handleSubmit}
+      />
     </div>
   )
 }
