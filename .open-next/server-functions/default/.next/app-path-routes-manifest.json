@@ -1,0 +1,11 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/admin/auth/forgot-password/page": "/admin/auth/forgot-password",
+  "/admin/auth/page": "/admin/auth",
+  "/admin/auth/register/page": "/admin/auth/register",
+  "/admin/dashboard/page": "/admin/dashboard",
+  "/admin/dashboard/users/page": "/admin/dashboard/users",
+  "/favicon.ico/route": "/favicon.ico",
+  "/page": "/",
+  "/preview/page": "/preview"
+}
