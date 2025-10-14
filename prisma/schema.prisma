@@ -39,7 +39,6 @@ model Profile {
   lastName    String?
   bio         String?
   avatar      String?
-  preferences Json?    // Untuk menyimpan user preferences
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
