@@ -1,34 +1,32 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   AudioWaveform,
   BookOpen,
   Bot,
-  Building,
-  Calendar,
   Command,
-  Frame,
   GalleryVerticalEnd,
   Home,
-  Map,
-  PieChart,
   Settings2,
   SquareTerminal,
   User,
   Users,
-} from "lucide-react"
+} from "lucide-react";
 
-import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { NavProjects } from "@/components/nav-projects";
+import { NavUser } from "@/components/nav-user";
+import { TeamSwitcher } from "@/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
+
+import { useAuth } from "@/hooks/use-auth";
+import { Skeleton } from "./ui/skeleton";
 
 // This is sample data.
 const data = {
@@ -158,9 +156,28 @@ const data = {
       icon: User,
     }
   ],
+};
+
+function UserSkeleton() {
+  return (
+    <div className="flex gap-2">
+      <Skeleton className="size-12 rounded-full" />
+      <div className="flex w-full flex-col gap-1">
+        <Skeleton className="w-full h-5" />
+        <Skeleton className="w-full h-4" />
+      </div>
+    </div>
+  );
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user, profile, isLoading, isAuthenticated } = useAuth();
+
+  const userData = {
+    name: profile?.firstName || profile?.lastName || "User",
+    email: user?.email || "user@example.com",
+    avatar: profile?.avatar || "/avatars/shadcn.jpg",
+  };
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -170,9 +187,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        {isAuthenticated && !isLoading ? (
+          <NavUser user={userData} />
+        ) : (
+          <UserSkeleton />
+        )}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }
