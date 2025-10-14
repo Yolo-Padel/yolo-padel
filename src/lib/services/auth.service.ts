@@ -2,7 +2,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
-import { RegisterFormData, LoginFormData } from "../validations/auth.validation";
+import {
+  RegisterFormData,
+  LoginFormData,
+} from "../validations/auth.validation";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";
 const JWT_EXPIRES_IN = "7d";
@@ -14,7 +17,7 @@ export const authService = {
       const existingUser = await prisma.user.findUnique({
         where: { email: data.email },
       });
-      
+
       if (existingUser) {
         return {
           success: false,
@@ -27,38 +30,40 @@ export const authService = {
       const hashedPassword = await bcrypt.hash(data.password, 12);
 
       // 3. Create user and profile in transaction
-      const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        // Create user
-        const user = await tx.user.create({
-          data: {
-            email: data.email,
-            password: hashedPassword,
-            role: data.role || 'MEMBER',
-          },
-        });
+      const result = await prisma.$transaction(
+        async (tx: Prisma.TransactionClient) => {
+          // Create user
+          const user = await tx.user.create({
+            data: {
+              email: data.email,
+              password: hashedPassword,
+              role: data.role || "MEMBER",
+            },
+          });
 
-        // Create profile - split name into firstName and lastName
-        const nameParts = data.name.trim().split(' ');
-        const firstName = nameParts[0] || data.name;
-        const lastName = nameParts.slice(1).join(' ') || null;
+          // Create profile - split name into firstName and lastName
+          const nameParts = data.name.trim().split(" ");
+          const firstName = nameParts[0] || data.name;
+          const lastName = nameParts.slice(1).join(" ") || null;
 
-        const profile = await tx.profile.create({
-          data: {
-            userId: user.id,
-            firstName: firstName,
-            lastName: lastName,
-          },
-        });
+          const profile = await tx.profile.create({
+            data: {
+              userId: user.id,
+              firstName: firstName,
+              lastName: lastName,
+            },
+          });
 
-        return { user, profile };
-      });
+          return { user, profile };
+        }
+      );
 
       // 4. Generate JWT token
       const token = jwt.sign(
-        { 
+        {
           userId: result.user.id,
           email: result.user.email,
-          role: result.user.role 
+          role: result.user.role,
         },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN }
@@ -76,7 +81,6 @@ export const authService = {
         },
         message: "Registration successful",
       };
-
     } catch (error) {
       console.error("Register error:", error);
 
@@ -107,7 +111,10 @@ export const authService = {
       }
 
       // 2. Verify password
-      const isPasswordValid = await bcrypt.compare(data.password, user.password);
+      const isPasswordValid = await bcrypt.compare(
+        data.password,
+        user.password
+      );
 
       if (!isPasswordValid) {
         return {
@@ -119,10 +126,10 @@ export const authService = {
 
       // 3. Generate JWT token
       const token = jwt.sign(
-        { 
+        {
           userId: user.id,
           email: user.email,
-          role: user.role 
+          role: user.role,
         },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN }
@@ -140,7 +147,6 @@ export const authService = {
         },
         message: "Login successful",
       };
-
     } catch (error) {
       console.error("Login error:", error);
 
@@ -155,7 +161,7 @@ export const authService = {
   verifyToken: async (token: string) => {
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
-      
+
       // Get fresh user data
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
@@ -167,7 +173,7 @@ export const authService = {
       }
 
       const { password, ...userWithoutPassword } = user;
-      
+
       return {
         success: true,
         data: {
