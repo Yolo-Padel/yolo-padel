@@ -10,6 +10,7 @@ import {
   Home,
   Settings2,
   SquareTerminal,
+  User,
   Users,
 } from "lucide-react";
 
@@ -149,6 +150,11 @@ const data = {
       url: "/admin/dashboard/users",
       icon: Users,
     },
+    {
+      name: "Profile",
+      url: "/admin/dashboard/profile",
+      icon: User,
+    }
   ],
 };
 
