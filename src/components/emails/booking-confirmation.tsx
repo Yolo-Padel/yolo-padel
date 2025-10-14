@@ -2,7 +2,6 @@ import { Html, Head, Body, Container, Text } from "@react-email/components";
 
 interface BookingConfirmationEmailProps {
   customerName?: string;
-  email: string;
   court: string;
   date: Date;
   time: string;
@@ -10,7 +9,7 @@ interface BookingConfirmationEmailProps {
   location: string;
 }
 
-export default function BookingConfirmationEmail({ customerName, email, court, date, time, bookingId, location }: BookingConfirmationEmailProps) {
+export default function BookingConfirmationEmail({ customerName, court, date, time, bookingId, location }: BookingConfirmationEmailProps) {
   return (
     <Html>
       <Head>

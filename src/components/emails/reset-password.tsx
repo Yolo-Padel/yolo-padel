@@ -3,11 +3,10 @@ import { Html, Head, Body, Text, Button, Container } from "@react-email/componen
 interface ResetPasswordEmailProps {
   customerName?: string;
   email: string;
-  resetToken: string;
   resetUrl: string;
 }
 
-export default function ResetPasswordEmail({customerName,email,resetToken,resetUrl}: ResetPasswordEmailProps) {
+export default function ResetPasswordEmail({customerName,email,resetUrl}: ResetPasswordEmailProps) {
 
     return (
         <Html>

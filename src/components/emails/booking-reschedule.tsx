@@ -2,7 +2,6 @@ import { Html, Head, Body, Container, Text } from "@react-email/components";
 
 interface BookingRescheduleEmailProps {
   customerName?: string;
-  email: string;
   court: string;
   date: Date;
   time: string;
@@ -11,7 +10,7 @@ interface BookingRescheduleEmailProps {
   status: string;
 }
 
-export default function BookingRescheduleEmail({ customerName, email, court, date, time, bookingId, location, status }: BookingRescheduleEmailProps) {
+export default function BookingRescheduleEmail({ customerName, court, date, time, bookingId, location, status }: BookingRescheduleEmailProps) {
   return (
     <Html>
       <Head>

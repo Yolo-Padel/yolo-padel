@@ -8,10 +8,10 @@ import ResetPasswordEmail from "@/components/emails/reset-password";
 export default function page() {
   return (
     <div>
-      <BookingCancelationEmail email="johndoe@examples.com" customerName="John Doe" court="Court 1" date={new Date()} time="10:00" bookingId="6879xbfury" location="Yolo Padel Lebak Bulus" status="Canceled" />
-      <BookingConfirmationEmail email="johndoe@examples.com" customerName="John Doe" court="Court 1" date={new Date()} time="10:00" bookingId="6879xbfury" location="Yolo Padel Lebak Bulus" />
-      <BookingRescheduleEmail email="johndoe@examples.com" customerName="John Doe" court="Court 1" date={new Date()} time="10:00" bookingId="6879xbfury" location="Yolo Padel Lebak Bulus" status="Rescheduled" />
-      <ResetPasswordEmail customerName="John Doe" email="johndoe@examples.com" resetToken="123456" resetUrl="https://yolo-padel.vercel.app/reset-password" />
+      <BookingCancelationEmail customerName="John Doe" court="Court 1" date={new Date()} time="10:00" bookingId="6879xbfury" location="Yolo Padel Lebak Bulus" status="Canceled" />
+      <BookingConfirmationEmail customerName="John Doe" court="Court 1" date={new Date()} time="10:00" bookingId="6879xbfury" location="Yolo Padel Lebak Bulus" />
+      <BookingRescheduleEmail customerName="John Doe" court="Court 1" date={new Date()} time="10:00" bookingId="6879xbfury" location="Yolo Padel Lebak Bulus" status="Rescheduled" />
+      <ResetPasswordEmail customerName="John Doe" email="johndoe@examples.com" resetUrl="https://yolo-padel.vercel.app/reset-password" />
     </div>
   );
 }

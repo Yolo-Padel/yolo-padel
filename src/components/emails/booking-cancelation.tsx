@@ -2,7 +2,6 @@ import { Html, Head, Body, Container, Text } from "@react-email/components";
 
 interface BookingCancelationEmailProps {
   customerName?: string;
-  email: string;
   court: string;
   date: Date;
   time: string;
@@ -11,7 +10,7 @@ interface BookingCancelationEmailProps {
   status: string;
 }
 
-export default function BookingCancelationEmail({ customerName, email, court, date, time, bookingId, location, status }: BookingCancelationEmailProps) {
+export default function BookingCancelationEmail({ customerName, court, date, time, bookingId, location, status }: BookingCancelationEmailProps) {
   return (
     <Html>
       <Head>
@@ -35,7 +34,7 @@ export default function BookingCancelationEmail({ customerName, email, court, da
           {/* Content */}
           <div className="flex flex-col items-left justify-center">
             <Text className="text-base leading-6 text-gray-700 mb-1">
-              We've processed your booking cancellation. Here are your booking details :
+              We,ve processed your booking cancellation. Here are your booking details :
             </Text>
             
             <ul style={{ listStyleType: 'none', padding: 1, fontSize: '16px', fontWeight: 'bold' }}>
@@ -48,7 +47,7 @@ export default function BookingCancelationEmail({ customerName, email, court, da
             </ul>
             
             <Text className="text-base leading-6 text-gray-700 mb-4">
-              We're sorry to see you cancel — but we hope to have you back on court soon!
+              We are sorry to see you cancel — but we hope to have you back on court soon!
               If you cancelled by mistake, you can make a new booking anytime
               <br/>
               Thanks for choosing Yolo Padel 💚
