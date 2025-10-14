@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
+import { jwtVerify } from "jose";
 
-const JWT_SECRET =
+const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET ||
-  "your-super-secret-jwt-key-here-make-it-long-and-random";
+  "your-super-secret-jwt-key-here-make-it-long-and-random"
+);
 
 // Routes configuration
 const PROTECTED_ROUTES = ["admin/dashboard"];
 const PUBLIC_ROUTES = ["/admin/auth"];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Get pathname from request
   const { pathname } = request.nextUrl;
   // Get token from cookie
@@ -40,7 +41,7 @@ export function middleware(request: NextRequest) {
 
     try {
       // Verify token
-      jwt.verify(token, JWT_SECRET);
+      await jwtVerify(token, JWT_SECRET);
     } catch (error) {
       // If token is invalid, redirect to login
       const loginUrl = new URL("/admin/auth", request.url);

@@ -1,5 +1,4 @@
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import { SignJWT, jwtVerify } from 'jose';
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import {
@@ -7,8 +6,22 @@ import {
   LoginFormData,
 } from "../validations/auth.validation";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-super-secret-key");
 const JWT_EXPIRES_IN = "7d";
+
+// Web Crypto API helper functions
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+  const hashedInput = await hashPassword(password);
+  return hashedInput === hashedPassword;
+}
 
 export const authService = {
   register: async (data: RegisterFormData) => {
@@ -27,7 +40,7 @@ export const authService = {
       }
 
       // 2. Hash password
-      const hashedPassword = await bcrypt.hash(data.password, 12);
+      const hashedPassword = await hashPassword(data.password);
 
       // 3. Create user and profile in transaction
       const result = await prisma.$transaction(
@@ -59,15 +72,14 @@ export const authService = {
       );
 
       // 4. Generate JWT token
-      const token = jwt.sign(
-        {
-          userId: result.user.id,
-          email: result.user.email,
-          role: result.user.role,
-        },
-        JWT_SECRET,
-        { expiresIn: JWT_EXPIRES_IN }
-      );
+      const token = await new SignJWT({
+        userId: result.user.id,
+        email: result.user.email,
+        role: result.user.role,
+      })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setExpirationTime(JWT_EXPIRES_IN)
+        .sign(JWT_SECRET);
 
       // 5. Remove password from response
       const { password, ...userWithoutPassword } = result.user;
@@ -111,7 +123,7 @@ export const authService = {
       }
 
       // 2. Verify password
-      const isPasswordValid = await bcrypt.compare(
+      const isPasswordValid = await verifyPassword(
         data.password,
         user.password
       );
@@ -125,15 +137,14 @@ export const authService = {
       }
 
       // 3. Generate JWT token
-      const token = jwt.sign(
-        {
-          userId: user.id,
-          email: user.email,
-          role: user.role,
-        },
-        JWT_SECRET,
-        { expiresIn: JWT_EXPIRES_IN }
-      );
+      const token = await new SignJWT({
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+      })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setExpirationTime(JWT_EXPIRES_IN)
+        .sign(JWT_SECRET);
 
       // 4. Remove password from response
       const { password, ...userWithoutPassword } = user;
@@ -160,11 +171,11 @@ export const authService = {
 
   verifyToken: async (token: string) => {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const { payload } = await jwtVerify(token, JWT_SECRET);
 
       // Get fresh user data
       const user = await prisma.user.findUnique({
-        where: { id: decoded.userId },
+        where: { id: payload.userId as string },
         include: { profile: true },
       });
 
