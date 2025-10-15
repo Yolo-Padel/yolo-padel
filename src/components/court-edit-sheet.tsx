@@ -25,6 +25,12 @@ const schema = z.object({
 type CourtType = "INDOOR" | "OUTDOOR"
 type CourtVenue = "Court Paddle Lebak Bulus" | "Court Paddle PIK" | "Court Paddle Kemang"
 type Status = "Available" | "Booked" | "Re-Schedule" | "Cancel"
+type Court = {
+  courtName: string
+  courtType: CourtType
+  venue: CourtVenue
+  status: Status
+}
 
 export function CourtEditSheet({
   open,
@@ -34,18 +40,13 @@ export function CourtEditSheet({
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
-  court: {
-    courtName: string
-    courtType: CourtType
-    courtVenue: CourtVenue
-    status: Status
-  } | null
+  court: Court | null
   onSubmit: (values: z.infer<typeof schema>) => Promise<void> | void
 }) {
   const [values, setValues] = React.useState<z.infer<typeof schema>>({
     courtName: court?.courtName ?? "",
     courtType: court?.courtType ?? "INDOOR",
-    courtVenue: court?.courtVenue ?? "Court Paddle Lebak Bulus",
+    courtVenue: court?.venue ?? "Court Paddle Lebak Bulus",
     status: court?.status ?? "Available",
   })
   const [errors, setErrors] = React.useState<Partial<Record<keyof z.infer<typeof schema>, string>>>({})
@@ -57,7 +58,7 @@ export function CourtEditSheet({
       setValues({
         courtName: court.courtName,
         courtType: court.courtType,
-        courtVenue: court.courtVenue,
+        courtVenue: court.venue,
         status: court.status,
       })
       setErrors({})
