@@ -8,6 +8,9 @@ import {
   Command,
   GalleryVerticalEnd,
   Home,
+  Map,
+  Zap,
+  PieChart,
   Settings2,
   SquareTerminal,
   User,
@@ -154,7 +157,11 @@ const data = {
       name: "Profile",
       url: "/admin/dashboard/profile",
       icon: User,
-    }
+    },
+    { name: "Court",
+      url: "/admin/dashboard/court",
+      icon: Zap,
+    },
   ],
 };
 

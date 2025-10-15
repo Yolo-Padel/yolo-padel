@@ -112,7 +112,11 @@ importers:
         specifier: ^9.0.10
         version: 9.0.10
       '@types/node':
+<<<<<<< Updated upstream
         specifier: ^20
+=======
+        specifier: ^20.19.19
+>>>>>>> Stashed changes
         version: 20.19.19
       '@types/react':
         specifier: ^19
