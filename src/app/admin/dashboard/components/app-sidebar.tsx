@@ -17,9 +17,9 @@ import {
   Users,
 } from "lucide-react";
 
-import { NavProjects } from "@/components/nav-projects";
-import { NavUser } from "@/components/nav-user";
-import { TeamSwitcher } from "@/components/team-switcher";
+import { NavProjects } from "@/app/admin/dashboard/components/nav-projects";
+import { NavUser } from "@/app/admin/dashboard/components/nav-user";
+import { TeamSwitcher } from "@/app/admin/dashboard/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/sidebar";
 
 import { useAuth } from "@/hooks/use-auth";
-import { Skeleton } from "./ui/skeleton";
+import { Skeleton } from "../../../../components/ui/skeleton";
 
 // This is sample data.
 const data = {

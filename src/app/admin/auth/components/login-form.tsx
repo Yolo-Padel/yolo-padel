@@ -40,14 +40,14 @@ export function LoginForm({
       {...props}
     >
       <FieldGroup>
-        <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-2xl font-bold">Login to your account</h1>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold">Login to Admin Dashboard</h1>
           <p className="text-muted-foreground text-sm text-balance">
-            Enter your email below to login to your account
+            Access your admin account to manage and monitor the system.
           </p>
         </div>
         <Field>
-          <FieldLabel htmlFor="email">Email</FieldLabel>
+          <FieldLabel htmlFor="email">Email <span className="text-red-500">*</span></FieldLabel>
           <Input 
             id="email" 
             type="email" 
@@ -62,13 +62,7 @@ export function LoginForm({
         </Field>
         <Field>
           <div className="flex items-center">
-            <FieldLabel htmlFor="password">Password</FieldLabel>
-            <a
-              href="/admin/auth/forgot-password"
-              className="ml-auto text-sm underline-offset-4 hover:underline"
-            >
-              Forgot your password?
-            </a>
+            <FieldLabel htmlFor="password">Password <span className="text-red-500">*</span></FieldLabel>
           </div>
           <Input 
             id="password" 
@@ -80,6 +74,12 @@ export function LoginForm({
               {form.formState.errors.password.message}
             </p>
           )}
+          <a
+              href="/admin/auth/forgot-password"
+              className="ml-auto text-sm underline-offset-4 hover:underline text-right"
+            >
+              Forgot your password?
+            </a>
         </Field>
         <Field>
           <Button 

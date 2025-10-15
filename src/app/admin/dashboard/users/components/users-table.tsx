@@ -13,7 +13,7 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import { Search, X, Pencil } from "lucide-react"
-import { UsersEditSheet } from "@/components/users-edit-sheet"
+import { UsersEditSheet } from "@/app/admin/dashboard/users/components/users-edit-sheet"
 
 // Types mengikuti prisma/schema.prisma
 type Role = "ADMIN" | "MEMBER"
