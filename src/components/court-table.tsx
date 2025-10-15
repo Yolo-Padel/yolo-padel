@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Search, X, Pencil, Filter } from "lucide-react"
+import { CourtEditSheet } from "./court-edit-sheet"
 
 // Types
 type CourtType = "INDOOR" | "OUTDOOR"
@@ -71,6 +72,8 @@ export function CourtTable() {
   const [query, setQuery] = React.useState("")
   const [page, setPage] = React.useState(1)
   const [statusFilter, setStatusFilter] = React.useState<CourtStatus | "All">("All")
+  const [selected, setSelected] = React.useState<Court | null>(null)
+  const [sheetOpen, setSheetOpen] = React.useState(false)
 
   // Debug: tambahkan console.log
   console.log("DUMMY_DATA:", DUMMY_DATA)
@@ -129,6 +132,11 @@ export function CourtTable() {
   React.useEffect(() => {
     setPage(1)
   }, [query])
+
+  async function handleSubmit() {
+    // Dummy submit: console log value
+    console.log("")
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -244,7 +252,7 @@ export function CourtTable() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => console.log("Edit court:", court.id)}
+                    onClick={() => { setSelected(court); setSheetOpen(true) }}
                   >
                     <Pencil className="mr-2 size-4" />
                     Edit
@@ -285,6 +293,12 @@ export function CourtTable() {
           </Button>
         </div>
       </div>
+      <CourtEditSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        court={selected}
+        onSubmit={handleSubmit}
+      />
     </div>
   )
 }
