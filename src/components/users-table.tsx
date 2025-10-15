@@ -121,9 +121,9 @@ export function UsersTable() {
     setPage(1)
   }, [query])
 
-  async function handleSubmit(values: any) {
+  async function handleSubmit() {
     // Dummy submit: console log value
-    console.log("submit values", values)
+    console.log("")
   }
 
   return (
