@@ -1,12 +1,12 @@
 import ResetPasswordEmail from "@/components/emails/reset-password";
 import { EMAIL_CONFIG, resend } from "../resend";
-import WelcomeEmail from "@/components/emails/welcome-email";
+import AdminInvitation from "@/components/emails/admin-invitation";
 import ConfirmationEmail from "@/components/emails/confirmation-email";
 import BookingRescheduleEmail from "@/components/emails/booking-reschedule";
 import BookingCancelationEmail from "@/components/emails/booking-cancelation";
 import BookingConfirmationEmail from "@/components/emails/booking-confirmation";
 import type { 
-    WelcomeEmailData,
+    AdminInvitationEmailData,
     ResetPasswordEmailData,
     ConfirmationEmailData,
     BookingRescheduleEmailData,
@@ -15,26 +15,34 @@ import type {
 } from "../validations/send-email.validation";
 
 export const resendService = {
-    sendWelcomeEmail: async (data: WelcomeEmailData) => {
+    sendAdminInvitationEmail: async (data: AdminInvitationEmailData) => {
         try {
             const response = await resend.emails.send({
                 from: EMAIL_CONFIG.FROM_EMAIL,
                 to: data.email,
-                subject: "Welcome to Yolo Padel!",
-                react: WelcomeEmail({ userName: data.userName, email: data.email }),
-                text: "Welcome to Yolo Padel!",
+                subject: "Admin Invitation",
+                react: AdminInvitation({ userName: data.userName, email: data.email, invitationUrl: data.invitationUrl }),
             });
+
+            if (response.error) {
+                return {
+                    success: false,
+                    data: null,
+                    message: response.error.message,
+                };
+            }
+
             return {
                 success: true,
                 data: response,
-                message: "Welcome email sent successfully",
+                message: "Admin invitation email sent successfully",
             };
         } catch (error) {
-            console.error("Send welcome email error:", error);
+            console.error("Send admin invitation email error:", error);
             return {
                 success: false,
                 data: null,
-                message: error instanceof Error ? error.message : "Send welcome email error",
+                message: error instanceof Error ? error.message : "Send admin invitation email error",
             };
         }
     },
@@ -46,6 +54,15 @@ export const resendService = {
                 subject: "Forgot Password",
                 react: ResetPasswordEmail({ customerName: data.customerName, email: data.email, resetUrl: data.resetUrl }),
             });
+
+            if (response.error) {
+                return {
+                    success: false,
+                    data: null,
+                    message: response.error.message,
+                };
+            }
+            
             return {
                 success: true,
                 data: response,
@@ -69,6 +86,15 @@ export const resendService = {
                 subject: "Confirmation Email",
                 react: ConfirmationEmail({ userName: data.userName, confirmationUrl: data.confirmationUrl }),
             });
+
+            if (response.error) {
+                return {
+                    success: false,
+                    data: null,
+                    message: response.error.message,
+                };
+            }
+            
             return {
                 success: true,
                 data: response,
@@ -99,6 +125,15 @@ export const resendService = {
                     status: data.status 
                 }),
             });
+
+            if (response.error) {
+                return {
+                    success: false,
+                    data: null,
+                    message: response.error.message,
+                };
+            }
+            
             return {
                 success: true,
                 data: response,
@@ -129,6 +164,15 @@ export const resendService = {
                     status: data.status 
                 }),
             });
+
+            if (response.error) {
+                return {
+                    success: false,
+                    data: null,
+                    message: response.error.message,
+                };
+            }
+
             return {
                 success: true,
                 data: response,
@@ -158,6 +202,14 @@ export const resendService = {
                     location: data.location 
                 }),
             });
+
+            if (response.error) {
+                return {
+                    success: false,
+                    data: null,
+                    message: response.error.message,
+                };
+            }
             return {
                 success: true,
                 data: response,

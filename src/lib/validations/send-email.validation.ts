@@ -2,9 +2,10 @@ import { z } from "zod";
 
 const emailSchema = z.string().email("Invalid email format");
 
-export const welcomeEmailSchema = z.object({
+export const adminInvitationEmailSchema = z.object({
   email: emailSchema,
   userName: z.string().min(1, "User name is required"),
+  invitationUrl: z.string().url("Invalid URL format"),
 });
 
 export const resetPasswordEmailSchema = z.object({
@@ -44,7 +45,7 @@ export const bookingCancelationEmailSchema = bookingEmailBaseSchema.extend({
 
 export const bookingConfirmationEmailSchema = bookingEmailBaseSchema;
 
-export type WelcomeEmailData = z.infer<typeof welcomeEmailSchema>;
+export type AdminInvitationEmailData = z.infer<typeof adminInvitationEmailSchema>;
 export type ResetPasswordEmailData = z.infer<typeof resetPasswordEmailSchema>;
 export type ConfirmationEmailData = z.infer<typeof confirmationEmailSchema>;
 export type BookingRescheduleEmailData = z.infer<typeof bookingRescheduleEmailSchema>;
