@@ -47,3 +47,16 @@ model Profile {
 
   @@map("profiles")
 }
+
+model Court {
+  id        String   @id @default(cuid())
+  name      String
+  isActive  Boolean  @default(true)
+  description String?
+  images      String[]
+  location    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("courts")
+}

@@ -1,7 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { RegisterFormData, LoginFormData } from '@/lib/validations/auth.validation';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import {
+  RegisterFormInput,
+  LoginFormInput,
+} from "@/lib/validations/auth.validation";
 
 // Types for API responses
 interface AuthResponse {
@@ -33,7 +36,7 @@ interface AuthResponse {
 
 // API functions
 const authApi = {
-  register: async (data: RegisterFormData): Promise<AuthResponse> => {
+  register: async (data: RegisterFormInput): Promise<AuthResponse> => {
     const response = await fetch("/api/auth/register", {
       method: "POST",
       headers: {
@@ -51,7 +54,7 @@ const authApi = {
     return response.json();
   },
 
-  login: async (data: LoginFormData): Promise<AuthResponse> => {
+  login: async (data: LoginFormInput): Promise<AuthResponse> => {
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: {
@@ -100,17 +103,19 @@ export const useRegister = () => {
     mutationFn: authApi.register,
     onSuccess: (data) => {
       // Show success message
-      toast.success('Account created successfully! Welcome!');
-      
+      toast.success("Account created successfully! Welcome!");
+
       // Invalidate user query to refetch current user
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+
       // Redirect to dashboard
-      router.push('/admin/dashboard');
+      router.push("/admin/dashboard");
     },
     onError: (error: Error) => {
-      console.error('Registration error:', error);
-      toast.error(error.message || 'Failed to create account. Please try again.');
+      console.error("Registration error:", error);
+      toast.error(
+        error.message || "Failed to create account. Please try again."
+      );
     },
   });
 };
