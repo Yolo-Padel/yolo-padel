@@ -20,6 +20,16 @@ const schema = z.object({
   courtType: z.enum(["INDOOR", "OUTDOOR"]),
   courtVenue: z.enum(["Court Paddle Lebak Bulus", "Court Paddle PIK", "Court Paddle Kemang"]),
   status: z.enum(["Available", "Booked", "Re-Schedule", "Cancel"]),
+  bookingDate: z.string().optional(),
+  bookingTimeFrom: z.string().optional(),
+  bookingTimeTo: z.string().optional(),
+})
+
+//Generate time options with interval 30 minute
+const timeOptions = Array.from({ length: 24 }, (_, i) => {
+  const hour = i.toString().padStart(2, "0")
+  const minute = "00"
+  return `${hour}:${minute}`
 })
 
 type CourtType = "INDOOR" | "OUTDOOR"
@@ -30,6 +40,9 @@ type Court = {
   courtType: CourtType
   venue: CourtVenue
   status: Status
+  bookingDate?: string
+  bookingTimeFrom?: string
+  bookingTimeTo?: string
 }
 
 export function CourtEditSheet({
@@ -48,6 +61,9 @@ export function CourtEditSheet({
     courtType: court?.courtType ?? "INDOOR",
     courtVenue: court?.venue ?? "Court Paddle Lebak Bulus",
     status: court?.status ?? "Available",
+    bookingDate: court?.bookingDate ?? "",
+    bookingTimeFrom: court?.bookingTimeFrom ?? "",
+    bookingTimeTo: court?.bookingTimeTo ?? "",
   })
   const [errors, setErrors] = React.useState<Partial<Record<keyof z.infer<typeof schema>, string>>>({})
   const [submitting, setSubmitting] = React.useState(false)
@@ -60,6 +76,9 @@ export function CourtEditSheet({
         courtType: court.courtType,
         courtVenue: court.venue,
         status: court.status,
+        bookingDate: court.bookingDate ?? "",
+        bookingTimeFrom: court.bookingTimeFrom ?? "",
+        bookingTimeTo: court.bookingTimeTo ?? "",
       })
       setErrors({})
     }
@@ -162,6 +181,39 @@ export function CourtEditSheet({
               <option value="Cancel">Cancel</option>
             </select>
             {errors.status && <p className="text-destructive mt-1 text-xs">{errors.status}</p>}
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">Booking Date</label>
+            <Input
+              value={values.bookingDate ?? ""}
+              onChange={(e) => handleChange("bookingDate", e.target.value)}
+              type="date"
+              placeholder="Booking Date"
+            />
+            {errors.bookingDate && <p className="text-destructive mt-1 text-xs">{errors.bookingDate}</p>}
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">Booking Time From</label>
+            <Input
+              value={values.bookingTimeFrom ?? ""}
+              onChange={(e) => handleChange("bookingTimeFrom", e.target.value)}
+              type="time"
+              placeholder="Booking Time From"
+            />
+            {errors.bookingTimeFrom && <p className="text-destructive mt-1 text-xs">{errors.bookingTimeFrom}</p>}
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">Booking Time To</label>
+            <Input
+              value={values.bookingTimeTo}
+              onChange={(e) => handleChange("bookingTimeTo", e.target.value)}
+              type="time"
+              placeholder="Booking Time To"
+            />
+            {errors.bookingTimeTo && <p className="text-destructive mt-1 text-xs">{errors.bookingTimeTo}</p>}
           </div>
 
           <SheetFooter>

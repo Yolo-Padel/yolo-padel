@@ -128,6 +128,14 @@ export function UsersTable() {
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setSheetOpen(true)}>
+            <Pencil className="mr-2 size-4" />
+            Add New User
+          </Button>
+        </div>
+      
       <div className="flex items-center justify-end gap-2">
         <div className="relative w-full max-w-sm">
           <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
@@ -149,7 +157,7 @@ export function UsersTable() {
           )}
         </div>
       </div>
-
+    </div>
       <Table>
         <TableHeader>
           <TableRow>

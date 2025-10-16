@@ -141,6 +141,14 @@ export function CourtTable() {
   return (
     <div className="flex flex-col gap-4">
       {/* Search and Filter */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setSheetOpen(true)}>
+            <Pencil className="mr-2 size-4" />
+            Add New Court
+          </Button>
+        </div>
+      
       <div className="flex items-center justify-end gap-2">
         <div className="relative w-full max-w-sm">
           <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
@@ -188,7 +196,7 @@ export function CourtTable() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
+    </div>
       {/* Active filters display */}
       {(statusFilter !== "All" || query) && (
         <div className="flex items-center gap-2 flex-wrap">
@@ -217,11 +225,6 @@ export function CourtTable() {
           )}
         </div>
       )}
-
-      {/* Debug info */}
-      <div className="text-sm text-gray-500">
-        Debug: Total data: {DUMMY_DATA.length}, Filtered: {filtered.length}, Paginated: {paginated.length}
-      </div>
 
       {/* Table */}
       <Table>
