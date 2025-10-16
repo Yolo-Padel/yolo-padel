@@ -5,6 +5,7 @@ import {
   Home,
   Zap,
   Users,
+  Building,
 } from "lucide-react";
 
 import { MenuItems } from "@/app/admin/dashboard/components/menu-items"
@@ -37,6 +38,11 @@ const data = {
     { name: "Court Management",
       url: "/admin/dashboard/court",
       icon: Zap,
+    },
+    {
+      name: "Venue",
+      url: "/admin/dashboard/venue",
+      icon: Building,
     },
   ],
 };
