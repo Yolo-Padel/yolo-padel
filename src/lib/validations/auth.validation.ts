@@ -26,3 +26,7 @@ export const loginFormSchema = z.object({
 
 export type RegisterFormInput = z.infer<typeof registerFormSchema>;
 export type LoginFormInput = z.infer<typeof loginFormSchema>;
+
+// Legacy type aliases for backward compatibility
+export type RegisterFormData = RegisterFormInput;
+export type LoginFormData = LoginFormInput;

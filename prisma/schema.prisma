@@ -25,6 +25,7 @@ model User {
   isEmailVerified Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  venues    Venue[]
 
   // Relasi ke Profile
   profile Profile?
@@ -48,15 +49,49 @@ model Profile {
   @@map("profiles")
 }
 
+model Venue {
+  id String   @id @default(cuid())
+  slug String   @unique
+  name String
+  address String
+  description String?
+  images      String[]
+  isActive Boolean @default(true)
+  isArchived Boolean @default(false) // Soft delete flag
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy User @relation(fields: [createdById], references: [id])
+  createdById String
+
+  // Relasi ke Court
+  courts Court[]
+
+  @@map("venues")
+}
+
 model Court {
   id        String   @id @default(cuid())
   name      String
   isActive  Boolean  @default(true)
-  description String?
-  images      String[]
-  location    String
+  isArchived Boolean  @default(false) // Soft delete flag
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Relasi ke Venue
+  venue Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venueId String
+
   @@map("courts")
+}
+
+model MagicLink {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("magic_links")
 }

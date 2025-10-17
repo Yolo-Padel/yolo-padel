@@ -23,6 +23,33 @@ export const courtService = {
     }
   },
 
+  getAllActive: async () => {
+    try {
+      // 1. Find all active courts
+      const result = await prisma.court.findMany({
+        where: {
+          isActive: true,
+        },
+      });
+      return {
+        success: true,
+        data: result,
+        message: "Get all active courts successful",
+      };
+    } catch (error) {
+      console.error("Get all active courts error:", error);
+
+      return {
+        success: false,
+        data: null,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Get all active courts failed",
+      };
+    }
+  },
+
   getById: async (id: string) => {
     try {
       // 1. Find court by id
@@ -74,6 +101,56 @@ export const courtService = {
         success: false,
         data: null,
         message: error instanceof Error ? error.message : "Create court failed",
+      };
+    }
+  },
+
+  update: async (id: string, data: CourtCreateInput) => {
+    try {
+      // 1. Update court
+      const result = await prisma.court.update({
+        where: { id },
+        data,
+      });
+
+      return {
+        success: true,
+        data: result,
+        message: "Update court successful",
+      };
+    } catch (error) {
+      console.error("Update court error:", error);
+
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : "Update court failed",
+      };
+    }
+  },
+
+  delete: async (id: string) => {
+    try {
+      // 1. Soft delete court
+      const result = await prisma.court.update({
+        where: { id },
+        data: {
+          isArchived: true,
+        },
+      });
+
+      return {
+        success: true,
+        data: result,
+        message: "Delete court successful",
+      };
+    } catch (error) {
+      console.error("Delete court error:", error);
+
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : "Delete court failed",
       };
     }
   },
