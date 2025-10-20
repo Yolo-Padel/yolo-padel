@@ -11,20 +11,16 @@ import { cn } from "@/lib/utils"
 
 const schema = z.object({
   email: z.string().email(),
-  username: z.string().min(2).max(32).optional().or(z.literal("")),
   firstName: z.string().min(1).max(64).optional().or(z.literal("")),
   lastName: z.string().min(1).max(64).optional().or(z.literal("")),
-  bio: z.string().max(500).optional().or(z.literal("")),
-  avatar: z.string().url().optional().or(z.literal("")),
 })
 
-type Role = "ADMIN" | "MEMBER"
+type Role = "ADMIN" | "USER"
 
 // Dummy data untuk admin yang sedang login
 const CURRENT_USER = {
   id: "u_1",
   email: "admin@yolopadel.com",
-  username: "admin",
   role: "ADMIN" as Role,
   isActive: true,
   isEmailVerified: true,
@@ -33,7 +29,6 @@ const CURRENT_USER = {
     userId: "u_1",
     firstName: "Admin",
     lastName: "Yolo",
-    bio: "System administrator for Yolo Padel platform",
     avatar: undefined,
   },
 }
@@ -41,11 +36,8 @@ const CURRENT_USER = {
 export default function AdminProfilePage() {
   const [values, setValues] = React.useState<z.infer<typeof schema>>({
     email: "",
-    username: "",
     firstName: "",
     lastName: "",
-    bio: "",
-    avatar: "",
   })
   const [errors, setErrors] = React.useState<Partial<Record<keyof z.infer<typeof schema>, string>>>({})
   const [submitting, setSubmitting] = React.useState(false)
@@ -54,11 +46,8 @@ export default function AdminProfilePage() {
     // Load current user data
     setValues({
       email: CURRENT_USER.email,
-      username: CURRENT_USER.username ?? "",
       firstName: CURRENT_USER.profile?.firstName ?? "",
       lastName: CURRENT_USER.profile?.lastName ?? "",
-      bio: CURRENT_USER.profile?.bio ?? "",
-      avatar: CURRENT_USER.profile?.avatar ?? "",
     })
   }, [])
 
@@ -114,7 +103,7 @@ export default function AdminProfilePage() {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
-                <AvatarImage src={values.avatar || undefined} alt={fullName} />
+                <AvatarImage src={CURRENT_USER.profile?.avatar || undefined} alt={fullName} />
                 <AvatarFallback className="text-lg">{initials}</AvatarFallback>
               </Avatar>
               <div>
@@ -123,12 +112,6 @@ export default function AdminProfilePage() {
                 <Badge className="mt-1">{CURRENT_USER.role}</Badge>
               </div>
             </div>
-            {values.bio && (
-              <div>
-                <h4 className="text-sm font-medium">Bio</h4>
-                <p className="text-sm text-muted-foreground">{values.bio}</p>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -174,41 +157,6 @@ export default function AdminProfilePage() {
                 {errors.email && <p className="text-destructive mt-1 text-xs">{errors.email}</p>}
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">Username</label>
-                <Input
-                  value={values.username ?? ""}
-                  onChange={(e) => handleChange("username", e.target.value)}
-                  placeholder="username"
-                />
-                {errors.username && <p className="text-destructive mt-1 text-xs">{errors.username}</p>}
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">Avatar URL</label>
-                <Input
-                  value={values.avatar ?? ""}
-                  onChange={(e) => handleChange("avatar", e.target.value)}
-                  placeholder="https://example.com/avatar.jpg"
-                />
-                {errors.avatar && <p className="text-destructive mt-1 text-xs">{errors.avatar}</p>}
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">Bio</label>
-                <textarea
-                  className={cn(
-                    "bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring",
-                    "border-input focus-visible:ring-2 flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm",
-                    "disabled:cursor-not-allowed disabled:opacity-50"
-                  )}
-                  value={values.bio ?? ""}
-                  onChange={(e) => handleChange("bio", e.target.value)}
-                  placeholder="Tell us about yourself..."
-                  rows={3}
-                />
-                {errors.bio && <p className="text-destructive mt-1 text-xs">{errors.bio}</p>}
-              </div>
 
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline">
