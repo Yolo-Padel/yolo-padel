@@ -1,5 +1,5 @@
 "use client";
-
+//
 import * as React from "react";
 import {
   AudioWaveform,
@@ -158,10 +158,7 @@ const data = {
       url: "/admin/dashboard/profile",
       icon: User,
     },
-    { name: "Court",
-      url: "/admin/dashboard/court",
-      icon: Zap,
-    },
+    { name: "Court", url: "/admin/dashboard/court", icon: Zap },
   ],
 };
 
