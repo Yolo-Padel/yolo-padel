@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/field"
 import { useAuth } from "@/hooks/use-auth"
 import { useUpdateProfile } from "@/hooks/use-profile"
-import { profileUpdateSchema, ProfileUpdateData } from "@/lib/validations/auth.validation"
+import { profileUpdateSchema, ProfileUpdateData } from "@/lib/validations/profile.validation"
 
 export default function AdminProfilePage() {
   const { user, profile, isLoading, isAuthenticated } = useAuth()

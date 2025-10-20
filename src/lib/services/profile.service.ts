@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { ProfileUpdateData } from "../validations/auth.validation";
+import { ProfileUpdateData } from "../validations/profile.validation";
 
 export const profileService = {
   updateProfile: async (userId: string, data: ProfileUpdateData) => {

@@ -32,7 +32,7 @@ export const profileUpdateSchema = z.object({
 
 export type RegisterFormInput = z.infer<typeof registerFormSchema>;
 export type LoginFormInput = z.infer<typeof loginFormSchema>;
-export type ProfileUpdateData = z.infer<typeof profileUpdateSchema>;
+export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
 
 // Legacy type aliases for backward compatibility
 export type RegisterFormData = RegisterFormInput;

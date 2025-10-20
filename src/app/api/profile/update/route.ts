@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { profileUpdateSchema } from "@/lib/validations/auth.validation";
+import { profileUpdateSchema } from "@/lib/validations/profile.validation";
 import { profileService } from "@/lib/services/profile.service";
 import { verifyAuth } from "@/lib/auth-utils";
 
