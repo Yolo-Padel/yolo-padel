@@ -2,9 +2,6 @@
 //
 import * as React from "react";
 import {
-  AudioWaveform,
-  Command,
-  GalleryVerticalEnd,
   Home,
   Zap,
   Users,
@@ -26,10 +23,6 @@ import { Skeleton } from "../../../../components/ui/skeleton";
 
 // This is sample data.
 const data = {
-  companyProfile: {
-    name: "Yolo Padel",
-    logo: GalleryVerticalEnd,
-  },
   menuItems: [
     {
       name: "Dashboard",
@@ -71,7 +64,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <CompanyProfile companyProfile={data.companyProfile} />
+        <CompanyProfile />
       </SidebarHeader>
       <SidebarContent>
         <NavProjects menuItems={data.menuItems} />
