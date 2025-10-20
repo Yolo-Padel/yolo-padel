@@ -55,7 +55,7 @@ const data = {
       icon: Home,
     },
     {
-      name: "Members",
+      name: "Users",
       url: "/admin/dashboard/users",
       icon: Users,
     },
