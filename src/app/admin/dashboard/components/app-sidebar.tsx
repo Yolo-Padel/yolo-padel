@@ -12,7 +12,7 @@ import {
 
 import { NavProjects } from "@/app/admin/dashboard/components/nav-projects";
 import { NavUser } from "@/app/admin/dashboard/components/nav-user";
-import { TeamSwitcher } from "@/app/admin/dashboard/components/team-switcher";
+import { CompanyProfile } from "@/app/admin/dashboard/components/company-profile";
 import {
   Sidebar,
   SidebarContent,
@@ -26,29 +26,11 @@ import { Skeleton } from "../../../../components/ui/skeleton";
 
 // This is sample data.
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+  companyProfile: {
+    name: "Yolo Padel",
+    logo: GalleryVerticalEnd,
   },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
-  projects: [
+  menuItems: [
     {
       name: "Dashboard",
       url: "/admin/dashboard",
@@ -89,10 +71,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <CompanyProfile companyProfile={data.companyProfile} />
       </SidebarHeader>
       <SidebarContent>
-        <NavProjects projects={data.projects} />
+        <NavProjects menuItems={data.menuItems} />
       </SidebarContent>
       <SidebarFooter>
         {isAuthenticated && !isLoading ? (
