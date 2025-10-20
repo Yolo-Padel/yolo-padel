@@ -24,8 +24,15 @@ export const loginFormSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+
+export const profileUpdateSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(64, "First name must be less than 64 characters"),
+  lastName: z.string().min(1, "Last name is required").max(64, "Last name must be less than 64 characters"),
+});
+
 export type RegisterFormInput = z.infer<typeof registerFormSchema>;
 export type LoginFormInput = z.infer<typeof loginFormSchema>;
+export type ProfileUpdateData = z.infer<typeof profileUpdateSchema>;
 
 // Legacy type aliases for backward compatibility
 export type RegisterFormData = RegisterFormInput;
