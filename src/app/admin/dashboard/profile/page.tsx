@@ -10,7 +10,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 
 const schema = z.object({
-  email: z.string().email(),
   firstName: z.string().min(1).max(64).optional().or(z.literal("")),
   lastName: z.string().min(1).max(64).optional().or(z.literal("")),
 })
@@ -35,17 +34,16 @@ const CURRENT_USER = {
 
 export default function AdminProfilePage() {
   const [values, setValues] = React.useState<z.infer<typeof schema>>({
-    email: "",
     firstName: "",
     lastName: "",
   })
+  const [email] = React.useState(CURRENT_USER.email)
   const [errors, setErrors] = React.useState<Partial<Record<keyof z.infer<typeof schema>, string>>>({})
   const [submitting, setSubmitting] = React.useState(false)
 
   React.useEffect(() => {
     // Load current user data
     setValues({
-      email: CURRENT_USER.email,
       firstName: CURRENT_USER.profile?.firstName ?? "",
       lastName: CURRENT_USER.profile?.lastName ?? "",
     })
@@ -84,92 +82,66 @@ export default function AdminProfilePage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account settings and profile information.
-        </p>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Profile Overview */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Profile Overview</CardTitle>
-            <CardDescription>
-              Your current profile information
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={CURRENT_USER.profile?.avatar || undefined} alt={fullName} />
-                <AvatarFallback className="text-lg">{initials}</AvatarFallback>
-              </Avatar>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={CURRENT_USER.profile?.avatar || undefined} alt={fullName} />
+              <AvatarFallback className="text-lg">{initials}</AvatarFallback>
+            </Avatar>
+            <div>
+              <CardTitle>Profile Settings</CardTitle>
+              <CardDescription>
+                Manage your account settings and profile information.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <h3 className="font-semibold">{fullName}</h3>
-                <p className="text-sm text-muted-foreground">{values.email}</p>
-                <Badge className="mt-1">{CURRENT_USER.role}</Badge>
+                <label className="mb-2 block text-sm font-medium">First Name</label>
+                <Input
+                  value={values.firstName ?? ""}
+                  onChange={(e) => handleChange("firstName", e.target.value)}
+                  placeholder="John"
+                />
+                {errors.firstName && <p className="text-destructive mt-1 text-xs">{errors.firstName}</p>}
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium">Last Name</label>
+                <Input
+                  value={values.lastName ?? ""}
+                  onChange={(e) => handleChange("lastName", e.target.value)}
+                  placeholder="Doe"
+                />
+                {errors.lastName && <p className="text-destructive mt-1 text-xs">{errors.lastName}</p>}
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Edit Form */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Edit Profile</CardTitle>
-            <CardDescription>
-              Update your personal information and preferences.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium">First Name</label>
-                  <Input
-                    value={values.firstName ?? ""}
-                    onChange={(e) => handleChange("firstName", e.target.value)}
-                    placeholder="John"
-                  />
-                  {errors.firstName && <p className="text-destructive mt-1 text-xs">{errors.firstName}</p>}
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium">Last Name</label>
-                  <Input
-                    value={values.lastName ?? ""}
-                    onChange={(e) => handleChange("lastName", e.target.value)}
-                    placeholder="Doe"
-                  />
-                  {errors.lastName && <p className="text-destructive mt-1 text-xs">{errors.lastName}</p>}
-                </div>
-              </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Email</label>
+              <Input
+                value={email}
+                type="email"
+                placeholder="m@example.com"
+                disabled
+                className="bg-muted"
+              />
+            </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">Email</label>
-                <Input
-                  value={values.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                  type="email"
-                  placeholder="m@example.com"
-                />
-                {errors.email && <p className="text-destructive mt-1 text-xs">{errors.email}</p>}
-              </div>
-
-
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline">
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }
