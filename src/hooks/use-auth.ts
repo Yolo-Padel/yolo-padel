@@ -99,23 +99,6 @@ const authApi = {
     return response.json();
   },
 
-  updateProfile: async (data: { firstName: string; lastName: string }): Promise<AuthResponse> => {
-    const response = await fetch("/api/profile/update", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Profile update failed");
-    }
-
-    return response.json();
-  },
 };
 
 // Custom hooks
@@ -190,25 +173,6 @@ export const useCurrentUser = () => {
   });
 };
 
-// Hook untuk update profile
-export const useUpdateProfile = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: authApi.updateProfile,
-    onSuccess: (data) => {
-      // Show success message
-      toast.success('Profile updated successfully!');
-      
-      // Invalidate user query to refetch current user
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-    },
-    onError: (error: Error) => {
-      console.error('Profile update error:', error);
-      toast.error(error.message || 'Failed to update profile. Please try again.');
-    },
-  });
-};
 
 // Hook untuk cek apakah user sudah login
 export const useAuth = () => {

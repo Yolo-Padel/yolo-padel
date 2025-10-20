@@ -1,37 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { usersService } from "@/lib/services/users.service";
-import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";
+import { verifyAdminAuth } from "@/lib/auth-utils";
 
 export async function GET(request: NextRequest) {
   try {
-    // Get token from cookies
-    const token = request.cookies.get("auth-token")?.value;
+    // Verify admin authentication
+    const { isValid, user, error } = await verifyAdminAuth(request);
 
-    if (!token) {
+    if (!isValid || !user) {
       return NextResponse.json(
         {
           success: false,
           data: null,
-          message: "No token provided",
+          message: error || "Unauthorized",
         },
-        { status: 401 }
-      );
-    }
-
-    // Verify token and get user ID
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string, role: string };
-    
-    // Check if user is admin
-    if (decoded.role !== "ADMIN") {
-      return NextResponse.json(
-        {
-          success: false,
-          data: null,
-          message: "Unauthorized - Admin access required",
-        },
-        { status: 403 }
+        { status: user?.role !== "ADMIN" ? 403 : 401 }
       );
     }
 

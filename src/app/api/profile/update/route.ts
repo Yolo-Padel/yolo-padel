@@ -1,29 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { profileUpdateSchema } from "@/lib/validations/auth.validation";
-import { authService } from "@/lib/services/auth.service";
-import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";
+import { profileService } from "@/lib/services/profile.service";
+import { verifyAuth } from "@/lib/auth-utils";
 
 export async function PUT(request: NextRequest) {
   try {
-    // Get token from cookies
-    const token = request.cookies.get("auth-token")?.value;
+    // Verify authentication
+    const { isValid, user, error } = await verifyAuth(request);
 
-    if (!token) {
+    if (!isValid || !user) {
       return NextResponse.json(
         {
           success: false,
           data: null,
-          message: "No token provided",
+          message: error || "Unauthorized",
         },
         { status: 401 }
       );
     }
-
-    // Verify token and get user ID
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-    const userId = decoded.userId;
 
     // Parse and validate request body
     const body = await request.json();
@@ -45,7 +39,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update profile
-    const result = await authService.updateProfile(userId, validationResult.data);
+    const result = await profileService.updateProfile(user.userId, validationResult.data);
 
     if (!result.success) {
       return NextResponse.json(

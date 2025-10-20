@@ -1,6 +1,6 @@
 "use client"
 
-import * as React from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Input } from "@/components/ui/input"
@@ -13,7 +13,8 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
-import { useAuth, useUpdateProfile } from "@/hooks/use-auth"
+import { useAuth } from "@/hooks/use-auth"
+import { useUpdateProfile } from "@/hooks/use-profile"
 import { profileUpdateSchema, ProfileUpdateData } from "@/lib/validations/auth.validation"
 
 export default function AdminProfilePage() {
@@ -29,7 +30,7 @@ export default function AdminProfilePage() {
     mode: "onChange", // Enable real-time validation
   })
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Load current user data
     if (profile) {
       form.reset({
@@ -44,7 +45,7 @@ export default function AdminProfilePage() {
   }
 
   // Check if form has changes from original values
-  const hasChanges = React.useMemo(() => {
+  const hasChanges = useMemo(() => {
     if (!profile) return false
     
     const currentValues = form.getValues()
