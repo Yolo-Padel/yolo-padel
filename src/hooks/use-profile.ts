@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ProfileUpdateData } from '@/lib/validations/profile.validation';
-import { User, Profile } from './use-auth';
+import { User, Profile } from '@/types/prisma';
 
 // Types for API responses
 interface ProfileResponse {

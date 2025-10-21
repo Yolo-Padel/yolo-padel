@@ -6,28 +6,7 @@ import {
   LoginFormInput,
 } from "@/lib/validations/auth.validation";
 
-// Shared types
-export type Role = "ADMIN" | "USER"
-
-export type User = {
-  id: string
-  email: string
-  role: Role
-  isActive: boolean
-  isEmailVerified: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-export type Profile = {
-  id: string
-  userId: string
-  firstName: string | null
-  lastName: string | null
-  avatar: string | null
-  createdAt: string
-  updatedAt: string
-}
+import { User, Profile } from '@/types/prisma';
 
 // Types for API responses
 interface AuthResponse {

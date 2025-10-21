@@ -1,13 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { User, Profile } from './use-auth';
-
-export type UserRow = User & { profile?: Profile | null }
+import { User, Profile } from '@/types/prisma';
 
 // Types for API responses
 interface UsersResponse {
   success: boolean;
   data: {
-    users: UserRow[];
+    users: (User & { profile?: Profile | null })[];
   } | null;
   message: string;
   errors?: any[];
