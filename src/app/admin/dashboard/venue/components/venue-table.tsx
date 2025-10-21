@@ -13,65 +13,39 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import { Search, X, Pencil } from "lucide-react"
-import { UsersEditSheet } from "@/app/admin/dashboard/users/components/users-edit-sheet"
-import { id } from "zod/v4/locales"
-import { profile } from "console"
-import { VenueEditSheet } from "./venue-edit-sheet"
+import { EditVenue } from "./venue-edit-sheet"
 
-type venueStatus = "Available" | "Fully Booked" | "Under Maintenance"
 
-type Venue = {
+type VenueRow = {
   id: string
   venueName: string
-  location: string
+  descriptions: string
+  address: string
   totalCourts: number
-  openingHours: string
-  admin: string
-  status: venueStatus
+  image: File | null
+  isActive: boolean
 }
 
-type Profile = {
-  userId: string
-  firstName?: string | null
-  lastName?: string | null
-  bio?: string | null
-  avatar?: string | null
-}
-
-type VenueRow = Venue & { profile?: Profile | null }
-
-const DUMMY_DATA: VenueRow[] = [
+const DUMMY_DATA: (VenueRow)[] = [
   {
     id: "v_1",
     venueName: "Yolo Padel",
-    location: "123 Main St, Anytown, USA",
+    descriptions: "A modern padel court with top-notch facilities",
+    address: "123 Main St, Anytown, USA",
     totalCourts: 10,
-    openingHours: "9:00 AM - 6:00 PM",
-    admin: "admin@yolopadel.com",
-    status: "Available",
-    profile: {
-      userId: "u_1",
-      firstName: "Admin",
-      lastName: "Yolo",
-      bio: "System administrator",
-      avatar: undefined,
-    },
+    isActive: true,
+    image: null,
+    
   },
   {
     id: "v_2",
     venueName: "Jane's Padel",
-    location: "456 Oak St, Somewhere, USA",
+    descriptions: "A modern padel court with top-notch facilities",
+    address: "456 Oak St, Somewhere, USA",
     totalCourts: 8,
-    openingHours: "9:00 AM - 6:00 PM",
-    admin: "jane.smith@example.com",
-    status: "Fully Booked",
-    profile: {
-      userId: "u_2",
-      firstName: "Jane",
-      lastName: "Smith",
-      bio: "Player",
-      avatar: undefined,
-    },
+    isActive: false,
+    image: null,
+    
   }
 ]
 
@@ -83,14 +57,16 @@ export function VenueTable() {
   const [sheetOpen, setSheetOpen] = React.useState(false)
   const [selected, setSelected] = React.useState<VenueRow | null>(null)
 
+
+
   const filtered = React.useMemo(() => {
     const q = query.toLowerCase().trim()
     if (!q) return DUMMY_DATA
     return DUMMY_DATA.filter((u) => {
-      const fullName = `${u.profile?.firstName ?? ""} ${u.profile?.lastName ?? ""}`.toLowerCase()
+      const fullName = `${u.venueName ?? ""}`.toLowerCase()
       return (
         u.venueName.toLowerCase().includes(q) ||
-        u.location.toLowerCase().includes(q) ||
+        u.address.toLowerCase().includes(q) ||
         fullName.includes(q)
       )
     })
@@ -148,25 +124,25 @@ export function VenueTable() {
         <TableHeader>
           <TableRow>
             <TableHead>Venue Name</TableHead>
-            <TableHead>Location</TableHead>
+            <TableHead>Description</TableHead>
+            <TableHead>Address</TableHead>
             <TableHead>Total Courts</TableHead>
-            <TableHead>Opening Hours</TableHead>
-            <TableHead>Admin</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead>Image</TableHead>
+            <TableHead>status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {paginated.map((u) => {
-            const fullName = [u.profile?.firstName, u.profile?.lastName].filter(Boolean).join(" ") || "-"
+            
             return (
               <TableRow key={u.id}>
                 <TableCell>{u.venueName}</TableCell>
-                <TableCell>{u.location}</TableCell>
+                <TableCell>{u.descriptions}</TableCell>
+                <TableCell>{u.address}</TableCell>
                 <TableCell>{u.totalCourts}</TableCell>
-                <TableCell>{u.openingHours}</TableCell>
-                <TableCell>{fullName}</TableCell>
-                <TableCell>{u.status}</TableCell>
+                <TableCell>{u.image ? "Yes" : "No"}</TableCell>
+                <TableCell>{u.isActive ? "Active" : "Inactive"}</TableCell>
                 <TableCell className="text-right">
                   <Button
                     variant="outline"
@@ -197,13 +173,12 @@ export function VenueTable() {
           </Button>
         </div>
       </div>
-      
-      <VenueEditSheet
+       <EditVenue
         open={sheetOpen}
+        venueRow={selected}
         onOpenChange={setSheetOpen}
-        venue={selected}
         onSubmit={handleSubmit}
-      />
+        />
     </div>
   )
 }

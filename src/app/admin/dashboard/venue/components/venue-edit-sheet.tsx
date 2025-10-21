@@ -1,190 +1,119 @@
 "use client"
 
-import * as React from "react"
-import { z } from "zod"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetFooter,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
+import React from 'react'
 
-const schema = z.object({
-  venuename: z.string().min(2).max(32).optional().or(z.literal("")),
-  location: z.string().min(2).max(32).optional().or(z.literal("")),
-  totalCourts: z.number().int().min(1).max(100),
-  openingHours: z.string().min(2).max(32).optional().or(z.literal("")),
-  admin: z.string().email().optional().or(z.literal("")),
-  status: z.enum(["Available", "Fully Booked", "Under Maintenance"]),
-})
 
 type VenueRow = {
-  venuename: string
-  location: string
+  id: string
+  venueName: string
+  descriptions: string
+  address: string
   totalCourts: number
-  openingHours: string
-  admin: string
-  status: "Available" | "Fully Booked" | "Under Maintenance"
-  
+  image: File | null
+  isActive: boolean
 }
 
-export function VenueEditSheet({
+
+export function EditVenue ({
   open,
   onOpenChange,
-  venue,
+  venueRow,
   onSubmit,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
-  venue: VenueRow | null
-  onSubmit: (values: z.infer<typeof schema>) => Promise<void> | void
+  venueRow: VenueRow | null
+  onSubmit: (values: VenueRow) => Promise<void> | void
 }) {
-  const [values, setValues] = React.useState<z.infer<typeof schema>>({
-    venuename: "",
-    location: "",
+
+  const [values, setValues] = React.useState<VenueRow>({
+    id: "",
+    venueName: "",
+    descriptions: "",
+    address: "",
     totalCourts: 0,
-    openingHours: "",
-    admin: "",
-    status: "Available",
+    image: null,
+    isActive: false,
   })
-  const [errors, setErrors] = React.useState<Partial<Record<keyof z.infer<typeof schema>, string>>>({})
-  const [submitting, setSubmitting] = React.useState(false)
 
-  React.useEffect(() => {
-    if (!open) return
-    if (venue) {
-      setValues({
-        
-        venuename: venue.venuename ?? "",
-        location: venue.location ?? "",
-        totalCourts: venue.totalCourts,
-        openingHours: venue.openingHours ?? "",
-        admin: venue.admin ?? "",
-        status: venue.status,
-      })
-      setErrors({})
-    }
-  }, [open, venue])
-
-  function handleChange<K extends keyof z.infer<typeof schema>>(key: K, val: z.infer<typeof schema>[K]) {
-    setValues((v) => ({ ...v, [key]: val }))
+  function handleSave () {
+    console.log("save")
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const parsed = schema.safeParse(values)
-    if (!parsed.success) {
-      const fieldErrors: typeof errors = {}
-      for (const issue of parsed.error.issues) {
-        const path = issue.path[0] as keyof z.infer<typeof schema>
-        fieldErrors[path] = issue.message
-      }
-      setErrors(fieldErrors)
-      return
-    }
-    setErrors({})
-    try {
-      setSubmitting(true)
-      await onSubmit(parsed.data)
-      onOpenChange(false)
-    } finally {
-      setSubmitting(false)
-    }
+React.useEffect(() => {
+  if (!open) return
+  if (venueRow) {
+    setValues({
+      id: venueRow.id,
+      venueName: venueRow.venueName,
+      descriptions: venueRow.descriptions,
+      address: venueRow.address,
+      totalCourts: venueRow.totalCourts,
+      image: venueRow.image,
+      isActive: venueRow.isActive,
+    })
   }
-
-  const fullName = [values.venuename, values.location].filter(Boolean).join(" ") || "-"
+}, [venueRow])
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col gap-4 sm:max-w-lg">
+      <SheetTrigger asChild>
+        <Button variant="outline">Open</Button>
+      </SheetTrigger>
+      <SheetContent>
         <SheetHeader>
           <SheetTitle>Edit Venue</SheetTitle>
           <SheetDescription>
-            Update data user dan profile. Perubahan ini hanya dummy pada sisi UI.
+            Make changes to your venue here. Click save when you&apos;re done.
           </SheetDescription>
         </SheetHeader>
-
-        <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-4 px-4">
+        <div className="grid flex-1 auto-rows-min gap-6 px-4">
+          <div className="grid gap-3">
+            <Label htmlFor="sheet-demo-name">VenueName</Label>
+            <Input id="sheet-demo-name" placeholder="type venue name here" value={values.venueName} onChange={(e) => setValues({ ...values, venueName: e.target.value })} />
+          </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Venue Name</label>
-            <Input
-              value={values.venuename}
-              onChange={(e) => handleChange("venuename", e.target.value)}
-              type="text"
-              placeholder="Venue Name"
-            />
-            {errors.venuename && <p className="text-destructive mt-1 text-xs">{errors.venuename}</p>}
+            <Label>Descriptions</Label>
+            <Textarea id="venue-descriptions" placeholder="type descriptions venue here" value={values.descriptions} onChange={(e) => setValues({ ...values, descriptions: e.target.value })} />
           </div>
-
           <div>
-            <label className="mb-1 block text-sm font-medium">Location</label>
-            <Input
-              value={values.location ?? ""}
-              onChange={(e) => handleChange("location", e.target.value)}
-              placeholder="Location"
-            />
-            {errors.location && <p className="text-destructive mt-1 text-xs">{errors.location}</p>}
+            <Label>Address</Label>
+            <Textarea id="venue-address" placeholder="type address venue here" value={values.address} onChange={(e) => setValues({ ...values, address: e.target.value })} />
           </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium">Total Courts</label>
-              <Input
-                value={values.totalCourts}
-                onChange={(e) => handleChange("totalCourts", Number(e.target.value))}
-                type="number"
-                placeholder="Total Courts"
-              />
-              {errors.totalCourts && <p className="text-destructive mt-1 text-xs">{errors.totalCourts}</p>}
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">Opening Hours</label>
-              <Input
-                value={values.openingHours ?? ""}
-                onChange={(e) => handleChange("openingHours", e.target.value)}
-                placeholder="Opening Hours"
-              />
-              {errors.openingHours && <p className="text-destructive mt-1 text-xs">{errors.openingHours}</p>}
-            </div>
+          <div className="grid gap-3">
+            <Label htmlFor="sheet-demo-username">Total Courts</Label>
+            <Input id="total-courts" type="number" placeholder="type total courts venue here" value={values.totalCourts} onChange={(e) => setValues({ ...values, totalCourts: Number(e.target.value) })} />
           </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium">Role</label>
-              <select
-                className={cn(
-                  "bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring text-sm",
-                  "border-input focus-visible:ring-2 flex h-9 w-full rounded-md border px-3 py-1",
-                )}
-                value={values.status}
-                onChange={(e) => handleChange("status", e.target.value as "Available")}
-              >
-                <option value="Available">Available</option>
-                <option value="Fully Booked">Fully Booked</option>
-                <option value="Under Maintenance">Under Maintenance</option>
-              </select>
-              {errors.status && <p className="text-destructive mt-1 text-xs">{errors.status}</p>}
-            </div>
-            <div className="flex items-end gap-2">
-              <Badge variant="secondary">{fullName}</Badge>
-            </div>
+          <div>
+            <Label htmlFor="picture">Image</Label>
+            <Input id="picture" type="file" onChange={(e) => setValues({ ...values, image: e.target.files?.[0] || null })} />
           </div>
-
-          <SheetFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              Save changes
-            </Button>
-          </SheetFooter>
-        </form>
+          <div className="grid gap-3">
+            <Label htmlFor="sheet-demo-username">Is Active</Label>
+            <Switch id="sheet-demo-username" checked={values.isActive} onCheckedChange={(checked) => setValues({ ...values, isActive: checked })} />
+          </div>
+        </div>
+        <SheetFooter>
+          <Button type="submit" onClick={handleSave}>Save changes</Button>
+          <SheetClose asChild>
+            <Button variant="outline">Close</Button>
+          </SheetClose>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   )
