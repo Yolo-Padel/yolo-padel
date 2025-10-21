@@ -54,7 +54,6 @@ export async function POST(request: NextRequest) {
       user: {
         id: user.id,
         email: user.email,
-        username: user.username,
         role: user.role,
         isActive: user.isActive,
         isEmailVerified: user.isEmailVerified,

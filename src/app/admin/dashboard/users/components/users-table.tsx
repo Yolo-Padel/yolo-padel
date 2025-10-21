@@ -16,7 +16,7 @@ import { Search, X, Pencil } from "lucide-react"
 import { UsersEditSheet } from "@/app/admin/dashboard/users/components/users-edit-sheet"
 import { UsersTableLoading } from "@/app/admin/dashboard/users/components/users-table-loading"
 import { useUsers } from "@/hooks/use-users"
-import { UserRow } from "@/hooks/use-users"
+import { User, Profile, Role } from "@/types/prisma"
 
 const PAGE_SIZE = 10
 
@@ -24,7 +24,7 @@ export function UsersTable() {
   const [query, setQuery] = useState("")
   const [page, setPage] = useState(1)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [selected, setSelected] = useState<UserRow | null>(null)
+  const [selected, setSelected] = useState<User & { profile?: Profile | null } | null>(null)
 
   // Fetch users data
   const { data, isLoading, error } = useUsers()
@@ -35,7 +35,7 @@ export function UsersTable() {
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim()
     if (!q) return allUsers
-    return allUsers.filter((u: any) => {
+    return allUsers.filter((u: User & { profile?: Profile | null }) => {
       const fullName = `${u.profile?.firstName ?? ""} ${u.profile?.lastName ?? ""}`.toLowerCase()
       return (
         u.email.toLowerCase().includes(q) ||
@@ -121,14 +121,14 @@ export function UsersTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {paginated.map((u: any) => {
+          {paginated.map((u: User & { profile?: Profile | null }) => {
             const fullName = [u.profile?.firstName, u.profile?.lastName].filter(Boolean).join(" ") || "-"
             return (
               <TableRow key={u.id}>
                 <TableCell>{fullName}</TableCell>
                 <TableCell>{u.email}</TableCell>
                 <TableCell>
-                  {u.role === "ADMIN" ? (
+                  {u.role === Role.ADMIN ? (
                     <Badge>ADMIN</Badge>
                   ) : (
                     <Badge variant="secondary">USER</Badge>
