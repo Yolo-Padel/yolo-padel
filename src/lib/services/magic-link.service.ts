@@ -125,6 +125,12 @@ class MagicLinkService {
         data: { used: true },
       });
 
+      // Update user join date
+      await prisma.user.update({
+        where: { email: magicLink.email },
+        data: { joinDate: new Date() },
+      });
+
       return {
         success: true,
         message: "Magic link berhasil diverifikasi",
