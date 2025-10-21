@@ -27,7 +27,7 @@ export function SignupForm({
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
-      role: Role.MEMBER,
+      role: Role.USER,
     },
   });
 

@@ -6,29 +6,14 @@ import {
   LoginFormInput,
 } from "@/lib/validations/auth.validation";
 
+import { User, Profile } from '@/types/prisma';
+
 // Types for API responses
 interface AuthResponse {
   success: boolean;
   data: {
-    user: {
-      id: string;
-      email: string;
-      role: string;
-      isActive: boolean;
-      isEmailVerified: boolean;
-      createdAt: string;
-      updatedAt: string;
-    };
-    profile: {
-      id: string;
-      userId: string;
-      firstName: string | null;
-      lastName: string | null;
-      bio: string | null;
-      avatar: string | null;
-      createdAt: string;
-      updatedAt: string;
-    } | null;
+    user: User;
+    profile: Profile | null;
   } | null;
   message: string;
   errors?: any[];
@@ -92,6 +77,7 @@ const authApi = {
 
     return response.json();
   },
+
 };
 
 // Custom hooks
@@ -165,6 +151,7 @@ export const useCurrentUser = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
+
 
 // Hook untuk cek apakah user sudah login
 export const useAuth = () => {

@@ -1,6 +1,6 @@
 "use client"
 
-import * as React from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -14,116 +14,66 @@ import {
 } from "@/components/ui/table"
 import { Search, X, Pencil } from "lucide-react"
 import { UsersEditSheet } from "@/app/admin/dashboard/users/components/users-edit-sheet"
-
-// Types mengikuti prisma/schema.prisma
-type Role = "ADMIN" | "MEMBER"
-
-type User = {
-  id: string
-  email: string
-  username?: string | null
-  role: Role
-  isActive: boolean
-  isEmailVerified: boolean
-  createdAt: string
-}
-
-type Profile = {
-  userId: string
-  firstName?: string | null
-  lastName?: string | null
-  bio?: string | null
-  avatar?: string | null
-}
-
-type UserRow = User & { profile?: Profile | null }
-
-const DUMMY_DATA: UserRow[] = [
-  {
-    id: "u_1",
-    email: "admin@yolopadel.com",
-    username: "admin",
-    role: "ADMIN",
-    isActive: true,
-    isEmailVerified: true,
-    createdAt: new Date().toISOString(),
-    profile: {
-      userId: "u_1",
-      firstName: "Admin",
-      lastName: "Yolo",
-      bio: "System administrator",
-      avatar: undefined,
-    },
-  },
-  {
-    id: "u_2",
-    email: "jane.smith@example.com",
-    username: "janesmith",
-    role: "MEMBER",
-    isActive: true,
-    isEmailVerified: false,
-    createdAt: new Date().toISOString(),
-    profile: {
-      userId: "u_2",
-      firstName: "Jane",
-      lastName: "Smith",
-      bio: "Player",
-      avatar: undefined,
-    },
-  },
-  {
-    id: "u_3",
-    email: "john.doe@example.com",
-    username: "johnd",
-    role: "MEMBER",
-    isActive: false,
-    isEmailVerified: true,
-    createdAt: new Date().toISOString(),
-    profile: {
-      userId: "u_3",
-      firstName: "John",
-      lastName: "Doe",
-      bio: null,
-      avatar: undefined,
-    },
-  },
-]
+import { UsersTableLoading } from "@/app/admin/dashboard/users/components/users-table-loading"
+import { useUsers } from "@/hooks/use-users"
+import { User, Profile, Role } from "@/types/prisma"
 
 const PAGE_SIZE = 10
 
 export function UsersTable() {
-  const [query, setQuery] = React.useState("")
-  const [page, setPage] = React.useState(1)
-  const [sheetOpen, setSheetOpen] = React.useState(false)
-  const [selected, setSelected] = React.useState<UserRow | null>(null)
+  const [query, setQuery] = useState("")
+  const [page, setPage] = useState(1)
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [selected, setSelected] = useState<User & { profile?: Profile | null } | null>(null)
 
-  const filtered = React.useMemo(() => {
+  // Fetch users data
+  const { data, isLoading, error } = useUsers()
+
+  const allUsers = data?.data?.users || []
+
+  // Frontend filtering and pagination
+  const filtered = useMemo(() => {
     const q = query.toLowerCase().trim()
-    if (!q) return DUMMY_DATA
-    return DUMMY_DATA.filter((u) => {
+    if (!q) return allUsers
+    return allUsers.filter((u: User & { profile?: Profile | null }) => {
       const fullName = `${u.profile?.firstName ?? ""} ${u.profile?.lastName ?? ""}`.toLowerCase()
       return (
         u.email.toLowerCase().includes(q) ||
-        (u.username ?? "").toLowerCase().includes(q) ||
         fullName.includes(q)
       )
     })
-  }, [query])
+  }, [allUsers, query])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const pageSafe = Math.min(page, totalPages)
-  const paginated = React.useMemo(() => {
+  const paginated = useMemo(() => {
     const start = (pageSafe - 1) * PAGE_SIZE
     return filtered.slice(start, start + PAGE_SIZE)
   }, [filtered, pageSafe])
 
-  React.useEffect(() => {
+  useEffect(() => {
     setPage(1)
   }, [query])
 
   async function handleSubmit() {
     // Dummy submit: console log value
     console.log("")
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return <UsersTableLoading />
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="text-center py-8">
+          <p className="text-destructive">Failed to load users: {error.message}</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -140,7 +90,7 @@ export function UsersTable() {
         <div className="relative w-full max-w-sm">
           <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
           <Input
-            placeholder="Search name, email, or username"
+            placeholder="Search name or email"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="pl-8 pr-8"
@@ -163,7 +113,6 @@ export function UsersTable() {
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
-            <TableHead>Username</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Email Verified</TableHead>
@@ -172,18 +121,17 @@ export function UsersTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {paginated.map((u) => {
+          {paginated.map((u: User & { profile?: Profile | null }) => {
             const fullName = [u.profile?.firstName, u.profile?.lastName].filter(Boolean).join(" ") || "-"
             return (
               <TableRow key={u.id}>
                 <TableCell>{fullName}</TableCell>
                 <TableCell>{u.email}</TableCell>
-                <TableCell>{u.username ?? "-"}</TableCell>
                 <TableCell>
-                  {u.role === "ADMIN" ? (
+                  {u.role === Role.ADMIN ? (
                     <Badge>ADMIN</Badge>
                   ) : (
-                    <Badge variant="secondary">MEMBER</Badge>
+                    <Badge variant="secondary">USER</Badge>
                   )}
                 </TableCell>
                 <TableCell>
@@ -222,11 +170,19 @@ export function UsersTable() {
           Showing {paginated.length} of {filtered.length} users
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" disabled={pageSafe <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+          <Button 
+            variant="outline" 
+            disabled={pageSafe <= 1} 
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
             Previous
           </Button>
           <div className="text-sm">Page {pageSafe} / {totalPages}</div>
-          <Button variant="outline" disabled={pageSafe >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
+          <Button 
+            variant="outline" 
+            disabled={pageSafe >= totalPages} 
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          >
             Next
           </Button>
         </div>
@@ -235,7 +191,7 @@ export function UsersTable() {
       <UsersEditSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
-        user={selected}
+        user={selected as any}
         onSubmit={handleSubmit}
       />
     </div>

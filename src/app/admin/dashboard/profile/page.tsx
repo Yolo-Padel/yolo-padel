@@ -1,227 +1,177 @@
 "use client"
 
-import * as React from "react"
-import { z } from "zod"
+import { useEffect, useMemo } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { cn } from "@/lib/utils"
-
-const schema = z.object({
-  email: z.string().email(),
-  username: z.string().min(2).max(32).optional().or(z.literal("")),
-  firstName: z.string().min(1).max(64).optional().or(z.literal("")),
-  lastName: z.string().min(1).max(64).optional().or(z.literal("")),
-  bio: z.string().max(500).optional().or(z.literal("")),
-  avatar: z.string().url().optional().or(z.literal("")),
-})
-
-type Role = "ADMIN" | "MEMBER"
-
-// Dummy data untuk admin yang sedang login
-const CURRENT_USER = {
-  id: "u_1",
-  email: "admin@yolopadel.com",
-  username: "admin",
-  role: "ADMIN" as Role,
-  isActive: true,
-  isEmailVerified: true,
-  createdAt: new Date().toISOString(),
-  profile: {
-    userId: "u_1",
-    firstName: "Admin",
-    lastName: "Yolo",
-    bio: "System administrator for Yolo Padel platform",
-    avatar: undefined,
-  },
-}
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
+import { useAuth } from "@/hooks/use-auth"
+import { useUpdateProfile } from "@/hooks/use-profile"
+import { profileUpdateSchema, ProfileUpdateData } from "@/lib/validations/profile.validation"
 
 export default function AdminProfilePage() {
-  const [values, setValues] = React.useState<z.infer<typeof schema>>({
-    email: "",
-    username: "",
-    firstName: "",
-    lastName: "",
-    bio: "",
-    avatar: "",
+  const { user, profile, isLoading, isAuthenticated } = useAuth()
+  const updateProfileMutation = useUpdateProfile()
+  
+  const form = useForm<ProfileUpdateData>({
+    resolver: zodResolver(profileUpdateSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+    },
+    mode: "onChange", // Enable real-time validation
   })
-  const [errors, setErrors] = React.useState<Partial<Record<keyof z.infer<typeof schema>, string>>>({})
-  const [submitting, setSubmitting] = React.useState(false)
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Load current user data
-    setValues({
-      email: CURRENT_USER.email,
-      username: CURRENT_USER.username ?? "",
-      firstName: CURRENT_USER.profile?.firstName ?? "",
-      lastName: CURRENT_USER.profile?.lastName ?? "",
-      bio: CURRENT_USER.profile?.bio ?? "",
-      avatar: CURRENT_USER.profile?.avatar ?? "",
-    })
-  }, [])
+    if (profile) {
+      form.reset({
+        firstName: profile.firstName || "",
+        lastName: profile.lastName || "",
+      })
+    }
+  }, [profile, form])
 
-  function handleChange<K extends keyof z.infer<typeof schema>>(key: K, val: z.infer<typeof schema>[K]) {
-    setValues((v) => ({ ...v, [key]: val }))
+  const onSubmit = (data: ProfileUpdateData) => {
+    updateProfileMutation.mutate(data)
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const parsed = schema.safeParse(values)
-    if (!parsed.success) {
-      const fieldErrors: typeof errors = {}
-      for (const issue of parsed.error.issues) {
-        const path = issue.path[0] as keyof z.infer<typeof schema>
-        fieldErrors[path] = issue.message
-      }
-      setErrors(fieldErrors)
-      return
+  // Check if form has changes from original values
+  const hasChanges = useMemo(() => {
+    if (!profile) return false
+    
+    const currentValues = form.getValues()
+    const originalValues = {
+      firstName: profile.firstName || "",
+      lastName: profile.lastName || "",
     }
-    setErrors({})
-    try {
-      setSubmitting(true)
-      // Dummy submit: console log values
-      console.log("Profile update:", parsed.data)
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-    } finally {
-      setSubmitting(false)
-    }
-  }
+    
+    return (
+      currentValues.firstName !== originalValues.firstName ||
+      currentValues.lastName !== originalValues.lastName
+    )
+  }, [form.watch(), profile])
 
-  const fullName = [values.firstName, values.lastName].filter(Boolean).join(" ") || "Admin User"
+  // Check if form is valid and has changes
+  const isFormValid = form.formState.isValid && hasChanges
+
+  const fullName = [form.watch("firstName"), form.watch("lastName")].filter(Boolean).join(" ") || "User"
   const initials = fullName.split(" ").map(n => n[0]).join("").toUpperCase()
+  
+  // Show loading state if data is still loading
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-6 p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-muted rounded w-48 mb-2"></div>
+          <div className="h-4 bg-muted rounded w-64"></div>
+        </div>
+        <div className="animate-pulse">
+          <div className="h-64 bg-muted rounded"></div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show not authenticated state
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="flex flex-col gap-6 p-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
+          <p className="text-muted-foreground">
+            Please log in to view your profile.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account settings and profile information.
-        </p>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Profile Overview */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Profile Overview</CardTitle>
-            <CardDescription>
-              Your current profile information
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={values.avatar || undefined} alt={fullName} />
-                <AvatarFallback className="text-lg">{initials}</AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="font-semibold">{fullName}</h3>
-                <p className="text-sm text-muted-foreground">{values.email}</p>
-                <Badge className="mt-1">{CURRENT_USER.role}</Badge>
-              </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={profile?.avatar || undefined} alt={fullName} />
+              <AvatarFallback className="text-lg">{initials}</AvatarFallback>
+            </Avatar>
+            <div>
+              <CardTitle>Profile Settings</CardTitle>
+              <CardDescription>
+                Manage your account settings and profile information.
+              </CardDescription>
+              <Badge className="mt-2">{user.role}</Badge>
             </div>
-            {values.bio && (
-              <div>
-                <h4 className="text-sm font-medium">Bio</h4>
-                <p className="text-sm text-muted-foreground">{values.bio}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Edit Form */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Edit Profile</CardTitle>
-            <CardDescription>
-              Update your personal information and preferences.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FieldGroup>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium">First Name</label>
+                <Field>
+                  <FieldLabel htmlFor="firstName">First Name <span className="text-red-500">*</span></FieldLabel>
                   <Input
-                    value={values.firstName ?? ""}
-                    onChange={(e) => handleChange("firstName", e.target.value)}
+                    id="firstName"
                     placeholder="John"
+                    {...form.register("firstName")}
                   />
-                  {errors.firstName && <p className="text-destructive mt-1 text-xs">{errors.firstName}</p>}
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium">Last Name</label>
+                  {form.formState.errors.firstName && (
+                    <p className="text-destructive text-sm">
+                      {form.formState.errors.firstName.message}
+                    </p>
+                  )}
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="lastName">Last Name <span className="text-red-500">*</span></FieldLabel>
                   <Input
-                    value={values.lastName ?? ""}
-                    onChange={(e) => handleChange("lastName", e.target.value)}
+                    id="lastName"
                     placeholder="Doe"
+                    {...form.register("lastName")}
                   />
-                  {errors.lastName && <p className="text-destructive mt-1 text-xs">{errors.lastName}</p>}
-                </div>
+                  {form.formState.errors.lastName && (
+                    <p className="text-destructive text-sm">
+                      {form.formState.errors.lastName.message}
+                    </p>
+                  )}
+                </Field>
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">Email</label>
+              <Field>
+                <FieldLabel htmlFor="email">Email</FieldLabel>
                 <Input
-                  value={values.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
+                  id="email"
+                  value={user.email}
                   type="email"
                   placeholder="m@example.com"
+                  disabled
+                  className="bg-muted"
                 />
-                {errors.email && <p className="text-destructive mt-1 text-xs">{errors.email}</p>}
-              </div>
+              </Field>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">Username</label>
-                <Input
-                  value={values.username ?? ""}
-                  onChange={(e) => handleChange("username", e.target.value)}
-                  placeholder="username"
-                />
-                {errors.username && <p className="text-destructive mt-1 text-xs">{errors.username}</p>}
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">Avatar URL</label>
-                <Input
-                  value={values.avatar ?? ""}
-                  onChange={(e) => handleChange("avatar", e.target.value)}
-                  placeholder="https://example.com/avatar.jpg"
-                />
-                {errors.avatar && <p className="text-destructive mt-1 text-xs">{errors.avatar}</p>}
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">Bio</label>
-                <textarea
-                  className={cn(
-                    "bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring",
-                    "border-input focus-visible:ring-2 flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm",
-                    "disabled:cursor-not-allowed disabled:opacity-50"
-                  )}
-                  value={values.bio ?? ""}
-                  onChange={(e) => handleChange("bio", e.target.value)}
-                  placeholder="Tell us about yourself..."
-                  rows={3}
-                />
-                {errors.bio && <p className="text-destructive mt-1 text-xs">{errors.bio}</p>}
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline">
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+              <Field>
+                <div className="flex justify-end pt-4">
+                  <Button 
+                    type="submit" 
+                    disabled={updateProfileMutation.isPending || !isFormValid}
+                    className="min-w-[120px]"
+                  >
+                    {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
+              </Field>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }
