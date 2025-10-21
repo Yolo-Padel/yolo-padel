@@ -7,7 +7,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { NavProjects } from "@/app/admin/dashboard/components/nav-projects";
+import { MenuItems } from "@/app/admin/dashboard/components/menu-items"
 import { NavUser } from "@/app/admin/dashboard/components/nav-user";
 import { CompanyProfile } from "@/app/admin/dashboard/components/company-profile";
 import {
@@ -30,11 +30,11 @@ const data = {
       icon: Home,
     },
     {
-      name: "Users",
+      name: "User Management",
       url: "/admin/dashboard/users",
       icon: Users,
     },
-    { name: "Court",
+    { name: "Court Management",
       url: "/admin/dashboard/court",
       icon: Zap,
     },
@@ -67,7 +67,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <CompanyProfile />
       </SidebarHeader>
       <SidebarContent>
-        <NavProjects menuItems={data.menuItems} />
+        <MenuItems menuItems={data.menuItems} />
       </SidebarContent>
       <SidebarFooter>
         {isAuthenticated && !isLoading ? (
