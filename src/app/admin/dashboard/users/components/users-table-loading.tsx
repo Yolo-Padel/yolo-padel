@@ -1,7 +1,6 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   Table,
   TableHeader,
@@ -9,106 +8,89 @@ import {
   TableHead,
   TableBody,
   TableCell,
+  TableFooter,
 } from "@/components/ui/table"
-import { Search, Pencil } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Plus } from "lucide-react"
 
 export function UsersTableLoading() {
   return (
     <div className="flex flex-col gap-4">
       {/* Header Section */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
-          <Button variant="outline" disabled>
-            <Pencil className="mr-2 size-4" />
-            Add New User
-          </Button>
+          <h2 className="text-xl font-bold">Team Members</h2>
+          <Skeleton className="h-6 w-16 rounded-full" />
         </div>
-        
-        <div className="flex items-center justify-end gap-2">
-          <div className="relative w-full max-w-sm">
-            <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
-            <Input
-              placeholder="Search name or email"
-              disabled
-              className="pl-8 pr-8"
-            />
-          </div>
-        </div>
+        <Button disabled className="text-black">
+          Add User
+          <Plus className="ml-2 size-4" />
+        </Button>
       </div>
 
       {/* Table Section */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Email Verified</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {/* Loading rows */}
-          {Array.from({ length: 5 }).map((_, index) => (
-            <TableRow key={index}>
-              <TableCell>
-                <div className="animate-pulse">
-                  <div className="h-4 bg-muted rounded w-24"></div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="animate-pulse">
-                  <div className="h-4 bg-muted rounded w-32"></div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="animate-pulse">
-                  <div className="h-6 bg-muted rounded w-16"></div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="animate-pulse">
-                  <div className="h-6 bg-muted rounded w-20"></div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="animate-pulse">
-                  <div className="h-6 bg-muted rounded w-24"></div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="animate-pulse">
-                  <div className="h-4 bg-muted rounded w-20"></div>
-                </div>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="animate-pulse">
-                  <div className="h-8 bg-muted rounded w-16 ml-auto"></div>
+      <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="h-11">Name</TableHead>
+              <TableHead className="h-11">Status</TableHead>
+              <TableHead className="h-11">Role</TableHead>
+              <TableHead className="h-11">Email address</TableHead>
+              <TableHead className="h-11">Join Date</TableHead>
+              <TableHead className="h-11 text-right"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {/* Loading rows */}
+            {Array.from({ length: 5 }).map((_, index) => (
+              <TableRow key={index}>
+                <TableCell className="flex items-center gap-2">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <Skeleton className="h-4 w-24" />
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="w-2 h-2 rounded-full" />
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-12" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-32" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-20" />
+                </TableCell>
+                <TableCell className="text-right">
+                  <Skeleton className="h-8 w-16 ml-auto" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={6} className="p-4">
+                <div className="flex items-center justify-between">
+                  {/* Previous Button Skeleton */}
+                  <Skeleton className="h-8 w-20" />
+                  
+                  {/* Page Numbers Skeleton */}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <Skeleton key={index} className="h-8 w-8" />
+                    ))}
+                  </div>
+                  
+                  {/* Next Button Skeleton */}
+                  <Skeleton className="h-8 w-16" />
                 </div>
               </TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-
-      {/* Pagination Section */}
-      <div className="flex items-center justify-between">
-        <div className="animate-pulse">
-          <div className="h-4 bg-muted rounded w-32"></div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="animate-pulse">
-            <div className="h-8 bg-muted rounded w-20"></div>
-          </div>
-          <div className="animate-pulse">
-            <div className="h-4 bg-muted rounded w-16"></div>
-          </div>
-          <div className="animate-pulse">
-            <div className="h-8 bg-muted rounded w-16"></div>
-          </div>
-        </div>
+          </TableFooter>
+        </Table>
       </div>
     </div>
   )

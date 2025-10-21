@@ -19,6 +19,7 @@ import { UserModal } from "@/app/admin/dashboard/users/components/user-modal"
 import { useUsers } from "@/hooks/use-users"
 import { User, Profile, Role } from "@/types/prisma"
 import { generatePageNumbers, calculatePaginationInfo, getPaginatedData } from "@/lib/pagination-utils"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const PAGE_SIZE = 10
 
@@ -99,11 +100,10 @@ export function UsersTable() {
           <TableHeader>
             <TableRow>
             <TableHead className="h-11">Name</TableHead>
-            <TableHead className="h-11">Email</TableHead>
-            <TableHead className="h-11">Role</TableHead>
             <TableHead className="h-11">Status</TableHead>
-            <TableHead className="h-11">Email Verified</TableHead>
-            <TableHead className="h-11">Created</TableHead>
+            <TableHead className="h-11">Role</TableHead>
+            <TableHead className="h-11">Email address</TableHead>
+            <TableHead className="h-11">Join Date</TableHead>
             <TableHead className="h-11 text-right"></TableHead>
           </TableRow>
         </TableHeader>
@@ -112,30 +112,26 @@ export function UsersTable() {
             const fullName = [u.profile?.firstName, u.profile?.lastName].filter(Boolean).join(" ") || "-"
             return (
               <TableRow key={u.id}>
-                <TableCell>{fullName}</TableCell>
+                <TableCell className="flex items-center gap-2"> 
+                  <Avatar>
+                    <AvatarImage src={u.profile?.avatar || ""} />
+                    <AvatarFallback>{fullName.charAt(0)}</AvatarFallback>
+                  </Avatar> 
+                  {fullName}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${u.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
+                      {u.isActive ? "Active" : "Inactive"}
+                    </div>
+                  </Badge>
+                </TableCell>
+                  <TableCell>
+                    {u.role === Role.ADMIN ? "Admin" : "User"}
+                  </TableCell>
                 <TableCell>{u.email}</TableCell>
-                <TableCell>
-                  {u.role === Role.ADMIN ? (
-                    <Badge>ADMIN</Badge>
-                  ) : (
-                    <Badge variant="secondary">USER</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {u.isActive ? (
-                    <Badge variant="secondary">Active</Badge>
-                  ) : (
-                    <Badge variant="outline">Inactive</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {u.isEmailVerified ? (
-                    <Badge variant="secondary">Verified</Badge>
-                  ) : (
-                    <Badge variant="outline">Unverified</Badge>
-                  )}
-                </TableCell>
-                <TableCell>{new Date(u.createdAt).toLocaleDateString()}</TableCell>
+                <TableCell>{ u.joinDate ? new Date(u.joinDate).toLocaleDateString() : "-"}</TableCell>
                 <TableCell className="text-right">
                   <Button
                     variant="outline"
