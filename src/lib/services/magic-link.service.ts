@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { UserStatus } from "@/types/prisma";
 import * as crypto from "crypto";
 
 export interface MagicLinkResult {
@@ -125,10 +126,24 @@ class MagicLinkService {
         data: { used: true },
       });
 
-      // Update user join date
+      // Update user - only set joinDate if it's the first time (joinDate is null)
+      const user = await prisma.user.findUnique({
+        where: { email: magicLink.email },
+        select: { joinDate: true }
+      });
+
+      const updateData: any = {};
+
+      // Only set joinDate if it's the first time user verifies magic link
+      if (!user?.joinDate) {
+        updateData.joinDate = new Date();
+        updateData.userStatus = UserStatus.ACTIVE; 
+        updateData.isEmailVerified = true; 
+      }
+
       await prisma.user.update({
         where: { email: magicLink.email },
-        data: { joinDate: new Date() },
+        data: updateData,
       });
 
       return {
