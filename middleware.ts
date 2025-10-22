@@ -7,7 +7,7 @@ const JWT_SECRET =
 
 // Routes configuration
 const PROTECTED_ROUTES = ["admin/dashboard"];
-const PUBLIC_ROUTES = ["/admin/auth"];
+const PUBLIC_ROUTES = ["/auth"];
 
 export function middleware(request: NextRequest) {
   // Get pathname from request
@@ -34,7 +34,7 @@ export function middleware(request: NextRequest) {
   if (isProtectedRoute) {
     if (!token) {
       // If no token, redirect to login
-      const loginUrl = new URL("/admin/auth", request.url);
+      const loginUrl = new URL("/auth", request.url);
       return NextResponse.redirect(loginUrl);
     }
 
@@ -43,7 +43,7 @@ export function middleware(request: NextRequest) {
       jwt.verify(token, JWT_SECRET);
     } catch (error) {
       // If token is invalid, redirect to login
-      const loginUrl = new URL("/admin/auth", request.url);
+      const loginUrl = new URL("/auth", request.url);
       return NextResponse.redirect(loginUrl);
     }
   }

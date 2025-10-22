@@ -26,7 +26,7 @@ export function VerifyMagicLink() {
         <p className="text-center text-sm text-balance">
           Uh-oh! Seems like the link is invalid or expired. Please try again.
         </p>
-        <Button variant={"outline"} onClick={() => router.push("/admin/auth")}>
+        <Button variant={"outline"} onClick={() => router.push("/auth")}>
           Back to login
         </Button>
       </div>
@@ -65,7 +65,7 @@ export function VerifyMagicLink() {
           >
             Try Again
           </Button>
-          <Button variant={"outline"} onClick={() => router.push("/admin/auth")}>
+          <Button variant={"outline"} onClick={() => router.push("/auth")}>
             Back to login
           </Button>
         </div>

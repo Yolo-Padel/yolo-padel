@@ -70,7 +70,7 @@ export const inviteUserService = {
             const email = await resendService.sendAdminInvitationEmail({
                 email: inviteResult.data!.user.email,
                 userName: data.fullName,
-                invitationUrl: process.env.NEXT_PUBLIC_APP_URL + "/admin/auth/verify?token=" + magicLink.token!,
+                invitationUrl: process.env.NEXT_PUBLIC_APP_URL + "/auth/verify?token=" + magicLink.token!,
             });
 
             console.log("email", email);

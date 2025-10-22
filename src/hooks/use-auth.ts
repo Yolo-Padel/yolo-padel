@@ -137,7 +137,7 @@ export const useLogout = () => {
     onSuccess: () => {
       // Clear all queries and redirect
       queryClient.clear();
-      window.location.href = "/admin/auth";
+      window.location.href = "/auth";
     },
   });
 };
