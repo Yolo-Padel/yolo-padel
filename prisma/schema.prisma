@@ -11,15 +11,24 @@ datasource db {
 }
 
 enum Role {
+  SUPER_ADMIN
   ADMIN
   USER
+  FINANCE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  INVITED
 }
 
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
+  password  String   @default("")
   role      Role     @default(USER)
-  isActive  Boolean  @default(true)
+  userStatus UserStatus @default(ACTIVE)
   isEmailVerified Boolean @default(false)
   joinDate  DateTime?
   createdAt DateTime @default(now())
