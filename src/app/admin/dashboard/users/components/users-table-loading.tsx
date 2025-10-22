@@ -30,41 +30,41 @@ export function UsersTableLoading() {
 
       {/* Table Section */}
       <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
+      <Table>
+        <TableHeader>
+          <TableRow>
               <TableHead className="h-11">Name</TableHead>
               <TableHead className="h-11">Status</TableHead>
               <TableHead className="h-11">Role</TableHead>
               <TableHead className="h-11">Email address</TableHead>
               <TableHead className="h-11">Join Date</TableHead>
               <TableHead className="h-11 text-right"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {/* Loading rows */}
-            {Array.from({ length: 5 }).map((_, index) => (
-              <TableRow key={index}>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {/* Loading rows */}
+          {Array.from({ length: 5 }).map((_, index) => (
+            <TableRow key={index}>
                 <TableCell className="flex items-center gap-2">
                   <Skeleton className="h-8 w-8 rounded-full" />
                   <Skeleton className="h-4 w-24" />
-                </TableCell>
-                <TableCell>
+              </TableCell>
+              <TableCell>
                   <div className="flex items-center gap-2">
                     <Skeleton className="w-2 h-2 rounded-full" />
                     <Skeleton className="h-4 w-12" />
-                  </div>
-                </TableCell>
-                <TableCell>
+                </div>
+              </TableCell>
+              <TableCell>
                   <Skeleton className="h-4 w-12" />
-                </TableCell>
-                <TableCell>
+              </TableCell>
+              <TableCell>
                   <Skeleton className="h-4 w-32" />
-                </TableCell>
-                <TableCell>
+              </TableCell>
+              <TableCell>
                   <Skeleton className="h-4 w-20" />
-                </TableCell>
-                <TableCell className="text-right">
+              </TableCell>
+              <TableCell className="text-right">
                   <Skeleton className="h-8 w-16 ml-auto" />
                 </TableCell>
               </TableRow>
@@ -90,7 +90,7 @@ export function UsersTableLoading() {
               </TableCell>
             </TableRow>
           </TableFooter>
-        </Table>
+      </Table>
       </div>
     </div>
   )

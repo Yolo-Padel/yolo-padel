@@ -109,15 +109,14 @@ export function UsersTable() {
         </TableHeader>
         <TableBody>
           {paginated.map((u: User & { profile?: Profile | null }) => {
-            const fullName = [u.profile?.firstName, u.profile?.lastName].filter(Boolean).join(" ") || "-"
             return (
               <TableRow key={u.id}>
                 <TableCell className="flex items-center gap-2"> 
                   <Avatar>
                     <AvatarImage src={u.profile?.avatar || ""} />
-                    <AvatarFallback>{fullName.charAt(0)}</AvatarFallback>
+                    <AvatarFallback>{u.profile?.fullName?.charAt(0)}</AvatarFallback>
                   </Avatar> 
-                  {fullName}
+                  {u.profile?.fullName || "-"}
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">
@@ -127,9 +126,9 @@ export function UsersTable() {
                     </div>
                   </Badge>
                 </TableCell>
-                  <TableCell>
+                <TableCell>
                     {u.role === Role.ADMIN ? "Admin" : "User"}
-                  </TableCell>
+                </TableCell>
                 <TableCell>{u.email}</TableCell>
                 <TableCell>{ u.joinDate ? new Date(u.joinDate).toLocaleDateString() : "-"}</TableCell>
                 <TableCell className="text-right">
@@ -153,18 +152,18 @@ export function UsersTable() {
         <TableFooter>
           <TableRow>
             <TableCell colSpan={columns.length} className="p-4">
-              <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between">
 
-              <Button 
-                variant="outline" 
+          <Button 
+            variant="outline" 
                 size="sm"
                 disabled={!paginationInfo.hasPreviousPage} 
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="flex items-center gap-2"
-              >
+          >
                 <ChevronLeft className="w-4 h-4" />
-                Previous
-              </Button>
+            Previous
+          </Button>
 
               <div className="flex items-center gap-1">
                 {generatePageNumbers(paginationInfo.pageSafe, paginationInfo.totalPages).map((pageNum, index) => (
@@ -187,17 +186,17 @@ export function UsersTable() {
                   ))}
                 </div>
 
-              <Button 
-                variant="outline" 
+          <Button 
+            variant="outline" 
                 size="sm"
                 disabled={!paginationInfo.hasNextPage} 
                 onClick={() => setPage((p) => Math.min(paginationInfo.totalPages, p + 1))}
                 className="flex items-center gap-2"
-              >
-                Next
+          >
+            Next
                 <ChevronRight className="w-4 h-4" />
-              </Button>
-              </div>
+          </Button>
+        </div>
             </TableCell>
           </TableRow>
         </TableFooter>
@@ -215,12 +214,7 @@ export function UsersTable() {
         open={modalOpen}
         onOpenChange={setModalOpen}
         mode={modalMode}
-        user={selected}
-        onSubmit={(data) => {
-          console.log("Modal submit:", data)
-          // TODO: Implement add/edit user logic
-          setModalOpen(false)
-        }}
+        user={selected as User & { profile?: Profile | null }}
       />
     </div>
   )

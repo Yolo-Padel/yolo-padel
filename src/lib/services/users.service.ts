@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { UserCreateData } from "../validations/user.validation";
+import { Prisma } from "@prisma/client";
 
 export const usersService = {
   getUsers: async () => {
@@ -9,13 +11,10 @@ export const usersService = {
         orderBy: { createdAt: "desc" },
       });
 
-      // Remove passwords from response
-      const usersWithoutPasswords = users.map(({ password, ...user }) => user);
-
       return {
         success: true,
         data: {
-          users: usersWithoutPasswords,
+          users: users,
         },
         message: "Users fetched successfully",
       };
@@ -29,6 +28,55 @@ export const usersService = {
     }
   },
 
+  createUser: async (data: UserCreateData, tx?: Prisma.TransactionClient) => {
+    try {
+      const user = await (tx || prisma).user.create({
+        data: {
+          email: data.email,
+          role: data.role,
+        },
+      });
+      return {
+        success: true,
+        data: user,
+        message: "User created successfully",
+      };
+    } catch (error) {
+      console.error("Create user error:", error);
+      return {
+        success: false,
+    }
+    }
+  },
+
+  // inviteUser: async (email: string, role: Role, fullName: string) => {
+  //   try {
+  //     const user = await prisma.user.create({
+  //       data: {
+  //         email,
+  //         role,
+  //         profile: {
+  //           create: {
+  //             fullName,
+  //           },
+  //         },
+  //       },
+  //     });
+
+  //     return {
+  //       success: true,
+  //       data: user,
+  //       message: "User invited successfully",
+  //     };
+  //   } catch (error) {
+  //     console.error("Invite user error:", error);
+  //     return {
+  //       success: false,
+  //       data: null,
+  //       message: "Failed to invite user",
+  //     };
+  //   }
+  // },
   // Future: Add more users management functions
   // createUser, updateUser, deleteUser, etc.
 };

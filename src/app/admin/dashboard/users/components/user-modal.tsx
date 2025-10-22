@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -11,54 +13,80 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-// Select component not available, using Input with datalist instead
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { X } from "lucide-react"
+import { User, Profile, Role } from "@/types/prisma"
+import { useInviteUser } from "@/hooks/use-users"
+import { userCreateSchema, UserCreateData } from "@/lib/validations/user.validation"
 
 interface UserModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   mode: "add" | "edit"
-  user?: {
-    id: string
-    email: string
-    profile?: {
-      firstName: string | null
-      lastName: string | null
-    } | null
-    role?: string
-  } | null
-  onSubmit?: (data: {
-    fullName: string
-    email: string
-    role: string
-  }) => void
+  user?: User & { profile?: Profile | null }
 }
 
 export function UserModal({ 
   open, 
   onOpenChange, 
   mode, 
-  user, 
-  onSubmit 
+  user
 }: UserModalProps) {
-  const [formData, setFormData] = useState({
-    fullName: user?.profile ? `${user.profile.firstName || ""} ${user.profile.lastName || ""}`.trim() : "",
-    email: user?.email || "",
-    role: user?.role || ""
+  const inviteUserMutation = useInviteUser()
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+    setValue,
+    watch
+  } = useForm<UserCreateData>({
+    resolver: zodResolver(userCreateSchema),
+    defaultValues: {
+      fullName: "",
+      email: "",
+      role: Role.USER
+    }
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (onSubmit) {
-      onSubmit(formData)
+  // Reset form when modal opens/closes or user changes
+  useEffect(() => {
+    if (open) {
+      if (mode === "edit" && user) {
+        setValue("fullName", user.profile?.fullName || "")
+        setValue("email", user.email)
+        setValue("role", user.role)
+      } else {
+        reset({
+          fullName: "",
+          email: "",
+          role: Role.USER
+        })
+      }
     }
-  }
+  }, [open, mode, user, setValue, reset])
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
+  const onSubmit = async (data: UserCreateData) => {
+    try {
+      if (mode === "add") {
+        await inviteUserMutation.mutateAsync(data)
+        onOpenChange(false)
+      } else {
+        // TODO: Implement edit user functionality
+        console.log("Edit user:", data)
+        onOpenChange(false)
+      }
+    } catch (error) {
+      // Error handling is done in the mutation
+      console.error("Submit error:", error)
+    }
   }
 
   const isAddMode = mode === "add"
@@ -92,7 +120,7 @@ export function UserModal({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Full Name Input */}
           <div className="space-y-2">
             <Label htmlFor="fullName" className="text-sm font-medium">
@@ -102,39 +130,33 @@ export function UserModal({
               id="fullName"
               type="text"
               placeholder="Enter full name"
-              value={formData.fullName}
-              onChange={(e) => handleInputChange("fullName", e.target.value)}
-              required
+              {...register("fullName")}
               className="w-full"
             />
+            {errors.fullName && (
+              <p className="text-sm text-red-500">{errors.fullName.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="role" className="text-sm font-medium">
               Role <span className="text-red-500">*</span>
             </Label>
-            <div className="relative">
-              <Input
-                id="role"
-                type="text"
-                placeholder="Select Role"
-                value={formData.role}
-                onChange={(e) => handleInputChange("role", e.target.value)}
-                list="role-options"
-                required
-                className="w-full pr-8"
-              />
-              <datalist id="role-options">
-                <option value="USER">User</option>
-                <option value="ADMIN">Admin</option>
-              </datalist>
-              {/* Custom dropdown arrow */}
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+            <Select
+              value={watch("role")}
+              onValueChange={(value) => setValue("role", value as Role)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={Role.USER}>User</SelectItem>
+                <SelectItem value={Role.ADMIN}>Admin</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.role && (
+              <p className="text-sm text-red-500">{errors.role.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -145,11 +167,12 @@ export function UserModal({
               id="email"
               type="email"
               placeholder="Enter email address"
-              value={formData.email}
-              onChange={(e) => handleInputChange("email", e.target.value)}
-              required
+              {...register("email")}
               className="w-full"
             />
+            {errors.email && (
+              <p className="text-sm text-red-500">{errors.email.message}</p>
+            )}
           </div>
 
           <div className="flex gap-3 pt-4 w-full">
@@ -158,14 +181,16 @@ export function UserModal({
               variant="outline"
               onClick={() => onOpenChange(false)}
               className="flex-1 border-primary text-gray-700 hover:bg-gray-50"
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
             <Button
               type="submit"
               className="flex-1 bg-primary hover:bg-primary/90 text-white"
+              disabled={isSubmitting}
             >
-              {primaryButtonText}
+              {isSubmitting ? "Processing..." : primaryButtonText}
             </Button>
           </div>
         </form>
