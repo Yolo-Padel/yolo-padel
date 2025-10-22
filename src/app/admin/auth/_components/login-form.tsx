@@ -3,8 +3,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  loginFormSchema,
-  LoginFormData,
+  loginWithMagicLinkSchema,
+  LoginWithMagicLinkData,
 } from "@/lib/validations/auth.validation";
 import { useLogin } from "@/hooks/use-auth";
 
@@ -12,25 +12,25 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Field,
-  FieldDescription,
   FieldGroup,
   FieldLabel,
-  FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { useMagicLinkRequest } from "@/hooks/use-magic-link";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
-  const form = useForm<LoginFormData>({
-    resolver: zodResolver(loginFormSchema),
+  const form = useForm<LoginWithMagicLinkData>({
+    resolver: zodResolver(loginWithMagicLinkSchema),
   });
 
   const loginMutation = useLogin();
+  const magicLinkRequestMutation = useMagicLinkRequest();
 
-  const onSubmit = (data: LoginFormData) => {
-    loginMutation.mutate(data);
+  const onSubmit = (data: LoginWithMagicLinkData) => {
+    magicLinkRequestMutation.mutate({ email: data.email });
   };
 
   return (
@@ -61,32 +61,11 @@ export function LoginForm({
           )}
         </Field>
         <Field>
-          <div className="flex items-center">
-            <FieldLabel htmlFor="password">Password <span className="text-red-500">*</span></FieldLabel>
-          </div>
-          <Input 
-            id="password" 
-            type="password" 
-            {...form.register("password")}
-          />
-          {form.formState.errors.password && (
-            <p className="text-destructive text-sm">
-              {form.formState.errors.password.message}
-            </p>
-          )}
-          <a
-              href="/admin/auth/forgot-password"
-              className="ml-auto text-sm underline-offset-4 hover:underline text-right"
-            >
-              Forgot your password?
-            </a>
-        </Field>
-        <Field>
           <Button 
             type="submit" 
-            disabled={loginMutation.isPending}
+            disabled={magicLinkRequestMutation.isPending}
           >
-            {loginMutation.isPending ? "Logging in..." : "Login"}
+            {magicLinkRequestMutation.isPending ? "Sending magic link..." : "Send magic link"}
           </Button>
         </Field>
       </FieldGroup>

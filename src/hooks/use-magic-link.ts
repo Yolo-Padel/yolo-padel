@@ -2,6 +2,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { MagicLinkVerifyInput } from "@/lib/validations/magic-link.validation";
 import { toast } from "sonner";
+import { LoginWithMagicLinkData } from "@/lib/validations/auth.validation";
 
 // Types for API Response
 export type VerifyMagicLinkResult = {
@@ -45,6 +46,20 @@ const magicLinkApi = {
 
     return response.json();
   },
+  request: async (input: LoginWithMagicLinkData) => {
+    const response = await fetch("/api/auth/magic-link/request", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Magic link request failed");
+    }
+    return response.json();
+  },
 };
 
 // Custom hooks
@@ -80,4 +95,20 @@ export const useMagicLinkVerify = () => {
       toast.error(error.message || "Magic link verification failed");
     },
   });
+};
+
+
+export const useMagicLinkRequest = () => {
+  return useMutation({
+    mutationFn: (input: LoginWithMagicLinkData) => {
+      return magicLinkApi.request(input);
+    },
+    onSuccess: (data: any) => {
+      toast.success(data.message || "Magic link request successful");
+    },
+    onError: (error: Error) => {
+      console.error("Magic link request error:", error);
+      toast.error(error.message || "Magic link request failed");
+    },
+  })
 };

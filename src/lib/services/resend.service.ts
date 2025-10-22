@@ -13,6 +13,8 @@ import type {
     BookingCancelationEmailData,
     BookingConfirmationEmailData
 } from "../validations/send-email.validation";
+import { LoginWithMagicLinkData } from "../validations/auth.validation";
+import LoginWithMagicLink from "@/components/emails/login-with-magic-link";
 
 export const resendService = {
     sendAdminInvitationEmail: async (data: AdminInvitationEmailData) => {
@@ -222,6 +224,35 @@ export const resendService = {
                 success: false,
                 data: null,
                 message: error instanceof Error ? error.message : "Send booking confirmation email error",
+            };
+        }
+    },
+    sendMagicLinkEmail: async (data: LoginWithMagicLinkData, magicLinkUrl: string) => {
+        try {
+            const response = await resend.emails.send({
+                from: EMAIL_CONFIG.FROM_EMAIL,
+                to: data.email,
+                subject: "Magic Link",
+                react: LoginWithMagicLink({ email: data.email, magicLinkUrl: magicLinkUrl }),
+            });
+            if (response.error) {
+                return {
+                    success: false,
+                    data: null,
+                    message: response.error.message,
+                };
+            }
+            return {
+                success: true,
+                data: response,
+                message: "Magic link email sent successfully",
+            };
+        } catch (error) {
+            console.error("Send magic link email error:", error);
+            return {
+                success: false,
+                data: null,
+                message: error instanceof Error ? error.message : "Send magic link email error",
             };
         }
     }

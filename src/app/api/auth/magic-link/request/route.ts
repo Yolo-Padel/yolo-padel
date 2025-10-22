@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { magicLinkService } from "@/lib/services/magic-link.service";
 import { magicLinkRequestSchema } from "@/lib/validations/magic-link.validation";
 import { validateRequest } from "@/lib/validate-request";
+import { resendService } from "@/lib/services/resend.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,12 +24,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      message: result.message,
-      // Note: In production, you might want to send this via email instead of returning it
-      token: result.token,
-    });
+    // return NextResponse.json({
+    //   success: true,
+    //   message: result.message,
+    //   // Note: In production, you might want to send this via email instead of returning it
+    //   token: result.token,
+    // });
+
+    const magicLinkUrl = process.env.NEXT_PUBLIC_APP_URL + "/admin/auth/verify?token=" + result.token!;
+
+    // send email with magic link token and redirect to verification page
+    const emailResponse = await resendService.sendMagicLinkEmail({ email: email }, magicLinkUrl);
+
+    if (!emailResponse.success) {
+      return NextResponse.json(emailResponse, { status: 500 });
+    }
+
+    return NextResponse.json(emailResponse, { status: 200 });
   } catch (error) {
     console.error("Magic link request error:", error);
     return NextResponse.json(
