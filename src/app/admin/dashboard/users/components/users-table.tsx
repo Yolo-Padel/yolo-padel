@@ -17,7 +17,7 @@ import { UsersEditSheet } from "@/app/admin/dashboard/users/components/users-edi
 import { UsersTableLoading } from "@/app/admin/dashboard/users/components/users-table-loading"
 import { UserModal } from "@/app/admin/dashboard/users/components/user-modal"
 import { useUsers } from "@/hooks/use-users"
-import { User, Profile, Role } from "@/types/prisma"
+import { User, Profile, Role, UserStatus } from "@/types/prisma"
 import { generatePageNumbers, calculatePaginationInfo, getPaginatedData } from "@/lib/pagination-utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -77,6 +77,17 @@ export function UsersTable() {
     )
   }
 
+  const getStatusBadge = (status: UserStatus) => {
+    switch (status) {
+      case UserStatus.ACTIVE:
+        return <Badge variant="outline"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-500" /> Active</div></Badge>
+      case UserStatus.INACTIVE:
+        return <Badge variant="outline"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500" /> Inactive</div></Badge>
+      case UserStatus.INVITED:
+        return <Badge variant="outline"><div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-yellow-500" /> Invited</div></Badge>
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2 justify-between">
@@ -119,12 +130,7 @@ export function UsersTable() {
                   {u.profile?.fullName || "-"}
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${u.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
-                      {u.isActive ? "Active" : "Inactive"}
-                    </div>
-                  </Badge>
+                  {getStatusBadge(u.userStatus)}
                 </TableCell>
                 <TableCell>
                     {u.role === Role.ADMIN ? "Admin" : "User"}
