@@ -50,10 +50,12 @@ export const profileService = {
         };
       }
 
+      const { password, ...userWithoutPassword } = user;
+
       return {
         success: true,
         data: {
-          user: user,
+          user: userWithoutPassword,
           profile: updatedProfile,
         },
         message: "Profile updated successfully",

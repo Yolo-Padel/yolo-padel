@@ -5,6 +5,7 @@ import {
   RegisterFormData,
   LoginFormData,
 } from "../validations/auth.validation";
+import bcrypt from "bcryptjs";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";
 const JWT_EXPIRES_IN = "7d";
@@ -25,13 +26,17 @@ export const authService = {
         };
       }
 
-      // 2. Create user and profile in transaction
+      // 2. Hash password
+      const hashedPassword = await bcrypt.hash(data.password, 12);
+
+      // 3. Create user and profile in transaction
       const result = await prisma.$transaction(
         async (tx: Prisma.TransactionClient) => {
           // Create user
           const user = await tx.user.create({
             data: {
               email: data.email,
+              password: hashedPassword,
               role: data.role || Role.USER,
             },
           });
@@ -58,10 +63,12 @@ export const authService = {
         { expiresIn: JWT_EXPIRES_IN }
       );
 
+      const { password, ...userWithoutPassword } = result.user;
+
       return {
         success: true,
         data: {
-          user: result.user,
+          user: userWithoutPassword,
           profile: result.profile,
           token,
         },
@@ -97,6 +104,15 @@ export const authService = {
       }
 
       // 2. Verify password
+      const isPasswordValid = await bcrypt.compare(data.password, user.password);
+
+      if (!isPasswordValid) {
+        return {
+          success: false,
+          data: null,
+          message: "Invalid email or password",
+        };
+      }
       // 3. Generate JWT token
       const token = jwt.sign(
         {
@@ -108,10 +124,12 @@ export const authService = {
         { expiresIn: JWT_EXPIRES_IN }
       );
 
+      const { password, ...userWithoutPassword } = user;
+
       return {
         success: true,
         data: {
-          user: user,
+          user: userWithoutPassword,
           profile: user.profile,
           token,
         },
@@ -142,10 +160,12 @@ export const authService = {
         return { success: false, data: null };
       }
 
+      const { password, ...userWithoutPassword } = user;
+
       return {
         success: true,
         data: {
-          user: user,
+          user: userWithoutPassword,
           profile: user.profile,
         },
       };
