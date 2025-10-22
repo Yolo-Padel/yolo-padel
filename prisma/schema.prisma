@@ -11,17 +11,26 @@ datasource db {
 }
 
 enum Role {
+  SUPER_ADMIN
   ADMIN
   USER
+  FINANCE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  INVITED
 }
 
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  password  String
+  password  String   @default("")
   role      Role     @default(USER)
-  isActive  Boolean  @default(true)
+  userStatus UserStatus @default(ACTIVE)
   isEmailVerified Boolean @default(false)
+  joinDate  DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   venues    Venue[]
@@ -35,8 +44,7 @@ model User {
 model Profile {
   id          String   @id @default(cuid())
   userId      String   @unique
-  firstName   String?
-  lastName    String?
+  fullName   String?
   avatar      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

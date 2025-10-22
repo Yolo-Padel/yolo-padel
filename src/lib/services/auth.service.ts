@@ -1,11 +1,13 @@
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 import {
   RegisterFormData,
   LoginFormData,
+  LoginWithMagicLinkData,
 } from "../validations/auth.validation";
+import bcrypt from "bcryptjs";
+import { magicLinkService } from "./magic-link.service";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";
 const JWT_EXPIRES_IN = "7d";
@@ -37,20 +39,14 @@ export const authService = {
             data: {
               email: data.email,
               password: hashedPassword,
-              role: data.role || "MEMBER",
+              role: data.role || Role.USER,
             },
           });
-
-          // Create profile - split name into firstName and lastName
-          const nameParts = data.name.trim().split(" ");
-          const firstName = nameParts[0] || data.name;
-          const lastName = nameParts.slice(1).join(" ") || null;
 
           const profile = await tx.profile.create({
             data: {
               userId: user.id,
-              firstName: firstName,
-              lastName: lastName,
+              fullName: data.name,
             },
           });
 
@@ -69,7 +65,6 @@ export const authService = {
         { expiresIn: JWT_EXPIRES_IN }
       );
 
-      // 5. Remove password from response
       const { password, ...userWithoutPassword } = result.user;
 
       return {
@@ -111,10 +106,7 @@ export const authService = {
       }
 
       // 2. Verify password
-      const isPasswordValid = await bcrypt.compare(
-        data.password,
-        user.password
-      );
+      const isPasswordValid = await bcrypt.compare(data.password, user.password);
 
       if (!isPasswordValid) {
         return {
@@ -123,7 +115,6 @@ export const authService = {
           message: "Invalid email or password",
         };
       }
-
       // 3. Generate JWT token
       const token = jwt.sign(
         {
@@ -135,7 +126,6 @@ export const authService = {
         { expiresIn: JWT_EXPIRES_IN }
       );
 
-      // 4. Remove password from response
       const { password, ...userWithoutPassword } = user;
 
       return {

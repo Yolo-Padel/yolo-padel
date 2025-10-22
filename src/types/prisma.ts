@@ -6,4 +6,4 @@ export type {
     MagicLink 
 } from "@prisma/client";
 
-export { Role } from "@prisma/client";
+export { Role, UserStatus } from "@prisma/client";

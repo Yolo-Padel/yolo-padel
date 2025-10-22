@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { UserCreateData } from "../validations/user.validation";
+import { Prisma } from "@prisma/client";
+import { UserStatus } from "@/types/prisma";
 
 export const usersService = {
   getUsers: async () => {
@@ -9,7 +12,6 @@ export const usersService = {
         orderBy: { createdAt: "desc" },
       });
 
-      // Remove passwords from response
       const usersWithoutPasswords = users.map(({ password, ...user }) => user);
 
       return {
@@ -29,6 +31,27 @@ export const usersService = {
     }
   },
 
+  createUser: async (data: UserCreateData, tx?: Prisma.TransactionClient) => {
+    try {
+      const user = await (tx || prisma).user.create({
+        data: {
+          email: data.email,
+          role: data.role,
+          userStatus: UserStatus.INVITED,
+        },
+      });
+      return {
+        success: true,
+        data: user,
+        message: "User created successfully",
+      };
+    } catch (error) {
+      console.error("Create user error:", error);
+      return {
+        success: false,
+    }
+    }
+  },
   // Future: Add more users management functions
   // createUser, updateUser, deleteUser, etc.
 };

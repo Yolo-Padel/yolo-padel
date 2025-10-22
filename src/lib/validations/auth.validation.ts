@@ -24,16 +24,15 @@ export const loginFormSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-
-export const profileUpdateSchema = z.object({
-  firstName: z.string().min(1, "First name is required").max(64, "First name must be less than 64 characters"),
-  lastName: z.string().min(1, "Last name is required").max(64, "Last name must be less than 64 characters"),
+export const loginWithMagicLinkSchema = z.object({
+  email: z.string().email("Invalid email address"),
 });
 
 export type RegisterFormInput = z.infer<typeof registerFormSchema>;
 export type LoginFormInput = z.infer<typeof loginFormSchema>;
-export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
+export type LoginWithMagicLinkInput = z.infer<typeof loginWithMagicLinkSchema>;
 
 // Legacy type aliases for backward compatibility
 export type RegisterFormData = RegisterFormInput;
 export type LoginFormData = LoginFormInput;
+export type LoginWithMagicLinkData = LoginWithMagicLinkInput;
