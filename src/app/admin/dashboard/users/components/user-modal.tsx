@@ -21,9 +21,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { X } from "lucide-react"
-import { User, Profile, Role } from "@/types/prisma"
+import { User, Profile, Role, Venue } from "@/types/prisma"
 import { useInviteUser } from "@/hooks/use-users"
 import { userCreateSchema, UserCreateData } from "@/lib/validations/user.validation"
+import { useVenue } from "@/hooks/use-venue"
 
 interface UserModalProps {
   open: boolean
@@ -39,6 +40,7 @@ export function UserModal({
   user
 }: UserModalProps) {
   const inviteUserMutation = useInviteUser()
+  const { data: venues, isLoading: isLoadingVenues } = useVenue()
   
   const {
     register,
@@ -52,7 +54,8 @@ export function UserModal({
     defaultValues: {
       fullName: "",
       email: "",
-      role: Role.USER
+      role: Role.USER,
+      assignedVenueId: undefined
     }
   })
 
@@ -63,11 +66,13 @@ export function UserModal({
         setValue("fullName", user.profile?.fullName || "")
         setValue("email", user.email)
         setValue("role", user.role)
+        setValue("assignedVenueId", user.assignedVenueId || undefined)
       } else {
         reset({
           fullName: "",
           email: "",
-          role: Role.USER
+          role: Role.USER,
+          assignedVenueId: undefined
         })
       }
     }
@@ -144,7 +149,13 @@ export function UserModal({
             </Label>
             <Select
               value={watch("role")}
-              onValueChange={(value) => setValue("role", value as Role)}
+              onValueChange={(value) => {
+                setValue("role", value as Role)
+                // Reset assignedVenueId if role is USER
+                if (value === Role.USER) {
+                  setValue("assignedVenueId", undefined)
+                }
+              }}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select Role" />
@@ -160,6 +171,35 @@ export function UserModal({
               <p className="text-sm text-red-500">{errors.role.message}</p>
             )}
           </div>
+
+          {/* Venue Assignment - Only show if role is not USER */}
+          {watch("role") !== Role.USER && (
+            <div className="space-y-2">
+              <Label htmlFor="assignedVenueId" className="text-sm font-medium">
+                Assigned Venue
+              </Label>
+              <Select
+                value={watch("assignedVenueId") || "none"}
+                onValueChange={(value) => setValue("assignedVenueId", value === "none" ? undefined : value)}
+                disabled={isLoadingVenues}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={isLoadingVenues ? "Loading venues..." : "Select Venue"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Venue Assignment</SelectItem>
+                  {venues?.data?.map((venue: Venue) => (
+                    <SelectItem key={venue.id} value={venue.id}>
+                      {venue.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.assignedVenueId && (
+                <p className="text-sm text-red-500">{errors.assignedVenueId.message}</p>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium">
