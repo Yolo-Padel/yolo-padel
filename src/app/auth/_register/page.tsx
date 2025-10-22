@@ -1,4 +1,4 @@
-import { SignupForm } from "@/app/admin/auth/_components/signup-form";
+import { SignupForm } from "@/app/auth/_components/signup-form";
 
 export default function AdminRegisterPage() {
   return <SignupForm />;
