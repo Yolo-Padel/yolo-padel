@@ -1,8 +1,12 @@
 import { z } from "zod";
 
 export const profileUpdateSchema = z.object({
-  firstName: z.string().min(1, "First name is required").max(64, "First name must be less than 64 characters"),
-  lastName: z.string().min(1, "Last name is required").max(64, "Last name must be less than 64 characters"),
+  fullName: z.string().min(1, "Full name is required").max(64, "Full name must be less than 64 characters"),
+});
+
+export const profileCreateSchema = z.object({
+  fullName: z.string().min(1, "Full name is required").max(64, "Full name must be less than 64 characters"),
 });
 
 export type ProfileUpdateData = z.infer<typeof profileUpdateSchema>;
+export type ProfileCreateData = z.infer<typeof profileCreateSchema>;

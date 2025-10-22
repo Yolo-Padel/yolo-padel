@@ -24,8 +24,7 @@ export default function AdminProfilePage() {
   const form = useForm<ProfileUpdateData>({
     resolver: zodResolver(profileUpdateSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
+      fullName: "",
     },
     mode: "onChange", // Enable real-time validation
   })
@@ -34,8 +33,7 @@ export default function AdminProfilePage() {
     // Load current user data
     if (profile) {
       form.reset({
-        firstName: profile.firstName || "",
-        lastName: profile.lastName || "",
+        fullName: profile.fullName || "",
       })
     }
   }, [profile, form])
@@ -50,26 +48,24 @@ export default function AdminProfilePage() {
     
     const currentValues = form.getValues()
     const originalValues = {
-      firstName: profile.firstName || "",
-      lastName: profile.lastName || "",
+      fullName: profile.fullName || "",
     }
     
     return (
-      currentValues.firstName !== originalValues.firstName ||
-      currentValues.lastName !== originalValues.lastName
+      currentValues.fullName !== originalValues.fullName
     )
   }, [form.watch(), profile])
 
   // Check if form is valid and has changes
   const isFormValid = form.formState.isValid && hasChanges
 
-  const fullName = [form.watch("firstName"), form.watch("lastName")].filter(Boolean).join(" ") || "User"
+  const fullName = form.watch("fullName") || "User"
   const initials = fullName.split(" ").map(n => n[0]).join("").toUpperCase()
   
   // Show loading state if data is still loading
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-6">
         <div className="animate-pulse">
           <div className="h-8 bg-muted rounded w-48 mb-2"></div>
           <div className="h-4 bg-muted rounded w-64"></div>
@@ -84,7 +80,7 @@ export default function AdminProfilePage() {
   // Show not authenticated state
   if (!isAuthenticated || !user) {
     return (
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
           <p className="text-muted-foreground">
@@ -96,7 +92,7 @@ export default function AdminProfilePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
           <div className="flex items-center gap-4">
@@ -118,28 +114,15 @@ export default function AdminProfilePage() {
             <FieldGroup>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field>
-                  <FieldLabel htmlFor="firstName">First Name <span className="text-red-500">*</span></FieldLabel>
+                  <FieldLabel htmlFor="fullName">Full Name <span className="text-red-500">*</span></FieldLabel>
                   <Input
-                    id="firstName"
-                    placeholder="John"
-                    {...form.register("firstName")}
+                    id="fullName"
+                    placeholder="John Doe"
+                    {...form.register("fullName")}
                   />
-                  {form.formState.errors.firstName && (
+                  {form.formState.errors.fullName && (
                     <p className="text-destructive text-sm">
-                      {form.formState.errors.firstName.message}
-                    </p>
-                  )}
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="lastName">Last Name <span className="text-red-500">*</span></FieldLabel>
-                  <Input
-                    id="lastName"
-                    placeholder="Doe"
-                    {...form.register("lastName")}
-                  />
-                  {form.formState.errors.lastName && (
-                    <p className="text-destructive text-sm">
-                      {form.formState.errors.lastName.message}
+                      {form.formState.errors.fullName.message}
                     </p>
                   )}
                 </Field>

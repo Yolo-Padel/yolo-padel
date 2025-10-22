@@ -1,15 +1,38 @@
 import { prisma } from "@/lib/prisma";
-import { ProfileUpdateData } from "../validations/profile.validation";
+import { ProfileCreateData, ProfileUpdateData } from "../validations/profile.validation";
+import { Prisma } from "@prisma/client";
 
 export const profileService = {
+  createProfile: async (userId: string, data: ProfileCreateData, tx?: Prisma.TransactionClient) => {
+    try {
+      const profile = await (tx || prisma).profile.create({
+        data: {
+          userId,
+          fullName: data.fullName,
+        },
+      });
+      return {
+        success: true,
+        data: profile,
+        message: "Profile created successfully",
+      };
+    } catch (error) {
+      console.error("Create profile error:", error);
+      return {
+        success: false,
+        data: null,
+        message: "Failed to create profile",
+      };
+    }
+  },
+
   updateProfile: async (userId: string, data: ProfileUpdateData) => {
     try {
       // Update profile
       const updatedProfile = await prisma.profile.update({
         where: { userId },
         data: {
-          firstName: data.firstName,
-          lastName: data.lastName,
+          fullName: data.fullName,
         },
       });
 
@@ -27,13 +50,10 @@ export const profileService = {
         };
       }
 
-      // Remove password from response
-      const { password, ...userWithoutPassword } = user;
-
       return {
         success: true,
         data: {
-          user: userWithoutPassword,
+          user: user,
           profile: updatedProfile,
         },
         message: "Profile updated successfully",

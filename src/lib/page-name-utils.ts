@@ -10,6 +10,8 @@ export const getPageName = (pathname: string) => {
             return "Venue Management";
         case "/admin/dashboard/bookings":
             return "Booking Management";
+        case "/admin/dashboard/profile":
+            return "Profile";
         default:
             return "Dashboard";
     }
