@@ -1,5 +1,9 @@
-import { VenueTable } from "@/app/admin/dashboard/venue/components/venue-table";
+import { VenueTable } from "./components/venue-table";
 
 export default function VenuePage() {
-  return <VenueTable />;
+  return (
+    <>
+      <VenueTable />
+    </>
+  );
 }

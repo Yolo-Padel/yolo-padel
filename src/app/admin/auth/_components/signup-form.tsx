@@ -38,8 +38,8 @@ export function SignupForm({
   };
 
   return (
-    <form 
-      className={cn("flex flex-col gap-6", className)} 
+    <form
+      className={cn("flex flex-col gap-6", className)}
       onSubmit={form.handleSubmit(onSubmit)}
       {...props}
     >
@@ -100,11 +100,10 @@ export function SignupForm({
           <FieldDescription>Please confirm your password.</FieldDescription>
         </Field>
         <Field>
-          <Button 
-            type="submit" 
-            disabled={registerMutation.isPending}
-          >
-            {registerMutation.isPending ? "Creating Account..." : "Create Account"}
+          <Button type="submit" disabled={registerMutation.isPending}>
+            {registerMutation.isPending
+              ? "Creating Account..."
+              : "Create Account"}
           </Button>
         </Field>
         <FieldSeparator>Or continue with</FieldSeparator>

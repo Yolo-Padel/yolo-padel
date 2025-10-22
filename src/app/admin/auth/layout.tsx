@@ -1,9 +1,9 @@
-import { GalleryVerticalEnd } from "lucide-react"
+import { GalleryVerticalEnd } from "lucide-react";
 
 export default function AdminAuthLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
@@ -17,9 +17,7 @@ export default function AdminAuthLayout({
           </a>
         </div> */}
         <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-xs">
-            {children}
-          </div>
+          <div className="w-full max-w-xs">{children}</div>
         </div>
       </div>
       <div className="bg-muted relative hidden lg:block">
@@ -29,9 +27,13 @@ export default function AdminAuthLayout({
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
         />
         <div className="absolute top-10 left-10">
-          <img src="/yolo-black.png" alt="Yolo Logo" className="w-[100px] h-[38px]" />
+          <img
+            src="/yolo-black.png"
+            alt="Yolo Logo"
+            className="w-[100px] h-[38px]"
+          />
         </div>
       </div>
     </div>
-  )
+  );
 }

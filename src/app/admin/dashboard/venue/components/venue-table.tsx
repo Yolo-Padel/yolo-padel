@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Bell, LayoutGrid } from "lucide-react"
+import * as React from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Bell, LayoutGrid } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -12,24 +12,31 @@ import {
   TableHead,
   TableBody,
   TableCell,
-} from "@/components/ui/table"
-import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription, CardAction, } from "@/components/ui/card"
-import { Search, X, Pencil, PlusIcon } from "lucide-react"
-import { EditVenue } from "./venue-edit-sheet"
-import { venueCreateSchema } from "@/lib/validations/venue.validation"
-
+} from "@/components/ui/table";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardFooter,
+  CardTitle,
+  CardDescription,
+  CardAction,
+} from "@/components/ui/card";
+import { Search, X, Pencil, PlusIcon } from "lucide-react";
+import { EditVenue } from "./venue-edit-sheet";
+import { venueCreateSchema } from "@/lib/validations/venue.validation";
 
 type VenueRow = {
-  id: string
-  venueName: string
-  descriptions: string
-  address: string
-  totalCourts: number
-  image: string
-  isActive: boolean
-}
+  id: string;
+  venueName: string;
+  descriptions: string;
+  address: string;
+  totalCourts: number;
+  image: string;
+  isActive: boolean;
+};
 
-const DUMMY_DATA: (VenueRow)[] = [
+const DUMMY_DATA: VenueRow[] = [
   {
     id: "v_1",
     venueName: "Yolo Padel",
@@ -38,7 +45,6 @@ const DUMMY_DATA: (VenueRow)[] = [
     totalCourts: 10,
     isActive: true,
     image: "/paddle-court1.svg",
-    
   },
   {
     id: "v_2",
@@ -48,53 +54,44 @@ const DUMMY_DATA: (VenueRow)[] = [
     totalCourts: 8,
     isActive: false,
     image: "/paddle-court2.svg",
-    
-  }
-]
+  },
+];
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 10;
 
-export function VenueTable({
-  venueName,
-  descriptions,
-  totalCourts,
-  address,
-  image,
-}:VenueRow) {
-  const [query, setQuery] = React.useState("")
-  const [page, setPage] = React.useState(1)
-  const [sheetOpen, setSheetOpen] = React.useState(false)
-  const [selected, setSelected] = React.useState<VenueRow | null>(null)
-
-
+export function VenueTable() {
+  const [query, setQuery] = React.useState("");
+  const [page, setPage] = React.useState(1);
+  const [sheetOpen, setSheetOpen] = React.useState(false);
+  const [selected, setSelected] = React.useState<VenueRow | null>(null);
 
   const filtered = React.useMemo(() => {
-    const q = query.toLowerCase().trim()
-    if (!q) return DUMMY_DATA
+    const q = query.toLowerCase().trim();
+    if (!q) return DUMMY_DATA;
     return DUMMY_DATA.filter((u) => {
-      const fullName = `${u.venueName ?? ""}`.toLowerCase()
+      const fullName = `${u.venueName ?? ""}`.toLowerCase();
       return (
         u.venueName.toLowerCase().includes(q) ||
         u.address.toLowerCase().includes(q) ||
         fullName.includes(q)
-      )
-    })
-  }, [query])
+      );
+    });
+  }, [query]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const pageSafe = Math.min(page, totalPages)
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageSafe = Math.min(page, totalPages);
   const paginated = React.useMemo(() => {
-    const start = (pageSafe - 1) * PAGE_SIZE
-    return filtered.slice(start, start + PAGE_SIZE)
-  }, [filtered, pageSafe])
+    const start = (pageSafe - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, pageSafe]);
 
   React.useEffect(() => {
-    setPage(1)
-  }, [query])
+    setPage(1);
+  }, [query]);
 
   async function handleSubmit() {
     // Dummy submit: console log value
-    console.log("")
+    console.log("");
   }
 
   return (
@@ -119,68 +116,85 @@ export function VenueTable({
               <X className="size-4" />
             </button>
           )}
-            <Button variant="outline" size="sm" className="bg-gray-200">
-              <Bell className="size-4" />
-            </Button>
+          <Button variant="outline" size="sm" className="bg-gray-200">
+            <Bell className="size-4" />
+          </Button>
         </div>
       </div>
       <div className="flex items-center justify-between gap-1">
         <h3 className="text-xl font-semibold ">Venue Table</h3>
-        <Button variant="outline" onClick={() => setSheetOpen(true)} className="font-normal font-weight-500 bg-[#C3D223] rounded-sm">
+        <Button
+          variant="outline"
+          onClick={() => setSheetOpen(true)}
+          className="font-normal font-weight-500 bg-[#C3D223] rounded-sm"
+        >
           Add Venue
           <PlusIcon className="mr-2 size-4" />
         </Button>
-      
-    </div>
-      // Card container
+      </div>
+
       <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-      <CardHeader className="pt-4 pb-2">
-        <div className="relative h-48 overflow-hidden rounded-t-lg">
-        <img 
-          src="public\paddle-court1.svg"
-          className="w-full h-full object-cover" /> 
-       </div>
-      </CardHeader>
-      <CardContent className="space-y-2 text-sm text-gray-600">
-        <CardTitle className="text-xl">{venueName}</CardTitle>
-        <div className="flex items-center space-x-3">
-          <span>{totalCourts} Court(s)</span>
-        </div>
-        <div className="flex items-center space-x-3">
-          <span className="text-primary font-medium">Address:</span>
-          <span>{address}</span>
-        </div>
-        <div className="flex items-center space-x-3">
-          <span className="text-primary font-medium">Description:</span>
-          <span>{descriptions}</span>
-        </div>
-      </CardContent>
+        <CardHeader className="pt-4 pb-2">
+          <div className="relative h-48 overflow-hidden rounded-t-lg">
+            <img
+              src="public\paddle-court1.svg"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-gray-600">
+          <CardTitle className="text-xl">Venue Name</CardTitle>
+          <div className="flex items-center space-x-3">
+            <span>TOTAL_COURTS Court(s)</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <span className="text-primary font-medium">Address:</span>
+            <span>ADDRESS</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <span className="text-primary font-medium">Description:</span>
+            <span>DESCRIPTIONS</span>
+          </div>
+        </CardContent>
 
-      {/* 3. Footer Aksi */}
-      <CardFooter className="flex justify-between pt-4">
-        <Button variant="outline" size="sm">
-          Edit Venue
-        </Button>
-        <Button variant="default" size="sm" className="bg-green-500 hover:bg-green-600">
-          Manage Court
-        </Button>
-      </CardFooter>
-    </Card>
-
+        {/* 3. Footer Aksi */}
+        <CardFooter className="flex justify-between pt-4">
+          <Button variant="outline" size="sm">
+            Edit Venue
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            className="bg-green-500 hover:bg-green-600"
+          >
+            Manage Court
+          </Button>
+        </CardFooter>
+      </Card>
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           Showing {paginated.length} of {filtered.length} venues
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" disabled={pageSafe <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+          <Button
+            variant="outline"
+            disabled={pageSafe <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
             Previous
           </Button>
-          <div className="text-sm">Page {pageSafe} / {totalPages}</div>
-          <Button variant="outline" disabled={pageSafe >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
+          <div className="text-sm">
+            Page {pageSafe} / {totalPages}
+          </div>
+          <Button
+            variant="outline"
+            disabled={pageSafe >= totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          >
             Next
           </Button>
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -73,7 +73,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, profile, isLoading, isAuthenticated } = useAuth();
 
   const userData = {
-    name: profile?.firstName || "User",
+    name: profile?.fullName || "User",
     email: user?.email || "user@example.com",
     avatar: profile?.avatar || "/avatars/shadcn.jpg",
   };
