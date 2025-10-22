@@ -16,52 +16,54 @@ import {
 } from "@/components/ui/card";
 import { Search, X, Pencil, PlusIcon } from "lucide-react";
 import { EditVenue } from "./venue-edit-sheet";
+import { AddVenue } from "./add-venue";
+import { EditVenueDetails } from "./details-venue";
 
 type VenueRow = {
   id: string;
   venueName: string;
-  descriptions: string;
+  phoneNumber?: number;
   address: string;
+  city: string;
   totalCourts: number;
   totalBooking: number;
-  user: string;
+  admin: string;
   image: string;
-  isActive: boolean;
 };
 
 const DUMMY_DATA: VenueRow[] = [
   {
     id: "v_1",
     venueName: "Slipi Paddle Center",
-    descriptions: "A modern padel court with top-notch facilities",
+    phoneNumber: 81234567890,
     address: "123 Main St, Anytown, USA",
+    city: "Jakarta",
     totalCourts: 10,
     totalBooking: 5,
-    user: "Revina",
-    isActive: true,
+    admin: "Revina",
     image: "/paddle-court1.svg",
   },
   {
     id: "v_2",
     venueName: "Lebak Bulus Paddle Center",
-    descriptions: "A modern padel court with top-notch facilities",
+    phoneNumber: 81234567890,
     address: "456 Oak St, Somewhere, USA",
+    city: "Jakarta",
     totalCourts: 8,
     totalBooking: 3,
-    user: "Angga",
-    isActive: false,
-    image: "/paddle-court1.svg",
+    admin: "Angga",
+    image: "/paddle-court2.svg",
   },
   {
     id: "v_3",
     venueName: "BSD Paddle Center",
-    descriptions: "A modern padel court with top-notch facilities",
+    phoneNumber: 81234567890,
     address: "456 Oak St, Somewhere, USA",
+    city: "Jakarta",
     totalCourts: 10,
     totalBooking: 2,
-    user: "Joko",
-    isActive: false,
-    image: "/paddle-court1.svg",
+    admin: "Joko",
+    image: "/paddle-court3.svg",
   },
 ];
 
@@ -70,8 +72,9 @@ const PAGE_SIZE = 10;
 export function VenueTable() {
   const [query, setQuery] = React.useState("");
   const [page, setPage] = React.useState(1);
-  const [sheetOpen, setSheetOpen] = React.useState(false);
-  const [selected, setSelected] = React.useState<VenueRow | null>(null);
+  const [addSheetOpen, setAddVenueOpen] = React.useState(false);
+  const [detailSheetOpen, setDetailSheetOpen] = React.useState(false);
+  const [selectedVenue, setSelectedVenue] = React.useState<VenueRow | null>(null);  
 
   const filtered = React.useMemo(() => {
     const q = query.toLowerCase().trim();
@@ -102,39 +105,24 @@ export function VenueTable() {
     console.log("");
   }
 
+  async function handleAddVenue() {
+    console.log("Add Venue");
+    setAddVenueOpen(false);
+  }
+
+  async function handleEditDetailsVenue() {
+    console.log("Edit Details");
+    setDetailSheetOpen(false);
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-4 py-4">
-        <h3 className="text-2xl font-semibold ">Venue Management</h3>
-        <div className="relative w-full max-w-sm flex items-center gap-4">
-          <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
-          <Input
-            placeholder="Search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="pl-8 pr-8"
-          />
-          {query && (
-            <button
-              type="button"
-              aria-label="Clear search"
-              onClick={() => setQuery("")}
-              className="text-muted-foreground hover:text-foreground absolute right-2 top-1/2 -translate-y-1/2"
-            >
-              <X className="size-4" />
-            </button>
-          )}
-          <Button variant="outline" size="sm" className="bg-gray-200">
-            <Bell className="size-4" />
-          </Button>
-        </div>
-      </div>
       <div className="flex items-center justify-between gap-1">
         <h3 className="text-xl font-semibold ">Venue List</h3>
         <Button
           variant="outline"
-          onClick={() => setSheetOpen(true)}
-          className="font-normal font-weight-500 bg-[#C3D223] rounded-sm"
+          onClick={() => setAddVenueOpen(true)}
+          className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
         >
           Add Venue
           <PlusIcon className="mr-2 size-4" />
@@ -157,13 +145,13 @@ export function VenueTable() {
             <LandPlot className="size-4" /> {venue.totalCourts} Courts <Dot/> {venue.totalBooking} Bookings today
           </div>
           <div className="flex items-center space-x-3">
-            <User className="size-4"/> <span> {venue.user} </span>
+            <User className="size-4"/> <span> {venue.admin} </span>
             
           </div>
         </CardContent>
 
         <CardFooter className="flex justify-between gap-2">
-          <Button variant="outline" size="default" className="border-[#C3D223] text-black font-normal rounded-sm">
+          <Button onClick={() => {setSelectedVenue(venue); setDetailSheetOpen(true); }} variant="outline" size="default" className="border-[#C3D223] text-black font-normal rounded-sm">
             See Details
           </Button>
           <Button variant="default" size="default" className="bg-[#C3D223] hover:bg-[#A9B920] text-black font-normal rounded-sm">
@@ -198,6 +186,18 @@ export function VenueTable() {
           </Button>
         </div>
       </div>
+      <AddVenue
+        open={addSheetOpen}
+        venueData={null}
+        onOpenChange={() => setAddVenueOpen(false)}
+        onSubmit={handleAddVenue}
+      />
+      <EditVenueDetails
+        detailSheetOpen={detailSheetOpen}
+        onOpenChange={() => setDetailSheetOpen(false)}
+        detailsVenue={selectedVenue}
+        onSubmit={handleEditDetailsVenue}
+      />
     </div>
   );
 }
