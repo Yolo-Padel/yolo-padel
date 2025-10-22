@@ -7,8 +7,7 @@ export interface UploadResult {
     downloadUrl: string;
     pathname: string;
     contentType: string;
-    contentDisposition: string;
-    size: number;
+    contentDisposition: string;    
   };
   message?: string;
 }
@@ -33,7 +32,6 @@ export const vercelBlobService = {
           pathname: blob.pathname,
           contentType: blob.contentType,
           contentDisposition: blob.contentDisposition,
-          size: blob.size,
         },
         message: 'File uploaded successfully',
       };
@@ -62,7 +60,6 @@ export const vercelBlobService = {
           pathname: blob.pathname,
           contentType: blob.contentType,
           contentDisposition: blob.contentDisposition,
-          size: blob.size,
         },
         message: 'File uploaded successfully',
       };

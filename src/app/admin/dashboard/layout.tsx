@@ -4,6 +4,7 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { Header } from "@/app/admin/dashboard/components/header";
+import { Suspense } from "react";
 
 export default function AdminDashboardLayout({
   children,
@@ -11,6 +12,7 @@ export default function AdminDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
@@ -18,5 +20,6 @@ export default function AdminDashboardLayout({
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
       </SidebarInset>
     </SidebarProvider>
+    </Suspense>
   );
 }
