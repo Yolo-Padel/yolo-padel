@@ -152,6 +152,8 @@ export function UserModal({
               <SelectContent>
                 <SelectItem value={Role.USER}>User</SelectItem>
                 <SelectItem value={Role.ADMIN}>Admin</SelectItem>
+                <SelectItem value={Role.SUPER_ADMIN}>Super Admin</SelectItem>
+                <SelectItem value={Role.FINANCE}>Finance</SelectItem>
               </SelectContent>
             </Select>
             {errors.role && (
