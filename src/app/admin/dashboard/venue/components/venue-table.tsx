@@ -4,7 +4,7 @@ import * as React from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Bell } from "lucide-react"
+import { Bell, LayoutGrid } from "lucide-react"
 import {
   Table,
   TableHeader,
@@ -13,8 +13,10 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table"
+import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription, CardAction, } from "@/components/ui/card"
 import { Search, X, Pencil, PlusIcon } from "lucide-react"
 import { EditVenue } from "./venue-edit-sheet"
+import { venueCreateSchema } from "@/lib/validations/venue.validation"
 
 
 type VenueRow = {
@@ -23,7 +25,7 @@ type VenueRow = {
   descriptions: string
   address: string
   totalCourts: number
-  image: File | null
+  image: string
   isActive: boolean
 }
 
@@ -35,7 +37,7 @@ const DUMMY_DATA: (VenueRow)[] = [
     address: "123 Main St, Anytown, USA",
     totalCourts: 10,
     isActive: true,
-    image: null,
+    image: "/paddle-court1.svg",
     
   },
   {
@@ -45,14 +47,20 @@ const DUMMY_DATA: (VenueRow)[] = [
     address: "456 Oak St, Somewhere, USA",
     totalCourts: 8,
     isActive: false,
-    image: null,
+    image: "/paddle-court2.svg",
     
   }
 ]
 
 const PAGE_SIZE = 10
 
-export function VenueTable() {
+export function VenueTable({
+  venueName,
+  descriptions,
+  totalCourts,
+  address,
+  image,
+}:VenueRow) {
   const [query, setQuery] = React.useState("")
   const [page, setPage] = React.useState(1)
   const [sheetOpen, setSheetOpen] = React.useState(false)
@@ -124,44 +132,40 @@ export function VenueTable() {
         </Button>
       
     </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Venue Name</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Address</TableHead>
-            <TableHead>Total Courts</TableHead>
-            <TableHead>Image</TableHead>
-            <TableHead>status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {paginated.map((u) => {
-            
-            return (
-              <TableRow key={u.id}>
-                <TableCell>{u.venueName}</TableCell>
-                <TableCell>{u.descriptions}</TableCell>
-                <TableCell>{u.address}</TableCell>
-                <TableCell>{u.totalCourts}</TableCell>
-                <TableCell>{u.image ? "Yes" : "No"}</TableCell>
-                <TableCell>{u.isActive ? "Active" : "Inactive"}</TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => { setSelected(u); setSheetOpen(true) }}
-                  >
-                    <Pencil className="mr-2 size-4" />
-                    Edit
-                  </Button>
-                </TableCell>
-              </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
+      // Card container
+      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+      <CardHeader className="pt-4 pb-2">
+        <div className="relative h-48 overflow-hidden rounded-t-lg">
+        <img 
+          src="public\paddle-court1.svg"
+          className="w-full h-full object-cover" /> 
+       </div>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm text-gray-600">
+        <CardTitle className="text-xl">{venueName}</CardTitle>
+        <div className="flex items-center space-x-3">
+          <span>{totalCourts} Court(s)</span>
+        </div>
+        <div className="flex items-center space-x-3">
+          <span className="text-primary font-medium">Address:</span>
+          <span>{address}</span>
+        </div>
+        <div className="flex items-center space-x-3">
+          <span className="text-primary font-medium">Description:</span>
+          <span>{descriptions}</span>
+        </div>
+      </CardContent>
+
+      {/* 3. Footer Aksi */}
+      <CardFooter className="flex justify-between pt-4">
+        <Button variant="outline" size="sm">
+          Edit Venue
+        </Button>
+        <Button variant="default" size="sm" className="bg-green-500 hover:bg-green-600">
+          Manage Court
+        </Button>
+      </CardFooter>
+    </Card>
 
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
@@ -177,12 +181,6 @@ export function VenueTable() {
           </Button>
         </div>
       </div>
-       <EditVenue
-        open={sheetOpen}
-        venueRow={selected}
-        onOpenChange={setSheetOpen}
-        onSubmit={handleSubmit}
-        />
     </div>
   )
 }
