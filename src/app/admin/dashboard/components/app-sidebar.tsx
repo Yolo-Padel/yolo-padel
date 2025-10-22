@@ -6,9 +6,13 @@ import {
   Zap,
   Users,
   Building,
+  Crown,
+  TableCellsMerge,
+  LandPlot,
+  PanelsLeftBottom,
 } from "lucide-react";
 
-import { MenuItems } from "@/app/admin/dashboard/components/menu-items"
+import { MenuItems } from "@/app/admin/dashboard/components/menu-items";
 import { NavUser } from "@/app/admin/dashboard/components/nav-user";
 import { CompanyProfile } from "@/app/admin/dashboard/components/company-profile";
 import {
@@ -31,18 +35,24 @@ const data = {
       icon: Home,
     },
     {
-      name: "User Management",
+      name: "Users Management",
       url: "/admin/dashboard/users",
       icon: Users,
     },
-    { name: "Court Management",
-      url: "/admin/dashboard/court",
-      icon: Zap,
+    {
+      name: "Booking Management",
+      url: "/admin/dashboard/booking",
+      icon: LandPlot,
     },
     {
-      name: "Venue",
+      name: "Venue Management",
       url: "/admin/dashboard/venue",
-      icon: Building,
+      icon: TableCellsMerge,
+    },
+    {
+      name: "Membership",
+      url: "/admin/dashboard/membership",
+      icon: Crown,
     },
   ],
 };
@@ -63,7 +73,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, profile, isLoading, isAuthenticated } = useAuth();
 
   const userData = {
-    name: profile?.fullName || "User",
+    name: profile?.firstName || "User",
     email: user?.email || "user@example.com",
     avatar: profile?.avatar || "/avatars/shadcn.jpg",
   };

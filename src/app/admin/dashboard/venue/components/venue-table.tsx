@@ -4,6 +4,7 @@ import * as React from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Bell } from "lucide-react"
 import {
   Table,
   TableHeader,
@@ -12,7 +13,7 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table"
-import { Search, X, Pencil } from "lucide-react"
+import { Search, X, Pencil, PlusIcon } from "lucide-react"
 import { EditVenue } from "./venue-edit-sheet"
 
 
@@ -90,19 +91,12 @@ export function VenueTable() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setSheetOpen(true)}>
-            <Pencil className="mr-2 size-4" />
-            Add New Venue
-          </Button>
-        </div>
-      
-      <div className="flex items-center justify-end gap-2">
-        <div className="relative w-full max-w-sm">
+      <div className="flex items-center justify-between gap-4 py-4">
+        <h3 className="text-2xl font-semibold ">Venue Management</h3>
+        <div className="relative w-full max-w-sm flex items-center gap-4">
           <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
           <Input
-            placeholder="Search venue"
+            placeholder="Search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="pl-8 pr-8"
@@ -117,8 +111,18 @@ export function VenueTable() {
               <X className="size-4" />
             </button>
           )}
+            <Button variant="outline" size="sm" className="bg-gray-200">
+              <Bell className="size-4" />
+            </Button>
         </div>
       </div>
+      <div className="flex items-center justify-between gap-1">
+        <h3 className="text-xl font-semibold ">Venue Table</h3>
+        <Button variant="outline" onClick={() => setSheetOpen(true)} className="font-normal font-weight-500 bg-[#C3D223] rounded-sm">
+          Add Venue
+          <PlusIcon className="mr-2 size-4" />
+        </Button>
+      
     </div>
       <Table>
         <TableHeader>
