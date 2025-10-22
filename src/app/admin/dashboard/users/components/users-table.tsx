@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useState, useMemo, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
   Table,
   TableHeader,
@@ -34,13 +35,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const PAGE_SIZE = 10;
 
 export function UsersTable() {
-  const [page, setPage] = useState(1);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [selected, setSelected] = useState<
-    (User & { profile?: Profile | null }) | null
-  >(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"add" | "edit">("add");
+  const [page, setPage] = useState(1)
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [selected, setSelected] = useState<User & { profile?: Profile | null } | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalMode, setModalMode] = useState<"add" | "edit">("add")
+  const searchParams = useSearchParams()
 
   // Define table columns for colSpan
   const columns = [
@@ -60,8 +60,26 @@ export function UsersTable() {
 
   // Frontend filtering and pagination
   const filtered = useMemo(() => {
-    return allUsers;
-  }, [allUsers]);
+    const searchQuery = searchParams.get("search")?.toLowerCase().trim()
+    
+    if (!searchQuery) {
+      return allUsers
+    }
+
+    return allUsers.filter((user: User & { profile?: Profile | null }) => {
+      const fullName = user.profile?.fullName?.toLowerCase() || ""
+      const email = user.email.toLowerCase()
+      const role = user.role === Role.ADMIN ? "admin" : "user"
+      const status = user.userStatus.toLowerCase()
+      
+      return (
+        fullName.includes(searchQuery) ||
+        email.includes(searchQuery) ||
+        role.includes(searchQuery) ||
+        status.includes(searchQuery)
+      )
+    })
+  }, [allUsers, searchParams])
 
   const paginationInfo = useMemo(
     () => calculatePaginationInfo(page, filtered.length, PAGE_SIZE),
@@ -72,6 +90,11 @@ export function UsersTable() {
     () => getPaginatedData(filtered, page, PAGE_SIZE),
     [filtered, page]
   );
+
+  // Reset page to 1 when search changes
+  useEffect(() => {
+    setPage(1)
+  }, [searchParams])
 
   async function handleSubmit() {
     // Dummy submit: console log value
