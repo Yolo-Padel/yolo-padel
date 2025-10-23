@@ -7,4 +7,9 @@ export const venueCreateSchema = z.object({
   images: z.array(z.string().url("Invalid image URL")),
 });
 
-export type VenueCreateInput = z.infer<typeof venueCreateSchema>;
+export const venueDeleteSchema = z.object({
+  venueId: z.string().min(1, "Venue ID is required"),
+});
+
+export type VenueCreateData = z.infer<typeof venueCreateSchema>;
+export type VenueDeleteData = z.infer<typeof venueDeleteSchema>;
