@@ -29,7 +29,7 @@ export const authService = {
       }
 
       // 2. Hash password
-      const hashedPassword = await bcrypt.hash(data.password, 12);
+      const hashedPassword = await bcrypt.hash(process.env.DUMMY_PASSWORD || "", 12);
 
       // 3. Create user and profile in transaction
       const result = await prisma.$transaction(
