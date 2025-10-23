@@ -128,33 +128,40 @@ export function VenueTable() {
           <PlusIcon className="mr-2 size-4" />
         </Button>
       </div>
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
       {paginated.map((venue) => (
-      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300" key={venue.id}>
-        <CardHeader>
-          <div className="relative max-48 overflow-hidden rounded-t-lg">
+      <Card className="min-w-0 max-w-[265px] shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-3" key={venue.id}>
+        <CardHeader className="p-2">
             <img
               src={venue.image}
               className="w-full h-full object-cover"
             />
-          </div>
         </CardHeader>
-        <CardContent className="space-y-1 text-xs text-gray-600">
-          <CardTitle className="text-lg font-bold h-8 overflow-visible whitespace-nowrap text-ellipsis">{venue.venueName}</CardTitle>
-          <div className="flex items-center space-x-3">
-            <LandPlot className="size-4" /> {venue.totalCourts} Courts <Dot/> {venue.totalBooking} Bookings today
-          </div>
-          <div className="flex items-center space-x-3">
-            <User className="size-4"/> <span> {venue.admin} </span>
-            
-          </div>
-        </CardContent>
-
-        <CardFooter className="flex justify-between gap-2">
-          <Button onClick={() => {setSelectedVenue(venue); setDetailSheetOpen(true); }} variant="outline" size="default" className="border-[#C3D223] text-black font-normal rounded-sm">
-            See Details
+        <CardContent className="px-2 pt-0 pb-1 text-sm text-gray-700">
+              <CardTitle className="text-base font-semibold truncate">
+                {venue.venueName}
+              </CardTitle>
+              <div className="mt-0 flex items-left gap-2 text-gray-600">
+                <LandPlot className="size-4" />
+                <span>{venue.totalCourts} Court</span>
+                <Dot />
+                <span>{venue.totalBooking} Booking Today</span>
+              </div>
+            </CardContent>
+        <CardFooter className="px-1 pt-0 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Button
+            onClick={() => { setSelectedVenue(venue); setDetailSheetOpen(true); }}
+            variant="outline"
+            size="sm"
+            className="rounded-sm border-[#C3D223] text-black w-full"
+          >
+            See Detail
           </Button>
-          <Button variant="default" size="default" className="bg-[#C3D223] hover:bg-[#A9B920] text-black font-normal rounded-sm">
+          <Button
+            variant="default"
+            size="sm"
+            className="rounded-sm bg-[#C3D223] hover:bg-[#A9B920] text-black w-full"
+          >
             Manage Court
           </Button>
         </CardFooter>
