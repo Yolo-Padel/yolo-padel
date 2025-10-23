@@ -34,6 +34,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   venues    Venue[]
+  assignedVenueId String?      // optional (nullable)
+
+  // Relasi ke venue yang di-assign ke user
+  assignedVenue   Venue?       @relation("VenueAssignment", fields: [assignedVenueId], references: [id])
 
   // Relasi ke Profile
   profile Profile?
@@ -71,6 +75,8 @@ model Venue {
 
   // Relasi ke Court
   courts Court[]
+  // Relasi balik untuk user-user yang assigned ke venue ini
+  assignedUsers User[] @relation("VenueAssignment")
 
   @@map("venues")
 }

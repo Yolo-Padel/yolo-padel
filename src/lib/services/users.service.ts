@@ -38,6 +38,7 @@ export const usersService = {
           email: data.email,
           role: data.role,
           userStatus: UserStatus.INVITED,
+          assignedVenueId: data.assignedVenueId || null,
         },
       });
       return {

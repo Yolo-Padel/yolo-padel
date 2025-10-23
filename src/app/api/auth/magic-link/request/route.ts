@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     //   token: result.token,
     // });
 
-    const magicLinkUrl = process.env.NEXT_PUBLIC_APP_URL + "/admin/auth/verify?token=" + result.token!;
+    const magicLinkUrl = process.env.NEXT_PUBLIC_APP_URL + "/auth/verify?token=" + result.token!;
 
     // send email with magic link token and redirect to verification page
     const emailResponse = await resendService.sendMagicLinkEmail({ email: email }, magicLinkUrl);

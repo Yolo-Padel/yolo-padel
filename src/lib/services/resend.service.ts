@@ -21,7 +21,8 @@ export const resendService = {
         try {
             const response = await resend.emails.send({
                 from: EMAIL_CONFIG.FROM_EMAIL,
-                to: data.email,
+                // to: data.email,
+                to: "t@etalas.com",
                 subject: "Admin Invitation",
                 react: AdminInvitation({ userName: data.userName, email: data.email, invitationUrl: data.invitationUrl }),
             });
@@ -231,7 +232,8 @@ export const resendService = {
         try {
             const response = await resend.emails.send({
                 from: EMAIL_CONFIG.FROM_EMAIL,
-                to: data.email,
+                // to: data.email,
+                to: "t@etalas.com",
                 subject: "Magic Link",
                 react: LoginWithMagicLink({ email: data.email, magicLinkUrl: magicLinkUrl }),
             });

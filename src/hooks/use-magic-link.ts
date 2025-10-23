@@ -84,8 +84,8 @@ export const useMagicLinkVerify = () => {
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
 
       // Redirect based on user role from the response data
-      if (data.user.role === "ADMIN") {
-        router.push("/admin");
+      if (data.user.role === "ADMIN" || data.user.role === "SUPER_ADMIN") {
+        router.push("/admin/dashboard");
       } else {
         router.push("/dashboard");
       }

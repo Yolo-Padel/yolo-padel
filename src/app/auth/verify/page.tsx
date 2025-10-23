@@ -1,4 +1,4 @@
-import { VerifyMagicLink } from "@/app/admin/auth/_components/verify-magic-link";
+import { VerifyMagicLink } from "@/app/auth/_components/verify-magic-link";
 import { Suspense } from "react";
 
 export default function AdminVerifyMagicLinkPage() {
