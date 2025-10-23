@@ -4,15 +4,7 @@ import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, LayoutGrid } from "lucide-react";
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
+import { Bell, Dot, LandPlot, LayoutGrid, User } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -24,36 +16,54 @@ import {
 } from "@/components/ui/card";
 import { Search, X, Pencil, PlusIcon } from "lucide-react";
 import { EditVenue } from "./venue-edit-sheet";
-import { venueCreateSchema } from "@/lib/validations/venue.validation";
+import { AddVenue } from "./add-venue";
+import { EditVenueDetails } from "./details-venue";
 
 type VenueRow = {
   id: string;
   venueName: string;
-  descriptions: string;
+  phoneNumber?: number;
   address: string;
+  city: string;
   totalCourts: number;
+  totalBooking: number;
+  admin: string;
   image: string;
-  isActive: boolean;
 };
 
 const DUMMY_DATA: VenueRow[] = [
   {
     id: "v_1",
-    venueName: "Yolo Padel",
-    descriptions: "A modern padel court with top-notch facilities",
+    venueName: "Slipi Paddle Center",
+    phoneNumber: 81234567890,
     address: "123 Main St, Anytown, USA",
+    city: "Jakarta",
     totalCourts: 10,
-    isActive: true,
+    totalBooking: 5,
+    admin: "Revina",
     image: "/paddle-court1.svg",
   },
   {
     id: "v_2",
-    venueName: "Jane's Padel",
-    descriptions: "A modern padel court with top-notch facilities",
+    venueName: "Lebak Bulus Paddle Center",
+    phoneNumber: 81234567890,
     address: "456 Oak St, Somewhere, USA",
+    city: "Jakarta",
     totalCourts: 8,
-    isActive: false,
+    totalBooking: 3,
+    admin: "Angga",
     image: "/paddle-court2.svg",
+  },
+  {
+    id: "v_3",
+    venueName: "BSD Paddle Center",
+    phoneNumber: 81234567890,
+    address: "456 Oak St, Somewhere, USA",
+    city: "Jakarta",
+    totalCourts: 10,
+    totalBooking: 2,
+    admin: "Joko",
+    image: "/paddle-court3.svg",
   },
 ];
 
@@ -62,8 +72,9 @@ const PAGE_SIZE = 10;
 export function VenueTable() {
   const [query, setQuery] = React.useState("");
   const [page, setPage] = React.useState(1);
-  const [sheetOpen, setSheetOpen] = React.useState(false);
-  const [selected, setSelected] = React.useState<VenueRow | null>(null);
+  const [addSheetOpen, setAddVenueOpen] = React.useState(false);
+  const [detailSheetOpen, setDetailSheetOpen] = React.useState(false);
+  const [selectedVenue, setSelectedVenue] = React.useState<VenueRow | null>(null);  
 
   const filtered = React.useMemo(() => {
     const q = query.toLowerCase().trim();
@@ -94,83 +105,63 @@ export function VenueTable() {
     console.log("");
   }
 
+  async function handleAddVenue() {
+    console.log("Add Venue");
+    setAddVenueOpen(false);
+  }
+
+  async function handleEditDetailsVenue() {
+    console.log("Edit Details");
+    setDetailSheetOpen(false);
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-4 py-4">
-        <h3 className="text-2xl font-semibold ">Venue Management</h3>
-        <div className="relative w-full max-w-sm flex items-center gap-4">
-          <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
-          <Input
-            placeholder="Search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="pl-8 pr-8"
-          />
-          {query && (
-            <button
-              type="button"
-              aria-label="Clear search"
-              onClick={() => setQuery("")}
-              className="text-muted-foreground hover:text-foreground absolute right-2 top-1/2 -translate-y-1/2"
-            >
-              <X className="size-4" />
-            </button>
-          )}
-          <Button variant="outline" size="sm" className="bg-gray-200">
-            <Bell className="size-4" />
-          </Button>
-        </div>
-      </div>
       <div className="flex items-center justify-between gap-1">
-        <h3 className="text-xl font-semibold ">Venue Table</h3>
+        <h3 className="text-xl font-semibold ">Venue List</h3>
         <Button
           variant="outline"
-          onClick={() => setSheetOpen(true)}
-          className="font-normal font-weight-500 bg-[#C3D223] rounded-sm"
+          onClick={() => setAddVenueOpen(true)}
+          className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
         >
           Add Venue
           <PlusIcon className="mr-2 size-4" />
         </Button>
       </div>
-
-      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-        <CardHeader className="pt-4 pb-2">
-          <div className="relative h-48 overflow-hidden rounded-t-lg">
+      <div className="grid grid-cols-5 gap-4">
+      {paginated.map((venue) => (
+      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300" key={venue.id}>
+        <CardHeader>
+          <div className="relative max-48 overflow-hidden rounded-t-lg">
             <img
-              src="public\paddle-court1.svg"
+              src={venue.image}
               className="w-full h-full object-cover"
             />
           </div>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm text-gray-600">
-          <CardTitle className="text-xl">Venue Name</CardTitle>
+        <CardContent className="space-y-1 text-xs text-gray-600">
+          <CardTitle className="text-lg font-bold h-8 overflow-visible whitespace-nowrap text-ellipsis">{venue.venueName}</CardTitle>
           <div className="flex items-center space-x-3">
-            <span>TOTAL_COURTS Court(s)</span>
+            <LandPlot className="size-4" /> {venue.totalCourts} Courts <Dot/> {venue.totalBooking} Bookings today
           </div>
           <div className="flex items-center space-x-3">
-            <span className="text-primary font-medium">Address:</span>
-            <span>ADDRESS</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <span className="text-primary font-medium">Description:</span>
-            <span>DESCRIPTIONS</span>
+            <User className="size-4"/> <span> {venue.admin} </span>
+            
           </div>
         </CardContent>
 
-        {/* 3. Footer Aksi */}
-        <CardFooter className="flex justify-between pt-4">
-          <Button variant="outline" size="sm">
-            Edit Venue
+        <CardFooter className="flex justify-between gap-2">
+          <Button onClick={() => {setSelectedVenue(venue); setDetailSheetOpen(true); }} variant="outline" size="default" className="border-[#C3D223] text-black font-normal rounded-sm">
+            See Details
           </Button>
-          <Button
-            variant="default"
-            size="sm"
-            className="bg-green-500 hover:bg-green-600"
-          >
+          <Button variant="default" size="default" className="bg-[#C3D223] hover:bg-[#A9B920] text-black font-normal rounded-sm">
             Manage Court
           </Button>
         </CardFooter>
       </Card>
+      ))}
+      </div>
+      
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           Showing {paginated.length} of {filtered.length} venues
@@ -195,6 +186,18 @@ export function VenueTable() {
           </Button>
         </div>
       </div>
+      <AddVenue
+        open={addSheetOpen}
+        venueData={null}
+        onOpenChange={() => setAddVenueOpen(false)}
+        onSubmit={handleAddVenue}
+      />
+      <EditVenueDetails
+        detailSheetOpen={detailSheetOpen}
+        onOpenChange={() => setDetailSheetOpen(false)}
+        detailsVenue={selectedVenue}
+        onSubmit={handleEditDetailsVenue}
+      />
     </div>
   );
 }

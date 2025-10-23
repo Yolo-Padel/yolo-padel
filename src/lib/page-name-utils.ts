@@ -6,9 +6,9 @@ export const getPageName = (pathname: string) => {
             return "User Management";
         case "/admin/dashboard/court":
             return "Court Management";
-        case "/admin/dashboard/venues":
+        case "/admin/dashboard/venue":
             return "Venue Management";
-        case "/admin/dashboard/bookings":
+        case "/admin/dashboard/booking":
             return "Booking Management";
         case "/admin/dashboard/profile":
             return "Profile";
