@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Dot, LandPlot, LayoutGrid, User } from "lucide-react";
@@ -14,80 +13,38 @@ import {
   CardDescription,
   CardAction,
 } from "@/components/ui/card";
-import { Search, X, Pencil, PlusIcon } from "lucide-react";
-import { EditVenue } from "./venue-edit-sheet";
-import { AddVenue } from "./add-venue";
+import { Pencil, PlusIcon } from "lucide-react";
+import { VenueFormSheet } from "./add-venue";
 import { EditVenueDetails } from "./details-venue";
+import { useVenue } from "@/hooks/use-venue";
+import { Venue } from "@/types/prisma";
 
 type VenueRow = {
   id: string;
   venueName: string;
-  phoneNumber?: number;
-  address: string;
-  city: string;
-  totalCourts: number;
-  totalBooking: number;
-  admin: string;
   image: string;
 };
-
-const DUMMY_DATA: VenueRow[] = [
-  {
-    id: "v_1",
-    venueName: "Slipi Paddle Center",
-    phoneNumber: 81234567890,
-    address: "123 Main St, Anytown, USA",
-    city: "Jakarta",
-    totalCourts: 10,
-    totalBooking: 5,
-    admin: "Revina",
-    image: "/paddle-court1.svg",
-  },
-  {
-    id: "v_2",
-    venueName: "Lebak Bulus Paddle Center",
-    phoneNumber: 81234567890,
-    address: "456 Oak St, Somewhere, USA",
-    city: "Jakarta",
-    totalCourts: 8,
-    totalBooking: 3,
-    admin: "Angga",
-    image: "/paddle-court2.svg",
-  },
-  {
-    id: "v_3",
-    venueName: "BSD Paddle Center",
-    phoneNumber: 81234567890,
-    address: "456 Oak St, Somewhere, USA",
-    city: "Jakarta",
-    totalCourts: 10,
-    totalBooking: 2,
-    admin: "Joko",
-    image: "/paddle-court3.svg",
-  },
-];
 
 const PAGE_SIZE = 10;
 
 export function VenueTable() {
-  const [query, setQuery] = React.useState("");
   const [page, setPage] = React.useState(1);
   const [addSheetOpen, setAddVenueOpen] = React.useState(false);
   const [detailSheetOpen, setDetailSheetOpen] = React.useState(false);
   const [selectedVenue, setSelectedVenue] = React.useState<VenueRow | null>(null);  
+  const { data, isLoading, error } = useVenue();
 
-  const filtered = React.useMemo(() => {
-    const q = query.toLowerCase().trim();
-    if (!q) return DUMMY_DATA;
-    return DUMMY_DATA.filter((u) => {
-      const fullName = `${u.venueName ?? ""}`.toLowerCase();
-      return (
-        u.venueName.toLowerCase().includes(q) ||
-        u.address.toLowerCase().includes(q) ||
-        fullName.includes(q)
-      );
-    });
-  }, [query]);
+  const allVenues = (data?.data as Venue[] | undefined) || [];
+
+  const rows: VenueRow[] = React.useMemo(() => {
+    return allVenues.map((v) => ({
+      id: v.id,
+      venueName: v.name,
+      image: v.images?.[0] || "/paddle-court1.svg",
+    }));
+  }, [allVenues]);
+
+  const filtered = rows;
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageSafe = Math.min(page, totalPages);
@@ -96,18 +53,10 @@ export function VenueTable() {
     return filtered.slice(start, start + PAGE_SIZE);
   }, [filtered, pageSafe]);
 
-  React.useEffect(() => {
-    setPage(1);
-  }, [query]);
 
   async function handleSubmit() {
     // Dummy submit: console log value
     console.log("");
-  }
-
-  async function handleAddVenue() {
-    console.log("Add Venue");
-    setAddVenueOpen(false);
   }
 
   async function handleEditDetailsVenue() {
@@ -130,22 +79,22 @@ export function VenueTable() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
       {paginated.map((venue) => (
-      <Card className="min-w-0 max-w-[265px] shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-3" key={venue.id}>
+      <Card className="min-w-0 max-w-[265px] shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-2" key={venue.id}>
         <CardHeader className="p-2">
             <img
               src={venue.image}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover rounded-sm"
             />
         </CardHeader>
-        <CardContent className="px-2 pt-0 pb-1 text-sm text-gray-700">
-              <CardTitle className="text-base font-semibold truncate">
+        <CardContent className="px-2 pt-0 pb-1 text-sm text-gray-700 gap-1">
+              <CardTitle className="text-sm font-semibold truncate">
                 {venue.venueName}
               </CardTitle>
-              <div className="mt-0 flex items-left gap-2 text-gray-600">
+              <div className="mt-0 flex items-left gap-1 text-gray-600 text-xs items-center">
                 <LandPlot className="size-4" />
-                <span>{venue.totalCourts} Court</span>
+                <span>X Court</span>
                 <Dot />
-                <span>{venue.totalBooking} Booking Today</span>
+                <span>X Booking Today</span>
               </div>
             </CardContent>
         <CardFooter className="px-1 pt-0 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -193,16 +142,16 @@ export function VenueTable() {
           </Button>
         </div>
       </div>
-      <AddVenue
+      <VenueFormSheet
         open={addSheetOpen}
+        onOpenChange={setAddVenueOpen}
         venueData={null}
-        onOpenChange={() => setAddVenueOpen(false)}
-        onSubmit={handleAddVenue}
+        mode="create"
       />
       <EditVenueDetails
         detailSheetOpen={detailSheetOpen}
         onOpenChange={() => setDetailSheetOpen(false)}
-        detailsVenue={selectedVenue}
+        detailsVenue={selectedVenue as any}
         onSubmit={handleEditDetailsVenue}
       />
     </div>
