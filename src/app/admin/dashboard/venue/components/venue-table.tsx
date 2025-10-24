@@ -35,6 +35,9 @@ type VenueRow = {
   city?: string;
   openHour?: string;
   closeHour?: string;
+  description?: string;
+  images?: string[];
+  isActive?: boolean;
 };
 
 const PAGE_SIZE = 10;
@@ -62,6 +65,9 @@ export function VenueTable() {
       city: v.city || "",
       openHour: v.openHour || "07:00",
       closeHour: v.closeHour || "23:00",
+      description: v.description || "",
+      images: v.images || [],
+      isActive: v.isActive ?? true,
     }));
   }, [allVenues]);
 
@@ -275,7 +281,18 @@ export function VenueTable() {
       <VenueFormSheet
         open={editSheetOpen}
         onOpenChange={setEditSheetOpen}
-        venueData={selectedVenue as any}
+        venueData={selectedVenue ? {
+          id: selectedVenue.id,
+          name: selectedVenue.venueName,
+          address: selectedVenue.address || "",
+          description: selectedVenue.description || "",
+          images: selectedVenue.images || [],
+          city: selectedVenue.city || "",
+          phone: selectedVenue.phoneNumber || "",
+          openHour: selectedVenue.openHour || "07:00",
+          closeHour: selectedVenue.closeHour || "23:00",
+          isActive: selectedVenue.isActive ?? true,
+        } : null}
         mode="edit"
       />
       
