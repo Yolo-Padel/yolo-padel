@@ -1,9 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Input } from "@/components/ui/input";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Bell, Dot, LandPlot, LayoutGrid, User } from "lucide-react";
 import {
   Card,
@@ -14,80 +16,77 @@ import {
   CardDescription,
   CardAction,
 } from "@/components/ui/card";
-import { Search, X, Pencil, PlusIcon } from "lucide-react";
-import { EditVenue } from "./venue-edit-sheet";
-import { AddVenue } from "./add-venue";
+import { Pencil, PlusIcon } from "lucide-react";
+import { VenueFormSheet } from "./add-venue";
 import { EditVenueDetails } from "./details-venue";
+import { DeleteVenue } from "./venue-delete";
+import { useVenue } from "@/hooks/use-venue";
+import { Venue } from "@/types/prisma";
+import { useRouter } from "next/navigation";
+import { VenueTableSkeleton } from "@/app/admin/dashboard/venue/components/venue-skeleton";
+import { VenueEmptyState } from "@/app/admin/dashboard/venue/components/venue-empty-state";
 
 type VenueRow = {
   id: string;
   venueName: string;
-  phoneNumber?: number;
-  address: string;
-  city: string;
-  totalCourts: number;
-  totalBooking: number;
-  admin: string;
   image: string;
+  phoneNumber?: string;
+  address?: string;
+  city?: string;
+  openHour?: string;
+  closeHour?: string;
+  description?: string;
+  images?: string[];
+  isActive?: boolean;
 };
-
-const DUMMY_DATA: VenueRow[] = [
-  {
-    id: "v_1",
-    venueName: "Slipi Paddle Center",
-    phoneNumber: 81234567890,
-    address: "123 Main St, Anytown, USA",
-    city: "Jakarta",
-    totalCourts: 10,
-    totalBooking: 5,
-    admin: "Revina",
-    image: "/paddle-court1.svg",
-  },
-  {
-    id: "v_2",
-    venueName: "Lebak Bulus Paddle Center",
-    phoneNumber: 81234567890,
-    address: "456 Oak St, Somewhere, USA",
-    city: "Jakarta",
-    totalCourts: 8,
-    totalBooking: 3,
-    admin: "Angga",
-    image: "/paddle-court2.svg",
-  },
-  {
-    id: "v_3",
-    venueName: "BSD Paddle Center",
-    phoneNumber: 81234567890,
-    address: "456 Oak St, Somewhere, USA",
-    city: "Jakarta",
-    totalCourts: 10,
-    totalBooking: 2,
-    admin: "Joko",
-    image: "/paddle-court3.svg",
-  },
-];
 
 const PAGE_SIZE = 10;
 
 export function VenueTable() {
-  const [query, setQuery] = React.useState("");
   const [page, setPage] = React.useState(1);
   const [addSheetOpen, setAddVenueOpen] = React.useState(false);
   const [detailSheetOpen, setDetailSheetOpen] = React.useState(false);
-  const [selectedVenue, setSelectedVenue] = React.useState<VenueRow | null>(null);  
+  const [selectedVenue, setSelectedVenue] = React.useState<VenueRow | null>(null);
+  const [editSheetOpen, setEditSheetOpen] = React.useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);  
+  const { data, isLoading, error } = useVenue();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const filtered = React.useMemo(() => {
-    const q = query.toLowerCase().trim();
-    if (!q) return DUMMY_DATA;
-    return DUMMY_DATA.filter((u) => {
-      const fullName = `${u.venueName ?? ""}`.toLowerCase();
+  const allVenues = (data?.data as Venue[] | undefined) || [];
+
+  const rows: VenueRow[] = React.useMemo(() => {
+    return allVenues.map((v) => ({
+      id: v.id,
+      venueName: v.name,
+      image: v.images?.[0] || "/paddle-court1.svg",
+      phoneNumber: v.phone || "",
+      address: v.address || "",
+      city: v.city || "",
+      openHour: v.openHour || "07:00",
+      closeHour: v.closeHour || "23:00",
+      description: v.description || "",
+      images: v.images || [],
+      isActive: v.isActive ?? true,
+    }));
+  }, [allVenues]);
+
+  // Frontend filtering and pagination
+  const filtered = useMemo(() => {
+    const searchQuery = searchParams.get("search")?.toLowerCase().trim()
+    
+    if (!searchQuery) {
+      return rows
+    }
+
+    return rows.filter((venue: VenueRow) => {
+      const venueName = venue.venueName.toLowerCase()
+      
       return (
-        u.venueName.toLowerCase().includes(q) ||
-        u.address.toLowerCase().includes(q) ||
-        fullName.includes(q)
-      );
-    });
-  }, [query]);
+        venueName.includes(searchQuery)
+      )
+    })
+  }, [rows, searchParams])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageSafe = Math.min(page, totalPages);
@@ -96,18 +95,10 @@ export function VenueTable() {
     return filtered.slice(start, start + PAGE_SIZE);
   }, [filtered, pageSafe]);
 
-  React.useEffect(() => {
-    setPage(1);
-  }, [query]);
 
   async function handleSubmit() {
     // Dummy submit: console log value
     console.log("");
-  }
-
-  async function handleAddVenue() {
-    console.log("Add Venue");
-    setAddVenueOpen(false);
   }
 
   async function handleEditDetailsVenue() {
@@ -115,37 +106,114 @@ export function VenueTable() {
     setDetailSheetOpen(false);
   }
 
+  function handleEditVenue() {
+    console.log("Edit Venue clicked");
+    setEditSheetOpen(true);
+  }
+
+  function handleDeleteVenue() {
+    console.log("Delete Venue clicked");
+    // Close details modal first
+    setDetailSheetOpen(false);
+    // Then open delete modal
+    setDeleteModalOpen(true);
+  }
+
+  function handleDeleteSuccess() {
+    setSelectedVenue(null);
+    setDeleteModalOpen(false);
+    setDetailSheetOpen(false);
+    // The useVenue hook will automatically refetch data
+  }
+
+  function handleDeleteCancel() {
+    setDeleteModalOpen(false);
+    // Reopen details modal if user cancels delete
+    setDetailSheetOpen(true);
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <VenueTableSkeleton />
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-1">
+          <h3 className="text-xl font-semibold">Venue List</h3>
+          <Button
+            variant="outline"
+            onClick={() => setAddVenueOpen(true)}
+            className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
+          >
+            Add Venue
+            <PlusIcon className="mr-2 size-4" />
+          </Button>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="text-red-500 mb-2">Error loading venues</div>
+            <p className="text-gray-500">{error.message}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-1">
         <h3 className="text-xl font-semibold ">Venue List</h3>
-        <Button
-          variant="outline"
-          onClick={() => setAddVenueOpen(true)}
-          className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
-        >
-          Add Venue
-          <PlusIcon className="mr-2 size-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search venues..."
+            value={searchParams.get("search") || ""}
+            onChange={(e) => {
+              const params = new URLSearchParams(searchParams.toString())
+              if (e.target.value) {
+                params.set("search", e.target.value)
+              } else {
+                params.delete("search")
+              }
+              router.push(`?${params.toString()}`)
+            }}
+            className="w-64"
+          />
+          <Button
+            variant="outline"
+            onClick={() => setAddVenueOpen(true)}
+            className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
+          >
+            Add Venue
+            <PlusIcon className="mr-2 size-4" />
+          </Button>
+        </div>
       </div>
+      {filtered.length === 0 ? (
+        <VenueEmptyState />
+      ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
       {paginated.map((venue) => (
-      <Card className="min-w-0 max-w-[265px] shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-3" key={venue.id}>
+      <Card className="min-w-0 max-w-[265px] shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-2" key={venue.id}>
         <CardHeader className="p-2">
             <img
               src={venue.image}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover rounded-sm"
             />
         </CardHeader>
-        <CardContent className="px-2 pt-0 pb-1 text-sm text-gray-700">
-              <CardTitle className="text-base font-semibold truncate">
+        <CardContent className="px-2 pt-0 pb-1 text-sm text-gray-700 gap-1">
+              <CardTitle className="text-sm font-semibold truncate">
                 {venue.venueName}
               </CardTitle>
-              <div className="mt-0 flex items-left gap-2 text-gray-600">
+              <div className="mt-0 flex items-left gap-1 text-gray-600 text-xs items-center">
                 <LandPlot className="size-4" />
-                <span>{venue.totalCourts} Court</span>
+                <span>X Court</span>
                 <Dot />
-                <span>{venue.totalBooking} Booking Today</span>
+                <span>X Booking Today</span>
               </div>
             </CardContent>
         <CardFooter className="px-1 pt-0 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -161,6 +229,7 @@ export function VenueTable() {
             variant="default"
             size="sm"
             className="rounded-sm bg-[#C3D223] hover:bg-[#A9B920] text-black w-full"
+            onClick={() => router.push(`/admin/dashboard/court?venueId=${venue.id}`)}
           >
             Manage Court
           </Button>
@@ -168,7 +237,7 @@ export function VenueTable() {
       </Card>
       ))}
       </div>
-      
+      )}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           Showing {paginated.length} of {filtered.length} venues
@@ -193,17 +262,50 @@ export function VenueTable() {
           </Button>
         </div>
       </div>
-      <AddVenue
+      <VenueFormSheet
         open={addSheetOpen}
+        onOpenChange={setAddVenueOpen}
         venueData={null}
-        onOpenChange={() => setAddVenueOpen(false)}
-        onSubmit={handleAddVenue}
+        mode="create"
       />
       <EditVenueDetails
         detailSheetOpen={detailSheetOpen}
         onOpenChange={() => setDetailSheetOpen(false)}
-        detailsVenue={selectedVenue}
+        detailsVenue={selectedVenue as any}
         onSubmit={handleEditDetailsVenue}
+        onEditVenue={handleEditVenue}
+        onDeleteVenue={handleDeleteVenue}
+      />
+      
+      {/* Edit Venue Sheet */}
+      <VenueFormSheet
+        open={editSheetOpen}
+        onOpenChange={setEditSheetOpen}
+        venueData={selectedVenue ? {
+          id: selectedVenue.id,
+          name: selectedVenue.venueName,
+          address: selectedVenue.address || "",
+          description: selectedVenue.description || "",
+          images: selectedVenue.images || [],
+          city: selectedVenue.city || "",
+          phone: selectedVenue.phoneNumber || "",
+          openHour: selectedVenue.openHour || "07:00",
+          closeHour: selectedVenue.closeHour || "23:00",
+          isActive: selectedVenue.isActive ?? true,
+        } : null}
+        mode="edit"
+      />
+      
+      {/* Delete Venue Modal */}
+      <DeleteVenue
+        deleteSheetOpen={deleteModalOpen}
+        onOpenChange={handleDeleteCancel}
+        venueData={selectedVenue ? {
+          id: selectedVenue.id,
+          name: selectedVenue.venueName,
+          address: selectedVenue.address
+        } : null}
+        onSuccess={handleDeleteSuccess}
       />
     </div>
   );

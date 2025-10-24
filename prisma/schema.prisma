@@ -35,6 +35,7 @@ model User {
   updatedAt DateTime @updatedAt
   venues    Venue[]
   assignedVenueId String?      // optional (nullable)
+  isArchived  Boolean  @default(false)
 
   // Relasi ke venue yang di-assign ke user
   assignedVenue   Venue?       @relation("VenueAssignment", fields: [assignedVenueId], references: [id])
@@ -59,42 +60,94 @@ model Profile {
   @@map("profiles")
 }
 
+enum OpeningHoursType {
+  REGULAR        // Pakai jam operasional venue (default)
+  WITHOUT_FIXED  // Punya jadwal custom sendiri
+  TEMP_CLOSED    // Ditutup sementara
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
 model Venue {
-  id String   @id @default(cuid())
-  slug String   @unique
-  name String
-  address String
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  address     String?
   description String?
   images      String[]
-  isActive Boolean @default(true)
-  isArchived Boolean @default(false) // Soft delete flag
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  createdBy User @relation(fields: [createdById], references: [id])
+  city        String?
+  phone       String?
+  isActive    Boolean  @default(true)
+  isArchived  Boolean  @default(false)
+
+  // Waktu buka default untuk generate REGULAR court
+  openHour    String   // ex: "07:00"
+  closeHour   String   // ex: "23:00"
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   User     @relation(fields: [createdById], references: [id])
   createdById String
 
-  // Relasi ke Court
-  courts Court[]
-  // Relasi balik untuk user-user yang assigned ke venue ini
-  assignedUsers User[] @relation("VenueAssignment")
+  // Relations
+  courts         Court[]
+  assignedUsers  User[] @relation("VenueAssignment")
 
   @@map("venues")
 }
 
 model Court {
-  id        String   @id @default(cuid())
-  name      String
-  isActive  Boolean  @default(true)
-  isArchived Boolean  @default(false) // Soft delete flag
+  id          String   @id @default(cuid())
+  name        String
+  isActive    Boolean  @default(true)
+  isArchived  Boolean  @default(false)
+  price       Int
+  openingType OpeningHoursType @default(REGULAR)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  venue     Venue   @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venueId   String
 
-  // Relasi ke Venue
-  venue Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
-  venueId String
+  // Custom schedule (optional)
+  operatingHours CourtOperatingHour[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("courts")
+}
+
+model CourtOperatingHour {
+  id        String   @id @default(cuid())
+
+  court     Court    @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  courtId   String
+
+  dayOfWeek DayOfWeek
+  closed    Boolean  @default(false)
+
+  slots     CourtTimeSlot[]
+
+  @@unique([courtId, dayOfWeek])
+  @@map("court_operating_hours")
+}
+
+model CourtTimeSlot {
+  id                   String   @id @default(cuid())
+  courtOperatingHour   CourtOperatingHour @relation(fields: [courtOperatingHourId], references: [id], onDelete: Cascade)
+  courtOperatingHourId String
+
+  openHour  String // "07:00"
+  closeHour String // "23:00"
+
+  @@map("court_time_slots")
 }
 
 model MagicLink {

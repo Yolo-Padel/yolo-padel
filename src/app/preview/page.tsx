@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { CourtModal } from "../admin/dashboard/court/components/court-modal";
+// import { CourtModal } from "../admin/dashboard/court/components/court-modal";
 
 export default function PreviewPage() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -16,12 +16,12 @@ export default function PreviewPage() {
           Open Court Modal
         </Button>
         
-        <CourtModal
+        {/* <CourtModal
           open={modalOpen}
           onOpenChange={setModalOpen}
           mode="add"
           venueName="Slipi Padel Center"
-        />
+        /> */}
       </div>
     </div>
   );

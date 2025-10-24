@@ -19,10 +19,12 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreHorizontal,
+  Trash,
 } from "lucide-react";
 import { UsersEditSheet } from "@/app/admin/dashboard/users/components/users-edit-sheet";
 import { UsersTableLoading } from "@/app/admin/dashboard/users/components/users-table-loading";
 import { UserModal } from "@/app/admin/dashboard/users/components/user-modal";
+import { DeleteUserModal } from "@/app/admin/dashboard/users/components/delete-user-modal";
 import { useUsers } from "@/hooks/use-users";
 import { User, Profile, Role, UserStatus } from "@/types/prisma";
 import {
@@ -40,6 +42,8 @@ export function UsersTable() {
   const [selected, setSelected] = useState<User & { profile?: Profile | null } | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState<"add" | "edit">("add")
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<User & { profile?: Profile | null } | null>(null)
   const searchParams = useSearchParams()
 
   // Define table columns for colSpan
@@ -208,13 +212,24 @@ export function UsersTable() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
+                        setUserToDelete(u);
+                        setDeleteModalOpen(true);
+                      }}
+                      className="border-none shadow-none"
+                    >
+                      <Trash className="size-4 text-[#A4A7AE]" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
                         setSelected(u);
                         setModalMode("edit");
                         setModalOpen(true);
                       }}
+                      className="border-none shadow-none"
                     >
-                      <Pencil className="mr-2 size-4" />
-                      Edit
+                      <Pencil className="size-4 text-[#A4A7AE]" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -295,6 +310,12 @@ export function UsersTable() {
         onOpenChange={setModalOpen}
         mode={modalMode}
         user={selected as User & { profile?: Profile | null }}
+      />
+
+      <DeleteUserModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        user={userToDelete as User & { profile?: Profile | null }}
       />
     </div>
   );

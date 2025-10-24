@@ -8,4 +8,9 @@ export const userCreateSchema = z.object({
   assignedVenueId: z.string().optional(),
 });
 
+export const userDeleteSchema = z.object({
+  userId: z.string().min(1, "User ID is required"),
+});
+
 export type UserCreateData = z.infer<typeof userCreateSchema>;
+export type UserDeleteData = z.infer<typeof userDeleteSchema>;

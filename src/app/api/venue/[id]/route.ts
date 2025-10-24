@@ -1,33 +1,30 @@
-import { venueService } from "@/lib/services/venue.service";
-import { venueCreateSchema, venueDeleteSchema } from "@/lib/validations/venue.validation";
 import { NextRequest, NextResponse } from "next/server";
+import { venueService } from "@/lib/services/venue.service";
+import { venueUpdateSchema } from "@/lib/validations/venue.validation";
 import { validateRequest } from "@/lib/validate-request";
 import { verifyAuth } from "@/lib/auth-utils";
 
-export async function GET() {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const result = await venueService.getAll();
-    
+    const { id } = await params;
+    const result = await venueService.getById(id);
     if (!result.success) {
-      return NextResponse.json({
-        success: false,
-        data: null,
-        message: result.message,
-      }, { status: 400 });
+      return NextResponse.json(result, { status: 404 });
     }
-    
-    return NextResponse.json({
-      success: true,
-      data: result.data,
-      message: result.message,
-    }, { status: 200 });
+    return NextResponse.json({ success: true, data: result.data, message: result.message }, { status: 200 });
   } catch (error) {
-    console.error("Get all venues error:", error);
+    console.error("Get venue by id error:", error);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   // Verify authentication
   const authResult = await verifyAuth(request);
   if (!authResult.isValid) {
@@ -37,24 +34,30 @@ export async function POST(request: NextRequest) {
     }, { status: 401 });
   }
 
-  const validation = await validateRequest(request, venueCreateSchema);
+  // Merge path param id into body for validation
+  const { id } = await params;
+  const body = await request.json();
+  const validation = venueUpdateSchema.safeParse({ ...body, venueId: id });
   if (!validation.success) {
-    return validation.error!;
+    return NextResponse.json({ success: false, message: "Validation failed", errors: validation.error.issues }, { status: 400 });
   }
 
   try {
-    const result = await venueService.create(validation.data!, authResult.user!.userId);
+    const result = await venueService.update(validation.data);
     if (!result.success) {
       return NextResponse.json(result, { status: 400 });
     }
-    return NextResponse.json({ success: true, data: result.data, message: result.message }, { status: 201 });
+    return NextResponse.json({ success: true, data: result.data, message: result.message }, { status: 200 });
   } catch (error) {
-    console.error("Create venue error:", error);
+    console.error("Update venue error:", error);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   // Verify authentication
   const authResult = await verifyAuth(request);
   if (!authResult.isValid) {
@@ -65,21 +68,16 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const validationResult = venueDeleteSchema.safeParse(body);
-
-    if (!validationResult.success) {
-      return NextResponse.json({ success: false, message: "Validation failed" }, { status: 400 });
-    }
-
-    const result = await venueService.delete(validationResult.data!);
+    const { id } = await params;
+    const result = await venueService.delete({ venueId: id });
     if (!result.success) {
       return NextResponse.json(result, { status: 400 });
     }
-    
     return NextResponse.json({ success: true, message: result.message }, { status: 200 });
   } catch (error) {
     console.error("Delete venue error:", error);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
   }
 }
+
+

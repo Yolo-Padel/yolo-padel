@@ -4,65 +4,53 @@ import React from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
-import { useDeleteVenue } from '@/hooks/use-venue'
-import { VenueDeleteData } from '@/lib/validations/venue.validation'
+import { useDeleteCourt } from '@/hooks/use-court'
 import { toast } from 'sonner'
 
-
-type VenueDeleteModalProps = {
-  deleteSheetOpen: boolean
+type CourtDeleteModalProps = {
+  deleteModalOpen: boolean
   onOpenChange: (open: boolean) => void
-  venueData?: {
+  courtData?: {
     id: string
     name: string
-    address?: string
+    price: number
   } | null
   onSuccess?: () => void
 }
 
-export function DeleteVenue({
-    deleteSheetOpen,
-    onOpenChange,
-    venueData,
-    onSuccess
-}: VenueDeleteModalProps) {
-  const deleteVenueMutation = useDeleteVenue()
+export function CourtDeleteModal({
+  deleteModalOpen,
+  onOpenChange,
+  courtData,
+  onSuccess
+}: CourtDeleteModalProps) {
+  const deleteCourtMutation = useDeleteCourt()
 
   const handleDelete = async () => {
-    if (!venueData?.id) return
+    if (!courtData?.id) return
 
     try {
-      const deleteData: VenueDeleteData = { venueId: venueData.id }
-      await deleteVenueMutation.mutateAsync(deleteData)
+      await deleteCourtMutation.mutateAsync(courtData.id)
+      toast.success("Court deleted successfully")
       onOpenChange(false)
       onSuccess?.()
     } catch (error) {
-      console.error("Error deleting venue:", error)
+      console.error("Error deleting court:", error)
+      toast.error("Failed to delete court")
     }
   }
-    
+
   return (
-    <Dialog open={deleteSheetOpen} onOpenChange={onOpenChange}>
+    <Dialog open={deleteModalOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[545px]" showCloseButton={false}>
         <div className="relative">
           <DialogHeader className="pr-8 gap-0">
             <DialogTitle className="text-xl font-semibold">
-              Remove Venue
+              Remove Court
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground mt-2">
-              Are you sure you want to remove <b>{venueData?.name}</b> from the system?
-              This will permanently delete the venue and all related courts, bookings, and reports. 
-              Please make sure there are no pending bookings before you continue.
+             Deleting this court will permanently remove all related booking history and availability settings. Make sure there are no active or upcoming bookings before continuing.
             </DialogDescription>
-            {venueData && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-semibold text-sm text-gray-700 mb-2">Venue Details:</h4>
-                <div className="text-sm text-gray-600">
-                  <div><strong>Name:</strong> {venueData.name}</div>
-                  {venueData.address && <div><strong>Address:</strong> {venueData.address}</div>}
-                </div>
-              </div>
-            )}
           </DialogHeader>
           
           <Button
@@ -81,7 +69,7 @@ export function DeleteVenue({
             variant="outline"
             onClick={() => onOpenChange(false)}
             className="flex-1 border-primary text-gray-700 hover:bg-gray-50"
-            disabled={deleteVenueMutation.isPending}
+            disabled={deleteCourtMutation.isPending}
           >
             Cancel
           </Button>
@@ -89,9 +77,9 @@ export function DeleteVenue({
             type="button"
             className="flex-1 bg-destructive hover:bg-destructive/90 text-white"
             onClick={handleDelete}
-            disabled={deleteVenueMutation.isPending}
+            disabled={deleteCourtMutation.isPending}
           >
-            {deleteVenueMutation.isPending ? "Processing..." : "Delete Venue"}
+            {deleteCourtMutation.isPending ? "Processing..." : "Delete Court"}
           </Button>
         </div>
       </DialogContent>

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { UserCreateData } from "../validations/user.validation";
+import { UserCreateData, UserDeleteData } from "../validations/user.validation";
 import { Prisma } from "@prisma/client";
 import { UserStatus } from "@/types/prisma";
 
@@ -8,6 +8,7 @@ export const usersService = {
     try {
       // Get all users
       const users = await prisma.user.findMany({
+        where: { isArchived: false },
         include: { profile: true },
         orderBy: { createdAt: "desc" },
       });
@@ -48,9 +49,29 @@ export const usersService = {
       };
     } catch (error) {
       console.error("Create user error:", error);
+
+      return {
+          success: false,
+      }
+    }
+  },
+
+  deleteUser: async (data: UserDeleteData) => {
+    try {
+      await prisma.user.update({
+        where: { id: data.userId },
+        data: { isArchived: true },
+      });
+      return {
+        success: true,
+        message: "User deleted successfully",
+      };
+    } catch (error) {
+      console.error("Delete user error:", error);
       return {
         success: false,
-    }
+        message: "Failed to delete user",
+      };
     }
   },
   // Future: Add more users management functions

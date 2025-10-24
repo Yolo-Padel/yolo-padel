@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { User, Profile } from '@/types/prisma';
-import { UserCreateData } from '@/lib/validations/user.validation';
+import { UserCreateData, UserDeleteData } from '@/lib/validations/user.validation';
 import { toast } from 'sonner';
 
 // Types for API responses
@@ -9,6 +9,12 @@ interface UsersResponse {
   data: {
     users: (User & { profile?: Profile | null })[];
   } | null;
+  message: string;
+  errors?: any[];
+}
+
+interface DeleteUserResponse {
+  success: boolean;
   message: string;
   errors?: any[];
 }
@@ -36,6 +42,28 @@ const usersApi = {
     }
 
     return response.json();
+  },
+  deleteUser: async (data: UserDeleteData): Promise<DeleteUserResponse> => {
+    const response = await fetch("/api/users", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      return {
+        success: false,
+        message: "Failed to delete user",
+      };
+    }
+
+    return {
+      success: true,
+      message: "User deleted successfully",
+    };
   },
 };
 
@@ -82,6 +110,22 @@ export const useInviteUser = () => {
     onError: (error: Error) => {
       console.error("Invite user error:", error);
       toast.error(error.message || "Failed to invite user. Please try again.");
+    },
+  });
+};
+
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: usersApi.deleteUser,
+    onSuccess: (data: DeleteUserResponse) => {
+      toast.success(data.message || "User deleted successfully!");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (error: Error) => {
+      console.error("Delete user error:", error);
+      toast.error(error.message || "Failed to delete user. Please try again.");
     },
   });
 };
