@@ -91,6 +91,8 @@ export const venueService = {
       if (data.description) createData.description = data.description;
       if (data.city) createData.city = data.city;
       if (data.phone) createData.phone = data.phone;
+      if (data.openHour) createData.openHour = data.openHour;
+      if (data.closeHour) createData.closeHour = data.closeHour;
 
       const result = await prisma.venue.create({
         data: createData,
@@ -122,14 +124,16 @@ export const venueService = {
         };
       }
 
+      const updateData: any = {
+        ...payload,
+        ...(payload.name
+          ? { slug: payload.name.trim().toLowerCase().replace(/\s+/g, "-") }
+          : {}),
+      };
+
       const result = await prisma.venue.update({
         where: { id: venueId },
-        data: {
-          ...payload,
-          ...(payload.name
-            ? { slug: payload.name.trim().toLowerCase().replace(/\s+/g, "-") }
-            : {}),
-        },
+        data: updateData,
       });
 
       return {

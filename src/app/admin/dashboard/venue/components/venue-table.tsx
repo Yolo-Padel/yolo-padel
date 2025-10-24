@@ -18,6 +18,9 @@ import { VenueFormSheet } from "./add-venue";
 import { EditVenueDetails } from "./details-venue";
 import { useVenue } from "@/hooks/use-venue";
 import { Venue } from "@/types/prisma";
+import { useRouter } from "next/navigation";
+import { VenueTableSkeleton } from "@/app/admin/dashboard/venue/components/venue-skeleton";
+import { VenueEmptyState } from "@/app/admin/dashboard/venue/components/venue-empty-state";
 
 type VenueRow = {
   id: string;
@@ -33,6 +36,7 @@ export function VenueTable() {
   const [detailSheetOpen, setDetailSheetOpen] = React.useState(false);
   const [selectedVenue, setSelectedVenue] = React.useState<VenueRow | null>(null);  
   const { data, isLoading, error } = useVenue();
+  const router = useRouter();
 
   const allVenues = (data?.data as Venue[] | undefined) || [];
 
@@ -64,6 +68,38 @@ export function VenueTable() {
     setDetailSheetOpen(false);
   }
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <VenueTableSkeleton />
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-1">
+          <h3 className="text-xl font-semibold">Venue List</h3>
+          <Button
+            variant="outline"
+            onClick={() => setAddVenueOpen(true)}
+            className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
+          >
+            Add Venue
+            <PlusIcon className="mr-2 size-4" />
+          </Button>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="text-red-500 mb-2">Error loading venues</div>
+            <p className="text-gray-500">{error.message}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-1">
@@ -77,6 +113,9 @@ export function VenueTable() {
           <PlusIcon className="mr-2 size-4" />
         </Button>
       </div>
+      {filtered.length === 0 ? (
+        <VenueEmptyState />
+      ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
       {paginated.map((venue) => (
       <Card className="min-w-0 max-w-[265px] shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-2" key={venue.id}>
@@ -110,6 +149,7 @@ export function VenueTable() {
             variant="default"
             size="sm"
             className="rounded-sm bg-[#C3D223] hover:bg-[#A9B920] text-black w-full"
+            onClick={() => router.push(`/admin/dashboard/court?venueId=${venue.id}`)}
           >
             Manage Court
           </Button>
@@ -117,7 +157,7 @@ export function VenueTable() {
       </Card>
       ))}
       </div>
-      
+      )}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           Showing {paginated.length} of {filtered.length} venues

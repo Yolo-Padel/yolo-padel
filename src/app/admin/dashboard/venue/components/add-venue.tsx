@@ -13,6 +13,13 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import React, { useEffect } from 'react'
 import { useForm, type SubmitHandler } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -54,6 +61,8 @@ export function VenueFormSheet ({
       images: undefined,
       city: "",
       phone: "",
+      openHour: "07:00",
+      closeHour: "23:00",
       isActive: true,
     },
   })
@@ -70,6 +79,8 @@ export function VenueFormSheet ({
         images: (venueData as any).images ?? [],
         city: (venueData as any).city ?? "",
         phone: (venueData as any).phone ?? "",
+        openHour: (venueData as any).openHour ?? "07:00",
+        closeHour: (venueData as any).closeHour ?? "23:00",
         isActive: (venueData as any).isActive ?? true,
       })
     } else if (mode === "create") {
@@ -81,6 +92,8 @@ export function VenueFormSheet ({
         images: [],
         city: "",
         phone: "",
+        openHour: "07:00",
+        closeHour: "23:00",
         isActive: true,
       })
     }
@@ -96,6 +109,8 @@ export function VenueFormSheet ({
         images: values.images ?? [],
         city: values.city,
         phone: values.phone,
+        openHour: values.openHour,
+        closeHour: values.closeHour,
         isActive: values.isActive,
       })
     } else {
@@ -106,6 +121,8 @@ export function VenueFormSheet ({
         images: values.images ?? [],
         city: values.city,
         phone: values.phone,
+        openHour: values.openHour,
+        closeHour: values.closeHour,
         isActive: values.isActive,
       })
     }
@@ -141,6 +158,53 @@ export function VenueFormSheet ({
               <Label>City <span className="text-red-500">*</span></Label>
               <Input placeholder="e.g. Jakarta" {...register("city")} />
             </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Opening Hour <span className="text-red-500">*</span></Label>
+                <Select
+                  value={watch("openHour")}
+                  onValueChange={(value) => setValue("openHour", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select opening hour" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 24 }, (_, i) => {
+                      const hour = i.toString().padStart(2, '0');
+                      return (
+                        <SelectItem key={`${hour}:00`} value={`${hour}:00`}>
+                          {hour}:00
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label>Closing Hour <span className="text-red-500">*</span></Label>
+                <Select
+                  value={watch("closeHour")}
+                  onValueChange={(value) => setValue("closeHour", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select closing hour" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 24 }, (_, i) => {
+                      const hour = i.toString().padStart(2, '0');
+                      return (
+                        <SelectItem key={`${hour}:00`} value={`${hour}:00`}>
+                          {hour}:00
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
             <div className="grid gap-2">
               <Label>Photo Venue (Optional)</Label>
               <FileUploader

@@ -6,10 +6,11 @@ import { verifyAuth } from "@/lib/auth-utils";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const result = await venueService.getById(params.id);
+    const { id } = await params;
+    const result = await venueService.getById(id);
     if (!result.success) {
       return NextResponse.json(result, { status: 404 });
     }
@@ -22,7 +23,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   // Verify authentication
   const authResult = await verifyAuth(request);
@@ -34,8 +35,9 @@ export async function PUT(
   }
 
   // Merge path param id into body for validation
+  const { id } = await params;
   const body = await request.json();
-  const validation = venueUpdateSchema.safeParse({ ...body, venueId: params.id });
+  const validation = venueUpdateSchema.safeParse({ ...body, venueId: id });
   if (!validation.success) {
     return NextResponse.json({ success: false, message: "Validation failed", errors: validation.error.issues }, { status: 400 });
   }
@@ -54,7 +56,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   // Verify authentication
   const authResult = await verifyAuth(request);
@@ -66,7 +68,8 @@ export async function DELETE(
   }
 
   try {
-    const result = await venueService.delete({ venueId: params.id });
+    const { id } = await params;
+    const result = await venueService.delete({ venueId: id });
     if (!result.success) {
       return NextResponse.json(result, { status: 400 });
     }

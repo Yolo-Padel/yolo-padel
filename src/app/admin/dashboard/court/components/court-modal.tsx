@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
@@ -24,13 +23,15 @@ import { X, Plus, Trash2 } from "lucide-react";
 import {
   courtCreateSchema,
   CourtCreateData,
-  OpeningHoursType,
 } from "@/lib/validations/court.validation";
+import { OpeningHoursType } from "@/types/prisma";
+import { useCreateCourt, useUpdateCourt } from "@/hooks/use-court";
 
 interface CourtModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode: "add" | "edit";
+  venueId: string;
   venueName?: string;
   court?: {
     id?: string;
@@ -45,6 +46,7 @@ export function CourtModal({
   open,
   onOpenChange,
   mode,
+  venueId,
   venueName = "Slipi Padel Center",
   court,
 }: CourtModalProps) {
@@ -55,6 +57,10 @@ export function CourtModal({
     sunday: [{ openHour: "07:00", closeHour: "07:30" }],
     monday: [{ openHour: "07:00", closeHour: "07:30" }],
   });
+
+  // Add mutation hooks
+  const createCourtMutation = useCreateCourt();
+  const updateCourtMutation = useUpdateCourt();
 
   const {
     register,
@@ -67,7 +73,7 @@ export function CourtModal({
     resolver: zodResolver(courtCreateSchema),
     defaultValues: {
       courtName: "",
-      venueName: venueName,
+      venueId: venueId,
       price: 200000,
       openingHours: OpeningHoursType.REGULAR,
       schedule: {
@@ -107,18 +113,39 @@ export function CourtModal({
   useEffect(() => {
     if (open) {
       if (mode === "edit" && court) {
+        console.log("Edit mode - court data:", court);
+        console.log("Edit mode - court price:", court.price);
+        
         setValue("courtName", court.name || "");
-        setValue("venueName", venueName);
+        setValue("venueId", venueId);
         setValue("price", court.price || 200000);
         setValue(
           "openingHours",
           court.openingHours || OpeningHoursType.REGULAR
         );
+        
+        console.log("Form values after setValue:", {
+          courtName: court.name || "",
+          price: court.price || 200000,
+          openingHours: court.openingHours || OpeningHoursType.REGULAR
+        });
+        
+        // Debug opening hours specifically
+        console.log("Opening hours debug:", {
+          courtOpeningHours: court.openingHours,
+          setValueOpeningHours: court.openingHours || OpeningHoursType.REGULAR,
+          watchOpeningHours: watch("openingHours")
+        });
+        
+        // Force re-render to ensure form updates
+        setTimeout(() => {
+          console.log("Delayed opening hours check:", watch("openingHours"));
+        }, 100);
         // TODO: Set schedule data when court data structure is defined
       } else {
         reset({
           courtName: "",
-          venueName: venueName,
+          venueId: venueId,
           price: 200000,
           openingHours: OpeningHoursType.REGULAR,
           schedule: {
@@ -163,19 +190,34 @@ export function CourtModal({
         });
       }
     }
-  }, [open, mode, court, setValue, reset, venueName]);
+  }, [open, mode, court, setValue, reset, venueId]);
 
   const onSubmit: SubmitHandler<CourtCreateData> = async (data) => {
     try {
       console.log("Court Form Data:", data);
-      // TODO: Implement court creation/editing when CRUD is ready
+      console.log("Price value:", data.price);
+      console.log("Price type:", typeof data.price);
+      console.log("Opening hours value:", data.openingHours);
+      console.log("Opening hours type:", typeof data.openingHours);
+      console.log("All form values:", watch());
+      console.log("Form errors:", errors);
+      
       if (mode === "add") {
         console.log("Creating new court:", data);
-        // await createCourtMutation.mutateAsync(data)
+        await createCourtMutation.mutateAsync(data);
         onOpenChange(false);
-      } else {
+      } else if (mode === "edit" && court?.id) {
         console.log("Updating court:", data);
-        // await updateCourtMutation.mutateAsync(data)
+        console.log("Court ID:", court.id);
+        console.log("Update payload:", {
+          courtId: court.id,
+          ...data
+        });
+        
+        await updateCourtMutation.mutateAsync({
+          courtId: court.id,
+          ...data
+        });
         onOpenChange(false);
       }
     } catch (error) {
@@ -403,15 +445,18 @@ export function CourtModal({
                     Price<span className="text-red-500">*</span>
                   </Label>
 
-                  <InputGroup
-                    id="price"
-                    {...register("price", { valueAsNumber: true })}
-                    className="w-full h-11"
-                  >
+                  <InputGroup className="w-full h-11">
                     <InputGroupAddon>
                       <InputGroupText>Rp</InputGroupText>
                     </InputGroupAddon>
-                    <InputGroupInput placeholder="200.000" />
+                    <InputGroupInput 
+                      placeholder="200.000"
+                      {...register("price", { valueAsNumber: true })}
+                      onChange={(e) => {
+                        console.log("Price input changed:", e.target.value);
+                        console.log("Price input type:", typeof e.target.value);
+                      }}
+                    />
                     <InputGroupAddon align="inline-end">
                       <InputGroupText>per hour</InputGroupText>
                     </InputGroupAddon>
@@ -431,11 +476,16 @@ export function CourtModal({
                   </Label>
                   <RadioGroup
                     value={watch("openingHours")}
-                    onValueChange={(value) =>
-                      setValue("openingHours", value as OpeningHoursType)
-                    }
+                    onValueChange={(value) => {
+                      console.log("RadioGroup value changed:", value);
+                      setValue("openingHours", value as OpeningHoursType);
+                    }}
                     className="space-y-3"
                   >
+                    {/* Debug opening hours value */}
+                    <div className="text-xs text-gray-500 mb-2">
+                      Current opening hours: {watch("openingHours")}
+                    </div>
                     <div className="flex items-start space-x-3">
                       <RadioGroupItem
                         value={OpeningHoursType.REGULAR}
@@ -476,8 +526,8 @@ export function CourtModal({
                     </div>
                     <div className="flex items-start space-x-3">
                       <RadioGroupItem
-                        value="temporarily_closed"
-                        id="temporarily-closed"
+                        value={OpeningHoursType.TEMP_CLOSED}
+                        id="temporarily_closed"
                         className="mt-1"
                       />
                       <div className="space-y-1">
@@ -644,8 +694,16 @@ export function CourtModal({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="flex-1">
-              {isSubmitting ? "Adding..." : "Add Court"}
+            <Button 
+              type="submit" 
+              disabled={isSubmitting} 
+              className="flex-1"
+              onClick={handleSubmit(onSubmit)}
+            >
+              {isSubmitting 
+                ? (mode === "add" ? "Adding..." : "Updating...") 
+                : (mode === "add" ? "Add Court" : "Update Court")
+              }
             </Button>
           </div>
         </div>

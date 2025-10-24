@@ -10,6 +10,8 @@ export const venueFormSchema = z.object({
   images: z.array(z.string()).optional(),
   city: z.string().default(""),
   phone: z.string().optional(),
+  openHour: z.string().default("07:00"),
+  closeHour: z.string().default("23:00"),
   isActive: z.boolean().default(true),
 });
 
@@ -21,6 +23,8 @@ export const venueCreateSchema = z.object({
   images: z.array(z.string().url("Invalid image URL")).optional().default([]),
   city: z.string().optional(),
   phone: z.string().optional(),
+  openHour: z.string().optional().default("07:00"),
+  closeHour: z.string().optional().default("23:00"),
   isActive: z.boolean().optional().default(true),
 });
 
@@ -33,6 +37,8 @@ export const venueUpdateSchema = z.object({
   images: z.array(z.string().url("Invalid image URL")).optional(),
   city: z.string().optional(),
   phone: z.string().optional(),
+  openHour: z.string().optional(),
+  closeHour: z.string().optional(),
   isActive: z.boolean().optional(),
 });
 

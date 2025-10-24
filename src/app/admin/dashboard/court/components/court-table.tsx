@@ -21,13 +21,18 @@ import {
   ChevronRight,
   MoreHorizontal,
 } from "lucide-react"
-import { CourtEditSheet } from "./court-edit-sheet"
+import { CourtModal } from "./court-modal"
 import {
   generatePageNumbers,
   calculatePaginationInfo,
   getPaginatedData,
 } from "@/lib/pagination-utils"
 import { Breadcrumb, BreadcrumbLink, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
+import { useCourtByVenue } from "@/hooks/use-court"
+import { useVenueById } from "@/hooks/use-venue"
+import { Court as PrismaCourt, OpeningHoursType } from "@/types/prisma"
+import { CourtTableSkeleton } from "@/app/admin/dashboard/court/components/court-skeleton"
+import { CourtEmptyState } from "@/app/admin/dashboard/court/components/court-empty-state"
 
 // Types
 type Court = {
@@ -37,6 +42,7 @@ type Court = {
   pricePerHour: number
   availability: boolean
   availabilityTime: string
+  openingHours?: OpeningHoursType
 }
 
 const DUMMY_DATA: Court[] = [
@@ -88,8 +94,32 @@ export function CourtTable() {
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<Court | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [courts, setCourts] = useState<Court[]>(DUMMY_DATA)
+  const [modalMode, setModalMode] = useState<"add" | "edit">("add")
   const searchParams = useSearchParams()
+  
+  // Get venueId from query params
+  const venueId = searchParams.get('venueId')
+  
+  // Fetch courts by venue
+  const { data: courtData, isLoading, error } = useCourtByVenue(venueId || '')
+  
+  // Fetch venue details for breadcrumb
+  const { data: venueData } = useVenueById(venueId || '')
+  
+  // Transform Prisma Court data to match our Court type
+  const courts: Court[] = useMemo(() => {
+    if (!courtData?.data) return []
+    
+    return (courtData.data as PrismaCourt[]).map((court) => ({
+      id: court.id,
+      courtName: court.name,
+      status: court.isActive ? "Available" : "Unavailable",
+      pricePerHour: court.price || 0,
+      availability: court.isActive,
+      availabilityTime: "09:00 - 21:00", // Default time, can be enhanced later
+      openingHours: court.openingType,
+    }))
+  }, [courtData])
 
   // Define table columns for colSpan
   const columns = [
@@ -143,17 +173,7 @@ export function CourtTable() {
 
   // Function to handle availability toggle
   const handleAvailabilityToggle = (courtId: string, checked: boolean) => {
-    setCourts(prevCourts => 
-      prevCourts.map(court => 
-        court.id === courtId 
-          ? { 
-              ...court, 
-              availability: checked,
-              status: checked ? "Available" : "Unavailable"
-            }
-          : court
-      )
-    )
+    // TODO: Implement API call to toggle court availability
     console.log(`Court ${courtId} availability changed to:`, checked)
   }
 
@@ -161,6 +181,85 @@ export function CourtTable() {
     // Dummy submit: console log value
     console.log("")
   }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+        <CourtTableSkeleton />
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-2 justify-between">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/admin/dashboard/venue">Venue Management</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator>/</BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/admin/dashboard/court" className="text-primary hover:text-primary/80">
+                {venueData?.data?.name || 'Court Management'}
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+        <Button
+          onClick={() => {
+            setModalMode("add");
+            setSelected(null);
+            setSheetOpen(true);
+          }}
+          className="text-black"
+        >
+          Add Court
+          <Plus className="ml-2 size-4" />
+        </Button>
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <div className="text-red-500 mb-2">Error loading courts</div>
+            <p className="text-gray-500">{error.message}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show empty state
+  // if (courts.length === 0) {
+  //   return (
+  //     <div className="flex flex-col gap-4">
+  //       <div className="flex items-center gap-2 justify-between">
+  //         <Breadcrumb>
+  //           <BreadcrumbList>
+  //             <BreadcrumbItem>
+  //               <BreadcrumbLink href="/admin/dashboard/venue">Venue Management</BreadcrumbLink>
+  //             </BreadcrumbItem>
+  //             <BreadcrumbSeparator>/</BreadcrumbSeparator>
+  //             <BreadcrumbItem>
+  //               <BreadcrumbLink href="/admin/dashboard/court" className="text-primary hover:text-primary/80">Court Management</BreadcrumbLink>
+  //             </BreadcrumbItem>
+  //           </BreadcrumbList>
+  //         </Breadcrumb>
+  //       </div>
+  //       <Button
+  //         onClick={() => setSheetOpen(true)}
+  //         className="text-black"
+  //       >
+  //         Add Court
+  //         <Plus className="ml-2 size-4" />
+  //       </Button>
+  //       <CourtEmptyState 
+  //         onAddCourt={() => setSheetOpen(true)}
+  //         venueName={courtData?.data?.[0]?.venue?.name}
+  //       />
+  //     </div>
+  //   )
+  // }
 
   return (
     <div className="flex flex-col gap-4">
@@ -174,12 +273,18 @@ export function CourtTable() {
               /
             </BreadcrumbSeparator>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/admin/dashboard/court" className="text-primary hover:text-primary/80">Court Management</BreadcrumbLink>
+              <BreadcrumbLink href="/admin/dashboard/court" className="text-primary hover:text-primary/80">
+                {venueData?.data?.name || 'Court Management'}
+              </BreadcrumbLink>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
         <Button
-          onClick={() => setSheetOpen(true)}
+          onClick={() => {
+            setModalMode("add");
+            setSelected(null);
+            setSheetOpen(true);
+          }}
           className="text-black"
         >
           Add Court
@@ -187,6 +292,9 @@ export function CourtTable() {
         </Button>
       </div>
 
+      {courts.length === 0 ? (
+        <CourtEmptyState />
+      ) : (
       <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
         <Table>
           <TableHeader>
@@ -238,6 +346,7 @@ export function CourtTable() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
+                        setModalMode("edit");
                         setSelected(court);
                         setSheetOpen(true);
                       }}
@@ -311,12 +420,24 @@ export function CourtTable() {
           </TableFooter>
         </Table>
       </div>
-
-      <CourtEditSheet
+      )}
+      <CourtModal
         open={sheetOpen}
         onOpenChange={setSheetOpen}
-        court={selected as any}
-        onSubmit={handleSubmit}
+        mode={modalMode}
+        venueId={venueId || ''}
+        venueName={venueData?.data?.name || 'Unknown Venue'}
+        court={selected ? (() => {
+          console.log("Selected court for modal:", selected);
+          console.log("Selected pricePerHour:", selected.pricePerHour);
+          console.log("Selected openingHours:", selected.openingHours);
+          return {
+            id: selected.id,
+            name: selected.courtName,
+            price: selected.pricePerHour,
+            openingHours: selected.openingHours || OpeningHoursType.REGULAR
+          };
+        })() : undefined}
       />
     </div>
   )

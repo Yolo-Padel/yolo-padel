@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { OpeningHoursType } from "@/types/prisma";
 
 // Time slot schema for schedule
 const timeSlotSchema = z.object({
@@ -12,11 +13,6 @@ const dayScheduleSchema = z.object({
   timeSlots: z.array(timeSlotSchema).optional(),
 });
 
-// Opening hours enum
-export enum OpeningHoursType {
-  REGULAR = "regular",
-  WITHOUT_FIXED = "without_fixed",
-}
 
 // Main court creation schema
 export const courtCreateSchema = z
@@ -25,7 +21,7 @@ export const courtCreateSchema = z
       .string()
       .min(1, "Court name is required")
       .max(100, "Court name must be less than 100 characters"),
-    venueName: z.string().min(1, "Venue name is required"),
+    venueId: z.string().min(1, "Venue ID is required"),
     price: z.number().min(0, "Price must be a positive number"),
     openingHours: z.nativeEnum(OpeningHoursType),
     schedule: z.object({
@@ -59,6 +55,10 @@ export const courtCreateSchema = z
       path: ["schedule"],
     }
   );
+
+export const courtDeleteSchema = z.object({
+  courtId: z.string().min(1, "Court ID is required"),
+});
 
 // Types
 export type TimeSlot = z.infer<typeof timeSlotSchema>;
