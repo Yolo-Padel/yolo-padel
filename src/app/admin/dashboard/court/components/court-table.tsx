@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
@@ -96,6 +96,7 @@ export function CourtTable() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [modalMode, setModalMode] = useState<"add" | "edit">("add")
   const searchParams = useSearchParams()
+  const router = useRouter()
   
   // Get venueId from query params
   const venueId = searchParams.get('venueId')
@@ -279,17 +280,19 @@ export function CourtTable() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-        <Button
-          onClick={() => {
-            setModalMode("add");
-            setSelected(null);
-            setSheetOpen(true);
-          }}
-          className="text-black"
-        >
-          Add Court
-          <Plus className="ml-2 size-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => {
+              setModalMode("add");
+              setSelected(null);
+              setSheetOpen(true);
+            }}
+            className="text-black"
+          >
+            Add Court
+            <Plus className="ml-2 size-4" />
+          </Button>
+        </div>
       </div>
 
       {courts.length === 0 ? (

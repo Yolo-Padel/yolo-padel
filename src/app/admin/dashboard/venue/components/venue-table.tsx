@@ -1,8 +1,11 @@
 "use client";
 
 import * as React from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Bell, Dot, LandPlot, LayoutGrid, User } from "lucide-react";
 import {
   Card,
@@ -37,6 +40,7 @@ export function VenueTable() {
   const [selectedVenue, setSelectedVenue] = React.useState<VenueRow | null>(null);  
   const { data, isLoading, error } = useVenue();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const allVenues = (data?.data as Venue[] | undefined) || [];
 
@@ -48,7 +52,22 @@ export function VenueTable() {
     }));
   }, [allVenues]);
 
-  const filtered = rows;
+  // Frontend filtering and pagination
+  const filtered = useMemo(() => {
+    const searchQuery = searchParams.get("search")?.toLowerCase().trim()
+    
+    if (!searchQuery) {
+      return rows
+    }
+
+    return rows.filter((venue: VenueRow) => {
+      const venueName = venue.venueName.toLowerCase()
+      
+      return (
+        venueName.includes(searchQuery)
+      )
+    })
+  }, [rows, searchParams])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageSafe = Math.min(page, totalPages);
@@ -104,14 +123,30 @@ export function VenueTable() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-1">
         <h3 className="text-xl font-semibold ">Venue List</h3>
-        <Button
-          variant="outline"
-          onClick={() => setAddVenueOpen(true)}
-          className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
-        >
-          Add Venue
-          <PlusIcon className="mr-2 size-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search venues..."
+            value={searchParams.get("search") || ""}
+            onChange={(e) => {
+              const params = new URLSearchParams(searchParams.toString())
+              if (e.target.value) {
+                params.set("search", e.target.value)
+              } else {
+                params.delete("search")
+              }
+              router.push(`?${params.toString()}`)
+            }}
+            className="w-64"
+          />
+          <Button
+            variant="outline"
+            onClick={() => setAddVenueOpen(true)}
+            className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
+          >
+            Add Venue
+            <PlusIcon className="mr-2 size-4" />
+          </Button>
+        </div>
       </div>
       {filtered.length === 0 ? (
         <VenueEmptyState />
