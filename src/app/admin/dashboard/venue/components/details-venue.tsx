@@ -4,7 +4,6 @@ import React from 'react'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { number } from 'zod'
 import { Button } from '@/components/ui/button'
-import { DeleteVenue } from './venue-delete'
 
 
 type DetailsVenue = {
@@ -42,7 +41,6 @@ export function EditVenueDetails({
       closeHour: "23:00",
     })
 
-    const [deleteSheetOpen,setDeleteSheetOpen] = React.useState(false)
     
     React.useEffect(() => {
       if (!detailSheetOpen) return 
@@ -58,9 +56,6 @@ export function EditVenueDetails({
       })
     }, [detailSheetOpen, detailsVenue])
       
-    async function handleDeleteVenue () {
-      setDeleteSheetOpen(false)
-    }
 
   return (
     <Dialog open={detailSheetOpen} onOpenChange={() => onOpenChange(false)}>
@@ -96,7 +91,6 @@ export function EditVenueDetails({
               variant="outline" 
               className="rounded-xs flex-1" 
               onClick={() => { 
-                setDeleteSheetOpen(true); 
                 if (onDeleteVenue) onDeleteVenue();
               }}
             >
@@ -114,11 +108,6 @@ export function EditVenueDetails({
           </div>
       </DialogContent>
 
-      <DeleteVenue
-        deleteSheetOpen={deleteSheetOpen}
-        onOpenChange={setDeleteSheetOpen}
-        onSubmit={handleDeleteVenue}
-      />
     </Dialog>
 
       

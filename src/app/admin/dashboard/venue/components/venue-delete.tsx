@@ -1,45 +1,99 @@
 "use client"
 
 import React from 'react'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { number } from 'zod'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { X } from 'lucide-react'
+import { useDeleteVenue } from '@/hooks/use-venue'
+import { VenueDeleteData } from '@/lib/validations/venue.validation'
+import { toast } from 'sonner'
 
+
+type VenueDeleteModalProps = {
+  deleteSheetOpen: boolean
+  onOpenChange: (open: boolean) => void
+  venueData?: {
+    id: string
+    name: string
+    address?: string
+  } | null
+  onSuccess?: () => void
+}
 
 export function DeleteVenue({
     deleteSheetOpen,
     onOpenChange,
-    onSubmit,
     venueData,
-}: {
-    deleteSheetOpen: boolean
-    onOpenChange: (v: boolean) => void
-    onSubmit: () => Promise<void> | void
-    venueData?: any
-}) {
+    onSuccess
+}: VenueDeleteModalProps) {
+  const deleteVenueMutation = useDeleteVenue()
+
+  const handleDelete = async () => {
+    if (!venueData?.id) return
+
+    try {
+      const deleteData: VenueDeleteData = { venueId: venueData.id }
+      await deleteVenueMutation.mutateAsync(deleteData)
+      onOpenChange(false)
+      onSuccess?.()
+    } catch (error) {
+      console.error("Error deleting venue:", error)
+    }
+  }
     
   return (
-    <Dialog open={deleteSheetOpen} onOpenChange={() => onOpenChange(false)}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className='text-2xl font-bold mb-6'>
-            Delete Venue
-          </DialogTitle>
-          <DialogClose className="absolute right-4 top-4 inline-flex items-center justify-center rounded-full bg-[#C3D223] p-1 text-black hover:bg-[#A9B920] ">  
-          </DialogClose>
-          <DialogDescription>
-              Deleting this venue will permanently remove it from your dashboard, including all related courts,bookings, and reports. 
+    <Dialog open={deleteSheetOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[545px]" showCloseButton={false}>
+        <div className="relative">
+          <DialogHeader className="pr-8 gap-0">
+            <DialogTitle className="text-xl font-semibold">
+              Remove Venue
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground mt-2">
+              Are you sure you want to remove <b>{venueData?.name}</b> from the system?
+              This will permanently delete the venue and all related courts, bookings, and reports. 
               Please make sure there are no pending bookings before you continue.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="mt-6 flex justify-center gap-3 rounded-b-sm">
-          <Button variant="outline" className="rounded-xs flex-1">
+            </DialogDescription>
+            {venueData && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-semibold text-sm text-gray-700 mb-2">Venue Details:</h4>
+                <div className="text-sm text-gray-600">
+                  <div><strong>Name:</strong> {venueData.name}</div>
+                  {venueData.address && <div><strong>Address:</strong> {venueData.address}</div>}
+                </div>
+              </div>
+            )}
+          </DialogHeader>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-0 right-0 h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
+            onClick={() => onOpenChange(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="flex gap-3 pt-4 w-full">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="flex-1 border-primary text-gray-700 hover:bg-gray-50"
+            disabled={deleteVenueMutation.isPending}
+          >
             Cancel
           </Button>
-          <Button className="rounded-xs bg-[#D93206] text-black hover:bg-[#B32805] flex-1">
-            Delete Venue
+          <Button
+            type="button"
+            className="flex-1 bg-destructive hover:bg-destructive/90 text-white"
+            onClick={handleDelete}
+            disabled={deleteVenueMutation.isPending}
+          >
+            {deleteVenueMutation.isPending ? "Processing..." : "Delete Venue"}
           </Button>
-          </div>
+        </div>
       </DialogContent>
     </Dialog>
   )

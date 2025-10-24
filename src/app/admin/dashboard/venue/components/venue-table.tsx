@@ -107,7 +107,23 @@ export function VenueTable() {
 
   function handleDeleteVenue() {
     console.log("Delete Venue clicked");
+    // Close details modal first
+    setDetailSheetOpen(false);
+    // Then open delete modal
     setDeleteModalOpen(true);
+  }
+
+  function handleDeleteSuccess() {
+    setSelectedVenue(null);
+    setDeleteModalOpen(false);
+    setDetailSheetOpen(false);
+    // The useVenue hook will automatically refetch data
+  }
+
+  function handleDeleteCancel() {
+    setDeleteModalOpen(false);
+    // Reopen details modal if user cancels delete
+    setDetailSheetOpen(true);
   }
 
   // Show loading state
@@ -266,9 +282,13 @@ export function VenueTable() {
       {/* Delete Venue Modal */}
       <DeleteVenue
         deleteSheetOpen={deleteModalOpen}
-        onOpenChange={setDeleteModalOpen}
-        onSubmit={handleDeleteVenue}
-        venueData={selectedVenue}
+        onOpenChange={handleDeleteCancel}
+        venueData={selectedVenue ? {
+          id: selectedVenue.id,
+          name: selectedVenue.venueName,
+          address: selectedVenue.address
+        } : null}
+        onSuccess={handleDeleteSuccess}
       />
     </div>
   );
