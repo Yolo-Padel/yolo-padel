@@ -1,9 +1,7 @@
 export type { 
     User, 
     Profile, 
-    Venue, 
-    VenueOperatingHour,
-    VenueTimeSlot,
+    Venue,
     Court,
     CourtOperatingHour,
     CourtTimeSlot,
