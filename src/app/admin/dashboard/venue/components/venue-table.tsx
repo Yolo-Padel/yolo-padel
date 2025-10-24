@@ -19,6 +19,7 @@ import {
 import { Pencil, PlusIcon } from "lucide-react";
 import { VenueFormSheet } from "./add-venue";
 import { EditVenueDetails } from "./details-venue";
+import { DeleteVenue } from "./venue-delete";
 import { useVenue } from "@/hooks/use-venue";
 import { Venue } from "@/types/prisma";
 import { useRouter } from "next/navigation";
@@ -29,6 +30,11 @@ type VenueRow = {
   id: string;
   venueName: string;
   image: string;
+  phoneNumber?: string;
+  address?: string;
+  city?: string;
+  openHour?: string;
+  closeHour?: string;
 };
 
 const PAGE_SIZE = 10;
@@ -37,7 +43,9 @@ export function VenueTable() {
   const [page, setPage] = React.useState(1);
   const [addSheetOpen, setAddVenueOpen] = React.useState(false);
   const [detailSheetOpen, setDetailSheetOpen] = React.useState(false);
-  const [selectedVenue, setSelectedVenue] = React.useState<VenueRow | null>(null);  
+  const [selectedVenue, setSelectedVenue] = React.useState<VenueRow | null>(null);
+  const [editSheetOpen, setEditSheetOpen] = React.useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);  
   const { data, isLoading, error } = useVenue();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,6 +57,11 @@ export function VenueTable() {
       id: v.id,
       venueName: v.name,
       image: v.images?.[0] || "/paddle-court1.svg",
+      phoneNumber: v.phone || "",
+      address: v.address || "",
+      city: v.city || "",
+      openHour: v.openHour || "07:00",
+      closeHour: v.closeHour || "23:00",
     }));
   }, [allVenues]);
 
@@ -85,6 +98,16 @@ export function VenueTable() {
   async function handleEditDetailsVenue() {
     console.log("Edit Details");
     setDetailSheetOpen(false);
+  }
+
+  function handleEditVenue() {
+    console.log("Edit Venue clicked");
+    setEditSheetOpen(true);
+  }
+
+  function handleDeleteVenue() {
+    console.log("Delete Venue clicked");
+    setDeleteModalOpen(true);
   }
 
   // Show loading state
@@ -228,6 +251,24 @@ export function VenueTable() {
         onOpenChange={() => setDetailSheetOpen(false)}
         detailsVenue={selectedVenue as any}
         onSubmit={handleEditDetailsVenue}
+        onEditVenue={handleEditVenue}
+        onDeleteVenue={handleDeleteVenue}
+      />
+      
+      {/* Edit Venue Sheet */}
+      <VenueFormSheet
+        open={editSheetOpen}
+        onOpenChange={setEditSheetOpen}
+        venueData={selectedVenue as any}
+        mode="edit"
+      />
+      
+      {/* Delete Venue Modal */}
+      <DeleteVenue
+        deleteSheetOpen={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        onSubmit={handleDeleteVenue}
+        venueData={selectedVenue}
       />
     </div>
   );

@@ -13,18 +13,23 @@ type DetailsVenue = {
   phoneNumber?: number
   address: string
   city: string
-  admin: string
+  openHour?: string
+  closeHour?: string
 }
 export function EditVenueDetails({
     detailSheetOpen,
     onOpenChange,
     detailsVenue,
     onSubmit,
+    onEditVenue,
+    onDeleteVenue,
 }: {
     detailSheetOpen: boolean
     onOpenChange: (v: boolean) => void
     detailsVenue: DetailsVenue | null
     onSubmit: (values: DetailsVenue) => Promise<void> | void
+    onEditVenue?: () => void
+    onDeleteVenue?: () => void
 }) {
 
     const [values, setValues] = React.useState<DetailsVenue>({
@@ -33,7 +38,8 @@ export function EditVenueDetails({
       phoneNumber: 0,
       address: "",
       city: "",
-      admin: "",
+      openHour: "07:00",
+      closeHour: "23:00",
     })
 
     const [deleteSheetOpen,setDeleteSheetOpen] = React.useState(false)
@@ -47,7 +53,8 @@ export function EditVenueDetails({
         phoneNumber: detailsVenue.phoneNumber,
         address: detailsVenue.address,
         city: detailsVenue.city,
-        admin: detailsVenue.admin,
+        openHour: detailsVenue.openHour,
+        closeHour: detailsVenue.closeHour,
       })
     }, [detailSheetOpen, detailsVenue])
       
@@ -64,7 +71,7 @@ export function EditVenueDetails({
           </DialogTitle>
           <DialogClose className="absolute right-4 top-4 inline-flex items-center justify-center rounded-full bg-[#C3D223] p-1 text-black hover:bg-[#A9B920] ">  
           </DialogClose>
-          <DialogDescription>
+          {/* <DialogDescription> */}
             <div className="mt-2 grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <div className="text-muted-foreground">Venue Name</div>
             <div className="font-medium text-foreground min-w-0 truncate">{values.venueName || "-"}</div>
@@ -78,17 +85,30 @@ export function EditVenueDetails({
             <div className="text-muted-foreground">City</div>
             <div className="font-medium text-foreground min-w-0 truncate">{values.city || "-"}</div>
 
-            <div className="text-muted-foreground">Admin</div>
-            <div className="font-medium text-foreground min-w-0 truncate">{values.admin || "-"}</div>
+            <div className="text-muted-foreground">Operating Hours</div>
+            <div className="font-medium text-foreground min-w-0 truncate">{values.openHour || "07:00"} - {values.closeHour || "23:00"}</div>
           </div>
 
-          </DialogDescription>
+          {/* </DialogDescription> */}
         </DialogHeader>
         <div className="mt-6 flex justify-center gap-3 rounded-b-sm">
-            <Button variant="outline" className="rounded-xs flex-1" onClick={() => { setDeleteSheetOpen(true); }}>
+            <Button 
+              variant="outline" 
+              className="rounded-xs flex-1" 
+              onClick={() => { 
+                setDeleteSheetOpen(true); 
+                if (onDeleteVenue) onDeleteVenue();
+              }}
+            >
               Delete Venue
             </Button>
-            <Button className="rounded-xs bg-[#C3D223] text-black hover:bg-[#A9B920] flex-1">
+            <Button 
+              className="rounded-xs bg-[#C3D223] text-black hover:bg-[#A9B920] flex-1"
+              onClick={() => {
+                onOpenChange(false);
+                if (onEditVenue) onEditVenue();
+              }}
+            >
               Edit Venue
             </Button>
           </div>

@@ -10,11 +10,12 @@ export function DeleteVenue({
     deleteSheetOpen,
     onOpenChange,
     onSubmit,
-
+    venueData,
 }: {
     deleteSheetOpen: boolean
     onOpenChange: (v: boolean) => void
     onSubmit: () => Promise<void> | void
+    venueData?: any
 }) {
     
   return (
@@ -27,9 +28,8 @@ export function DeleteVenue({
           <DialogClose className="absolute right-4 top-4 inline-flex items-center justify-center rounded-full bg-[#C3D223] p-1 text-black hover:bg-[#A9B920] ">  
           </DialogClose>
           <DialogDescription>
-            <p className="justify-center">
               Deleting this venue will permanently remove it from your dashboard, including all related courts,bookings, and reports. 
-              Please make sure there are no pending bookings before you continue.</p>
+              Please make sure there are no pending bookings before you continue.
           </DialogDescription>
         </DialogHeader>
         <div className="mt-6 flex justify-center gap-3 rounded-b-sm">
