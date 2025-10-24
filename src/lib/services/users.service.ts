@@ -8,6 +8,7 @@ export const usersService = {
     try {
       // Get all users
       const users = await prisma.user.findMany({
+        where: { isArchived: false },
         include: { profile: true },
         orderBy: { createdAt: "desc" },
       });
@@ -57,10 +58,10 @@ export const usersService = {
 
   deleteUser: async (data: UserDeleteData) => {
     try {
-      // await prisma.user.update({
-      //   where: { id: userId },
-      //   data: { isArchived: true },
-      // });
+      await prisma.user.update({
+        where: { id: data.userId },
+        data: { isArchived: true },
+      });
       return {
         success: true,
         message: "User deleted successfully",

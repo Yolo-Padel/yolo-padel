@@ -35,6 +35,7 @@ model User {
   updatedAt DateTime @updatedAt
   venues    Venue[]
   assignedVenueId String?      // optional (nullable)
+  isArchived  Boolean  @default(false)
 
   // Relasi ke venue yang di-assign ke user
   assignedVenue   Venue?       @relation("VenueAssignment", fields: [assignedVenueId], references: [id])
