@@ -20,8 +20,10 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreHorizontal,
+  Trash,
 } from "lucide-react"
 import { CourtModal } from "./court-modal"
+import { CourtDeleteModal } from "./court-delete-modal"
 import {
   generatePageNumbers,
   calculatePaginationInfo,
@@ -95,6 +97,8 @@ export function CourtTable() {
   const [selected, setSelected] = useState<Court | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [modalMode, setModalMode] = useState<"add" | "edit">("add")
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [courtToDelete, setCourtToDelete] = useState<Court | null>(null)
   const searchParams = useSearchParams()
   const router = useRouter()
   
@@ -176,6 +180,18 @@ export function CourtTable() {
   const handleAvailabilityToggle = (courtId: string, checked: boolean) => {
     // TODO: Implement API call to toggle court availability
     console.log(`Court ${courtId} availability changed to:`, checked)
+  }
+
+  // Function to handle delete court
+  const handleDeleteCourt = (court: Court) => {
+    setCourtToDelete(court)
+    setDeleteModalOpen(true)
+  }
+
+  // Function to handle delete success
+  const handleDeleteSuccess = () => {
+    setCourtToDelete(null)
+    // The useCourtByVenue hook will automatically refetch data
   }
 
   async function handleSubmit() {
@@ -345,18 +361,28 @@ export function CourtTable() {
                   </TableCell>
                   <TableCell>{court.availabilityTime}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setModalMode("edit");
-                        setSelected(court);
-                        setSheetOpen(true);
-                      }}
-                      className="border-none shadow-none"
-                    >
-                      <Pencil className="size-4 text-[#A4A7AE]" />
-                    </Button>
+                    <div className="flex items-center gap-2 justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setModalMode("edit");
+                          setSelected(court);
+                          setSheetOpen(true);
+                        }}
+                        className="border-none shadow-none"
+                      >
+                        <Pencil className="size-4 text-[#A4A7AE]" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteCourt(court)}
+                        className="border-none shadow-none"
+                      >
+                        <Trash className="size-4 text-[#A4A7AE]" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -441,6 +467,17 @@ export function CourtTable() {
             openingHours: selected.openingHours || OpeningHoursType.REGULAR
           };
         })() : undefined}
+      />
+      
+      <CourtDeleteModal
+        deleteModalOpen={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        courtData={courtToDelete ? {
+          id: courtToDelete.id,
+          name: courtToDelete.courtName,
+          price: courtToDelete.pricePerHour
+        } : null}
+        onSuccess={handleDeleteSuccess}
       />
     </div>
   )
