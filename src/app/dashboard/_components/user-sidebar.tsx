@@ -2,11 +2,9 @@
 //
 import * as React from "react";
 import {
-  Home,
-  Users,
-  Crown,
-  TableCellsMerge,
+  History,
   LandPlot,
+  IdCard,
 } from "lucide-react";
 
 import { MenuItems } from "@/app/admin/dashboard/components/menu-items";
@@ -27,29 +25,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 const data = {
   menuItems: [
     {
-      name: "Dashboard",
-      url: "/admin/dashboard",
-      icon: Home,
-    },
-    {
-      name: "Users Management",
-      url: "/admin/dashboard/users",
-      icon: Users,
-    },
-    {
-      name: "Booking Management",
-      url: "/admin/dashboard/booking",
+      name: "Booking Court",
+      url: "/dashboard/booking",
       icon: LandPlot,
     },
     {
-      name: "Venue Management",
-      url: "/admin/dashboard/venue",
-      icon: TableCellsMerge,
+      name: "Order History",
+      url: "/dashboard/order-history",
+      icon: History,
     },
     {
       name: "Membership",
-      url: "/admin/dashboard/membership",
-      icon: Crown,
+      url: "/dashboard/membership",
+      icon: IdCard,
     },
   ],
 };
@@ -66,7 +54,7 @@ function UserSkeleton() {
   );
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function UserSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, profile, isLoading, isAuthenticated } = useAuth();
 
   const userData = {
