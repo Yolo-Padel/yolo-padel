@@ -1,12 +1,12 @@
 import ResetPasswordEmail from "@/components/emails/reset-password";
 import { EMAIL_CONFIG, resend } from "../resend";
-import AdminInvitation from "@/components/emails/admin-invitation";
+import Invitation from "@/components/emails/invitation";
 import ConfirmationEmail from "@/components/emails/confirmation-email";
 import BookingRescheduleEmail from "@/components/emails/booking-reschedule";
 import BookingCancelationEmail from "@/components/emails/booking-cancelation";
 import BookingConfirmationEmail from "@/components/emails/booking-confirmation";
 import type { 
-    AdminInvitationEmailData,
+    InvitationEmailData,
     ResetPasswordEmailData,
     ConfirmationEmailData,
     BookingRescheduleEmailData,
@@ -17,14 +17,13 @@ import { LoginWithMagicLinkData } from "../validations/auth.validation";
 import LoginWithMagicLink from "@/components/emails/login-with-magic-link";
 
 export const resendService = {
-    sendAdminInvitationEmail: async (data: AdminInvitationEmailData) => {
+    sendInvitationEmail: async (data: InvitationEmailData) => {
         try {
             const response = await resend.emails.send({
                 from: EMAIL_CONFIG.FROM_EMAIL,
-                // to: data.email,
-                to: "t@etalas.com",
-                subject: "Admin Invitation",
-                react: AdminInvitation({ userName: data.userName, email: data.email, invitationUrl: data.invitationUrl }),
+                to: data.email,
+                subject: "Invitation",
+                react: Invitation({ userName: data.userName, email: data.email, invitationUrl: data.invitationUrl, role: data.role }),
             });
 
             if (response.error) {
@@ -38,10 +37,10 @@ export const resendService = {
             return {
                 success: true,
                 data: response,
-                message: "Admin invitation email sent successfully",
+                message: "Invitation email sent successfully",
             };
         } catch (error) {
-            console.error("Send admin invitation email error:", error);
+            console.error("Send invitation email error:", error);
             return {
                 success: false,
                 data: null,
@@ -232,8 +231,7 @@ export const resendService = {
         try {
             const response = await resend.emails.send({
                 from: EMAIL_CONFIG.FROM_EMAIL,
-                // to: data.email,
-                to: "t@etalas.com",
+                to: data.email,
                 subject: "Magic Link",
                 react: LoginWithMagicLink({ email: data.email, magicLinkUrl: magicLinkUrl }),
             });

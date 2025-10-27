@@ -1,3 +1,4 @@
+import { Role } from "@/types/prisma";
 import {
   Html,
   Head,
@@ -10,21 +11,23 @@ import {
   Button,
 } from "@react-email/components";
 
-interface AdminInvitationProps {
+interface InvitationProps {
   userName?: string;
   email: string;
   invitationUrl: string;
+  role: Role;
 }
 
-export default function AdminInvitation({
+export default function Invitation({
   userName,
   email,
   invitationUrl,
-}: AdminInvitationProps) {
+  role,
+}: InvitationProps) {
   return (
     <Html>
       <Head>
-        <title>Admin Invitation - Yolo Padel</title>
+        <title>Invitation - Yolo Padel</title>
       </Head>
       <Body className="bg-slate-100 font-sans">
         <Container className="bg-white mx-auto py-5 pb-12 mb-16 max-w-2xl">
@@ -42,12 +45,14 @@ export default function AdminInvitation({
             </Text>
 
             <Text className="text-base leading-6 text-gray-700 mb-4">
-              You have been invited to join Yolo Padel as an administrator. 
+              {role === Role.ADMIN ? "You have been invited to join Yolo Padel as an administrator." : role === Role.USER ? "You have been invited to join Yolo Padel as a user." : "You have been invited to join Yolo Padel as a finance."}
             </Text>
 
             <Text className="text-base leading-6 text-gray-700 mb-4">
-              As an admin, you will have access to manage courts, bookings, 
-              users, and other administrative functions of the Yolo Padel system.
+              {role === Role.ADMIN ? 
+              "As an admin, you will have access to manage courts, bookings, users, and other administrative functions of the Yolo Padel system." 
+              : role === Role.USER ? "As a user, you will have access to book courts, view your bookings, and other user functions of the Yolo Padel system." 
+              : "As a finance, you will have access to manage finances, view financial reports, and other finance functions of the Yolo Padel system."}
             </Text>
 
             <Section className="text-center my-8">
@@ -68,7 +73,7 @@ export default function AdminInvitation({
             </Text>
 
             <Text className="text-base leading-6 text-gray-700 mb-4">
-              This invitation will expire in 7 days. If you don't want to accept 
+              This invitation will expire in 15 minutes. If you don't want to accept 
               this invitation, you can safely ignore this email.
             </Text>
 

@@ -1,8 +1,10 @@
+import { Role } from "@/types/prisma";
 import { z } from "zod";
 
 const emailSchema = z.string().email("Invalid email format");
 
-export const adminInvitationEmailSchema = z.object({
+export const invitationEmailSchema = z.object({
+  role: z.nativeEnum(Role),
   email: emailSchema,
   userName: z.string().min(1, "User name is required"),
   invitationUrl: z.string().url("Invalid URL format"),
@@ -45,7 +47,7 @@ export const bookingCancelationEmailSchema = bookingEmailBaseSchema.extend({
 
 export const bookingConfirmationEmailSchema = bookingEmailBaseSchema;
 
-export type AdminInvitationEmailData = z.infer<typeof adminInvitationEmailSchema>;
+export type InvitationEmailData = z.infer<typeof invitationEmailSchema>;
 export type ResetPasswordEmailData = z.infer<typeof resetPasswordEmailSchema>;
 export type ConfirmationEmailData = z.infer<typeof confirmationEmailSchema>;
 export type BookingRescheduleEmailData = z.infer<typeof bookingRescheduleEmailSchema>;
