@@ -152,6 +152,19 @@ export function UsersTable() {
     }
   };
 
+  const getRole = (role: Role) => {
+    switch (role) {
+      case Role.SUPER_ADMIN:
+        return "Super Admin";
+      case Role.ADMIN:
+        return "Admin";
+      case Role.USER:
+        return "User";
+      case Role.FINANCE:
+        return "Finance";
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 justify-between">
@@ -199,7 +212,7 @@ export function UsersTable() {
                   </TableCell>
                   <TableCell>{getStatusBadge(u.userStatus)}</TableCell>
                   <TableCell>
-                    {u.role === Role.ADMIN ? "Admin" : "User"}
+                    {getRole(u.role)}
                   </TableCell>
                   <TableCell>{u.email}</TableCell>
                   <TableCell>

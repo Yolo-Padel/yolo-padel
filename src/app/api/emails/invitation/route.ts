@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resendService } from "@/lib/services/resend.service";
 import { validateRequest } from "@/lib/validate-request";
-import { adminInvitationEmailSchema } from "@/lib/validations/send-email.validation";
+import { invitationEmailSchema } from "@/lib/validations/send-email.validation";
 
 export async function POST(request: NextRequest) {
     try {
-        const validationResult = await validateRequest(request, adminInvitationEmailSchema);
+        const validationResult = await validateRequest(request, invitationEmailSchema);
         
         if (!validationResult.success) {
             return validationResult.error!;
         }
         
-        const result = await resendService.sendAdminInvitationEmail(validationResult.data!);
+        const result = await resendService.sendInvitationEmail(validationResult.data!);
         
         if (result.success) {
             return NextResponse.json(result, { status: 200 });
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(result, { status: 500 });
         }
     } catch (error) {
-        console.error("Admin invitation email API error:", error);
+        console.error("Invitation email API error:", error);
         return NextResponse.json(
             { 
                 success: false, 
