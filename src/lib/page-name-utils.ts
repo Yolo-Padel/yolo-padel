@@ -12,6 +12,12 @@ export const getPageName = (pathname: string) => {
             return "Booking Management";
         case "/admin/dashboard/profile":
             return "Profile";
+        case "/dashboard/booking":
+            return "Booking Court";
+        case "/dashboard/order-history":
+            return "Order History";
+        case "/dashboard/membership":
+            return "Membership";
         default:
             return "Dashboard";
     }
