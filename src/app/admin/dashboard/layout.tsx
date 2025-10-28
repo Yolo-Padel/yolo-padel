@@ -1,9 +1,9 @@
-import { AppSidebar } from "@/app/admin/dashboard/components/app-sidebar";
+import { AppSidebar } from "@/app/admin/dashboard/_components/app-sidebar";
 import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar";
-import { Header } from "@/app/admin/dashboard/components/header";
+import { Header } from "@/app/admin/dashboard/_components/header";
 import { Suspense } from "react";
 
 export default function AdminDashboardLayout({

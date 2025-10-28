@@ -7,9 +7,9 @@ import {
   IdCard,
 } from "lucide-react";
 
-import { MenuItems } from "@/app/admin/dashboard/components/menu-items";
-import { NavUser } from "@/app/admin/dashboard/components/nav-user";
-import { CompanyProfile } from "@/app/admin/dashboard/components/company-profile";
+import { MenuItems } from "@/app/admin/dashboard/_components/menu-items";
+import { NavUser } from "@/app/admin/dashboard/_components/nav-user";
+import { CompanyProfile } from "@/app/admin/dashboard/_components/company-profile";
 import {
   Sidebar,
   SidebarContent,

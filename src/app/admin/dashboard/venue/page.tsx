@@ -1,4 +1,4 @@
-import { VenueTable } from "./components/venue-table";
+import { VenueTable } from "./_components/venue-table";
 
 export default function VenuePage() {
   return (

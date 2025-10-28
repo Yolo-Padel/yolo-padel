@@ -21,10 +21,10 @@ import {
   MoreHorizontal,
   Trash,
 } from "lucide-react";
-import { UsersEditSheet } from "@/app/admin/dashboard/users/components/users-edit-sheet";
-import { UsersTableLoading } from "@/app/admin/dashboard/users/components/users-table-loading";
-import { UserModal } from "@/app/admin/dashboard/users/components/user-modal";
-import { DeleteUserModal } from "@/app/admin/dashboard/users/components/delete-user-modal";
+import { UsersEditSheet } from "@/app/admin/dashboard/users/_components/users-edit-sheet";
+import { UsersTableLoading } from "@/app/admin/dashboard/users/_components/users-table-loading";
+import { UserModal } from "@/app/admin/dashboard/users/_components/user-modal";
+import { DeleteUserModal } from "@/app/admin/dashboard/users/_components/delete-user-modal";
 import { useUsers } from "@/hooks/use-users";
 import { User, Profile, Role, UserStatus } from "@/types/prisma";
 import {
