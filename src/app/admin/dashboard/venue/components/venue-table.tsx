@@ -169,27 +169,14 @@ export function VenueTable() {
       <div className="flex items-center justify-between gap-1">
         <h3 className="text-xl font-semibold ">Venue List</h3>
         <div className="flex items-center gap-2">
-          <Input
-            placeholder="Search venues..."
-            value={searchParams.get("search") || ""}
-            onChange={(e) => {
-              const params = new URLSearchParams(searchParams.toString())
-              if (e.target.value) {
-                params.set("search", e.target.value)
-              } else {
-                params.delete("search")
-              }
-              router.push(`?${params.toString()}`)
-            }}
-            className="w-64"
-          />
+          
           <Button
             variant="outline"
             onClick={() => setAddVenueOpen(true)}
             className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
           >
             Add Venue
-            <PlusIcon className="mr-2 size-4" />
+            <PlusIcon className="mr-0 size-4" />
           </Button>
         </div>
       </div>
@@ -198,14 +185,14 @@ export function VenueTable() {
       ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
       {paginated.map((venue) => (
-      <Card className="min-w-0 max-w-[265px] shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-2" key={venue.id}>
-        <CardHeader className="p-2">
+      <Card className="min-w-0 max-w-[265px] shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-4" key={venue.id}>
+        <CardHeader className="p-2 aspect-square">
             <img
               src={venue.image}
               className="w-full h-full object-cover rounded-sm"
             />
         </CardHeader>
-        <CardContent className="px-2 pt-0 pb-1 text-sm text-gray-700 gap-1">
+        <CardContent className="px-2 pb-1 text-sm text-gray-700 gap-1">
               <CardTitle className="text-sm font-semibold truncate">
                 {venue.venueName}
               </CardTitle>

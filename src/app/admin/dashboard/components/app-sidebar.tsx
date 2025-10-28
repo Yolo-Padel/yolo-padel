@@ -75,11 +75,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     avatar: profile?.avatar || "/avatars/shadcn.jpg",
   };
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
+    <Sidebar collapsible="icon" {...props} className="bg-[#f9fafb]">
+      <SidebarHeader className="bg-white">
         <CompanyProfile />
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="bg-white">
         <MenuItems menuItems={data.menuItems} />
       </SidebarContent>
       <SidebarFooter>
