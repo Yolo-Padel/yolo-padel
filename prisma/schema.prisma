@@ -23,6 +23,22 @@ enum UserStatus {
   INVITED
 }
 
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  EXPIRED
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -42,6 +58,12 @@ model User {
 
   // Relasi ke Profile
   profile Profile?
+
+  // Relasi ke Booking
+  bookings Booking[]
+
+  // Relasi ke Payment
+  payments Payment[]
 
   @@map("users")
 }
@@ -118,6 +140,9 @@ model Court {
   // Custom schedule (optional)
   operatingHours CourtOperatingHour[]
 
+  // Relasi ke Booking
+  bookings Booking[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -159,5 +184,62 @@ model MagicLink {
   createdAt DateTime @default(now())
 
   @@map("magic_links")
+}
+
+model Booking {
+  id               String        @id @default(cuid())
+  courtId          String
+  userId           String
+  source           String        // flag for booking created by YOLO / Courtside system
+  bookingDate      DateTime
+  bookingHour      String
+  duration         Int           // could be handled on the fly (for Courtside)
+  totalPrice       Int
+  status           BookingStatus
+  courtsideCourtId String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  court    Court     @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments Payment[]
+  blocking Blocking?
+
+  @@map("bookings")
+}
+
+model Blocking {
+  id          String   @id @default(cuid())
+  bookingId   String   @unique
+  description String
+  timerange   DateTime
+  isBlocking  Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("blockings")
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  bookingId    String
+  channelName  String
+  userId       String
+  amount       Int
+  paymentDate  DateTime?
+  status       PaymentStatus
+  expiredAt    DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
 }
 
