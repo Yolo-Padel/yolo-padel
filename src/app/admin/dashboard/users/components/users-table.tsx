@@ -71,7 +71,7 @@ export function UsersTable() {
     }
 
     return allUsers.filter((user: User & { profile?: Profile | null }) => {
-      const fullName = user.profile?.fullName?.toLowerCase() || ""
+      const fullName = user.profile?.fullName?.toUpperCase() || ""
       const email = user.email.toLowerCase()
       const role = user.role === Role.ADMIN ? "admin" : "user"
       const status = user.userStatus.toLowerCase()
@@ -169,7 +169,7 @@ export function UsersTable() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold">Team Members</h2>
+          <h2 className="text-xl font-semibold">User List</h2>
           <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
             {allUsers.length} users
           </Badge>
@@ -182,7 +182,7 @@ export function UsersTable() {
           className="text-black"
         >
           Add User
-          <Plus className="ml-2 size-4" />
+          <Plus className="ml-0 size-4" />
         </Button>
       </div>
       <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
@@ -204,18 +204,18 @@ export function UsersTable() {
                   <TableCell className="flex items-center gap-2">
                     <Avatar>
                       <AvatarImage src={u.profile?.avatar || ""} />
-                      <AvatarFallback>
-                        {u.profile?.fullName?.charAt(0)}
+                      <AvatarFallback className="uppercase">
+                        {u.profile?.fullName?.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     {u.profile?.fullName || "-"}
                   </TableCell>
                   <TableCell>{getStatusBadge(u.userStatus)}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-muted-foreground">
                     {getRole(u.role)}
                   </TableCell>
-                  <TableCell>{u.email}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-muted-foreground">{u.email}</TableCell>
+                  <TableCell className="text-muted-foreground">
                     {u.joinDate
                       ? new Date(u.joinDate).toLocaleDateString()
                       : "-"}
@@ -249,7 +249,7 @@ export function UsersTable() {
               );
             })}
           </TableBody>
-          <TableFooter>
+          <TableFooter className="bg-transparent">
             <TableRow>
               <TableCell colSpan={columns.length} className="p-4">
                 <div className="flex items-center justify-between">
@@ -271,7 +271,7 @@ export function UsersTable() {
                     ).map((pageNum, index) => (
                       <div key={index}>
                         {pageNum === "..." ? (
-                          <div className="flex items-center justify-center w-8 h-8 text-muted-foreground">
+                          <div className="flex items-center justify-center w-8 h-8 bg-background border border-[#E9EAEB] text-[#A4A7AE]">
                             <MoreHorizontal className="w-4 h-4" />
                           </div>
                         ) : (
@@ -283,7 +283,7 @@ export function UsersTable() {
                             }
                             size="sm"
                             onClick={() => setPage(pageNum as number)}
-                            className="w-8 h-8 p-0"
+                            className="w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]"
                           >
                             {pageNum}
                           </Button>
