@@ -5,7 +5,10 @@ export type {
     Court,
     CourtOperatingHour,
     CourtTimeSlot,
-    MagicLink
+    MagicLink,
+    Booking,
+    Payment,
+    Blocking
 } from "@prisma/client";
 
-export { Role, UserStatus, DayOfWeek, OpeningHoursType } from "@prisma/client";
+export { Role, UserStatus, DayOfWeek, OpeningHoursType, BookingStatus, PaymentStatus } from "@prisma/client";
