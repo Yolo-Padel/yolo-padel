@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
-import { Prisma, Role } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { Role } from "@/types/prisma";
 import {
   RegisterFormData,
   LoginFormData,

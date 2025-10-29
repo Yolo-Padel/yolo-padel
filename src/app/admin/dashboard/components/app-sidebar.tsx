@@ -22,37 +22,42 @@ import {
 
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Role } from "@/types/prisma";
+import { MenuItem, filterMenuByRole } from "@/lib/frontend-rbac";
 
-// This is sample data.
-const data = {
-  menuItems: [
-    {
-      name: "Dashboard",
-      url: "/admin/dashboard",
-      icon: Home,
-    },
-    {
-      name: "Users Management",
-      url: "/admin/dashboard/users",
-      icon: Users,
-    },
-    {
-      name: "Booking Management",
-      url: "/admin/dashboard/booking",
-      icon: LandPlot,
-    },
-    {
-      name: "Venue Management",
-      url: "/admin/dashboard/venue",
-      icon: TableCellsMerge,
-    },
-    {
-      name: "Membership",
-      url: "/admin/dashboard/membership",
-      icon: Crown,
-    },
-  ],
-};
+// Menu configuration dengan role requirements
+const menuConfig: MenuItem[] = [
+  {
+    name: "Dashboard",
+    url: "/admin/dashboard",
+    icon: Home,
+    roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN],
+  },
+  {
+    name: "Users Management",
+    url: "/admin/dashboard/users",
+    icon: Users,
+    roles: [Role.ADMIN, Role.SUPER_ADMIN],
+  },
+  {
+    name: "Booking Management",
+    url: "/admin/dashboard/booking",
+    icon: LandPlot,
+    roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN],
+  },
+  {
+    name: "Venue Management",
+    url: "/admin/dashboard/venue",
+    icon: TableCellsMerge,
+    roles: [Role.ADMIN, Role.SUPER_ADMIN],
+  },
+  {
+    name: "Membership",
+    url: "/admin/dashboard/membership",
+    icon: Crown,
+    roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN], // Semua role bisa akses
+  },
+];
 
 function UserSkeleton() {
   return (
@@ -74,13 +79,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     email: user?.email || "user@example.com",
     avatar: profile?.avatar || "/avatars/shadcn.jpg",
   };
+
+  // Filter menu items berdasarkan role user
+  const userRole = user?.role as Role;
+  const filteredMenuItems = userRole ? filterMenuByRole(menuConfig, userRole) : [];
+
   return (
     <Sidebar collapsible="icon" {...props} className="bg-[#f9fafb]">
       <SidebarHeader className="bg-white">
         <CompanyProfile />
       </SidebarHeader>
       <SidebarContent className="bg-white">
-        <MenuItems menuItems={data.menuItems} />
+        <MenuItems menuItems={filteredMenuItems} />
       </SidebarContent>
       <SidebarFooter>
         {isAuthenticated && !isLoading ? (
