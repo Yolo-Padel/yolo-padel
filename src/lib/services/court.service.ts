@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { CourtCreateData } from "@/lib/validations/court.validation";
 import { OpeningHoursType, DayOfWeek, Role } from "@/types/prisma";
 import { ServiceContext, hasPermission, requirePermission } from "@/types/service-context";
+import { activityLogService, buildChangesDiff } from "@/lib/services/activity-log.service";
+import { ACTION_TYPES } from "@/types/action";
+import { ENTITY_TYPES } from "@/types/entity";
 
 export const courtService = {
   // Get all courts with venue and schedule info
@@ -267,6 +270,24 @@ export const courtService = {
         }
       });
 
+      // audit log
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.CREATE_COURT,
+        entityType: ENTITY_TYPES.COURT,
+        entityId: court.id,
+        changes: {
+          before: {},
+          after: {
+            name: data.courtName,
+            price: data.price,
+            openingType: data.openingHours,
+            venueId: data.venueId,
+          }
+        } as any,
+        description: "Create court",
+      });
+
       return {
         success: true,
         data: createdCourt,
@@ -418,6 +439,24 @@ export const courtService = {
 
       console.log('updatedCourt', updatedCourt)
 
+      // audit log
+      const courtDiff = buildChangesDiff(existingCourt as any, {
+        ...existingCourt,
+        name: data.courtName,
+        price: data.price,
+        openingType: data.openingHours,
+        venueId: data.venueId,
+      } as any, ["name", "price", "openingType", "venueId"] as any);
+
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.UPDATE_COURT,
+        entityType: ENTITY_TYPES.COURT,
+        entityId: court.id,
+        changes: (courtDiff as any) ?? null,
+        description: "Update court",
+      });
+
       return {
         success: true,
         data: updatedCourt,
@@ -458,6 +497,15 @@ export const courtService = {
         },
       });
 
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.DELETE_COURT,
+        entityType: ENTITY_TYPES.COURT,
+        entityId: id,
+        changes: { before: { isArchived: false }, after: { isArchived: true } } as any,
+        description: "Soft delete court",
+      });
+
       return {
         success: true,
         data: result,
@@ -496,6 +544,16 @@ export const courtService = {
         data: {
           isActive,
         },
+      });
+
+      const toggleDiff = { before: { isActive: court.isActive }, after: { isActive } } as any;
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.UPDATE_COURT,
+        entityType: ENTITY_TYPES.COURT,
+        entityId: id,
+        changes: toggleDiff,
+        description: `Toggle court ${isActive ? 'activate' : 'deactivate'}`,
       });
 
       return {

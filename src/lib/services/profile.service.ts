@@ -1,9 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { ProfileCreateData, ProfileUpdateData } from "../validations/profile.validation";
 import { Prisma } from "@prisma/client";
+import { activityLogService } from "@/lib/services/activity-log.service";
+import { ACTION_TYPES } from "@/types/action";
+import { ENTITY_TYPES } from "@/types/entity";
+import { ServiceContext } from "@/types/service-context";
 
 export const profileService = {
-  createProfile: async (userId: string, data: ProfileCreateData, tx?: Prisma.TransactionClient) => {
+  createProfile: async (userId: string, data: ProfileCreateData, tx?: Prisma.TransactionClient, context?: ServiceContext) => {
     try {
       const profile = await (tx || prisma).profile.create({
         data: {
@@ -11,6 +15,17 @@ export const profileService = {
           fullName: data.fullName,
         },
       });
+      // audit log (entityType USER untuk perubahan profile)
+      if (context) {
+        activityLogService.record({
+          context,
+          action: ACTION_TYPES.CREATE_PROFILE,
+          entityType: ENTITY_TYPES.USER,
+          entityId: userId,
+          changes: { before: {}, after: { fullName: data.fullName } } as any,
+          description: "Create profile",
+        });
+      }
       return {
         success: true,
         data: profile,
@@ -26,7 +41,7 @@ export const profileService = {
     }
   },
 
-  updateProfile: async (userId: string, data: ProfileUpdateData) => {
+  updateProfile: async (userId: string, data: ProfileUpdateData, context?: ServiceContext) => {
     try {
       // Update profile
       const updatedProfile = await prisma.profile.update({
@@ -35,6 +50,17 @@ export const profileService = {
           fullName: data.fullName,
         },
       });
+
+      if (context) {
+        activityLogService.record({
+          context,
+          action: ACTION_TYPES.UPDATE_PROFILE,
+          entityType: ENTITY_TYPES.USER,
+          entityId: userId,
+          changes: { fullName: data.fullName },
+          description: "Update profile",
+        });
+      }
 
       // Get updated user with profile
       const user = await prisma.user.findUnique({

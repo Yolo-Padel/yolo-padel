@@ -3,14 +3,17 @@ import { Role } from "@/types/prisma";
 export interface ServiceContext {
   userRole: Role;
   assignedVenueId?: string;
+  actorUserId?: string; // for audit logging
 }
 
 export const createServiceContext = (
   userRole: Role,
+  actorUserId: string,
   assignedVenueId?: string,
 ): ServiceContext => ({
   userRole,
   assignedVenueId,
+  actorUserId,
 });
 
 export const hasPermission = (context: ServiceContext, requiredRole: Role): boolean => {

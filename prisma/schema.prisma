@@ -64,6 +64,8 @@ model User {
 
   // Relasi ke Payment
   payments Payment[]
+  // Relasi ke log
+  activityLogs ActivityLog[] @relation("ActivityLogs")
 
   @@map("users")
 }
@@ -243,3 +245,18 @@ model Payment {
   @@map("payments")
 }
 
+model ActivityLog {
+  id          String     @id @default(cuid())
+  userId      String?
+  action      String
+  entityType  String
+  entityId    String?
+  changes     Json?
+  description String?
+  createdAt   DateTime   @default(now())
+
+  // Optional relation ke User yang melakukan aksi
+  user User? @relation("ActivityLogs", fields: [userId], references: [id])
+
+  @@map("activity_logs")
+}

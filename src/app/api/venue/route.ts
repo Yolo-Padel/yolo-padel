@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
     const result = await venueService.getAll(serviceContext);
     
     if (!result.success) {
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
     const result = await venueService.create(validatedData, serviceContext, tokenResult.user?.userId!);
 
     if (!result.success) {
@@ -98,7 +98,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
     const result = await venueService.delete(validatedData, serviceContext);
 
     if (!result.success) {
