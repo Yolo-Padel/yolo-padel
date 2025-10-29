@@ -2,10 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { UserCreateData, UserDeleteData } from "../validations/user.validation";
 import { Prisma } from "@prisma/client";
 import { UserStatus } from "@/types/prisma";
+import { ServiceContext, requirePermission } from "@/types/service-context";
+import { Role } from "@/types/prisma";
 
 export const usersService = {
-  getUsers: async () => {
+  getUsers: async (context: ServiceContext) => {
     try {
+      const accessError = requirePermission(context, Role.ADMIN);
+      if (accessError) return accessError;
+
       // Get all users
       const users = await prisma.user.findMany({
         where: { isArchived: false },
@@ -13,7 +18,22 @@ export const usersService = {
         orderBy: { createdAt: "desc" },
       });
 
-      const usersWithoutPasswords = users.map(({ password, ...user }) => user);
+      // Filter users berdasarkan role dan venue assignment
+      const filteredUsers = users.filter((user) => {
+        // SUPER_ADMIN bisa lihat semua users
+        if (context.userRole === Role.SUPER_ADMIN) {
+          return true;
+        }
+        
+        // ADMIN hanya bisa lihat users di venue yang sama
+        if (context.userRole === Role.ADMIN) {
+          return user.assignedVenueId === context.assignedVenueId;
+        }
+        
+        return false; // Role lain tidak bisa akses
+      });
+
+      const usersWithoutPasswords = filteredUsers.map(({ password, ...user }) => user);
 
       return {
         success: true,
@@ -32,8 +52,11 @@ export const usersService = {
     }
   },
 
-  createUser: async (data: UserCreateData, tx?: Prisma.TransactionClient) => {
+  createUser: async (data: UserCreateData, context: ServiceContext, tx?: Prisma.TransactionClient) => {
     try {
+      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      if (accessError) return accessError;
+
       const user = await (tx || prisma).user.create({
         data: {
           email: data.email,
@@ -52,12 +75,17 @@ export const usersService = {
 
       return {
           success: false,
+          data: null,
+          message: error instanceof Error ? error.message : "Failed to create user",
       }
     }
   },
 
-  deleteUser: async (data: UserDeleteData) => {
+  deleteUser: async (data: UserDeleteData, context: ServiceContext) => {
     try {
+      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      if (accessError) return accessError;
+
       await prisma.user.update({
         where: { id: data.userId },
         data: { isArchived: true },
@@ -70,10 +98,8 @@ export const usersService = {
       console.error("Delete user error:", error);
       return {
         success: false,
-        message: "Failed to delete user",
+        message: error instanceof Error ? error.message : "Failed to delete user",
       };
     }
   },
-  // Future: Add more users management functions
-  // createUser, updateUser, deleteUser, etc.
 };

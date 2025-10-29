@@ -4,9 +4,10 @@ import { profileService } from "./profile.service";
 import { usersService } from "./users.service";
 import { resendService } from "./resend.service";
 import { prisma } from "@/lib/prisma";
+import { ServiceContext } from "@/types/service-context";
 
 export const inviteUserService = {
-    inviteUser: async (data: UserCreateData) => {
+    inviteUser: async (data: UserCreateData, context: ServiceContext) => {
         try {
             const existingUser = await prisma.user.findUnique({
                 where: { email: data.email },
@@ -21,7 +22,7 @@ export const inviteUserService = {
               }
             
             const inviteResult = await prisma.$transaction(async (tx) => {
-                const user = await usersService.createUser(data, tx);
+                const user = await usersService.createUser(data, context, tx);
                 if (!user.success) {
                     return {
                         success: false,
