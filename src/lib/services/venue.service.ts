@@ -1,17 +1,30 @@
 import { prisma } from "../prisma";
 import { VenueCreateData, VenueDeleteData, VenueUpdateData } from "../validations/venue.validation";
+import { ServiceContext, requirePermission } from "@/types/service-context";
+import { Role } from "@/types/prisma";
 
 export const venueService = {
-  getAll: async () => {
+  getAll: async (context: ServiceContext) => {
     try {
-      const result = await prisma.venue.findMany({
+      const accessError = requirePermission(context, Role.USER);
+      if (accessError) return accessError;
+
+      const venues = await prisma.venue.findMany({
         where: { isArchived: false },
         orderBy: { createdAt: "desc" },
+      });
+
+      // Filter venues berdasarkan role
+      const filteredVenues = venues.filter((venue) => {
+        if (context.userRole === Role.ADMIN || context.userRole === Role.FINANCE) {
+          return venue.id === context.assignedVenueId;
+        }
+        return true; // USER dan SUPER_ADMIN bisa akses semua venue
       });
       
       return {
         success: true,
-        data: result,
+        data: filteredVenues,
         message: "Get all venues successful",
       };
     } catch (error) {
@@ -23,8 +36,11 @@ export const venueService = {
       };
     }
   },
-  getById: async (venueId: string) => {
+  getById: async (venueId: string, context: ServiceContext) => {
     try {
+      const accessError = requirePermission(context, Role.USER);
+      if (accessError) return accessError;
+
       const venue = await prisma.venue.findUnique({
         where: { id: venueId },
       });
@@ -34,6 +50,15 @@ export const venueService = {
           success: false,
           data: null,
           message: "Venue not found",
+        };
+      }
+
+      // Check venue access untuk ADMIN/FINANCE roles
+      if ((context.userRole === Role.ADMIN || context.userRole === Role.FINANCE) && venue.id !== context.assignedVenueId) {
+        return {
+          success: false,
+          data: null,
+          message: "You are not authorized to access this resource",
         };
       }
 
@@ -51,32 +76,10 @@ export const venueService = {
       };
     }
   },
-  create: async (data: VenueCreateData, createdById?: string) => {
+  create: async (data: VenueCreateData, context: ServiceContext, userId: string) => {
     try {
-      // If no createdById provided, find or create a default admin user
-      let userId = createdById;
-      if (!userId) {
-        const defaultUser = await prisma.user.findFirst({
-          where: { role: "ADMIN" }
-        });
-        
-        if (!defaultUser) {
-          // Create a default admin user if none exists
-          const newUser = await prisma.user.create({
-            data: {
-              email: "admin@yolo-padel.com",
-              password: "dummy-password",
-              role: "ADMIN",
-              userStatus: "ACTIVE",
-              isEmailVerified: true,
-              joinDate: new Date(),
-            },
-          });
-          userId = newUser.id;
-        } else {
-          userId = defaultUser.id;
-        }
-      }
+      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      if (accessError) return accessError;
 
       const createData: any = {
         name: data.name,
@@ -111,8 +114,11 @@ export const venueService = {
       };
     }
   },
-  update: async (data: VenueUpdateData) => {
+  update: async (data: VenueUpdateData, context: ServiceContext) => {
     try {
+      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      if (accessError) return accessError;
+
       const { venueId, ...payload } = data;
 
       const exist = await prisma.venue.findUnique({ where: { id: venueId } });
@@ -150,8 +156,11 @@ export const venueService = {
       };
     }
   },
-  delete: async (data: VenueDeleteData) => {
+  delete: async (data: VenueDeleteData, context: ServiceContext) => {
     try {
+      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      if (accessError) return accessError;
+
       await prisma.venue.update({
         where: { id: data.venueId },
         data: { isArchived: true },

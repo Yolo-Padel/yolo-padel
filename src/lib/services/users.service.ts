@@ -2,10 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { UserCreateData, UserDeleteData } from "../validations/user.validation";
 import { Prisma } from "@prisma/client";
 import { UserStatus } from "@/types/prisma";
+import { ServiceContext, requirePermission } from "@/types/service-context";
+import { Role } from "@/types/prisma";
 
 export const usersService = {
-  getUsers: async () => {
+  getUsers: async (context: ServiceContext) => {
     try {
+      const accessError = requirePermission(context, Role.ADMIN);
+      
+      if (accessError) return accessError;
       // Get all users
       const users = await prisma.user.findMany({
         where: { isArchived: false },
@@ -32,8 +37,11 @@ export const usersService = {
     }
   },
 
-  createUser: async (data: UserCreateData, tx?: Prisma.TransactionClient) => {
+  createUser: async (data: UserCreateData, context: ServiceContext, tx?: Prisma.TransactionClient) => {
     try {
+      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      if (accessError) return accessError;
+
       const user = await (tx || prisma).user.create({
         data: {
           email: data.email,
@@ -52,12 +60,17 @@ export const usersService = {
 
       return {
           success: false,
+          data: null,
+          message: error instanceof Error ? error.message : "Failed to create user",
       }
     }
   },
 
-  deleteUser: async (data: UserDeleteData) => {
+  deleteUser: async (data: UserDeleteData, context: ServiceContext) => {
     try {
+      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      if (accessError) return accessError;
+
       await prisma.user.update({
         where: { id: data.userId },
         data: { isArchived: true },
@@ -70,10 +83,8 @@ export const usersService = {
       console.error("Delete user error:", error);
       return {
         success: false,
-        message: "Failed to delete user",
+        message: error instanceof Error ? error.message : "Failed to delete user",
       };
     }
   },
-  // Future: Add more users management functions
-  // createUser, updateUser, deleteUser, etc.
 };

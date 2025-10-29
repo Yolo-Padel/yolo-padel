@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { MagicLinkVerifyInput } from "@/lib/validations/magic-link.validation";
 import { toast } from "sonner";
 import { LoginWithMagicLinkData } from "@/lib/validations/auth.validation";
+import { Role } from "@/types/prisma";
 
 // Types for API Response
 export type VerifyMagicLinkResult = {
@@ -84,10 +85,10 @@ export const useMagicLinkVerify = () => {
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
 
       // Redirect based on user role from the response data
-      if (data.user.role === "ADMIN" || data.user.role === "SUPER_ADMIN") {
-        router.push("/admin/dashboard");
-      } else {
+      if (data.user.role === Role.USER) {
         router.push("/dashboard");
+      } else {
+        router.push("/admin/dashboard");
       }
     },
     onError: (error: Error) => {

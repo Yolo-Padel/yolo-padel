@@ -1,36 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { usersService } from "@/lib/services/users.service";
 import { userDeleteSchema } from "@/lib/validations/user.validation";
+import { verifyAuth } from "@/lib/auth-utils";
+import { createServiceContext } from "@/types/service-context";
 
 export async function GET(request: NextRequest) {
   try {
-    const result = await usersService.getUsers();
+    const tokenResult = await verifyAuth(request);
 
-    if (!result.success) {
+    if (!tokenResult.isValid) {
       return NextResponse.json(
-        result,
-        { status: 400 }
+        { success: false, message: tokenResult.error },
+        { status: 401 }
       );
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: result.data,
-        message: result.message,
-      },
-      { status: 200 }
-    );
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    const result = await usersService.getUsers(serviceContext);
 
+    if (!result.success) {
+      return NextResponse.json(
+        { success: false, message: result.message },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: result.data,
+      message: result.message,
+    });
   } catch (error) {
-    console.error("Users API error:", error);
-    
+    console.error("GET /api/users error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        data: null,
-        message: "Internal server error",
-      },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
@@ -39,42 +42,43 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();
-    const validationResult = userDeleteSchema.safeParse(body);
-    
-    if (!validationResult.success) {
+    const validatedData = userDeleteSchema.parse(body);
+    const tokenResult = await verifyAuth(request);
+
+    if (!tokenResult.isValid) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Validation failed",
-        },
-        { status: 400 }
+        { success: false, message: tokenResult.error },
+        { status: 401 }
       );
     }
 
-    const result = await usersService.deleteUser(validationResult.data!);
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    const result = await usersService.deleteUser(validatedData, serviceContext);
 
     if (!result.success) {
       return NextResponse.json(
-        result,
+        { success: false, message: result.message },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    console.error("DELETE /api/users error:", error);
+    
+    if (error instanceof Error && error.name === 'ZodError') {
+      return NextResponse.json(
+        { success: false, message: "Validation error", errors: error.message },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      {
-        success: true,
-        message: result.message || "User deleted successfully",
-      },
-      { status: 200 }
+      { success: false, message: "Internal server error" },
+      { status: 500 }
     );
-  } catch (error) {
-    console.error("Delete user error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Internal server error",
-      },
-        { status: 500 }
-      );
-    }
   }
+}

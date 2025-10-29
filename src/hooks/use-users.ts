@@ -53,10 +53,12 @@ const usersApi = {
       credentials: "include",
     });
 
+    const result = await response.json();
+
     if (!response.ok) {
       return {
         success: false,
-        message: "Failed to delete user",
+        message: result.message || "Failed to delete user",
       };
     }
 
@@ -77,13 +79,21 @@ const inviteUserApi = {
       body: JSON.stringify(data),
       credentials: "include",
     });
+    const result = await response.json();
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to invite user");
+      return {
+        success: false,
+        data: null,
+        message: result.message || "Failed to invite user",
+      };  
     }
 
-    return response.json();
+    return {
+      success: true,
+      data: result.data,
+      message: result.message || "User invited successfully!",
+    };
   },
 };
 
@@ -102,7 +112,11 @@ export const useInviteUser = () => {
   return useMutation({
     mutationFn: inviteUserApi.inviteUser,
     onSuccess: (data: InviteUserResponse) => {
-      toast.success(data.message || "User invited successfully!");
+      if (data.success) {
+        toast.success(data.message || "User invited successfully!");
+      } else {
+        toast.error(data.message || "Failed to invite user. Please try again.");
+      }
 
       // Invalidate users query to refetch users
       queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -119,8 +133,12 @@ export const useDeleteUser = () => {
 
   return useMutation({
     mutationFn: usersApi.deleteUser,
-    onSuccess: (data: DeleteUserResponse) => {
-      toast.success(data.message || "User deleted successfully!");
+    onSuccess: (result: DeleteUserResponse) => {
+      if (result.success) {
+        toast.success(result.message || "User deleted successfully!");
+      } else {
+        toast.error(result.message || "Failed to delete user. Please try again.");
+      }
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (error: Error) => {

@@ -2,23 +2,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { courtService } from "@/lib/services/court.service";
 import { courtCreateSchema } from "@/lib/validations/court.validation";
+import { createServiceContext } from "@/types/service-context";
+import { verifyAuth } from "@/lib/auth-utils";
 
 // GET /api/court - Get all courts
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const venueId = searchParams.get('venueId');
+    const tokenResult = await verifyAuth(request);
 
+    if (!tokenResult.isValid) {
+      return NextResponse.json(
+        { success: false, message: tokenResult.error },
+        { status: 401 }
+      );
+    }
+
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    
     let result;
     if (venueId) {
-      result = await courtService.getByVenue(venueId);
+      result = await courtService.getByVenue(venueId, serviceContext);
     } else {
-      result = await courtService.getAll();
+      result = await courtService.getAll(serviceContext);
     }
 
     if (!result.success) {
       return NextResponse.json(
-        { message: result.message },
+        { success: false, message: result.message },
         { status: 404 }
       );
     }
@@ -31,7 +43,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("GET /api/court error:", error);
     return NextResponse.json(
-      { message: "Internal server error" },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
@@ -40,16 +52,24 @@ export async function GET(request: NextRequest) {
 // POST /api/court - Create new court
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    
-    // Validate request body
+    const body = await request.json();    
     const validatedData = courtCreateSchema.parse(body);
+    const tokenResult = await verifyAuth(request);
+
+    if (!tokenResult.isValid) {
+      return NextResponse.json(
+        { success: false, message: tokenResult.error },
+        { status: 401 }
+      );
+    }
+
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
     
-    const result = await courtService.create(validatedData);
+    const result = await courtService.create(validatedData, serviceContext);
 
     if (!result.success) {
       return NextResponse.json(
-        { message: result.message },
+        { success: false, message: result.message },
         { status: 400 }
       );
     }
@@ -64,13 +84,13 @@ export async function POST(request: NextRequest) {
     
     if (error instanceof Error && error.name === 'ZodError') {
       return NextResponse.json(
-        { message: "Validation error", errors: error.message },
+        { success: false, message: "Validation error", errors: error.message },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { message: "Internal server error" },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

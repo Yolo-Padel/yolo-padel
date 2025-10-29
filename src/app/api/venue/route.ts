@@ -3,83 +3,128 @@ import { venueCreateSchema, venueDeleteSchema } from "@/lib/validations/venue.va
 import { NextRequest, NextResponse } from "next/server";
 import { validateRequest } from "@/lib/validate-request";
 import { verifyAuth } from "@/lib/auth-utils";
+import { createServiceContext } from "@/types/service-context";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const result = await venueService.getAll();
+    const tokenResult = await verifyAuth(request);
+
+    if (!tokenResult.isValid) {
+      return NextResponse.json(
+        { success: false, message: tokenResult.error },
+        { status: 401 }
+      );
+    }
+
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    const result = await venueService.getAll(serviceContext);
     
     if (!result.success) {
-      return NextResponse.json({
-        success: false,
-        data: null,
-        message: result.message,
-      }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: result.message },
+        { status: 404 }
+      );
     }
     
     return NextResponse.json({
       success: true,
       data: result.data,
       message: result.message,
-    }, { status: 200 });
+    });
   } catch (error) {
     console.error("Get all venues error:", error);
-    return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
-  // Verify authentication
-  const authResult = await verifyAuth(request);
-  if (!authResult.isValid) {
-    return NextResponse.json({
-      success: false,
-      message: authResult.error || "Authentication required",
-    }, { status: 401 });
-  }
-
-  const validation = await validateRequest(request, venueCreateSchema);
-  if (!validation.success) {
-    return validation.error!;
-  }
-
   try {
-    const result = await venueService.create(validation.data!, authResult.user!.userId);
-    if (!result.success) {
-      return NextResponse.json(result, { status: 400 });
+    const body = await request.json();    
+    const validatedData = venueCreateSchema.parse(body);
+    const tokenResult = await verifyAuth(request);
+
+    if (!tokenResult.isValid) {
+      return NextResponse.json(
+        { success: false, message: tokenResult.error },
+        { status: 401 }
+      );
     }
-    return NextResponse.json({ success: true, data: result.data, message: result.message }, { status: 201 });
+
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    const result = await venueService.create(validatedData, serviceContext, tokenResult.user?.userId!);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { success: false, message: result.message },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: result.data,
+      message: result.message
+    }, { status: 201 });
   } catch (error) {
-    console.error("Create venue error:", error);
-    return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
+    console.error("POST /api/venue error:", error);
+    
+    if (error instanceof Error && error.name === 'ZodError') {
+      return NextResponse.json(
+        { success: false, message: "Validation error", errors: error.message },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: false, message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(request: NextRequest) {
-  // Verify authentication
-  const authResult = await verifyAuth(request);
-  if (!authResult.isValid) {
-    return NextResponse.json({
-      success: false,
-      message: authResult.error || "Authentication required",
-    }, { status: 401 });
-  }
-
   try {
     const body = await request.json();
-    const validationResult = venueDeleteSchema.safeParse(body);
+    const validatedData = venueDeleteSchema.parse(body);
+    const tokenResult = await verifyAuth(request);
 
-    if (!validationResult.success) {
-      return NextResponse.json({ success: false, message: "Validation failed" }, { status: 400 });
+    if (!tokenResult.isValid) {
+      return NextResponse.json(
+        { success: false, message: tokenResult.error },
+        { status: 401 }
+      );
     }
 
-    const result = await venueService.delete(validationResult.data!);
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    const result = await venueService.delete(validatedData, serviceContext);
+
     if (!result.success) {
-      return NextResponse.json(result, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: result.message },
+        { status: 400 }
+      );
     }
     
-    return NextResponse.json({ success: true, message: result.message }, { status: 200 });
+    return NextResponse.json({
+      success: true,
+      message: result.message
+    });
   } catch (error) {
-    console.error("Delete venue error:", error);
-    return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
+    console.error("DELETE /api/venue error:", error);
+    
+    if (error instanceof Error && error.name === 'ZodError') {
+      return NextResponse.json(
+        { success: false, message: "Validation error", errors: error.message },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: false, message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
