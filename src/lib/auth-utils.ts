@@ -1,12 +1,14 @@
 import jwt from "jsonwebtoken";
 import { NextRequest } from "next/server";
+import { Role } from "@/types/prisma";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";
 
 export interface AuthUser {
   userId: string;
   email: string;
-  role: string;
+  role: Role;
+  assignedVenueId?: string;
 }
 
 export async function verifyAuth(request: NextRequest): Promise<{
@@ -21,7 +23,7 @@ export async function verifyAuth(request: NextRequest): Promise<{
     if (!token) {
       return {
         isValid: false,
-        error: "No token provided",
+        error: "Unauthorized - No token provided",
       };
     }
 
@@ -35,28 +37,7 @@ export async function verifyAuth(request: NextRequest): Promise<{
   } catch (error) {
     return {
       isValid: false,
-      error: "Invalid token",
+      error: "Unauthorized - Invalid token",
     };
   }
-}
-
-export async function verifyAdminAuth(request: NextRequest): Promise<{
-  isValid: boolean;
-  user?: AuthUser;
-  error?: string;
-}> {
-  const authResult = await verifyAuth(request);
-  
-  if (!authResult.isValid) {
-    return authResult;
-  }
-
-  if (authResult.user?.role !== "ADMIN") {
-    return {
-      isValid: false,
-      error: "Unauthorized - Admin access required",
-    };
-  }
-
-  return authResult;
 }

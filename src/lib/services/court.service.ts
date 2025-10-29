@@ -1,13 +1,18 @@
 // src/lib/services/court.service.ts
 import { prisma } from "@/lib/prisma";
 import { CourtCreateData } from "@/lib/validations/court.validation";
-import { OpeningHoursType, DayOfWeek } from "@/types/prisma";
+import { OpeningHoursType, DayOfWeek, Role } from "@/types/prisma";
+import { ServiceContext, hasPermission, requirePermission } from "@/types/service-context";
 
 export const courtService = {
   // Get all courts with venue and schedule info
-  getAll: async () => {
+  getAll: async (context: ServiceContext) => {
     try {
+      const accessError = requirePermission(context, Role.USER);
+      if (accessError) return accessError;
+
       const courts = await prisma.court.findMany({
+        where: { isArchived: false},
         include: {
           venue: {
             select: {
@@ -27,9 +32,16 @@ export const courtService = {
         }
       });
 
+      const filteredCourts = courts.filter((court) => {
+        if (context.userRole === Role.ADMIN ||      context.userRole === Role.FINANCE) {
+          return court.venueId === context.assignedVenueId;
+        }
+        return true;
+      });
+
       return {
         success: true,
-        data: courts,
+        data: filteredCourts,
         message: "Get all courts successful",
       };
     } catch (error) {
@@ -43,8 +55,11 @@ export const courtService = {
   },
 
   // Get courts by venue
-  getByVenue: async (venueId: string) => {
+  getByVenue: async (venueId: string, context: ServiceContext) => {
     try {
+      const accessError = requirePermission(context, Role.FINANCE);
+      if (accessError) return accessError;
+
       const courts = await prisma.court.findMany({
         where: {
           venueId,
@@ -69,6 +84,14 @@ export const courtService = {
         }
       });
 
+      if ((context.userRole === Role.ADMIN || context.userRole === Role.FINANCE) && venueId !== context.assignedVenueId) {
+        return {
+          success: false,
+          data: null,
+          message: "You are not authorized to access this resource",
+        };
+      }
+
       return {
         success: true,
         data: courts,
@@ -85,8 +108,11 @@ export const courtService = {
   },
 
   // Get court by ID with full details
-  getById: async (id: string) => {
+  getById: async (id: string, context: ServiceContext) => {
     try {
+      const accessError = requirePermission(context, Role.USER);
+      if (accessError) return accessError;
+
       const court = await prisma.court.findUnique({
         where: { id },
         include: {
@@ -112,6 +138,15 @@ export const courtService = {
           message: "Court not found",
         };
       }
+      
+      // Check venue access for ADMIN/FINANCE roles
+      if ((context.userRole === Role.ADMIN || context.userRole === Role.FINANCE) && court.venueId !== context.assignedVenueId) {
+        return {
+          success: false,
+          data: null,
+          message: "You are not authorized to access this resource",
+        };
+      }
 
       return {
         success: true,
@@ -129,8 +164,11 @@ export const courtService = {
   },
 
   // Create new court
-  create: async (data: CourtCreateData) => {
+  create: async (data: CourtCreateData, context: ServiceContext) => {
     try {
+      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      if (accessError) return accessError;
+
       // 1. Get venue data for REGULAR opening hours
       let venueOpenHour;
       let venueCloseHour;
@@ -245,8 +283,12 @@ export const courtService = {
   },
 
   // Update court
-  update: async (id: string, data: CourtCreateData) => {
+  update: async (id: string, data: CourtCreateData, context: ServiceContext) => {
     try {
+      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      if (accessError) return accessError;
+
+
       console.log("updating court")
       // 1. Check if court exists
       const existingCourt = await prisma.court.findUnique({
@@ -392,7 +434,10 @@ export const courtService = {
   },
 
   // Soft delete court
-  delete: async (id: string) => {
+  delete: async (id: string, context: ServiceContext) => {
+    const accessError = requirePermission(context, Role.SUPER_ADMIN);
+    if (accessError) return accessError;
+
     try {
       const court = await prisma.court.findUnique({
         where: { id }
@@ -429,8 +474,11 @@ export const courtService = {
   },
 
   // Toggle court availability
-  toggleAvailability: async (id: string, isActive: boolean) => {
+  toggleAvailability: async (id: string, isActive: boolean, context: ServiceContext) => {
     try {
+      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      if (accessError) return accessError;
+
       const court = await prisma.court.findUnique({
         where: { id }
       });

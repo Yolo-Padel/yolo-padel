@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { courtService } from "@/lib/services/court.service";
 import { courtCreateSchema } from "@/lib/validations/court.validation";
+import { createServiceContext } from "@/types/service-context";
+import { verifyAuth } from "@/lib/auth-utils";
 
 // GET /api/court/[id] - Get court by ID
 export async function GET(
@@ -10,11 +12,21 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const result = await courtService.getById(id);
+    const tokenResult = await verifyAuth(request);
+
+    if (!tokenResult.isValid) {
+      return NextResponse.json(
+        { success: false, message: tokenResult.error },
+        { status: 401 }
+      );
+    }
+
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    const result = await courtService.getById(id, serviceContext);
 
     if (!result.success) {
       return NextResponse.json(
-        { message: result.message },
+        { success: false, message: result.message },
         { status: 404 }
       );
     }
@@ -27,7 +39,7 @@ export async function GET(
   } catch (error) {
     console.error("GET /api/court/[id] error:", error);
     return NextResponse.json(
-      { message: "Internal server error" },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
@@ -41,6 +53,16 @@ export async function PUT(
   try {
     const body = await request.json();
     const { id } = await params;
+    const tokenResult = await verifyAuth(request);
+
+    if (!tokenResult.isValid) {
+      return NextResponse.json(
+        { success: false, message: tokenResult.error },
+        { status: 401 }
+      );
+    }
+
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
     
     // Validate request body
     console.log("Raw body received:", body);
@@ -52,11 +74,11 @@ export async function PUT(
     console.log("Validated price:", validatedData.price);
     console.log("Validated price type:", typeof validatedData.price);
     
-    const result = await courtService.update(id, validatedData);
+    const result = await courtService.update(id, validatedData, serviceContext);
 
     if (!result.success) {
       return NextResponse.json(
-        { message: result.message },
+        { success: false, message: result.message },
         { status: 400 }
       );
     }
@@ -71,13 +93,13 @@ export async function PUT(
     
     if (error instanceof Error && error.name === 'ZodError') {
       return NextResponse.json(
-        { message: "Validation error", errors: error.message },
+        { success: false, message: "Validation error", errors: error.message },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { message: "Internal server error" },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
@@ -90,11 +112,22 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const result = await courtService.delete(id);
+    const tokenResult = await verifyAuth(request);
+
+    if (!tokenResult.isValid) {
+      return NextResponse.json(
+        { success: false, message: tokenResult.error },
+        { status: 401 }
+      );
+    }
+
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+
+    const result = await courtService.delete(id, serviceContext);
 
     if (!result.success) {
       return NextResponse.json(
-        { message: result.message },
+        { success: false, message: result.message },
         { status: 404 }
       );
     }
@@ -107,7 +140,7 @@ export async function DELETE(
   } catch (error) {
     console.error("DELETE /api/court/[id] error:", error);
     return NextResponse.json(
-      { message: "Internal server error" },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
