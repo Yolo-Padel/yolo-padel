@@ -64,7 +64,7 @@ export function EditVenueDetails({
           <DialogTitle className='text-2xl font-bold mb-6'>
             Details Venue
           </DialogTitle>
-          <DialogClose className="absolute right-4 top-4 inline-flex items-center justify-center rounded-full bg-[#C3D223] p-1 text-black hover:bg-[#A9B920] ">  
+          <DialogClose className="absolute right-4 top-4 inline-flex items-center justify-center rounded-full bg-[#C3D223] p-1 text-black hover:bg-[#A9B920]">  
           </DialogClose>
           {/* <DialogDescription> */}
             <div className="mt-2 grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
