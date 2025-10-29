@@ -9,8 +9,8 @@ export const usersService = {
   getUsers: async (context: ServiceContext) => {
     try {
       const accessError = requirePermission(context, Role.ADMIN);
+      
       if (accessError) return accessError;
-
       // Get all users
       const users = await prisma.user.findMany({
         where: { isArchived: false },
@@ -18,22 +18,7 @@ export const usersService = {
         orderBy: { createdAt: "desc" },
       });
 
-      // Filter users berdasarkan role dan venue assignment
-      const filteredUsers = users.filter((user) => {
-        // SUPER_ADMIN bisa lihat semua users
-        if (context.userRole === Role.SUPER_ADMIN) {
-          return true;
-        }
-        
-        // ADMIN hanya bisa lihat users di venue yang sama
-        if (context.userRole === Role.ADMIN) {
-          return user.assignedVenueId === context.assignedVenueId;
-        }
-        
-        return false; // Role lain tidak bisa akses
-      });
-
-      const usersWithoutPasswords = filteredUsers.map(({ password, ...user }) => user);
+      const usersWithoutPasswords = users.map(({ password, ...user }) => user);
 
       return {
         success: true,

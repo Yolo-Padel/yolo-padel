@@ -4,11 +4,14 @@ import { profileService } from "./profile.service";
 import { usersService } from "./users.service";
 import { resendService } from "./resend.service";
 import { prisma } from "@/lib/prisma";
-import { ServiceContext } from "@/types/service-context";
+import { requirePermission, ServiceContext } from "@/types/service-context";
+import { Role } from "@/types/prisma";
 
 export const inviteUserService = {
     inviteUser: async (data: UserCreateData, context: ServiceContext) => {
         try {
+            const accessError = requirePermission(context, Role.SUPER_ADMIN);
+            if (accessError) return accessError;
             const existingUser = await prisma.user.findUnique({
                 where: { email: data.email },
               });
