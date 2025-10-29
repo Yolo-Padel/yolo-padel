@@ -37,7 +37,7 @@ const menuConfig: MenuItem[] = [
     name: "Users Management",
     url: "/admin/dashboard/users",
     icon: Users,
-    roles: [Role.ADMIN, Role.SUPER_ADMIN],
+    roles: [Role.SUPER_ADMIN],
   },
   {
     name: "Booking Management",
