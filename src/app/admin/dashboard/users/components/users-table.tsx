@@ -271,7 +271,7 @@ export function UsersTable() {
                     ).map((pageNum, index) => (
                       <div key={index}>
                         {pageNum === "..." ? (
-                          <div className="flex items-center justify-center w-8 h-8 bg-white border border-[#E9EAEB] text-[#A4A7AE]">
+                          <div className="flex items-center justify-center w-8 h-8 bg-background border border-[#E9EAEB] text-[#A4A7AE]">
                             <MoreHorizontal className="w-4 h-4" />
                           </div>
                         ) : (
