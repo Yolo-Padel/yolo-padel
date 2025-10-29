@@ -101,10 +101,18 @@ export function SeeBookingDetails({
                                 <Info className='w-6 h-6 mr-2 mb-5'/> Please arrive at least 10-15 minutes before your booking time to ensure a smooth check-in and warm-up.
                             </Badge>
                         </div>
-
-                        <div>
+                        {bookingDetails?.status === "Upcoming" && (
+                            <div>
                             <Button onClick={() => onOpenChange(false)} className="w-full p-4 rounded-sm">Close</Button>
-                        </div>
+                            </div>
+                        )}
+                        {bookingDetails?.status === "Completed" && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center justify-center">
+                                <Button onClick={() => onOpenChange(false)} variant="outline" className="w-full p-4 rounded-sm">Close</Button>
+                                <Button onClick={() => onOpenChange(false)} className="w-full p-4 rounded-sm">Book Again</Button>
+                                
+                            </div>
+                        )}
                     </DialogDescription>
                 </DialogHeader>
             </DialogContent>
