@@ -54,15 +54,6 @@ export function DeleteVenue({
               This will permanently delete the venue and all related courts, bookings, and reports. 
               Please make sure there are no pending bookings before you continue.
             </DialogDescription>
-            {venueData && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-semibold text-sm text-gray-700 mb-2">Venue Details:</h4>
-                <div className="text-sm text-gray-600">
-                  <div><strong>Name:</strong> {venueData.name}</div>
-                  {venueData.address && <div><strong>Address:</strong> {venueData.address}</div>}
-                </div>
-              </div>
-            )}
           </DialogHeader>
           
           <Button
