@@ -8,7 +8,8 @@ export type {
     MagicLink,
     Booking,
     Payment,
-    Blocking
+    Blocking,
+    ActivityLog,
 } from "@prisma/client";
 
 export { Role, UserStatus, DayOfWeek, OpeningHoursType, BookingStatus, PaymentStatus } from "@prisma/client";

@@ -6,6 +6,9 @@ import { resendService } from "./resend.service";
 import { prisma } from "@/lib/prisma";
 import { requirePermission, ServiceContext } from "@/types/service-context";
 import { Role } from "@/types/prisma";
+import { activityLogService } from "@/lib/services/activity-log.service";
+import { ACTION_TYPES } from "@/types/action";
+import { ENTITY_TYPES } from "@/types/entity";
 
 export const inviteUserService = {
     inviteUser: async (data: UserCreateData, context: ServiceContext) => {
@@ -87,6 +90,19 @@ export const inviteUserService = {
                     message: email.message,
                 };
             }
+
+            // audit log
+            activityLogService.record({
+                context,
+                action: ACTION_TYPES.INVITE_USER,
+                entityType: ENTITY_TYPES.USER,
+                entityId: inviteResult.data!.user.id,
+                changes: { before: {}, after: {
+                    email: inviteResult.data!.user.email,
+                    role: data.role,
+                    assignedVenueId: inviteResult.data!.user.assignedVenueId,
+                } } as any,
+            });
 
             return {
                 success: true,

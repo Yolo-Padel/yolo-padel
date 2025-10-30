@@ -21,7 +21,7 @@ export async function GET(
       );
     }
 
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
     const result = await courtService.getById(id, serviceContext);
 
     if (!result.success) {
@@ -62,7 +62,7 @@ export async function PUT(
       );
     }
 
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
     
     // Validate request body
     console.log("Raw body received:", body);
@@ -121,7 +121,7 @@ export async function DELETE(
       );
     }
 
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
 
     const result = await courtService.delete(id, serviceContext);
 

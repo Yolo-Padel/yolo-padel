@@ -4,6 +4,9 @@ import { Prisma } from "@prisma/client";
 import { UserStatus } from "@/types/prisma";
 import { ServiceContext, requirePermission } from "@/types/service-context";
 import { Role } from "@/types/prisma";
+import { activityLogService } from "@/lib/services/activity-log.service";
+import { ACTION_TYPES } from "@/types/action";
+import { ENTITY_TYPES } from "@/types/entity";
 
 export const usersService = {
   getUsers: async (context: ServiceContext) => {
@@ -50,6 +53,22 @@ export const usersService = {
           assignedVenueId: data.assignedVenueId || null,
         },
       });
+      // audit log (non-blocking)
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.CREATE_USER,
+        entityType: ENTITY_TYPES.USER,
+        entityId: user.id,
+        changes: {
+          before: {},
+          after: {
+            email: user.email,
+            role: user.role,
+            assignedVenueId: user.assignedVenueId,
+            userStatus: user.userStatus,
+          }
+        } as any,
+      });
       return {
         success: true,
         data: user,
@@ -71,9 +90,20 @@ export const usersService = {
       const accessError = requirePermission(context, Role.SUPER_ADMIN);
       if (accessError) return accessError;
 
-      await prisma.user.update({
+      const updated = await prisma.user.update({
         where: { id: data.userId },
         data: { isArchived: true },
+      });
+      // audit log
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.DELETE_USER,
+        entityType: ENTITY_TYPES.USER,
+        entityId: data.userId,
+        changes: {
+          before: { isArchived: false },
+          after: { isArchived: true }
+        } as any,
       });
       return {
         success: true,

@@ -2,6 +2,9 @@ import { prisma } from "../prisma";
 import { VenueCreateData, VenueDeleteData, VenueUpdateData } from "../validations/venue.validation";
 import { ServiceContext, requirePermission } from "@/types/service-context";
 import { Role } from "@/types/prisma";
+import { activityLogService, buildChangesDiff } from "@/lib/services/activity-log.service";
+import { ACTION_TYPES } from "@/types/action";
+import { ENTITY_TYPES } from "@/types/entity";
 
 export const venueService = {
   getAll: async (context: ServiceContext) => {
@@ -100,6 +103,14 @@ export const venueService = {
       const result = await prisma.venue.create({
         data: createData,
       });
+      // audit log
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.CREATE_VENUE,
+        entityType: ENTITY_TYPES.VENUE,
+        entityId: result.id,
+        changes: { before: {}, after: createData } as any,
+      });
       return {
         success: true,
         data: result,
@@ -141,6 +152,14 @@ export const venueService = {
         where: { id: venueId },
         data: updateData,
       });
+      const diff = buildChangesDiff(exist as any, { ...exist, ...updateData } as any, Object.keys(updateData) as any);
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.UPDATE_VENUE,
+        entityType: ENTITY_TYPES.VENUE,
+        entityId: venueId,
+        changes: (diff as any) ?? null,
+      });
 
       return {
         success: true,
@@ -164,6 +183,13 @@ export const venueService = {
       await prisma.venue.update({
         where: { id: data.venueId },
         data: { isArchived: true },
+      });
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.DELETE_VENUE,
+        entityType: ENTITY_TYPES.VENUE,
+        entityId: data.venueId,
+        changes: { before: { isArchived: false }, after: { isArchived: true } } as any,
       });
       return {
         success: true,

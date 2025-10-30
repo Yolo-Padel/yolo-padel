@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { venueService } from "@/lib/services/venue.service";
 import { venueUpdateSchema } from "@/lib/validations/venue.validation";
-import { validateRequest } from "@/lib/validate-request";
 import { verifyAuth } from "@/lib/auth-utils";
 import { createServiceContext } from "@/types/service-context";
 
@@ -20,7 +19,7 @@ export async function GET(
       );
     }
 
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
     const result = await venueService.getById(id, serviceContext);
 
     if (!result.success) {
@@ -61,7 +60,7 @@ export async function PUT(
       );
     }
 
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
     const result = await venueService.update(validatedData, serviceContext);
 
     if (!result.success) {
@@ -108,7 +107,7 @@ export async function DELETE(
       );
     }
 
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.assignedVenueId);
+    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
     const result = await venueService.delete({ venueId: id }, serviceContext);
 
     if (!result.success) {
