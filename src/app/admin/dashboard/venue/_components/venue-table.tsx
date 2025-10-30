@@ -38,6 +38,8 @@ type VenueRow = {
   description?: string;
   images?: string[];
   isActive?: boolean;
+  courtsCount?: number;
+  bookingsToday?: number;
 };
 
 const PAGE_SIZE = 10;
@@ -53,7 +55,7 @@ export function VenueTable() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const allVenues = (data?.data as Venue[] | undefined) || [];
+  const allVenues = (data?.data as (Venue & { _counts?: { courts: number; bookingsToday: number } })[] | undefined) || [];
 
   const rows: VenueRow[] = React.useMemo(() => {
     return allVenues.map((v) => ({
@@ -68,6 +70,8 @@ export function VenueTable() {
       description: v.description || "",
       images: v.images || [],
       isActive: v.isActive ?? true,
+      courtsCount: v._counts?.courts ?? 0,
+      bookingsToday: v._counts?.bookingsToday ?? 0,
     }));
   }, [allVenues]);
 
@@ -198,9 +202,9 @@ export function VenueTable() {
               </CardTitle>
               <div className="mt-0 flex items-left gap-1 text-gray-600 text-xs items-center">
                 <LandPlot className="size-4" />
-                <span>X Court</span>
+                <span>{venue.courtsCount ?? 0} Court{(venue.courtsCount ?? 0) === 1 ? '' : 's'}</span>
                 <Dot />
-                <span>X Booking Today</span>
+                <span>{venue.bookingsToday ?? 0} Booking Today</span>
               </div>
             </CardContent>
         <CardFooter className="px-1 pt-0 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">

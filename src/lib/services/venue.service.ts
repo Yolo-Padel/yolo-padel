@@ -25,9 +25,34 @@ export const venueService = {
         return true; // USER dan SUPER_ADMIN bisa akses semua venue
       });
       
+      // Enrich with counts: courts count and today's bookings count per venue
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const enriched = await Promise.all(filteredVenues.map(async (venue) => {
+        const [courtsCount, bookingsToday] = await Promise.all([
+          prisma.court.count({ where: { venueId: venue.id, isArchived: false } }),
+          prisma.booking.count({
+            where: {
+              bookingDate: { gte: startOfDay, lte: endOfDay },
+              court: { venueId: venue.id },
+            },
+          }),
+        ]);
+        return {
+          ...venue,
+          _counts: {
+            courts: courtsCount,
+            bookingsToday,
+          },
+        } as any;
+      }));
+
       return {
         success: true,
-        data: filteredVenues,
+        data: enriched,
         message: "Get all venues successful",
       };
     } catch (error) {
