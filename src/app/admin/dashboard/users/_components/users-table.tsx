@@ -33,6 +33,7 @@ import {
   getPaginatedData,
 } from "@/lib/pagination-utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ResendInviteButton } from "@/app/admin/dashboard/users/_components/resend-invite-button";
 
 const PAGE_SIZE = 10;
 
@@ -45,6 +46,7 @@ export function UsersTable() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [userToDelete, setUserToDelete] = useState<User & { profile?: Profile | null } | null>(null)
   const searchParams = useSearchParams()
+  
 
   // Define table columns for colSpan
   const columns = [
@@ -210,7 +212,12 @@ export function UsersTable() {
                     </Avatar>
                     {u.profile?.fullName || "-"}
                   </TableCell>
-                  <TableCell>{getStatusBadge(u.userStatus)}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(u.userStatus)}
+                      <ResendInviteButton userId={u.id} status={u.userStatus} />
+                    </div>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     {getRole(u.role)}
                   </TableCell>
@@ -221,6 +228,7 @@ export function UsersTable() {
                       : "-"}
                   </TableCell>
                   <TableCell className="text-right">
+                    {/* Resend dipindah ke kolom Status */}
                     <Button
                       variant="outline"
                       size="sm"

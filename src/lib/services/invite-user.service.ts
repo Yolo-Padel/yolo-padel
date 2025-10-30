@@ -118,4 +118,73 @@ export const inviteUserService = {
             };
         }
     }
+    ,
+    resendInvitation: async (userId: string, context: ServiceContext) => {
+        try {
+            const accessError = requirePermission(context, Role.SUPER_ADMIN);
+            if (accessError) return accessError;
+
+            const user = await prisma.user.findUnique({
+                where: { id: userId },
+                include: { profile: true },
+            });
+
+            if (!user || user.isArchived) {
+                return {
+                    success: false,
+                    data: null,
+                    message: "User not found",
+                };
+            }
+
+            // Generate fresh magic link
+            const magicLink = await magicLinkService.generateMagicLink(user.email);
+            if (!magicLink.success || !magicLink.token) {
+                return {
+                    success: false,
+                    data: null,
+                    message: magicLink.message,
+                };
+            }
+
+            const invitationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify?token=${magicLink.token}`;
+            const fullName = user.profile?.fullName || user.email;
+
+            const emailResult = await resendService.sendInvitationEmail({
+                email: user.email,
+                userName: fullName,
+                invitationUrl,
+                role: user.role,
+            } as any);
+
+            if (!emailResult.success) {
+                return {
+                    success: false,
+                    data: null,
+                    message: emailResult.message,
+                };
+            }
+
+            activityLogService.record({
+                context,
+                action: ACTION_TYPES.INVITE_USER,
+                entityType: ENTITY_TYPES.USER,
+                entityId: user.id,
+                changes: { before: {}, after: { resend: true, email: user.email } } as any,
+            });
+
+            return {
+                success: true,
+                data: null,
+                message: "Invitation resent successfully",
+            };
+        } catch (error) {
+            console.error("Resend invitation error:", error);
+            return {
+                success: false,
+                data: null,
+                message: "Failed to resend invitation",
+            };
+        }
+    }
 }

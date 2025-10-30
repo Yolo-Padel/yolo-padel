@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { User, Profile } from '@/types/prisma';
-import { UserCreateData, UserDeleteData, UserUpdateData } from '@/lib/validations/user.validation';
+import { UserCreateData, UserDeleteData, UserUpdateData, UserResendInviteData } from '@/lib/validations/user.validation';
 import { toast } from 'sonner';
 
 // Types for API responses
@@ -34,6 +34,11 @@ interface InviteUserResponse {
   } | null;
   message: string;
   errors?: any[];
+}
+
+interface ResendInviteResponse {
+  success: boolean;
+  message: string;
 }
 
 // API functions
@@ -127,6 +132,19 @@ const inviteUserApi = {
       message: result.message || "User invited successfully!",
     };
   },
+  resendInvitation: async (data: UserResendInviteData): Promise<ResendInviteResponse> => {
+    const response = await fetch("/api/users/invite-user/resend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+      credentials: "include",
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      return { success: false, message: result.message || "Failed to resend invitation" };
+    }
+    return { success: true, message: result.message || "Invitation resent successfully" };
+  },
 };
 
 // Custom hooks
@@ -156,6 +174,25 @@ export const useInviteUser = () => {
     onError: (error: Error) => {
       console.error("Invite user error:", error);
       toast.error(error.message || "Failed to invite user. Please try again.");
+    },
+  });
+};
+
+export const useResendInvitation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: inviteUserApi.resendInvitation,
+    onSuccess: (data: ResendInviteResponse) => {
+      if (data.success) {
+        toast.success(data.message || "Invitation resent successfully!");
+      } else {
+        toast.error(data.message || "Failed to resend invitation.");
+      }
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (error: Error) => {
+      console.error("Resend invitation error:", error);
+      toast.error(error.message || "Failed to resend invitation.");
     },
   });
 };
