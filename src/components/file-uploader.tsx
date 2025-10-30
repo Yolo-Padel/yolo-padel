@@ -29,7 +29,7 @@ export function FileUploader({
   onChange,
   maxFiles = 5,
   accept = { "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"] },
-  multiple = true,
+  multiple = false,
   className,
 }: FileUploaderProps) {
   const uploadMutation = useFileUpload();
