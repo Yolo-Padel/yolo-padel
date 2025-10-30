@@ -15,6 +15,7 @@ import {
   useDropzone as rootUseDropzone,
 } from "react-dropzone";
 import { Button } from "./button";
+import { Trash2Icon } from "lucide-react";
 
 type DropzoneResult<TUploadRes, TUploadError> =
   | {
@@ -674,6 +675,7 @@ const DropzoneRemoveFile = forwardRef<
         "aria-disabled:pointer-events-none aria-disabled:opacity-50",
       )}
     >
+      <Trash2Icon/>
       <span className="sr-only">Remove file</span>
     </Button>
   );
