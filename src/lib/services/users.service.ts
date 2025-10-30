@@ -23,10 +23,49 @@ export const usersService = {
 
       const usersWithoutPasswords = users.map(({ password, ...user }) => user);
 
+      // Build invitation state for INVITED users (no schema changes)
+      const invitedEmails = usersWithoutPasswords
+        .filter(u => u.userStatus === UserStatus.INVITED)
+        .map(u => u.email);
+
+      let emailToLatestLink: Record<string, { used: boolean; expiresAt: Date } | undefined> = {};
+      if (invitedEmails.length > 0) {
+        const links = await prisma.magicLink.findMany({
+          where: { email: { in: invitedEmails } },
+          orderBy: [{ email: 'asc' }, { createdAt: 'desc' }],
+        });
+        for (const link of links) {
+          if (!emailToLatestLink[link.email]) {
+            emailToLatestLink[link.email] = { used: link.used, expiresAt: link.expiresAt } as any;
+          }
+        }
+      }
+
+      const now = new Date();
+      const usersWithInvitation = usersWithoutPasswords.map(u => {
+        if (u.userStatus !== UserStatus.INVITED) return u as any;
+        const latest = emailToLatestLink[u.email];
+        let state: 'valid' | 'expired' | 'used' | 'none' = 'none';
+        let expiresAt: Date | undefined = undefined;
+        if (latest) {
+          expiresAt = latest.expiresAt;
+          if (latest.used) state = 'used';
+          else if (latest.expiresAt < now) state = 'expired';
+          else state = 'valid';
+        }
+        return {
+          ...u,
+          invitation: {
+            state,
+            expiresAt: expiresAt ? expiresAt.toISOString() : undefined,
+          },
+        } as any;
+      });
+
       return {
         success: true,
         data: {
-          users: usersWithoutPasswords,
+          users: usersWithInvitation,
         },
         message: "Users fetched successfully",
       };

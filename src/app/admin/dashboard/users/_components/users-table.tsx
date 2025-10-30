@@ -154,6 +154,31 @@ export function UsersTable() {
     }
   };
 
+  const renderStatusBadge = (
+    user: (User & { profile?: Profile | null } & { invitation?: { state: 'valid' | 'expired' | 'used' | 'none'; expiresAt?: string } })
+  ) => {
+    if (user.userStatus !== UserStatus.INVITED) return getStatusBadge(user.userStatus);
+    const state = user.invitation?.state || 'none';
+
+    return (
+      <Badge variant="outline">
+        <div className="flex items-center gap-2">
+          {state === 'expired' ? (
+            <>
+              <div className="w-2 h-2 rounded-full bg-red-500" />
+              <span>Link Expired</span>
+            </>
+          ) : (
+            <>
+              <div className="w-2 h-2 rounded-full bg-yellow-500" />
+              <span>Invited (Sent)</span>
+            </>
+          )}
+        </div>
+      </Badge>
+    );
+  };
+
   const getRole = (role: Role) => {
     switch (role) {
       case Role.SUPER_ADMIN:
@@ -214,7 +239,7 @@ export function UsersTable() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {getStatusBadge(u.userStatus)}
+                      {renderStatusBadge(u as any)}
                       <ResendInviteButton userId={u.id} status={u.userStatus} />
                     </div>
                   </TableCell>

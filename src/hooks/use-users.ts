@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 interface UsersResponse {
   success: boolean;
   data: {
-    users: (User & { profile?: Profile | null })[];
+    users: (User & { profile?: Profile | null } & { invitation?: { state: 'valid' | 'expired' | 'used' | 'none'; expiresAt?: string } })[];
   } | null;
   message: string;
   errors?: any[];
