@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { User, Profile } from '@/types/prisma';
-import { UserCreateData, UserDeleteData } from '@/lib/validations/user.validation';
+import { UserCreateData, UserDeleteData, UserUpdateData } from '@/lib/validations/user.validation';
 import { toast } from 'sonner';
 
 // Types for API responses
@@ -15,6 +15,13 @@ interface UsersResponse {
 
 interface DeleteUserResponse {
   success: boolean;
+  message: string;
+  errors?: any[];
+}
+
+interface UpdateUserResponse {
+  success: boolean;
+  data: { user: User; profile?: Profile | null } | null;
   message: string;
   errors?: any[];
 }
@@ -65,6 +72,31 @@ const usersApi = {
     return {
       success: true,
       message: "User deleted successfully",
+    };
+  },
+  updateUser: async (data: UserUpdateData): Promise<UpdateUserResponse> => {
+    const response = await fetch("/api/users", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+      credentials: "include",
+    });
+    const result = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        data: null,
+        message: result.message || "Failed to update user",
+      };
+    }
+
+    return {
+      success: true,
+      data: result.data || null,
+      message: result.message || "User updated successfully",
     };
   },
 };
@@ -144,6 +176,26 @@ export const useDeleteUser = () => {
     onError: (error: Error) => {
       console.error("Delete user error:", error);
       toast.error(error.message || "Failed to delete user. Please try again.");
+    },
+  });
+};
+
+export const useUpdateUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: usersApi.updateUser,
+    onSuccess: (result: UpdateUserResponse) => {
+      if (result.success) {
+        toast.success(result.message || "User updated successfully!");
+      } else {
+        toast.error(result.message || "Failed to update user. Please try again.");
+      }
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (error: Error) => {
+      console.error("Update user error:", error);
+      toast.error(error.message || "Failed to update user. Please try again.");
     },
   });
 };

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { UserCreateData, UserDeleteData } from "../validations/user.validation";
+import { UserCreateData, UserDeleteData, UserUpdateData } from "../validations/user.validation";
 import { Prisma } from "@prisma/client";
 import { UserStatus } from "@/types/prisma";
 import { ServiceContext, requirePermission } from "@/types/service-context";
@@ -82,6 +82,78 @@ export const usersService = {
           data: null,
           message: error instanceof Error ? error.message : "Failed to create user",
       }
+    }
+  },
+
+  updateUser: async (data: UserUpdateData, context: ServiceContext) => {
+    try {
+      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      if (accessError) return accessError;
+
+      const existing = await prisma.user.findUnique({
+        where: { id: data.userId },
+        include: { profile: true },
+      });
+      if (!existing || existing.isArchived) {
+        return { success: false, data: null, message: "User not found" } as any;
+      }
+
+      const assignedVenueId = data.role === Role.USER ? null : (data.assignedVenueId ?? null);
+
+      const updated = await prisma.user.update({
+        where: { id: data.userId },
+        data: {
+          email: data.email,
+          role: data.role,
+          assignedVenueId,
+        },
+        include: { profile: true },
+      });
+
+      // Update or create profile fullName
+      if (data.fullName) {
+        const hasProfile = !!existing.profile;
+        if (hasProfile) {
+          await prisma.profile.update({ where: { userId: data.userId }, data: { fullName: data.fullName } });
+        } else {
+          await prisma.profile.create({ data: { userId: data.userId, fullName: data.fullName } });
+        }
+      }
+
+      // audit log (minimal diff)
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.UPDATE_USER,
+        entityType: ENTITY_TYPES.USER,
+        entityId: data.userId,
+        changes: {
+          before: {
+            email: existing.email,
+            role: existing.role,
+            assignedVenueId: existing.assignedVenueId,
+            fullName: existing.profile?.fullName ?? null,
+          },
+          after: {
+            email: data.email,
+            role: data.role,
+            assignedVenueId,
+            fullName: data.fullName,
+          },
+        } as any,
+      });
+
+      return {
+        success: true,
+        data: updated,
+        message: "User updated successfully",
+      } as any;
+    } catch (error) {
+      console.error("Update user error:", error);
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : "Failed to update user",
+      } as any;
     }
   },
 
