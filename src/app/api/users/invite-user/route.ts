@@ -21,7 +21,8 @@ export async function POST(request: NextRequest) {
             return validation.error;
         }
 
-        const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
+        const { user } = tokenResult;
+        const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
         const result = await inviteUserService.inviteUser(validation.data!, serviceContext);
 
         if (!result.success) {

@@ -11,33 +11,23 @@ export interface AuthUser {
   assignedVenueId?: string;
 }
 
-export async function verifyAuth(request: NextRequest): Promise<{
-  isValid: boolean;
-  user?: AuthUser;
-  error?: string;
-}> {
+type AuthSuccess = { isValid: true; user: AuthUser };
+type AuthFailure = { isValid: false; error: string };
+
+export async function verifyAuth(request: NextRequest): Promise<AuthSuccess | AuthFailure> {
   try {
     // Get token from cookies
     const token = request.cookies.get("auth-token")?.value;
 
     if (!token) {
-      return {
-        isValid: false,
-        error: "Unauthorized - No token provided",
-      };
+      return { isValid: false, error: "Unauthorized - No token provided" };
     }
 
     // Verify token and get user data
     const decoded = jwt.verify(token, JWT_SECRET) as AuthUser;
 
-    return {
-      isValid: true,
-      user: decoded,
-    };
+    return { isValid: true, user: decoded };
   } catch (error) {
-    return {
-      isValid: false,
-      error: "Unauthorized - Invalid token",
-    };
+    return { isValid: false, error: "Unauthorized - Invalid token" };
   }
 }

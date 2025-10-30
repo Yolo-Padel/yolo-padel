@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
-
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
+    const { user } = tokenResult;
+    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
     const result = await usersService.getUsers(serviceContext);
 
     if (!result.success) {
@@ -51,8 +51,8 @@ export async function DELETE(request: NextRequest) {
         { status: 401 }
       );
     }
-
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
+    const { user } = tokenResult;
+    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
     const result = await usersService.deleteUser(validatedData, serviceContext);
 
     if (!result.success) {

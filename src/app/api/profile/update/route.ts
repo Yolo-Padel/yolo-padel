@@ -6,18 +6,14 @@ import { verifyAuth } from "@/lib/auth-utils";
 export async function PUT(request: NextRequest) {
   try {
     // Verify authentication
-    const { isValid, user, error } = await verifyAuth(request);
-
-    if (!isValid || !user) {
+    const tokenResult = await verifyAuth(request);
+    if (!tokenResult.isValid) {
       return NextResponse.json(
-        {
-          success: false,
-          data: null,
-          message: error || "Unauthorized",
-        },
+        { success: false, message: tokenResult.error },
         { status: 401 }
       );
     }
+    const { user } = tokenResult;
 
     // Parse and validate request body
     const body = await request.json();
