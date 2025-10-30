@@ -1,9 +1,9 @@
 "use client"
 
 import React from 'react'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { number } from 'zod'
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { X } from 'lucide-react'
 
 
 type DetailsVenue = {
@@ -19,7 +19,6 @@ export function EditVenueDetails({
     detailSheetOpen,
     onOpenChange,
     detailsVenue,
-    onSubmit,
     onEditVenue,
     onDeleteVenue,
 }: {
@@ -59,15 +58,22 @@ export function EditVenueDetails({
 
   return (
     <Dialog open={detailSheetOpen} onOpenChange={() => onOpenChange(false)}>
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
+          <div className="relative">
           <DialogTitle className='text-2xl font-bold mb-6'>
             Details Venue
           </DialogTitle>
-          <DialogClose className="absolute right-4 top-4 inline-flex items-center justify-center rounded-full bg-[#C3D223] p-1 text-black hover:bg-[#A9B920]">  
-          </DialogClose>
-          {/* <DialogDescription> */}
-            <div className="mt-2 grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-0 right-0 h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
+            onClick={() => onOpenChange(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <div className="text-muted-foreground">Venue Name</div>
             <div className="font-medium text-foreground min-w-0 truncate">{values.venueName || "-"}</div>
 
@@ -89,7 +95,7 @@ export function EditVenueDetails({
         <div className="mt-6 flex justify-center gap-3 rounded-b-sm">
             <Button 
               variant="outline" 
-              className="rounded-xs flex-1" 
+              className="flex-1" 
               onClick={() => { 
                 if (onDeleteVenue) onDeleteVenue();
               }}
@@ -97,7 +103,7 @@ export function EditVenueDetails({
               Delete Venue
             </Button>
             <Button 
-              className="rounded-xs bg-[#C3D223] text-black hover:bg-[#A9B920] flex-1"
+              className="bg-[#C3D223] text-black hover:bg-[#A9B920] flex-1"
               onClick={() => {
                 onOpenChange(false);
                 if (onEditVenue) onEditVenue();
