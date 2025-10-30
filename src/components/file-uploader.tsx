@@ -28,12 +28,23 @@ export function FileUploader({
   value,
   onChange,
   maxFiles = 5,
-  accept = { "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"] },
+  accept = { "image/*": [".png", ".jpg", ".jpeg"] },
   multiple = false,
   className,
 }: FileUploaderProps) {
   const uploadMutation = useFileUpload();
   const [uploadedUrls, setUploadedUrls] = React.useState<string[]>(value ?? []);
+  const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+  const MAX_SIZE_LABEL = `${(MAX_SIZE_BYTES / (1024 * 1024)) | 0} MB`;
+  const allowedExtensions = React.useMemo(() => {
+    try {
+      const flat = Object.values(accept || {}).flat() as string[];
+      if (!flat || flat.length === 0) return "";
+      return flat.map((ext) => ext.replace(".", "").toUpperCase()).join(", ");
+    } catch {
+      return "";
+    }
+  }, [accept]);
 
   // Sync with external value changes
   React.useEffect(() => {
@@ -85,7 +96,7 @@ export function FileUploader({
     },
     validation: {
       accept,
-      maxSize: 10 * 1024 * 1024,
+      maxSize: MAX_SIZE_BYTES,
       maxFiles: multiple ? maxFiles : 1,
     },
   });
@@ -107,6 +118,9 @@ export function FileUploader({
                 <p className="font-semibold">Upload image{multiple ? "s" : ""}</p>
                 <p className="text-sm text-muted-foreground">
                   Click here or drag and drop to upload
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {allowedExtensions ? `${allowedExtensions} • ` : ""}Max {MAX_SIZE_LABEL}
                 </p>
               </div>
             </DropzoneTrigger>
