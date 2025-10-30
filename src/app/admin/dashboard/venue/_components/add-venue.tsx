@@ -209,13 +209,16 @@ export function VenueFormSheet ({
             </div>
             
             <div className="grid gap-2">
-              <Label>Photo Venue (Optional)</Label>
+              <Label>Photo Venue <span className="text-red-500">*</span></Label>
               <FileUploader
                 value={((watch("images") as string[] | undefined) ?? []).slice(0, 1)}
                 onChange={(urls) => setValue("images", (urls ?? []).slice(0, 1))}
                 multiple={false}
                 maxFiles={1}
               />
+              {errors.images && (
+                <p className="text-xs text-red-500">{String(errors.images.message || "At least one image is required")}</p>
+              )}
             </div>
           </form>
         </div>
