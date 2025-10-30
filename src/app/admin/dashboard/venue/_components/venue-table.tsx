@@ -23,8 +23,8 @@ import { DeleteVenue } from "./venue-delete";
 import { useVenue } from "@/hooks/use-venue";
 import { Venue } from "@/types/prisma";
 import { useRouter } from "next/navigation";
-import { VenueTableSkeleton } from "@/app/admin/dashboard/venue/components/venue-skeleton";
-import { VenueEmptyState } from "@/app/admin/dashboard/venue/components/venue-empty-state";
+import { VenueTableSkeleton } from "@/app/admin/dashboard/venue/_components/venue-skeleton";
+import { VenueEmptyState } from "@/app/admin/dashboard/venue/_components/venue-empty-state";
 
 type VenueRow = {
   id: string;

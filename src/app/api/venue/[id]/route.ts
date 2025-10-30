@@ -18,8 +18,8 @@ export async function GET(
         { status: 401 }
       );
     }
-
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
+    const { user } = tokenResult;
+    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
     const result = await venueService.getById(id, serviceContext);
 
     if (!result.success) {
@@ -59,8 +59,8 @@ export async function PUT(
         { status: 401 }
       );
     }
-
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
+    const { user } = tokenResult;
+    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
     const result = await venueService.update(validatedData, serviceContext);
 
     if (!result.success) {
@@ -106,8 +106,8 @@ export async function DELETE(
         { status: 401 }
       );
     }
-
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
+    const { user } = tokenResult;
+    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
     const result = await venueService.delete({ venueId: id }, serviceContext);
 
     if (!result.success) {

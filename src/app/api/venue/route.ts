@@ -1,7 +1,6 @@
 import { venueService } from "@/lib/services/venue.service";
 import { venueCreateSchema, venueDeleteSchema } from "@/lib/validations/venue.validation";
 import { NextRequest, NextResponse } from "next/server";
-import { validateRequest } from "@/lib/validate-request";
 import { verifyAuth } from "@/lib/auth-utils";
 import { createServiceContext } from "@/types/service-context";
 
@@ -15,8 +14,8 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
-
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
+    const { user } = tokenResult;
+    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
     const result = await venueService.getAll(serviceContext);
     
     if (!result.success) {
@@ -52,9 +51,9 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
-    const result = await venueService.create(validatedData, serviceContext, tokenResult.user?.userId!);
+    const { user } = tokenResult;
+    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
+    const result = await venueService.create(validatedData, serviceContext, user.userId);
 
     if (!result.success) {
       return NextResponse.json(
@@ -97,8 +96,8 @@ export async function DELETE(request: NextRequest) {
         { status: 401 }
       );
     }
-
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
+    const { user } = tokenResult;
+    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
     const result = await venueService.delete(validatedData, serviceContext);
 
     if (!result.success) {

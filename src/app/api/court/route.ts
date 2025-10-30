@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
-
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
+    const { user } = tokenResult;
+    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
     
     let result;
     if (venueId) {
@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-
-    const serviceContext = createServiceContext(tokenResult.user?.role!, tokenResult.user?.userId!, tokenResult.user?.assignedVenueId);
+    const { user } = tokenResult;
+    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
     
     const result = await courtService.create(validatedData, serviceContext);
 

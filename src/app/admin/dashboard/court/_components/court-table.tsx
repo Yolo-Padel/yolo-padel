@@ -33,8 +33,8 @@ import { Breadcrumb, BreadcrumbLink, BreadcrumbItem, BreadcrumbList, BreadcrumbS
 import { useCourtByVenue } from "@/hooks/use-court"
 import { useVenueById } from "@/hooks/use-venue"
 import { Court as PrismaCourt, OpeningHoursType } from "@/types/prisma"
-import { CourtTableSkeleton } from "@/app/admin/dashboard/court/components/court-skeleton"
-import { CourtEmptyState } from "@/app/admin/dashboard/court/components/court-empty-state"
+import { CourtTableSkeleton } from "@/app/admin/dashboard/court/_components/court-skeleton"
+import { CourtEmptyState } from "@/app/admin/dashboard/court/_components/court-empty-state"
 
 // Types
 type Court = {

@@ -84,9 +84,24 @@ export const venueService = {
       const accessError = requirePermission(context, Role.SUPER_ADMIN);
       if (accessError) return accessError;
 
+      const baseSlug = data.name.trim().toLowerCase().replace(/\s+/g, "-");
+      // Ambil semua slug yang diawali baseSlug untuk menentukan sufiks unik
+      const existing = await prisma.venue.findMany({
+        where: { slug: { startsWith: baseSlug } },
+        select: { slug: true },
+      });
+
+      const existingSet = new Set(existing.map(e => e.slug));
+      const nextUniqueSlug = (() => {
+        if (!existingSet.has(baseSlug)) return baseSlug;
+        let suffix = 2;
+        while (existingSet.has(`${baseSlug}-${suffix}`)) suffix += 1;
+        return `${baseSlug}-${suffix}`;
+      })();
+
       const createData: any = {
         name: data.name,
-        slug: data.name.trim().toLowerCase().replace(/\s+/g, "-"),
+        slug: nextUniqueSlug,
         images: data.images ?? [],
         isActive: data.isActive ?? true,
         createdById: userId,
@@ -141,11 +156,28 @@ export const venueService = {
         };
       }
 
+      let slugUpdate: string | undefined;
+      if (payload.name) {
+        const baseSlug = payload.name.trim().toLowerCase().replace(/\s+/g, "-");
+        // Cari slug yang konflik (kecuali venue ini sendiri)
+        const existing = await prisma.venue.findMany({
+          where: {
+            slug: { startsWith: baseSlug },
+            NOT: { id: venueId },
+          },
+          select: { slug: true },
+        });
+        const existingSet = new Set(existing.map(e => e.slug));
+        if (!existingSet.has(baseSlug)) slugUpdate = baseSlug; else {
+          let suffix = 2;
+          while (existingSet.has(`${baseSlug}-${suffix}`)) suffix += 1;
+          slugUpdate = `${baseSlug}-${suffix}`;
+        }
+      }
+
       const updateData: any = {
         ...payload,
-        ...(payload.name
-          ? { slug: payload.name.trim().toLowerCase().replace(/\s+/g, "-") }
-          : {}),
+        ...(slugUpdate ? { slug: slugUpdate } : {}),
       };
 
       const result = await prisma.venue.update({

@@ -2,7 +2,7 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar";
-import { Header } from "@/app/admin/dashboard/components/header";
+import { Header } from "@/app/admin/dashboard/_components/header";
 import { Suspense } from "react";
 import { UserSidebar } from "./_components/user-sidebar";
 
