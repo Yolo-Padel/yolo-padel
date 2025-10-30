@@ -38,6 +38,8 @@ type VenueRow = {
   description?: string;
   images?: string[];
   isActive?: boolean;
+  courtsCount?: number;
+  bookingsToday?: number;
 };
 
 const PAGE_SIZE = 10;
@@ -53,7 +55,7 @@ export function VenueTable() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const allVenues = (data?.data as Venue[] | undefined) || [];
+  const allVenues = (data?.data as (Venue & { _counts?: { courts: number; bookingsToday: number } })[] | undefined) || [];
 
   const rows: VenueRow[] = React.useMemo(() => {
     return allVenues.map((v) => ({
@@ -68,6 +70,8 @@ export function VenueTable() {
       description: v.description || "",
       images: v.images || [],
       isActive: v.isActive ?? true,
+      courtsCount: v._counts?.courts ?? 0,
+      bookingsToday: v._counts?.bookingsToday ?? 0,
     }));
   }, [allVenues]);
 
@@ -185,37 +189,37 @@ export function VenueTable() {
       ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
       {paginated.map((venue) => (
-      <Card className="min-w-0 max-w-[265px] shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-2" key={venue.id}>
-        <CardHeader className="p-2 gap-0">
+      <Card className="min-w-0 max-w-[265px] shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-4.5" key={venue.id}>
+        <CardHeader className="px-2 pt-2 gap-0">
             <img
               src={venue.image}
               className="w-full h-full object-cover rounded-sm aspect-square"
             />
         </CardHeader>
-        <CardContent className="px-2 pb-1 text-sm text-gray-700 gap-1">
+        <CardContent className="px-2 text-sm text-gray-700 gap-4">
               <CardTitle className="text-sm font-semibold truncate">
                 {venue.venueName}
               </CardTitle>
               <div className="mt-0 flex items-left gap-1 text-gray-600 text-xs items-center">
                 <LandPlot className="size-4" />
-                <span>X Court</span>
+                <span>{venue.courtsCount ?? 0} Court{(venue.courtsCount ?? 0) === 1 ? '' : 's'}</span>
                 <Dot />
-                <span>X Booking Today</span>
+                <span>{venue.bookingsToday ?? 0} Booking Today</span>
               </div>
             </CardContent>
-        <CardFooter className="px-1 pt-0 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <CardFooter className="px-1 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Button
             onClick={() => { setSelectedVenue(venue); setDetailSheetOpen(true); }}
             variant="outline"
             size="sm"
-            className="rounded-sm border-[#C3D223] text-black w-full"
+            className="rounded-sm border-[#C3D223] text-black w-full font-normal text-xs"
           >
             See Detail
           </Button>
           <Button
             variant="default"
             size="sm"
-            className="rounded-sm bg-[#C3D223] hover:bg-[#A9B920] text-black w-full"
+            className="rounded-sm bg-[#C3D223] hover:bg-[#A9B920] text-black w-full font-normal text-xs"
             onClick={() => router.push(`/admin/dashboard/court?venueId=${venue.id}`)}
           >
             Manage Court

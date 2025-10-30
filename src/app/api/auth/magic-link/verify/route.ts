@@ -3,7 +3,7 @@ import { magicLinkService } from "@/lib/services/magic-link.service";
 import { magicLinkVerifySchema } from "@/lib/validations/magic-link.validation";
 import { validateRequest } from "@/lib/validate-request";
 import { prisma } from "@/lib/prisma";
-import jwt from "jsonwebtoken";
+import { SignJWT } from "jose";
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,12 +40,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate JWT token
-    const jwtToken = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role, assignedVenueId: user.assignedVenueId },
-      process.env.JWT_SECRET!,
-      { expiresIn: "7d" }
-    );
+    // Generate JWT token using jose
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || "your-super-secret-key");
+    const jwtToken = await new SignJWT({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      assignedVenueId: user.assignedVenueId,
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime("7d")
+      .sign(secret);
 
     // Set HTTP-only cookie
     const response = NextResponse.json({

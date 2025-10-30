@@ -22,8 +22,8 @@ import {
 } from "@/components/ui/select"
 import { X } from "lucide-react"
 import { User, Profile, Role, Venue } from "@/types/prisma"
-import { useInviteUser } from "@/hooks/use-users"
-import { userCreateSchema, UserCreateData } from "@/lib/validations/user.validation"
+import { useInviteUser, useUpdateUser } from "@/hooks/use-users"
+import { userCreateSchema, UserCreateData, UserUpdateData } from "@/lib/validations/user.validation"
 import { useVenue } from "@/hooks/use-venue"
 
 interface UserModalProps {
@@ -40,6 +40,7 @@ export function UserModal({
   user
 }: UserModalProps) {
   const inviteUserMutation = useInviteUser()
+  const updateUserMutation = useUpdateUser()
   const { data: venues, isLoading: isLoadingVenues } = useVenue()
   
   const {
@@ -84,8 +85,15 @@ export function UserModal({
         await inviteUserMutation.mutateAsync(data)
         onOpenChange(false)
       } else {
-        // TODO: Implement edit user functionality
-        console.log("Edit user:", data)
+        if (!user) return
+        const payload: UserUpdateData = {
+          userId: user.id,
+          email: data.email,
+          role: data.role,
+          fullName: data.fullName,
+          assignedVenueId: data.assignedVenueId,
+        }
+        await updateUserMutation.mutateAsync(payload)
         onOpenChange(false)
       }
     } catch (error) {

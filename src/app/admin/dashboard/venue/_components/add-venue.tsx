@@ -76,7 +76,7 @@ export function VenueFormSheet ({
         name: venueData.name ?? "",
         address: venueData.address ?? "",
         description: (venueData as any).description ?? "",
-        images: (venueData as any).images ?? [],
+        images: ((venueData as any).images ?? []).slice(0, 1),
         city: (venueData as any).city ?? "",
         phone: (venueData as any).phone ?? "",
         openHour: (venueData as any).openHour ?? "07:00",
@@ -100,13 +100,16 @@ export function VenueFormSheet ({
   }, [open, mode, reset])
 
   const onSubmit: SubmitHandler<VenueFormValues> = async (values) => {
+    // Ensure only single image is submitted
+    const imagesOne: string[] = (values.images ?? []).slice(0, 1)
+
     if (mode === "edit" && values.id) {
       await updateMutation.mutateAsync({
         venueId: values.id,
         name: values.name,
         address: values.address,
         description: values.description,
-        images: values.images ?? [],
+        images: imagesOne,
         city: values.city,
         phone: values.phone,
         openHour: values.openHour,
@@ -118,7 +121,7 @@ export function VenueFormSheet ({
         name: values.name,
         address: values.address,
         description: values.description,
-        images: values.images ?? [],
+        images: imagesOne,
         city: values.city,
         phone: values.phone,
         openHour: values.openHour,
@@ -206,13 +209,16 @@ export function VenueFormSheet ({
             </div>
             
             <div className="grid gap-2">
-              <Label>Photo Venue (Optional)</Label>
+              <Label>Photo Venue <span className="text-red-500">*</span></Label>
               <FileUploader
-                multiple
-                maxFiles={5}
-                value={(watch("images") as string[] | undefined) ?? []}
-                onChange={(urls) => setValue("images", urls)}
+                value={((watch("images") as string[] | undefined) ?? []).slice(0, 1)}
+                onChange={(urls) => setValue("images", (urls ?? []).slice(0, 1))}
+                multiple={false}
+                maxFiles={1}
               />
+              {errors.images && (
+                <p className="text-xs text-red-500">{String(errors.images.message || "At least one image is required")}</p>
+              )}
             </div>
           </form>
         </div>
