@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { MenuItems } from "@/app/admin/dashboard/_components/menu-items";
+import { MenuItemsSkeleton } from "@/app/admin/dashboard/_components/menu-items-skeleton";
 import { NavUser } from "@/app/admin/dashboard/_components/nav-user";
 import { CompanyProfile } from "@/app/admin/dashboard/_components/company-profile";
 import {
@@ -90,7 +91,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <CompanyProfile />
       </SidebarHeader>
       <SidebarContent className="bg-white">
-        <MenuItems menuItems={filteredMenuItems} />
+        {isLoading ? (
+          <MenuItemsSkeleton />
+        ) : (
+          <MenuItems menuItems={filteredMenuItems} />
+        )}
       </SidebarContent>
       <SidebarFooter>
         {isAuthenticated && !isLoading ? (
