@@ -28,7 +28,7 @@ export const usersService = {
         .filter(u => u.userStatus === UserStatus.INVITED)
         .map(u => u.email);
 
-      let emailToLatestLink: Record<string, { used: boolean; expiresAt: Date } | undefined> = {};
+      const emailToLatestLink: Record<string, { used: boolean; expiresAt: Date } | undefined> = {};
       if (invitedEmails.length > 0) {
         const links = await prisma.magicLink.findMany({
           where: { email: { in: invitedEmails } },
