@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import { jwtVerify } from "jose";
 import { NextRequest } from "next/server";
 import { Role } from "@/types/prisma";
 
@@ -23,10 +23,11 @@ export async function verifyAuth(request: NextRequest): Promise<AuthSuccess | Au
       return { isValid: false, error: "Unauthorized - No token provided" };
     }
 
-    // Verify token and get user data
-    const decoded = jwt.verify(token, JWT_SECRET) as AuthUser;
-
-    return { isValid: true, user: decoded };
+    // Verify token and get user data using jose
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+    const user = payload as any as AuthUser;
+    return { isValid: true, user };
   } catch (error) {
     return { isValid: false, error: "Unauthorized - Invalid token" };
   }

@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { Role } from "@/types/prisma";
@@ -10,6 +10,7 @@ import bcrypt from "bcryptjs";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";
 const JWT_EXPIRES_IN = "7d";
+const secretKey = new TextEncoder().encode(JWT_SECRET);
 
 export const authService = {
   register: async (data: RegisterFormData) => {
@@ -53,16 +54,16 @@ export const authService = {
         }
       );
 
-      // 4. Generate JWT token
-      const token = jwt.sign(
-        {
-          userId: result.user.id,
-          email: result.user.email,
-          role: result.user.role,
-        },
-        JWT_SECRET,
-        { expiresIn: JWT_EXPIRES_IN }
-      );
+      // 4. Generate JWT token (jose)
+      const token = await new SignJWT({
+        userId: result.user.id,
+        email: result.user.email,
+        role: result.user.role,
+      })
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime(JWT_EXPIRES_IN)
+        .sign(secretKey);
 
       const { password, ...userWithoutPassword } = result.user;
 
@@ -114,16 +115,16 @@ export const authService = {
           message: "Invalid email or password",
         };
       }
-      // 3. Generate JWT token
-      const token = jwt.sign(
-        {
-          userId: user.id,
-          email: user.email,
-          role: user.role,
-        },
-        JWT_SECRET,
-        { expiresIn: JWT_EXPIRES_IN }
-      );
+      // 3. Generate JWT token (jose)
+      const token = await new SignJWT({
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+      })
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime(JWT_EXPIRES_IN)
+        .sign(secretKey);
 
       const { password, ...userWithoutPassword } = user;
 
@@ -149,7 +150,8 @@ export const authService = {
 
   verifyToken: async (token: string) => {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const { payload } = await jwtVerify(token, secretKey);
+      const decoded = payload as any;
 
       // Get fresh user data
       const user = await prisma.user.findUnique({
