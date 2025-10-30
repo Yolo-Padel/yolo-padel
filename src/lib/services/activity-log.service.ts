@@ -171,12 +171,10 @@ export const activityLogService = {
     entityType,
     entityId,
     changes,
-    description,
   }: RecordActivityParams) => {
     try {
       // Auto-generate description if not provided
       const finalDescription = 
-        description || 
         generateDescriptionFromChanges(action, entityType, changes) || 
         null;
 

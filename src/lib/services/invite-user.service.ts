@@ -102,7 +102,6 @@ export const inviteUserService = {
                     role: data.role,
                     assignedVenueId: inviteResult.data!.user.assignedVenueId,
                 } } as any,
-                description: "Invite user",
             });
 
             return {

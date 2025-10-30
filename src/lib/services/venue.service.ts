@@ -110,7 +110,6 @@ export const venueService = {
         entityType: ENTITY_TYPES.VENUE,
         entityId: result.id,
         changes: { before: {}, after: createData } as any,
-        description: "Create venue",
       });
       return {
         success: true,
@@ -160,7 +159,6 @@ export const venueService = {
         entityType: ENTITY_TYPES.VENUE,
         entityId: venueId,
         changes: (diff as any) ?? null,
-        description: "Update venue",
       });
 
       return {
@@ -192,7 +190,6 @@ export const venueService = {
         entityType: ENTITY_TYPES.VENUE,
         entityId: data.venueId,
         changes: { before: { isArchived: false }, after: { isArchived: true } } as any,
-        description: "Soft delete venue",
       });
       return {
         success: true,

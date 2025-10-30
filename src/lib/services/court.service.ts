@@ -285,7 +285,6 @@ export const courtService = {
             venueId: data.venueId,
           }
         } as any,
-        description: "Create court",
       });
 
       return {
@@ -454,7 +453,6 @@ export const courtService = {
         entityType: ENTITY_TYPES.COURT,
         entityId: court.id,
         changes: (courtDiff as any) ?? null,
-        description: "Update court",
       });
 
       return {
@@ -503,7 +501,6 @@ export const courtService = {
         entityType: ENTITY_TYPES.COURT,
         entityId: id,
         changes: { before: { isArchived: false }, after: { isArchived: true } } as any,
-        description: "Soft delete court",
       });
 
       return {
@@ -553,7 +550,6 @@ export const courtService = {
         entityType: ENTITY_TYPES.COURT,
         entityId: id,
         changes: toggleDiff,
-        description: `Toggle court ${isActive ? 'activate' : 'deactivate'}`,
       });
 
       return {

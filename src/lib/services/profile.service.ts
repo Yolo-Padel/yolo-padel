@@ -23,7 +23,6 @@ export const profileService = {
           entityType: ENTITY_TYPES.USER,
           entityId: userId,
           changes: { before: {}, after: { fullName: data.fullName } } as any,
-          description: "Create profile",
         });
       }
       return {
@@ -58,7 +57,6 @@ export const profileService = {
           entityType: ENTITY_TYPES.USER,
           entityId: userId,
           changes: { fullName: data.fullName },
-          description: "Update profile",
         });
       }
 

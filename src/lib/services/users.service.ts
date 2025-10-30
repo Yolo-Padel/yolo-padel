@@ -68,7 +68,6 @@ export const usersService = {
             userStatus: user.userStatus,
           }
         } as any,
-        description: "Create user",
       });
       return {
         success: true,
@@ -105,7 +104,6 @@ export const usersService = {
           before: { isArchived: false },
           after: { isArchived: true }
         } as any,
-        description: "Soft delete user",
       });
       return {
         success: true,
