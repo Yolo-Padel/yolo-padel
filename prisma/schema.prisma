@@ -195,6 +195,7 @@ model Booking {
   source           String        // flag for booking created by YOLO / Courtside system
   bookingDate      DateTime
   bookingHour      String
+  bookingCode      String        @unique
   duration         Int           // could be handled on the fly (for Courtside)
   totalPrice       Int
   status           BookingStatus

@@ -38,14 +38,6 @@ export const bookingService = {
               paymentDate: true,
               channelName: true
             }
-          },
-          blocking: {
-            select: {
-              id: true,
-              description: true,
-              timerange: true,
-              isBlocking: true
-            }
           }
         },
         orderBy: {
@@ -96,14 +88,6 @@ export const bookingService = {
               paymentDate: true,
               channelName: true
             }
-          },
-          blocking: {
-            select: {
-              id: true,
-              description: true,
-              timerange: true,
-              isBlocking: true
-            }
           }
         },
         orderBy: {
@@ -153,14 +137,6 @@ export const bookingService = {
               channelName: true
             }
           },
-          blocking: {
-            select: {
-              id: true,
-              description: true,
-              timerange: true,
-              isBlocking: true
-            }
-          }
         },
         orderBy: {
           bookingDate: 'asc'

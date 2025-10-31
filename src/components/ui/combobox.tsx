@@ -30,7 +30,7 @@ const filterStatus = [
   },
 ]
 
-export function ComboboxFilter() {
+export function ComboboxFilter({ disabled = false }: { disabled?: boolean }) {
   const [open, setOpen] = React.useState(false)
   const [value, setValue] = React.useState("")
   const selectedLabel = value
@@ -41,6 +41,7 @@ export function ComboboxFilter() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          disabled={disabled}
           variant="outline"
           role="combobox"
           aria-expanded={open}
@@ -60,6 +61,7 @@ export function ComboboxFilter() {
                   key={status.value}
                   value={status.value}
                   onSelect={(currentValue) => {
+                    if (disabled) return
                     setValue(currentValue === value ? "" : currentValue)
                     setOpen(false)
                   }}
