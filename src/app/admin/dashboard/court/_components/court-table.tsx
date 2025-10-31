@@ -36,7 +36,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { useCourtByVenue } from "@/hooks/use-court";
+import { useCourtByVenue, useToggleCourtAvailability } from "@/hooks/use-court";
 import { useVenueById } from "@/hooks/use-venue";
 import { Court as PrismaCourt, OpeningHoursType } from "@/types/prisma";
 import { CourtTableSkeleton } from "@/app/admin/dashboard/court/_components/court-skeleton";
@@ -128,6 +128,9 @@ export function CourtTable() {
   // Fetch venue details for breadcrumb
   const { data: venueData } = useVenueById(venueId || "");
 
+  // Toggle court availability hook
+  const toggleCourtAvailability = useToggleCourtAvailability();
+
   // Transform Prisma Court data to match our Court type
   const courts: Court[] = useMemo(() => {
     if (!courtData?.data) return [];
@@ -209,8 +212,7 @@ export function CourtTable() {
 
   // Function to handle availability toggle
   const handleAvailabilityToggle = (courtId: string, checked: boolean) => {
-    // TODO: Implement API call to toggle court availability
-    console.log(`Court ${courtId} availability changed to:`, checked);
+    toggleCourtAvailability.mutate(courtId);
   };
 
   // Function to handle delete court
@@ -397,6 +399,7 @@ export function CourtTable() {
                       <div className="flex items-center gap-2">
                         <Switch
                           checked={court.availability}
+                          disabled={toggleCourtAvailability.isPending}
                           onCheckedChange={(checked: boolean) => {
                             handleAvailabilityToggle(court.id, checked);
                           }}
