@@ -45,6 +45,16 @@ type Court = {
   availability: boolean
   availabilityTime: string
   openingHours?: OpeningHoursType
+  operatingHours?: Array<{
+    id: string
+    dayOfWeek: string
+    closed: boolean
+    slots: Array<{
+      id: string
+      openHour: string
+      closeHour: string
+    }>
+  }>
 }
 
 const DUMMY_DATA: Court[] = [
@@ -123,6 +133,7 @@ export function CourtTable() {
       availability: court.isActive,
       availabilityTime: "09:00 - 21:00", // Default time, can be enhanced later
       openingHours: court.openingType,
+      operatingHours: (court as any).operatingHours || [],
     }))
   }, [courtData])
 
@@ -460,11 +471,13 @@ export function CourtTable() {
           console.log("Selected court for modal:", selected);
           console.log("Selected pricePerHour:", selected.pricePerHour);
           console.log("Selected openingHours:", selected.openingHours);
+          console.log("Selected operatingHours:", selected.operatingHours);
           return {
             id: selected.id,
             name: selected.courtName,
             price: selected.pricePerHour,
-            openingHours: selected.openingHours || OpeningHoursType.REGULAR
+            openingHours: selected.openingHours || OpeningHoursType.REGULAR,
+            operatingHours: selected.operatingHours || []
           };
         })() : undefined}
       />

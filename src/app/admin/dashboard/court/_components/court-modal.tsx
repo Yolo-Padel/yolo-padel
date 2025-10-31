@@ -38,6 +38,16 @@ interface CourtModalProps {
     name?: string;
     price?: number;
     openingHours?: OpeningHoursType;
+    operatingHours?: Array<{
+      id: string;
+      dayOfWeek: string;
+      closed: boolean;
+      slots: Array<{
+        id: string;
+        openHour: string;
+        closeHour: string;
+      }>;
+    }>;
     // Add other court properties as needed
   };
 }
@@ -115,7 +125,7 @@ export function CourtModal({
       if (mode === "edit" && court) {
         console.log("Edit mode - court data:", court);
         console.log("Edit mode - court price:", court.price);
-        
+
         setValue("courtName", court.name || "");
         setValue("venueId", venueId);
         setValue("price", court.price || 200000);
@@ -123,25 +133,86 @@ export function CourtModal({
           "openingHours",
           court.openingHours || OpeningHoursType.REGULAR
         );
-        
+
         console.log("Form values after setValue:", {
           courtName: court.name || "",
           price: court.price || 200000,
-          openingHours: court.openingHours || OpeningHoursType.REGULAR
+          openingHours: court.openingHours || OpeningHoursType.REGULAR,
         });
-        
+
         // Debug opening hours specifically
         console.log("Opening hours debug:", {
           courtOpeningHours: court.openingHours,
           setValueOpeningHours: court.openingHours || OpeningHoursType.REGULAR,
-          watchOpeningHours: watch("openingHours")
+          watchOpeningHours: watch("openingHours"),
         });
-        
+
         // Force re-render to ensure form updates
         setTimeout(() => {
           console.log("Delayed opening hours check:", watch("openingHours"));
         }, 100);
-        // TODO: Set schedule data when court data structure is defined
+
+        // Set schedule data from operatingHours when openingHours is WITHOUT_FIXED
+        if (
+          court.openingHours === OpeningHoursType.WITHOUT_FIXED &&
+          court.operatingHours
+        ) {
+          console.log(
+            "Loading schedule data from operatingHours:",
+            court.operatingHours
+          );
+
+          // Transform operatingHours to schedule format
+          const scheduleData: any = {};
+          const timeSlotsData: any = {};
+
+          // Initialize all days
+          const daysOfWeek = [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+          ];
+
+          daysOfWeek.forEach((day) => {
+            const dayUpper = day.toUpperCase();
+            const operatingHour = court.operatingHours?.find(
+              (oh) => oh.dayOfWeek === dayUpper
+            );
+
+            if (operatingHour) {
+              scheduleData[day] = {
+                closed: operatingHour.closed,
+                timeSlots: operatingHour.slots.map((slot) => ({
+                  openHour: slot.openHour,
+                  closeHour: slot.closeHour,
+                })),
+              };
+
+              timeSlotsData[day] = operatingHour.slots.map((slot) => ({
+                openHour: slot.openHour,
+                closeHour: slot.closeHour,
+              }));
+            } else {
+              // Default values if no operating hour found
+              scheduleData[day] = {
+                closed: false,
+                timeSlots: [{ openHour: "09:00", closeHour: "17:00" }],
+              };
+              timeSlotsData[day] = [{ openHour: "09:00", closeHour: "17:00" }];
+            }
+          });
+
+          console.log("Transformed schedule data:", scheduleData);
+          console.log("Transformed timeSlots data:", timeSlotsData);
+
+          // Set the schedule data
+          setValue("schedule", scheduleData);
+          setTimeSlots(timeSlotsData);
+        }
       } else {
         reset({
           courtName: "",
@@ -201,7 +272,7 @@ export function CourtModal({
       console.log("Opening hours type:", typeof data.openingHours);
       console.log("All form values:", watch());
       console.log("Form errors:", errors);
-      
+
       if (mode === "add") {
         console.log("Creating new court:", data);
         await createCourtMutation.mutateAsync(data);
@@ -211,12 +282,12 @@ export function CourtModal({
         console.log("Court ID:", court.id);
         console.log("Update payload:", {
           courtId: court.id,
-          ...data
+          ...data,
         });
-        
+
         await updateCourtMutation.mutateAsync({
           courtId: court.id,
-          ...data
+          ...data,
         });
         onOpenChange(false);
       }
@@ -449,7 +520,7 @@ export function CourtModal({
                     <InputGroupAddon>
                       <InputGroupText>Rp</InputGroupText>
                     </InputGroupAddon>
-                    <InputGroupInput 
+                    <InputGroupInput
                       placeholder="200.000"
                       {...register("price", { valueAsNumber: true })}
                       onChange={(e) => {
@@ -482,10 +553,6 @@ export function CourtModal({
                     }}
                     className="space-y-3"
                   >
-                    {/* Debug opening hours value */}
-                    <div className="text-xs text-gray-500 mb-2">
-                      Current opening hours: {watch("openingHours")}
-                    </div>
                     <div className="flex items-start space-x-3">
                       <RadioGroupItem
                         value={OpeningHoursType.REGULAR}
@@ -521,25 +588,6 @@ export function CourtModal({
                         <p className="text-sm text-gray-500">
                           Display the court's custom defined schedule (e.g.
                           09:00-24:00).
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-3">
-                      <RadioGroupItem
-                        value={OpeningHoursType.TEMP_CLOSED}
-                        id="temporarily_closed"
-                        className="mt-1"
-                      />
-                      <div className="space-y-1">
-                        <Label
-                          htmlFor="temporarily-closed"
-                          className="text-sm font-medium text-gray-900 cursor-pointer"
-                        >
-                          Temporarily closed
-                        </Label>
-                        <p className="text-sm text-gray-500">
-                          Mark the court as temporarily unavailable. The court
-                          will reappear when the closure period ends.
                         </p>
                       </div>
                     </div>
@@ -694,16 +742,19 @@ export function CourtModal({
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting} 
+            <Button
+              type="submit"
+              disabled={isSubmitting}
               className="flex-1"
               onClick={handleSubmit(onSubmit)}
             >
-              {isSubmitting 
-                ? (mode === "add" ? "Adding..." : "Updating...") 
-                : (mode === "add" ? "Add Court" : "Update Court")
-              }
+              {isSubmitting
+                ? mode === "add"
+                  ? "Creating Court..."
+                  : "Updating Court..."
+                : mode === "add"
+                  ? "Create Court"
+                  : "Save Changes"}
             </Button>
           </div>
         </div>
