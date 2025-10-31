@@ -214,7 +214,7 @@ export function BookingCourt({
               className="w-full h-full object-cover rounded-sm"
             />
         </CardHeader>
-        <CardContent className="px-2 pt-0 pb-1 text-md text-gray-700 gap-2 space-y-2">
+        <CardContent className="px-2 pt-0 pb-1 text-md text-foreground gap-2 space-y-2">
               <CardTitle className="text-md font-semibold truncate">
                 <span className="justify-between flex items-center gap-1">
                 ID#{bookingCourt.id} <Badge className={getStatusBadge(bookingCourt.status)}><p className="capitalize">{bookingCourt.status}</p></Badge>
