@@ -6,7 +6,7 @@ import {
   LoginFormInput,
 } from "@/lib/validations/auth.validation";
 
-import { User, Profile } from '@/types/prisma';
+import { User, Profile } from "@/types/prisma";
 
 // Types for API responses
 interface AuthResponse {
@@ -77,7 +77,6 @@ const authApi = {
 
     return response.json();
   },
-
 };
 
 // Custom hooks
@@ -149,9 +148,12 @@ export const useCurrentUser = () => {
     queryFn: authApi.getCurrentUser,
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 };
-
 
 // Hook untuk cek apakah user sudah login
 export const useAuth = () => {

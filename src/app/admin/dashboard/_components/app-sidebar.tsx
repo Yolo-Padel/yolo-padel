@@ -1,13 +1,7 @@
 "use client";
 //
 import * as React from "react";
-import {
-  Home,
-  Users,
-  Crown,
-  TableCellsMerge,
-  LandPlot,
-} from "lucide-react";
+import { Home, Users, Crown, TableCellsMerge, LandPlot } from "lucide-react";
 
 import { MenuItems } from "@/app/admin/dashboard/_components/menu-items";
 import { MenuItemsSkeleton } from "@/app/admin/dashboard/_components/menu-items-skeleton";
@@ -83,21 +77,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   // Filter menu items berdasarkan role user
   const userRole = user?.role as Role;
-  const filteredMenuItems = userRole ? filterMenuByRole(menuConfig, userRole) : [];
+  const filteredMenuItems = userRole
+    ? filterMenuByRole(menuConfig, userRole)
+    : [];
 
   return (
     <Sidebar collapsible="icon" {...props} className="bg-[#f9fafb]">
-      <SidebarHeader className="bg-white">
+      <SidebarHeader className="bg-background">
         <CompanyProfile />
       </SidebarHeader>
-      <SidebarContent className="bg-white">
+      <SidebarContent className="bg-background">
         {isLoading ? (
           <MenuItemsSkeleton />
         ) : (
           <MenuItems menuItems={filteredMenuItems} />
         )}
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="bg-background">
         {isAuthenticated && !isLoading ? (
           <NavUser user={userData} />
         ) : (

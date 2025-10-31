@@ -1,10 +1,8 @@
 import { AppSidebar } from "@/app/admin/dashboard/_components/app-sidebar";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Header } from "@/app/admin/dashboard/_components/header";
 import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
 
 export default function AdminDashboardLayout({
   children,
@@ -12,14 +10,21 @@ export default function AdminDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <Header />
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+        <Suspense
+          fallback={
+            <div className="h-full w-full flex items-center justify-center">
+              <Loader2 className="h-12 w-12 animate-spin" />
+            </div>
+          }
+        >
+          <Header />
+
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+        </Suspense>
       </SidebarInset>
     </SidebarProvider>
-    </Suspense>
   );
 }
