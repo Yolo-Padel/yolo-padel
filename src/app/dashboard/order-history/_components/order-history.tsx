@@ -17,6 +17,7 @@ import {
 import { DatePicker } from '@/components/ui/date-picker'
 import ComboboxFilter from '@/components/ui/combobox'
 import { SeeOrderDetails } from './order-details'
+import { Payment } from './order-payment'
 
 type OrderData={
     orderId: string;
@@ -41,6 +42,7 @@ export default function OrderHistory() {
     const [page,setPage]=useState(1)
     const [selectedOrder,setSelectedOrder]=useState<OrderData | null>(null)
     const [openDetails, setOpenDetails]=useState(false)
+    const [openPayNow, setOpenPayNow]=useState(false)   
 
     const DummyData = [
         {
@@ -174,14 +176,14 @@ export default function OrderHistory() {
                     <Button 
                         className ="w-full border-primary"
                         variant="outline"
-                        onClick={()=>setSelectedOrder(orderData)}
+                        onClick={()=>{setSelectedOrder(orderData); setOpenDetails(true)}}
                     >
                         See Details
                     </Button>
                     <Button 
                         className ="w-full"
                         variant="default"
-                        onClick={()=>setSelectedOrder(orderData)}
+                        onClick={()=>{setSelectedOrder(orderData); setOpenPayNow(true)}}
                     >
                         Pay Now
                     </Button>
@@ -194,7 +196,7 @@ export default function OrderHistory() {
                     <Button 
                         className="w-full border-primary"
                         variant="outline"
-                        onClick={()=>setSelectedOrder(orderData)}
+                        onClick={()=>{setSelectedOrder(orderData); setOpenDetails(true)}}
                     >
                         See Details
                     </Button>
@@ -215,6 +217,14 @@ export default function OrderHistory() {
             open={openDetails}
             onOpenChange={setOpenDetails}
             orderDetails={selectedOrder}/>
+        
+        <Payment
+            open={openPayNow}
+            onOpenChange={setOpenPayNow}
+            paymentProps={selectedOrder}
+            onPayNowClick={()=>setOpenPayNow(false)}
+        />
+
     </div>
   )
 }
