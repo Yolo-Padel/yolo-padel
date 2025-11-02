@@ -6,7 +6,7 @@ import {Button} from '@/components/ui/button'
 import {Badge} from '@/components/ui/badge'
 import { X } from 'lucide-react'
 import {useState, useMemo, useEffect } from 'react'
-import {Payment} from './order-payment'
+import {Payment} from './order-paynow-modal'
 
 type OrderDetails ={
     orderId: string;
@@ -43,12 +43,16 @@ export function SeeOrderDetails ({
     onOpenChange,
     orderDetails,
     onPayNowClick,
+    
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     orderDetails: OrderDetails | null;
-    onPayNowClick?: ()=> void;
+    onPayNowClick?: () => void;
+    
 }) {
+
+    const [openPayNow, setOpenPayNow] = useState(false);
 
     return (
          <Dialog open={open} onOpenChange={onOpenChange} key={orderDetails?.orderId}>
@@ -109,7 +113,7 @@ export function SeeOrderDetails ({
                         <Button 
                             className ="w-full border-primary rounded-sm"
                             variant="outline"
-                            onClick={()=>onOpenChange(false)}
+                            onClick={()=> onOpenChange(false)}
                         >
                             Close
                         </Button>
@@ -130,7 +134,7 @@ export function SeeOrderDetails ({
                         <Button 
                             className ="w-full border-primary rounded-sm"
                             variant="outline"
-                            onClick={()=>onOpenChange(false)}
+                            onClick={()=> onOpenChange(false)}
                         >
                             Change Payment Method
                         </Button>
@@ -138,7 +142,9 @@ export function SeeOrderDetails ({
                         <Button 
                             className ="w-full rounded-sm"
                             variant="default"
-                            onClick={()=>onPayNowClick?.()}
+                            onClick={()=> 
+                            onOpenChange(false)
+                            }
                         >
                             Pay Now
                         </Button>
@@ -164,12 +170,19 @@ export function SeeOrderDetails ({
                             Re-Book
                         </Button>
                         </div>
-                        )}
-                        
+                        )}        
+                                       
                     </DialogFooter>
                 </DialogHeader>
+                <div>
+                <Payment 
+                open={openPayNow}
+                onOpenChange={setOpenPayNow}
+                paymentProps={orderDetails}/>
+                </div>
             </DialogContent>
           </Dialog>  
+          
     )
 }
 

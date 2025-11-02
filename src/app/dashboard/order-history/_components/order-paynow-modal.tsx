@@ -6,6 +6,10 @@ import {Button} from '@/components/ui/button'
 import { X } from 'lucide-react'
 import {Barcode} from 'lucide-react'
 import {useState, useMemo, useEffect } from 'react'
+import {OrderSuccess} from './order_success'
+import {OrderPending} from './order_pending'
+
+
 
 type PaymentProps ={
     orderId: string;
@@ -28,13 +32,15 @@ export function Payment ({
     open,
     onOpenChange,
     paymentProps,
-    onPayNowClick,
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     paymentProps: PaymentProps | null;
-    onPayNowClick?: ()=> void;
 }) {
+
+    const [openModalSuccess,setOpenModalSuccess]=useState(false)
+    const [openModalPending,setOpenModalPending]=useState(false)
+
     return (
          <Dialog open={open} onOpenChange={onOpenChange} key={paymentProps?.orderId}>
             <DialogContent showCloseButton={false}>
@@ -46,10 +52,13 @@ export function Payment ({
                     </DialogTitle>
                     <X className='absolute top-9 right-9 cursor-pointer rounded-full bg-primary p-1' onClick={()=>onOpenChange(false)} />
                     </div>
-                    <DialogDescription className='text-xl gap-4 mt-4 space-y-6'>
-                        <div>
-                            <Barcode className='w-40 h-40 rounded-md' />
+                    <DialogDescription className='text-xl gap-4 mt-4 space-y-6 items-center'>
+                            <img src="/scan_me_qr_code.jpg" alt="barcode" className='w-auto h-auto rounded-md' />
+                        <div className='flex flex-col items-center gap-2 text-sm text-foreground'>
+                            <div>Total Payment Rp {paymentProps?.totalPayment}</div>
+                            <div>Expires in 15 minutes</div>
                         </div>
+                        
                     </DialogDescription>
                     <DialogFooter className="mt-4">
                       
@@ -67,7 +76,7 @@ export function Payment ({
                         <Button 
                             className ="w-full rounded-sm"
                             variant="default"
-                            onClick={()=>(``)}
+                            onClick={()=>setOpenModalPending(true)}
                         >
                             Payment Status
                         </Button>
@@ -77,6 +86,21 @@ export function Payment ({
                     </DialogFooter>
                 </DialogHeader>
             </DialogContent>
+            <div>
+                <OrderSuccess
+                open={openModalSuccess}
+                onOpenChange={setOpenModalSuccess}
+                paymentProps={paymentProps}
+                />
+            </div>
+
+            <div>
+                <OrderPending
+                open={openModalPending}
+                onOpenChange={setOpenModalPending}
+                paymentProps={paymentProps}
+                />
+            </div>
          </Dialog>
     )
 }

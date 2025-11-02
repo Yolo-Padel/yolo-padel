@@ -17,7 +17,7 @@ import {
 import { DatePicker } from '@/components/ui/date-picker'
 import ComboboxFilter from '@/components/ui/combobox'
 import { SeeOrderDetails } from './order-details'
-import { Payment } from './order-payment'
+import { Payment } from './order-paynow-modal'
 
 type OrderData={
     orderId: string;
@@ -121,8 +121,6 @@ export default function OrderHistory() {
         return DummyData.slice(startIndex,startIndex+PAGE_SIZE)
     },[page, DummyData])
 
-
-
   return (
     <div className='flex flex-col gap-4'>
         <div className='flex justify-between items-center'>
@@ -213,18 +211,17 @@ export default function OrderHistory() {
             </Card>
             ))}
         </div>
+        {/*Order Details Modal*/}
         <SeeOrderDetails
             open={openDetails}
             onOpenChange={setOpenDetails}
             orderDetails={selectedOrder}/>
-        
+
+        {/*Pay Now Modal*/}
         <Payment
             open={openPayNow}
             onOpenChange={setOpenPayNow}
-            paymentProps={selectedOrder}
-            onPayNowClick={()=>setOpenPayNow(false)}
-        />
-
-    </div>
+            paymentProps={selectedOrder}/>
+        </div>
   )
 }
