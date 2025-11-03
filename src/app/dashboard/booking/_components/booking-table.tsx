@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
-import { useBooking } from "@/hooks/use-booking";
+import { useBooking, useBookingByUser } from "@/hooks/use-booking";
 import { BookingEmptyState } from "./booking-empty-state";
 import { DatePicker } from "@/components/ui/date-picker";
 import ComboboxFilter from "@/components/ui/combobox";
@@ -28,6 +28,7 @@ import {
   Venue,
   Payment,
 } from "@/types/prisma";
+import { useCurrentUser } from "@/hooks/use-auth";
 
 type BookingCourtRow = {
   id: string;
@@ -46,10 +47,6 @@ type BookingCourtRow = {
 const PAGE_SIZE = 10;
 
 export function BookingCourt() {
-  const [page, setPage] = useState(1);
-  const [addSheetOpen, setAddBookingCourtOpen] = useState(false);
-  const [selectedBookingCourt, setSelectedBookingCourt] =
-    useState<BookingCourtRow | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [mode, setMode] = useState<
     | "booking-details"
@@ -59,7 +56,13 @@ export function BookingCourt() {
     | "payment-pending"
     | "booking-payment"
   >("booking-details");
-  const { data, isLoading, error } = useBooking();
+  const [page, setPage] = useState(1);
+  const [selectedBookingCourt, setSelectedBookingCourt] =
+    useState<BookingCourtRow | null>(null);
+  const { data: userData } = useCurrentUser();
+  const { data, isLoading, error } = useBookingByUser(
+    userData?.data?.user.id || ""
+  );
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -129,7 +132,7 @@ export function BookingCourt() {
           <h3 className="text-xl font-semibold">Booking Court List</h3>
           <Button
             variant="outline"
-            onClick={() => setAddBookingCourtOpen(true)}
+            disabled
             className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
           >
             Book Court
@@ -160,7 +163,7 @@ export function BookingCourt() {
 
           <Button
             variant="outline"
-            onClick={() => setAddBookingCourtOpen(true)}
+            onClick={() => setModalOpen(true)}
             className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
           >
             Book Court
