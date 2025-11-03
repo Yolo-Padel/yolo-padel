@@ -1,6 +1,12 @@
 // src/lib/services/booking.service.ts
 import { prisma } from "@/lib/prisma";
-import { BookingStatus } from "@/types/prisma";
+import { ACTION_TYPES } from "@/types/action";
+import { ENTITY_TYPES } from "@/types/entity";
+import { BookingStatus, Booking, Role } from "@/types/prisma";
+import { activityLogService } from "@/lib/services/activity-log.service";
+import { requirePermission, ServiceContext } from "@/types/service-context";
+import { BookingCreateData } from "../validations/booking.validation";
+import { customAlphabet } from "nanoid";
 
 export const bookingService = {
   // Get all bookings with related data
@@ -276,5 +282,57 @@ export const bookingService = {
         message: error instanceof Error ? error.message : "Get booking failed",
       };
     }
-  }
+  },
+
+  // Create booking
+  create: async (booking: BookingCreateData, context: ServiceContext) => {
+    try {
+      const accessError = requirePermission(context, Role.USER);
+      if (accessError) return accessError;
+
+      const nanoId = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 5);
+
+      const currentDate = new Date();
+      const bookingCode = `#BK-${nanoId}`
+
+      const bookingData = {
+        courtId: booking.courtId,
+        userId: context.actorUserId || "",
+        source: "YOLO system",
+        bookingDate: new Date(booking.bookingDate),
+        bookingHour: booking.bookingHour,
+        duration: booking.duration,
+        totalPrice: booking.totalPrice,
+        status: BookingStatus.PENDING,
+        bookingCode: bookingCode,
+        courtsideCourtId: null,
+        createdAt: currentDate,
+        updatedAt: currentDate
+      }
+
+      const newBooking = await prisma.booking.create({
+        data: bookingData
+      });
+      // audit log
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.CREATE_BOOKING,
+        entityType: ENTITY_TYPES.BOOKING,
+        entityId: newBooking.id,
+        changes: { before: {}, after: newBooking } as any,
+      });
+      return {
+        success: true,
+        data: newBooking,
+        message: "Create booking successful",
+      };
+    } catch (error) {
+      console.error("Create booking error:", error);
+      return {
+        success: false,
+        data: null,
+        message: error instanceof Error ? error.message : "Create booking failed",
+      };
+    }
+  },
 };
