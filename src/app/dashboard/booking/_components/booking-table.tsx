@@ -13,12 +13,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
-import { useBooking, useBookingByUser } from "@/hooks/use-booking";
+import { useBookingByUser } from "@/hooks/use-booking";
 import { BookingEmptyState } from "./booking-empty-state";
 import { DatePicker } from "@/components/ui/date-picker";
 import ComboboxFilter from "@/components/ui/combobox";
-import { BookingModal } from "./booking-modal";
-import { BookingSummary } from "./booking-summary";
 import BookingTableLoading from "./booking-table-loading";
 import {
   Booking,
@@ -29,6 +27,8 @@ import {
   Payment,
 } from "@/types/prisma";
 import { useCurrentUser } from "@/hooks/use-auth";
+import { BookingModal } from "./booking-modal";
+// import { transformDbFormatToUISlots } from "@/utils/booking-slots-utils";
 
 type BookingCourtRow = {
   id: string;
@@ -57,12 +57,19 @@ export function BookingCourt() {
     | "booking-payment"
   >("booking-details");
   const [page, setPage] = useState(1);
+  const [addSheetOpen, setAddBookingCourtOpen] = useState(false);
   const [selectedBookingCourt, setSelectedBookingCourt] =
     useState<BookingCourtRow | null>(null);
-  const { data: userData } = useCurrentUser();
-  const { data, isLoading, error } = useBookingByUser(
-    userData?.data?.user.id || ""
-  );
+  const { data: userData, isLoading: isLoadingUser } = useCurrentUser();
+  const userId = userData?.data?.user.id || "";
+  const {
+    data,
+    isLoading: isLoadingBookings,
+    error,
+  } = useBookingByUser(userId);
+
+  // Show loading if user is still loading OR bookings are loading
+  const isLoading = isLoadingUser || isLoadingBookings;
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -83,23 +90,41 @@ export function BookingCourt() {
 
   const allBookingCourts =
     (data?.data as
-      | (Booking & { court: Court & { venue: Venue }; payments: Payment[] })[]
+      | (Booking & {
+          court: Court & { venue: Venue };
+          payments: Payment[];
+          timeSlots?: Array<{ openHour: string; closeHour: string }>;
+        })[]
       | undefined) || [];
 
   const rows: BookingCourtRow[] = useMemo(() => {
-    return allBookingCourts.map((b) => ({
-      id: b.id,
-      venue: b.court.venue.name,
-      courtName: b.court.name,
-      image: b.court.venue.images[0],
-      bookingTime: b.bookingHour || "",
-      bookingDate: b.bookingDate.toLocaleDateString(),
-      duration: b.duration.toString() + " Hours",
-      totalPayment: b.totalPrice,
-      status: b.status,
-      paymentMethod: b.payments[0].channelName,
-      paymentStatus: b.payments[0].status,
-    }));
+    return allBookingCourts.map((b) => {
+      // Transform timeSlots to display format
+      let bookingTime: string;
+      if (b.timeSlots && b.timeSlots.length > 0) {
+        // Multiple slots: join with comma
+        // bookingTime = transformDbFormatToUISlots(b.timeSlots).join(", ");
+      } else if (b.bookingHour) {
+        // Backward compatibility: use bookingHour
+        bookingTime = b.bookingHour;
+      } else {
+        bookingTime = "N/A";
+      }
+
+      return {
+        id: b.bookingCode,
+        venue: b.court.venue.name,
+        courtName: b.court.name,
+        image: b.court.venue.images?.[0],
+        bookingTime: b.bookingHour || "",
+        bookingDate: new Date(b.bookingDate).toISOString().split("T")[0],
+        duration: b.duration.toString() + " Hours",
+        totalPayment: b.totalPrice,
+        status: b.status,
+        paymentMethod: b.payments[0]?.channelName || "N/A",
+        paymentStatus: b.payments[0]?.status || "PENDING",
+      };
+    });
   }, [allBookingCourts]);
 
   // Frontend filtering and pagination
@@ -123,6 +148,11 @@ export function BookingCourt() {
     const start = (pageSafe - 1) * PAGE_SIZE;
     return filtered.slice(start, start + PAGE_SIZE);
   }, [filtered, pageSafe]);
+
+  // Show loading state first (before checking error or empty state)
+  if (isLoading) {
+    return <BookingTableLoading />;
+  }
 
   // Show error state
   if (error) {
@@ -149,10 +179,6 @@ export function BookingCourt() {
     );
   }
 
-  if (isLoading) {
-    return <BookingTableLoading />;
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-1">
@@ -174,7 +200,7 @@ export function BookingCourt() {
       {filtered.length === 0 ? (
         <BookingEmptyState />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
           {paginated.map((bookingCourt) => (
             <Card
               className="min-w-0 max-w-[265px] shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-2 border-[1px] border-foreground"
@@ -186,10 +212,10 @@ export function BookingCourt() {
                   className="w-full h-full object-cover rounded-sm"
                 />
               </CardHeader>
-              <CardContent className="px-2 pt-0 pb-1 text-md text-foreground gap-2 space-y-2">
+              <CardContent className="px-2 pt-0 pb-1 text-md text-gray-700 gap-2 space-y-2">
                 <CardTitle className="text-md font-semibold truncate">
                   <span className="justify-between flex items-center gap-1">
-                    ID#{bookingCourt.id}{" "}
+                    {bookingCourt.id}{" "}
                     <Badge className={getStatusBadge(bookingCourt.status)}>
                       <p className="capitalize">{bookingCourt.status}</p>
                     </Badge>
