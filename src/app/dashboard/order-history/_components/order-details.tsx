@@ -6,7 +6,7 @@ import {Button} from '@/components/ui/button'
 import {Badge} from '@/components/ui/badge'
 import { X } from 'lucide-react'
 import {useState, useMemo, useEffect } from 'react'
-import {Payment} from './order-paynow-modal'
+import { OrderModal } from './order-modal'
 
 type OrderDetails ={
     orderId: string;
@@ -42,88 +42,94 @@ export function SeeOrderDetails ({
     open,
     onOpenChange,
     orderDetails,
-    onPayNowClick,
+    mode,
+    onChangeMode,
     
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     orderDetails: OrderDetails | null;
-    onPayNowClick?: () => void;
+    mode: "details-payment" | "paynow" | "payment-success" | "view-booking" | "change-method" | "confirm-method";
+    onChangeMode: (mode: "details-payment" | "paynow" | "payment-success" | "view-booking" | "change-method" | "confirm-method") => void;
     
 }) {
 
-    const [openPayNow, setOpenPayNow] = useState(false);
 
     return (
-         <Dialog open={open} onOpenChange={onOpenChange} key={orderDetails?.orderId}>
-            <DialogContent showCloseButton={false}>
-                <DialogHeader>
-                    <div className='grid grid-cols-1'>
-                    <DialogTitle className='space-y-2 text-2xl'>
+            <div>
+                <div className='grid grid-cols-1'>
+                    {mode === "details-payment" && (
+                        <div className='space-y-2 text-2xl'>
                         Payment Details
                         <p className='font-normal text-sm text-muted-foreground pt-2'>Your payment has been {orderDetails?.paymentStatus?.toUpperCase()}. Here's your booking and transaction summary.</p>
-                    </DialogTitle>
-                    <X className='absolute top-9 right-9 cursor-pointer rounded-full bg-primary p-1' onClick={()=>onOpenChange(false)} />
-                    </div>
-                    <DialogDescription className='text-xl gap-4 mt-4 space-y-6'>
-                    
+                        </div>
+                        )}
+                    {mode === "view-booking" && (
+                        <div className='space-y-2 text-2xl'>
+                        View Booking
+                        <p className='font-normal text-sm text-muted-foreground pt-2'>Your payment has been {orderDetails?.paymentStatus?.toUpperCase()}. Here's your booking and transaction summary.</p>
+                        </div>
+                        )}
+                </div>
+
+                <div className='text-xl gap-4 mt-4 space-y-6'>
                         <span className='font-semibold text-foreground'>Order Summary</span>
-                        <div className='grid grid-cols-2 gap-2 mt-4 text-sm text-foreground'>
-                            <div>Order ID</div>
-                            <div className='font-medium'>{orderDetails?.orderId}</div>
+                    <div className='grid grid-cols-2 gap-2 mt-4 text-sm text-foreground'>
+                        <div>Order ID</div>
+                        <div className='font-medium'>{orderDetails?.orderId}</div>
                             
-                            <div>Booking ID</div>
-                            <div className='font-medium'>{orderDetails?.bookingId}</div>
+                        <div>Booking ID</div>
+                        <div className='font-medium'>{orderDetails?.bookingId}</div>
                             
-                            <div>Venue</div>
-                            <div className='font-medium'>{orderDetails?.venue}</div>
+                        <div>Venue</div>
+                        <div className='font-medium'>{orderDetails?.venue}</div>
 
-                            <div>Court Name</div>
-                            <div className='font-medium'>{orderDetails?.courtName}</div>
+                        <div>Court Name</div>
+                        <div className='font-medium'>{orderDetails?.courtName}</div>
 
-                            <div>Date</div>
-                            <div className='font-medium'>{orderDetails?.bookingDate}</div>
+                        <div>Date</div>
+                        <div className='font-medium'>{orderDetails?.bookingDate}</div>
                             
-                            <div>Time</div>
-                            <div className='font-medium'>{orderDetails?.bookingTime}</div>
+                        <div>Time</div>
+                        <div className='font-medium'>{orderDetails?.bookingTime}</div>
                             
-                            <div>Duration</div>
-                            <div className='font-medium'>{orderDetails?.duration}</div>
-                        </div>
+                        <div>Duration</div>
+                        <div className='font-medium'>{orderDetails?.duration}</div>
+                    </div>
+
                         <span className='font-semibold text-foreground'>Payment Status</span>
-                        <div className='grid grid-cols-2 gap-2 mt-4 text-sm text-foreground'>
-                            <div>Total Amount</div>
-                            <div className='font-medium'>Rp {orderDetails?.totalPayment}</div>
+                    <div className='grid grid-cols-2 gap-2 mt-4 text-sm text-foreground'>
+                        <div>Total Amount</div>
+                        <div className='font-medium'>Rp {orderDetails?.totalPayment}</div>
                             
-                            <div>Payment Method</div>
-                            <div className='font-medium'>{orderDetails?.paymentMethod}</div>
+                        <div>Payment Method</div>
+                        <div className='font-medium'>{orderDetails?.paymentMethod}</div>
                             
-                            <div>Payment Status</div>
-                            <div className={`font-medium`}><Badge className={getPaymentStatus(orderDetails?.paymentStatus || " ")}>{orderDetails?.paymentStatus}</Badge></div>
+                        <div>Payment Status</div>
+                        <div className={`font-medium`}><Badge className={getPaymentStatus(orderDetails?.paymentStatus || " ")}>{orderDetails?.paymentStatus}</Badge></div>
                             
-                            <div>Created</div>
-                            <div className='font-medium'>{orderDetails?.created}</div>
-                        </div>
-                    </DialogDescription>
-                    <DialogFooter className="mt-4">
+                        <div>Created</div>
+                        <div className='font-medium'>{orderDetails?.created}</div>
+                    </div>
+                </div>
+
+                <div className="mt-4">
                       
-                        {/*Payment Paid Button*/}
+                {/*Payment Paid Button*/}
                         {orderDetails?.paymentStatus === "Paid" && (
                         <div className='grid grid-cols-1 sm:grid-cols-2 w-full gap-2'>
                         <Button 
                             className ="w-full border-primary rounded-sm"
                             variant="outline"
-                            onClick={()=> onOpenChange(false)}
-                        >
-                            Close
+                            onClick={()=> onOpenChange(false)}>
+                                Close
                         </Button>
 
                         <Button 
                             className ="w-full rounded-sm"
                             variant="default"
-                            onClick={()=>window.open(`/api/order/${orderDetails?.orderId}/receipt`)}
-                        >
-                            Download Receipt
+                            onClick={()=>window.open(`/api/order/${orderDetails?.orderId}/receipt`)}>
+                                Download Receipt
                         </Button>
                         </div>
                         )}
@@ -134,19 +140,17 @@ export function SeeOrderDetails ({
                         <Button 
                             className ="w-full border-primary rounded-sm"
                             variant="outline"
-                            onClick={()=> onOpenChange(false)}
-                        >
-                            Change Payment Method
+                            onClick={()=> onChangeMode("change-method")}>
+                                Change Payment Method
                         </Button>
 
                         <Button 
                             className ="w-full rounded-sm"
                             variant="default"
                             onClick={()=> 
-                            onOpenChange(false)
-                            }
-                        >
-                            Pay Now
+                            {onChangeMode("paynow") }
+                            }>
+                                Pay Now
                         </Button>
                         </div>
                         )}
@@ -157,32 +161,20 @@ export function SeeOrderDetails ({
                         <Button 
                             className ="w-full border-primary rounded-sm"
                             variant="outline"
-                            onClick={()=>onOpenChange(false)}
-                        >
-                            Close
+                            onClick={()=>onOpenChange(false)}> 
+                                Close
                         </Button>
                         
                         <Button 
                             className ="w-full rounded-sm"
                             variant="default"
-                            onClick={()=>("")}
-                        >
-                            Re-Book
+                            onClick={()=>("")}> 
+                                Book Again
                         </Button>
-                        </div>
-                        )}        
-                                       
-                    </DialogFooter>
-                </DialogHeader>
-                <div>
-                <Payment 
-                open={openPayNow}
-                onOpenChange={setOpenPayNow}
-                paymentProps={orderDetails}/>
+                    </div>
+                    )}                       
                 </div>
-            </DialogContent>
-          </Dialog>  
-          
+          </div>  
     )
 }
 

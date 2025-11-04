@@ -17,7 +17,7 @@ import {
 import { DatePicker } from '@/components/ui/date-picker'
 import ComboboxFilter from '@/components/ui/combobox'
 import { SeeOrderDetails } from './order-details'
-import { Payment } from './order-paynow-modal'
+import { OrderModal } from './order-modal'
 
 type OrderData={
     orderId: string;
@@ -42,8 +42,10 @@ export default function OrderHistory() {
     const [page,setPage]=useState(1)
     const [selectedOrder,setSelectedOrder]=useState<OrderData | null>(null)
     const [openDetails, setOpenDetails]=useState(false)
-    const [openPayNow, setOpenPayNow]=useState(false)   
-
+    const [openPayNow, setOpenPayNow]=useState(false) 
+    const [orderModal, setOrderModal]=useState(false)  
+    const [modeModal,setModeModal]=useState<"details-payment" |"paynow" | "payment-success" | "payment-pending" | "view-booking" | "change-method" | "confirm-method">("paynow")
+    
     const DummyData = [
         {
             orderId: "1xcSa23rP",
@@ -163,7 +165,7 @@ export default function OrderHistory() {
                     {orderData.paymentStatus === "Paid" && (
                     <Button 
                         className="w-full bg-primary"
-                        onClick={()=>{setSelectedOrder(orderData); setOpenDetails(true)}}
+                        onClick={()=>{setSelectedOrder(orderData); setOrderModal(true); setModeModal("details-payment") }}
                         >See Details
                     </Button>
                     )}
@@ -174,14 +176,14 @@ export default function OrderHistory() {
                     <Button 
                         className ="w-full border-primary"
                         variant="outline"
-                        onClick={()=>{setSelectedOrder(orderData); setOpenDetails(true)}}
+                        onClick={()=>{setSelectedOrder(orderData); setOrderModal(true); setModeModal("details-payment")}}
                     >
                         See Details
                     </Button>
                     <Button 
                         className ="w-full"
                         variant="default"
-                        onClick={()=>{setSelectedOrder(orderData); setOpenPayNow(true)}}
+                        onClick={()=>{setSelectedOrder(orderData); setOrderModal(true); setModeModal("paynow")}}
                     >
                         Pay Now
                     </Button>
@@ -194,14 +196,14 @@ export default function OrderHistory() {
                     <Button 
                         className="w-full border-primary"
                         variant="outline"
-                        onClick={()=>{setSelectedOrder(orderData); setOpenDetails(true)}}
+                        onClick={()=>{setSelectedOrder(orderData); setOrderModal(true); setModeModal("details-payment")}}
                     >
                         See Details
                     </Button>
                     <Button 
                         className="w-full"
                         variant="default"
-                        onClick={()=>setSelectedOrder(orderData)}
+                        onClick={()=>{setSelectedOrder(orderData); setOrderModal(true); setModeModal("paynow")}}
                     >
                         Re-Book
                     </Button>
@@ -211,17 +213,15 @@ export default function OrderHistory() {
             </Card>
             ))}
         </div>
-        {/*Order Details Modal*/}
-        <SeeOrderDetails
-            open={openDetails}
-            onOpenChange={setOpenDetails}
-            orderDetails={selectedOrder}/>
 
-        {/*Pay Now Modal*/}
-        <Payment
-            open={openPayNow}
-            onOpenChange={setOpenPayNow}
-            paymentProps={selectedOrder}/>
+        {/*Order Modal*/}
+        <OrderModal
+            open={orderModal}
+            onOpenChange={setOrderModal}
+            orderProps={selectedOrder}
+            mode={modeModal}
+            onChangeMode={setModeModal}
+        />
         </div>
   )
 }
