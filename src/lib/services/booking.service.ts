@@ -14,6 +14,7 @@ export const bookingService = {
     try {
       const bookings = await prisma.booking.findMany({
         include: {
+          timeSlots: true,
           court: {
             include: {
               venue: {
@@ -21,20 +22,20 @@ export const bookingService = {
                   id: true,
                   name: true,
                   slug: true,
-                  city: true
-                }
-              }
-            }
+                  city: true,
+                },
+              },
+            },
           },
           user: {
             include: {
               profile: {
                 select: {
                   fullName: true,
-                  avatar: true
-                }
-              }
-            }
+                  avatar: true,
+                },
+              },
+            },
           },
           payments: {
             select: {
@@ -42,13 +43,13 @@ export const bookingService = {
               amount: true,
               status: true,
               paymentDate: true,
-              channelName: true
-            }
-          }
+              channelName: true,
+            },
+          },
         },
         orderBy: {
-          createdAt: 'desc'
-        }
+          createdAt: "desc",
+        },
       });
 
       return {
@@ -61,7 +62,8 @@ export const bookingService = {
       return {
         success: false,
         data: null,
-        message: error instanceof Error ? error.message : "Get all bookings failed",
+        message:
+          error instanceof Error ? error.message : "Get all bookings failed",
       };
     }
   },
@@ -71,9 +73,10 @@ export const bookingService = {
     try {
       const bookings = await prisma.booking.findMany({
         where: {
-          userId
+          userId,
         },
         include: {
+          timeSlots: true,
           court: {
             include: {
               venue: {
@@ -81,10 +84,11 @@ export const bookingService = {
                   id: true,
                   name: true,
                   slug: true,
-                  city: true
-                }
-              }
-            }
+                  city: true,
+                  images: true,
+                },
+              },
+            },
           },
           payments: {
             select: {
@@ -92,13 +96,13 @@ export const bookingService = {
               amount: true,
               status: true,
               paymentDate: true,
-              channelName: true
-            }
-          }
+              channelName: true,
+            },
+          },
         },
         orderBy: {
-          createdAt: 'desc'
-        }
+          createdAt: "desc",
+        },
       });
 
       return {
@@ -111,7 +115,8 @@ export const bookingService = {
       return {
         success: false,
         data: null,
-        message: error instanceof Error ? error.message : "Get user bookings failed",
+        message:
+          error instanceof Error ? error.message : "Get user bookings failed",
       };
     }
   },
@@ -121,18 +126,19 @@ export const bookingService = {
     try {
       const bookings = await prisma.booking.findMany({
         where: {
-          courtId
+          courtId,
         },
         include: {
+          timeSlots: true,
           user: {
             include: {
               profile: {
                 select: {
                   fullName: true,
-                  avatar: true
-                }
-              }
-            }
+                  avatar: true,
+                },
+              },
+            },
           },
           payments: {
             select: {
@@ -140,13 +146,13 @@ export const bookingService = {
               amount: true,
               status: true,
               paymentDate: true,
-              channelName: true
-            }
+              channelName: true,
+            },
           },
         },
         orderBy: {
-          bookingDate: 'asc'
-        }
+          bookingDate: "asc",
+        },
       });
 
       return {
@@ -159,7 +165,8 @@ export const bookingService = {
       return {
         success: false,
         data: null,
-        message: error instanceof Error ? error.message : "Get court bookings failed",
+        message:
+          error instanceof Error ? error.message : "Get court bookings failed",
       };
     }
   },
@@ -169,9 +176,10 @@ export const bookingService = {
     try {
       const bookings = await prisma.booking.findMany({
         where: {
-          status
+          status,
         },
         include: {
+          timeSlots: true,
           court: {
             include: {
               venue: {
@@ -179,20 +187,21 @@ export const bookingService = {
                   id: true,
                   name: true,
                   slug: true,
-                  city: true
-                }
-              }
-            }
+                  city: true,
+                  images: true,
+                },
+              },
+            },
           },
           user: {
             include: {
               profile: {
                 select: {
                   fullName: true,
-                  avatar: true
-                }
-              }
-            }
+                  avatar: true,
+                },
+              },
+            },
           },
           payments: {
             select: {
@@ -200,13 +209,13 @@ export const bookingService = {
               amount: true,
               status: true,
               paymentDate: true,
-              channelName: true
-            }
-          }
+              channelName: true,
+            },
+          },
         },
         orderBy: {
-          createdAt: 'desc'
-        }
+          createdAt: "desc",
+        },
       });
 
       return {
@@ -219,7 +228,10 @@ export const bookingService = {
       return {
         success: false,
         data: null,
-        message: error instanceof Error ? error.message : `Get ${status.toLowerCase()} bookings failed`,
+        message:
+          error instanceof Error
+            ? error.message
+            : `Get ${status.toLowerCase()} bookings failed`,
       };
     }
   },
@@ -229,9 +241,10 @@ export const bookingService = {
     try {
       const booking = await prisma.booking.findUnique({
         where: {
-          id
+          id,
         },
         include: {
+          timeSlots: true,
           court: {
             include: {
               venue: {
@@ -241,24 +254,25 @@ export const bookingService = {
                   slug: true,
                   city: true,
                   address: true,
-                  phone: true
-                }
-              }
-            }
+                  phone: true,
+                  images: true,
+                },
+              },
+            },
           },
           user: {
             include: {
               profile: {
                 select: {
                   fullName: true,
-                  avatar: true
-                }
-              }
-            }
+                  avatar: true,
+                },
+              },
+            },
           },
           payments: true,
-          blocking: true
-        }
+          blocking: true,
+        },
       });
 
       if (!booking) {
@@ -293,26 +307,56 @@ export const bookingService = {
       const nanoId = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 5);
 
       const currentDate = new Date();
-      const bookingCode = `#BK-${nanoId}`
+      const bookingCode = `#BK-${nanoId()}`;
 
-      const bookingData = {
-        courtId: booking.courtId,
-        userId: context.actorUserId || "",
-        source: "YOLO system",
-        bookingDate: new Date(booking.bookingDate),
-        bookingHour: booking.bookingHour,
-        duration: booking.duration,
-        totalPrice: booking.totalPrice,
-        status: BookingStatus.PENDING,
-        bookingCode: bookingCode,
-        courtsideCourtId: null,
-        createdAt: currentDate,
-        updatedAt: currentDate
-      }
-
+      // Create booking with time slots
       const newBooking = await prisma.booking.create({
-        data: bookingData
+        data: {
+          courtId: booking.courtId,
+          userId: context.actorUserId || "",
+          source: "YOLO system",
+          bookingDate: new Date(booking.bookingDate),
+          bookingHour: booking.bookingHour || null, // Backward compatibility
+          bookingCode: bookingCode,
+          duration: booking.duration,
+          totalPrice: booking.totalPrice,
+          status: BookingStatus.PENDING,
+          courtsideCourtId: null,
+          // Create time slots
+          timeSlots: {
+            create: booking.timeSlots.map((slot) => ({
+              openHour: slot.openHour,
+              closeHour: slot.closeHour,
+            })),
+          },
+        },
+        include: {
+          timeSlots: true,
+          court: {
+            include: {
+              venue: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  city: true,
+                },
+              },
+            },
+          },
+          user: {
+            include: {
+              profile: {
+                select: {
+                  fullName: true,
+                  avatar: true,
+                },
+              },
+            },
+          },
+        },
       });
+
       // audit log
       activityLogService.record({
         context,
@@ -321,6 +365,7 @@ export const bookingService = {
         entityId: newBooking.id,
         changes: { before: {}, after: newBooking } as any,
       });
+
       return {
         success: true,
         data: newBooking,
@@ -331,7 +376,106 @@ export const bookingService = {
       return {
         success: false,
         data: null,
-        message: error instanceof Error ? error.message : "Create booking failed",
+        message:
+          error instanceof Error ? error.message : "Create booking failed",
+      };
+    }
+  },
+
+  // Check slot availability
+  checkAvailability: async (
+    courtId: string,
+    date: Date,
+    timeSlots: Array<{ openHour: string; closeHour: string }>
+  ) => {
+    try {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      // Find conflicting bookings
+      const conflictingBookings = await prisma.booking.findMany({
+        where: {
+          courtId,
+          bookingDate: {
+            gte: startOfDay,
+            lte: endOfDay,
+          },
+          status: {
+            not: BookingStatus.CANCELLED,
+          },
+          timeSlots: {
+            some: {
+              OR: timeSlots.map((slot) => ({
+                OR: [
+                  // Overlap scenarios: slot overlaps with existing booking
+                  {
+                    AND: [
+                      { openHour: { lte: slot.openHour } },
+                      { closeHour: { gt: slot.openHour } },
+                    ],
+                  },
+                  {
+                    AND: [
+                      { openHour: { lt: slot.closeHour } },
+                      { closeHour: { gte: slot.closeHour } },
+                    ],
+                  },
+                  {
+                    AND: [
+                      { openHour: { gte: slot.openHour } },
+                      { closeHour: { lte: slot.closeHour } },
+                    ],
+                  },
+                ],
+              })),
+            },
+          },
+        },
+        include: { timeSlots: true },
+      });
+
+      // Extract all booked slots
+      const bookedSlots = conflictingBookings.flatMap((booking) =>
+        booking.timeSlots.map((ts) => ({
+          openHour: ts.openHour,
+          closeHour: ts.closeHour,
+        }))
+      );
+
+      // Check which requested slots are available
+      const availableSlots = timeSlots.filter((requestedSlot) => {
+        return !bookedSlots.some((bookedSlot) => {
+          // Check if slots overlap
+          return (
+            (requestedSlot.openHour < bookedSlot.closeHour &&
+              requestedSlot.closeHour > bookedSlot.openHour) ||
+            (requestedSlot.openHour === bookedSlot.openHour &&
+              requestedSlot.closeHour === bookedSlot.closeHour)
+          );
+        });
+      });
+
+      return {
+        success: true,
+        data: {
+          available: conflictingBookings.length === 0,
+          conflictingSlots: bookedSlots,
+          availableSlots,
+        },
+        message:
+          conflictingBookings.length === 0
+            ? "All slots are available"
+            : "Some slots are already booked",
+      };
+    } catch (error) {
+      console.error("Check availability error:", error);
+      return {
+        success: false,
+        data: null,
+        message:
+          error instanceof Error ? error.message : "Check availability failed",
       };
     }
   },

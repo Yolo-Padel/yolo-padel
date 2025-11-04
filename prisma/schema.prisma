@@ -194,9 +194,9 @@ model Booking {
   userId           String
   source           String        // flag for booking created by YOLO / Courtside system
   bookingDate      DateTime
-  bookingHour      String
+  bookingHour      String?       // Deprecated, keep for backward compatibility
   bookingCode      String        @unique
-  duration         Int           // could be handled on the fly (for Courtside)
+  duration         Int           // Total duration: jumlah slots
   totalPrice       Int
   status           BookingStatus
   courtsideCourtId String?
@@ -204,12 +204,28 @@ model Booking {
   updatedAt        DateTime      @updatedAt
 
   // Relations
-  court    Court     @relation(fields: [courtId], references: [id], onDelete: Cascade)
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  payments Payment[]
-  blocking Blocking?
+  court     Court             @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments  Payment[]
+  blocking  Blocking?
+  timeSlots BookingTimeSlot[]  // NEW: Relasi ke time slots
 
   @@map("bookings")
+}
+
+model BookingTimeSlot {
+  id        String   @id @default(cuid())
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId String
+  
+  openHour  String   // "07:00" - format sama dengan CourtTimeSlot
+  closeHour String   // "23:00"
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("booking_time_slots")
+  @@index([bookingId])
 }
 
 model Blocking {
