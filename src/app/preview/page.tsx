@@ -4,12 +4,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 // import { CourtModal } from "../admin/dashboard/court/components/court-modal";
-import { PaymentMethod } from "../dashboard/order-history/_components/select-payment-method";
 
 
 export default function PreviewPage() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("QRIS");
 
   return (
     <div className="h-screen w-screen flex items-center justify-center">
@@ -26,7 +24,7 @@ export default function PreviewPage() {
           venueName="Slipi Padel Center"
         /> */}
 
-        {/*Modal Select PM*/}
+        
         
       </div>
     </div>
