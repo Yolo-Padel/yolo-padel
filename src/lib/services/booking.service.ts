@@ -8,6 +8,25 @@ import { requirePermission, ServiceContext } from "@/types/service-context";
 import { BookingCreateData } from "../validations/booking.validation";
 import { customAlphabet } from "nanoid";
 
+/**
+ * Parse date string (YYYY-MM-DD) and return Date object representing start of day in UTC
+ * This ensures consistent date storage regardless of timezone
+ * @param dateString Date string in YYYY-MM-DD format
+ * @returns Date object representing start of day in UTC
+ */
+function parseDateString(dateString: string): Date {
+  // If it's already in ISO format with time, parse directly
+  if (dateString.includes("T")) {
+    return new Date(dateString);
+  }
+
+  // If it's YYYY-MM-DD format, parse as UTC start of day
+  // This ensures the date is stored correctly
+  // Example: "2024-11-09" -> 2024-11-09T00:00:00.000Z
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+}
+
 export const bookingService = {
   // Get all bookings with related data
   getAll: async () => {
@@ -309,13 +328,17 @@ export const bookingService = {
       const currentDate = new Date();
       const bookingCode = `#BK-${nanoId()}`;
 
+      // Parse booking date - handle both ISO format and YYYY-MM-DD format
+      // This ensures timezone issues are resolved
+      const parsedBookingDate = parseDateString(booking.bookingDate);
+
       // Create booking with time slots
       const newBooking = await prisma.booking.create({
         data: {
           courtId: booking.courtId,
           userId: context.actorUserId || "",
           source: "YOLO system",
-          bookingDate: new Date(booking.bookingDate),
+          bookingDate: parsedBookingDate,
           bookingHour: booking.bookingHour || null, // Backward compatibility
           bookingCode: bookingCode,
           duration: booking.duration,
@@ -389,10 +412,14 @@ export const bookingService = {
     timeSlots: Array<{ openHour: string; closeHour: string }>
   ) => {
     try {
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
+      // Normalize date to UTC start/end of day for consistent comparison
+      // This ensures timezone issues don't affect availability checks
+      const year = date.getUTCFullYear();
+      const month = date.getUTCMonth();
+      const day = date.getUTCDate();
+
+      const startOfDay = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+      const endOfDay = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
 
       // Find conflicting bookings
       const conflictingBookings = await prisma.booking.findMany({

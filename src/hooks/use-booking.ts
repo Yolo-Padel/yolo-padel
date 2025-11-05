@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { transformUISlotsToDbFormat } from "@/lib/booking-slots-utils";
+import {
+  transformUISlotsToDbFormat,
+  normalizeDateToLocalStartOfDay,
+} from "@/lib/booking-slots-utils";
 
 const bookingApi = {
   getAll: async () => {
@@ -64,6 +67,11 @@ const bookingApi = {
   }) => {
     const timeSlots = transformUISlotsToDbFormat(data.slots);
 
+    // Normalize date to prevent timezone issues
+    // This ensures the date selected by user (e.g., Nov 9) is preserved
+    // regardless of timezone conversion
+    const normalizedDate = normalizeDateToLocalStartOfDay(data.date);
+
     const response = await fetch("/api/booking", {
       method: "POST",
       credentials: "include",
@@ -72,7 +80,7 @@ const bookingApi = {
         courtId: data.courtId,
         userId: data.userId,
         source: "YOLO system",
-        bookingDate: data.date.toISOString(),
+        bookingDate: normalizedDate,
         timeSlots,
         duration: data.slots.length,
         totalPrice: data.totalPrice,

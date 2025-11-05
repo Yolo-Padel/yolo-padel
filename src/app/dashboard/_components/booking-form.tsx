@@ -15,6 +15,7 @@ import {
   getAvailableSlots,
   transformDbFormatToUISlots,
   isSlotBooked,
+  normalizeDateToLocalStartOfDay,
 } from "@/lib/booking-slots-utils";
 import { useCreateBooking, useBookingByCourt } from "@/hooks/use-booking";
 import { useAuth } from "@/hooks/use-auth";
@@ -93,11 +94,12 @@ export const BookingForm = ({
   const bookedSlots = (() => {
     if (!watchDate || bookingsData.length === 0) return [];
 
-    const selectedDateStr = watchDate.toISOString().split("T")[0];
+    // Use normalized date format for consistent comparison
+    // This prevents timezone issues when comparing dates
+    const selectedDateStr = normalizeDateToLocalStartOfDay(watchDate);
     const bookingsOnDate = bookingsData.filter((booking: any) => {
-      const bookingDateStr = new Date(booking.bookingDate)
-        .toISOString()
-        .split("T")[0];
+      const bookingDate = new Date(booking.bookingDate);
+      const bookingDateStr = normalizeDateToLocalStartOfDay(bookingDate);
       return (
         bookingDateStr === selectedDateStr && booking.status !== "CANCELLED"
       );

@@ -145,3 +145,31 @@ export function isSlotBooked(slot: string, bookedSlots: string[]): boolean {
     );
   });
 }
+
+/**
+ * Normalize date to start of day in local timezone, then convert to ISO string
+ * This prevents timezone issues when sending dates to the backend
+ * @param date Date object (can be in any timezone)
+ * @returns ISO string representing the start of day in local timezone
+ * @example
+ * // If user in WIB (UTC+7) selects Nov 9:
+ * // Input: 2024-11-09T00:00:00+07:00
+ * // Output: "2024-11-09T00:00:00.000Z" (but represents Nov 9 in local time, not UTC)
+ */
+export function normalizeDateToLocalStartOfDay(date: Date): string {
+  // Create a new date object with the same year, month, and day in local timezone
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+
+  // Create date at start of day (00:00:00) in local timezone
+  const normalizedDate = new Date(year, month, day, 0, 0, 0, 0);
+
+  // Format as YYYY-MM-DD to send only the date part
+  // This ensures the date is preserved regardless of timezone
+  const yearStr = String(normalizedDate.getFullYear()).padStart(4, "0");
+  const monthStr = String(normalizedDate.getMonth() + 1).padStart(2, "0");
+  const dayStr = String(normalizedDate.getDate()).padStart(2, "0");
+
+  return `${yearStr}-${monthStr}-${dayStr}`;
+}
