@@ -73,7 +73,7 @@ export function BookingSummary ({
                 
                 <RadioGroup defaultValue={bookingSummaryProps?.paymentMethod}>
                     {displayMethods.map((pm) => (
-                    <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+                    <div key={pm} className="flex items-center justify-between px-4 py-2 border-b border-border">
                         <label htmlFor={pm} className="flex items-center"><img src="/qris.png" className="w-4 h-4 mr-2" />{pm}</label>
                         <RadioGroupItem value={pm} id={pm} className="h-4 w-4 border-2 [&_svg]:w-3 [&_svg]:h-3"/>
                     </div>
