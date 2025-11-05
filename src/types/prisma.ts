@@ -7,7 +7,9 @@ export type {
   CourtTimeSlot,
   MagicLink,
   Booking,
+  BookingTimeSlot,
   Payment,
+  Order,
   Blocking,
   ActivityLog,
 } from "@prisma/client";
@@ -19,4 +21,5 @@ export {
   OpeningHoursType,
   BookingStatus,
   PaymentStatus,
+  OrderStatus,
 } from "@prisma/client";

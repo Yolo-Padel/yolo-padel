@@ -20,6 +20,7 @@ export const bookingCreateSchema = z
   .object({
     courtId: z.string().min(1, "Court ID is required"),
     userId: z.string().min(1, "User ID is required"),
+    orderId: z.string().optional(), // Optional - for order flow
     source: z.string().min(1, "Source is required"),
     bookingDate: z.string().min(1, "Booking date is required"),
     bookingHour: z.string().optional(), // Deprecated, optional for backward compatibility

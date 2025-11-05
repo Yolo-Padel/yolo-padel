@@ -56,6 +56,14 @@ export const bookingService = {
               },
             },
           },
+          order: {
+            select: {
+              id: true,
+              orderCode: true,
+              status: true,
+              totalAmount: true,
+            },
+          },
           payments: {
             select: {
               id: true,
@@ -107,6 +115,14 @@ export const bookingService = {
                   images: true,
                 },
               },
+            },
+          },
+          order: {
+            select: {
+              id: true,
+              orderCode: true,
+              status: true,
+              totalAmount: true,
             },
           },
           payments: {
@@ -289,6 +305,14 @@ export const bookingService = {
               },
             },
           },
+          order: {
+            select: {
+              id: true,
+              orderCode: true,
+              status: true,
+              totalAmount: true,
+            },
+          },
           payments: true,
           blocking: true,
         },
@@ -337,6 +361,7 @@ export const bookingService = {
         data: {
           courtId: booking.courtId,
           userId: context.actorUserId || "",
+          orderId: booking.orderId || null, // Optional - for order flow
           source: "YOLO system",
           bookingDate: parsedBookingDate,
           bookingHour: booking.bookingHour || null, // Backward compatibility
