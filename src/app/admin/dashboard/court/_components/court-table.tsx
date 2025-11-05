@@ -51,6 +51,7 @@ type Court = {
   pricePerHour: number;
   availability: boolean;
   availabilityTime: string;
+  image?: string;
   openingHours?: OpeningHoursType;
   operatingHours?: Array<{
     id: string;
@@ -154,6 +155,7 @@ export function CourtTable() {
           operatingHours,
           venueDefaultHours
         ),
+        image: (court as any).image,
         openingHours: court.openingType,
         operatingHours: operatingHours,
       };
@@ -521,6 +523,7 @@ export function CourtTable() {
                   id: selected.id,
                   name: selected.courtName,
                   price: selected.pricePerHour,
+                  image: selected.image,
                   openingHours:
                     selected.openingHours || OpeningHoursType.REGULAR,
                   operatingHours: selected.operatingHours || [],

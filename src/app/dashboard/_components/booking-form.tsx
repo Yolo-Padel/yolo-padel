@@ -65,12 +65,6 @@ export const BookingForm = ({
   const { data: courts, isLoading: isLoadingCourts } =
     useCourtByVenue(selectedVenueId);
   const courtsData: Court[] = Array.isArray(courts?.data) ? courts.data : [];
-  const courtImages = [
-    "/paddle-court1.svg",
-    "/paddle-court2.svg",
-    "/paddle-court3.svg",
-    "/paddle-racket.png",
-  ];
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
 
   // Set default court when courts are loaded
@@ -234,8 +228,7 @@ export const BookingForm = ({
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 h-[80px]">
-            {courtsData.map((court: Court, idx: number) => {
-              const img = courtImages[idx % courtImages.length];
+            {courtsData.map((court: Court) => {
               const active = watchCourtId === court.id;
               return (
                 <div
@@ -254,7 +247,7 @@ export const BookingForm = ({
                   }}
                 >
                   <Image
-                    src={img}
+                    src={court.image || "/paddle-court1.svg"}
                     alt={court.name}
                     width={100}
                     height={70}

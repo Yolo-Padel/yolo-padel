@@ -26,6 +26,7 @@ import {
 } from "@/lib/validations/court.validation";
 import { OpeningHoursType } from "@/types/prisma";
 import { useCreateCourt, useUpdateCourt } from "@/hooks/use-court";
+import { FileUploader } from "@/components/file-uploader";
 
 interface CourtModalProps {
   open: boolean;
@@ -37,6 +38,7 @@ interface CourtModalProps {
     id?: string;
     name?: string;
     price?: number;
+    image?: string;
     openingHours?: OpeningHoursType;
     operatingHours?: Array<{
       id: string;
@@ -85,6 +87,7 @@ export function CourtModal({
       courtName: "",
       venueId: venueId,
       price: 200000,
+      image: undefined,
       openingHours: OpeningHoursType.REGULAR,
       schedule: {
         monday: {
@@ -129,6 +132,7 @@ export function CourtModal({
         setValue("courtName", court.name || "");
         setValue("venueId", venueId);
         setValue("price", court.price || 200000);
+        setValue("image", court.image || "");
         setValue(
           "openingHours",
           court.openingHours || OpeningHoursType.REGULAR
@@ -218,6 +222,7 @@ export function CourtModal({
           courtName: "",
           venueId: venueId,
           price: 200000,
+          image: undefined,
           openingHours: OpeningHoursType.REGULAR,
           schedule: {
             monday: {
@@ -536,6 +541,33 @@ export function CourtModal({
                   {errors.price && (
                     <p className="text-sm text-red-600">
                       {errors.price.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Court Image */}
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="image"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Court Image <span className="text-red-500">*</span>
+                  </Label>
+                  <FileUploader
+                    folderPath="court"
+                    value={watch("image") ? [watch("image")] : []}
+                    onChange={(urls) => {
+                      setValue("image", urls[0] || "", {
+                        shouldValidate: true,
+                      });
+                    }}
+                    multiple={false}
+                    accept={{ "image/*": [".png", ".jpg", ".jpeg", ".webp"] }}
+                    maxFiles={1}
+                  />
+                  {errors.image && (
+                    <p className="text-sm text-red-600">
+                      {errors.image.message}
                     </p>
                   )}
                 </div>

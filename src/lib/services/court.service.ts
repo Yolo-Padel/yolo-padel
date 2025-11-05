@@ -2,10 +2,18 @@
 import { prisma } from "@/lib/prisma";
 import { CourtCreateData } from "@/lib/validations/court.validation";
 import { OpeningHoursType, DayOfWeek, Role } from "@/types/prisma";
-import { ServiceContext, hasPermission, requirePermission } from "@/types/service-context";
-import { activityLogService, buildChangesDiff } from "@/lib/services/activity-log.service";
+import {
+  ServiceContext,
+  hasPermission,
+  requirePermission,
+} from "@/types/service-context";
+import {
+  activityLogService,
+  buildChangesDiff,
+} from "@/lib/services/activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
+import { vercelBlobService } from "@/lib/services/vercel-blob.service";
 
 export const courtService = {
   // Get all courts with venue and schedule info
@@ -15,28 +23,31 @@ export const courtService = {
       if (accessError) return accessError;
 
       const courts = await prisma.court.findMany({
-        where: { isArchived: false},
+        where: { isArchived: false },
         include: {
           venue: {
             select: {
               id: true,
               name: true,
-              slug: true
-            }
+              slug: true,
+            },
           },
           operatingHours: {
             include: {
-              slots: true
-            }
-          }
+              slots: true,
+            },
+          },
         },
         orderBy: {
-          createdAt: 'desc'
-        }
+          createdAt: "desc",
+        },
       });
 
       const filteredCourts = courts.filter((court) => {
-        if (context.userRole === Role.ADMIN ||      context.userRole === Role.FINANCE) {
+        if (
+          context.userRole === Role.ADMIN ||
+          context.userRole === Role.FINANCE
+        ) {
           return court.venueId === context.assignedVenueId;
         }
         return true;
@@ -52,7 +63,8 @@ export const courtService = {
       return {
         success: false,
         data: null,
-        message: error instanceof Error ? error.message : "Get all courts failed",
+        message:
+          error instanceof Error ? error.message : "Get all courts failed",
       };
     }
   },
@@ -66,28 +78,32 @@ export const courtService = {
       const courts = await prisma.court.findMany({
         where: {
           venueId,
-          isArchived: false
+          isArchived: false,
         },
         include: {
           venue: {
             select: {
               id: true,
               name: true,
-              slug: true
-            }
+              slug: true,
+            },
           },
           operatingHours: {
             include: {
-              slots: true
-            }
-          }
+              slots: true,
+            },
+          },
         },
         orderBy: {
-          name: 'asc'
-        }
+          name: "asc",
+        },
       });
 
-      if ((context.userRole === Role.ADMIN || context.userRole === Role.FINANCE) && venueId !== context.assignedVenueId) {
+      if (
+        (context.userRole === Role.ADMIN ||
+          context.userRole === Role.FINANCE) &&
+        venueId !== context.assignedVenueId
+      ) {
         return {
           success: false,
           data: null,
@@ -105,7 +121,8 @@ export const courtService = {
       return {
         success: false,
         data: null,
-        message: error instanceof Error ? error.message : "Get courts by venue failed",
+        message:
+          error instanceof Error ? error.message : "Get courts by venue failed",
       };
     }
   },
@@ -123,15 +140,15 @@ export const courtService = {
             select: {
               id: true,
               name: true,
-              slug: true
-            }
+              slug: true,
+            },
           },
           operatingHours: {
             include: {
-              slots: true
-            }
-          }
-        }
+              slots: true,
+            },
+          },
+        },
       });
 
       if (!court) {
@@ -141,9 +158,13 @@ export const courtService = {
           message: "Court not found",
         };
       }
-      
+
       // Check venue access for ADMIN/FINANCE roles
-      if ((context.userRole === Role.ADMIN || context.userRole === Role.FINANCE) && court.venueId !== context.assignedVenueId) {
+      if (
+        (context.userRole === Role.ADMIN ||
+          context.userRole === Role.FINANCE) &&
+        court.venueId !== context.assignedVenueId
+      ) {
         return {
           success: false,
           data: null,
@@ -161,7 +182,8 @@ export const courtService = {
       return {
         success: false,
         data: null,
-        message: error instanceof Error ? error.message : "Get court by id failed",
+        message:
+          error instanceof Error ? error.message : "Get court by id failed",
       };
     }
   },
@@ -175,12 +197,12 @@ export const courtService = {
       // 1. Get venue data for REGULAR opening hours
       let venueOpenHour;
       let venueCloseHour;
-      
+
       if (data.openingHours === OpeningHoursType.REGULAR) {
         const venue = await prisma.venue.findUnique({
-          where: { id: data.venueId }
+          where: { id: data.venueId },
         });
-        
+
         if (venue) {
           venueOpenHour = venue.openHour;
           venueCloseHour = venue.closeHour;
@@ -192,26 +214,32 @@ export const courtService = {
         data: {
           name: data.courtName,
           price: data.price,
+          image: data.image, // Now mandatory from validation
           openingType: data.openingHours,
-          venueId: data.venueId
-        }
+          venueId: data.venueId,
+        },
       });
 
       // 3. Create operating hours based on type
       if (data.openingHours === OpeningHoursType.REGULAR) {
         // Generate REGULAR schedule for all days using venue hours
         const daysOfWeek: DayOfWeek[] = [
-          'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 
-          'FRIDAY', 'SATURDAY', 'SUNDAY'
+          "MONDAY",
+          "TUESDAY",
+          "WEDNESDAY",
+          "THURSDAY",
+          "FRIDAY",
+          "SATURDAY",
+          "SUNDAY",
         ];
-        
+
         for (const dayOfWeek of daysOfWeek) {
           const operatingHour = await prisma.courtOperatingHour.create({
             data: {
               courtId: court.id,
               dayOfWeek,
-              closed: false // All days open for REGULAR
-            }
+              closed: false, // All days open for REGULAR
+            },
           });
 
           // Create time slot using venue hours
@@ -219,21 +247,21 @@ export const courtService = {
             data: {
               courtOperatingHourId: operatingHour.id,
               openHour: venueOpenHour!,
-              closeHour: venueCloseHour!
-            }
+              closeHour: venueCloseHour!,
+            },
           });
         }
       } else if (data.openingHours === OpeningHoursType.WITHOUT_FIXED) {
         // Create custom schedule
         for (const [dayName, dayData] of Object.entries(data.schedule)) {
           const dayOfWeek = dayName.toUpperCase() as DayOfWeek;
-          
+
           const operatingHour = await prisma.courtOperatingHour.create({
             data: {
               courtId: court.id,
               dayOfWeek,
-              closed: dayData.closed
-            }
+              closed: dayData.closed,
+            },
           });
 
           // Create time slots if not closed
@@ -243,8 +271,8 @@ export const courtService = {
                 data: {
                   courtOperatingHourId: operatingHour.id,
                   openHour: slot.openHour,
-                  closeHour: slot.closeHour
-                }
+                  closeHour: slot.closeHour,
+                },
               });
             }
           }
@@ -259,15 +287,15 @@ export const courtService = {
             select: {
               id: true,
               name: true,
-              slug: true
-            }
+              slug: true,
+            },
           },
           operatingHours: {
             include: {
-              slots: true
-            }
-          }
-        }
+              slots: true,
+            },
+          },
+        },
       });
 
       // audit log
@@ -283,7 +311,7 @@ export const courtService = {
             price: data.price,
             openingType: data.openingHours,
             venueId: data.venueId,
-          }
+          },
         } as any,
       });
 
@@ -303,16 +331,19 @@ export const courtService = {
   },
 
   // Update court
-  update: async (id: string, data: CourtCreateData, context: ServiceContext) => {
+  update: async (
+    id: string,
+    data: CourtCreateData,
+    context: ServiceContext
+  ) => {
     try {
       const accessError = requirePermission(context, Role.SUPER_ADMIN);
       if (accessError) return accessError;
 
-
-      console.log("updating court")
+      console.log("updating court");
       // 1. Check if court exists
       const existingCourt = await prisma.court.findUnique({
-        where: { id }
+        where: { id },
       });
 
       if (!existingCourt) {
@@ -323,61 +354,82 @@ export const courtService = {
         };
       }
 
-      console.log('existingCourt', existingCourt);
+      console.log("existingCourt", existingCourt);
 
-      // 2. Get venue data for REGULAR opening hours
+      // 2. Delete old image if it's being replaced
+      if (existingCourt.image && existingCourt.image !== data.image) {
+        console.log("Deleting old court image:", existingCourt.image);
+        const deleteResult = await vercelBlobService.deleteFile(
+          existingCourt.image
+        );
+        if (!deleteResult.success) {
+          console.warn(
+            "Failed to delete old court image:",
+            deleteResult.message
+          );
+          // Continue with update even if delete fails (non-blocking)
+        }
+      }
+
+      // 3. Get venue data for REGULAR opening hours
       let venueOpenHour;
       let venueCloseHour;
-      
+
       if (data.openingHours === OpeningHoursType.REGULAR) {
-        const venue = await prisma.venue.findUnique({
-          where: { id: data.venueId }
-        }) as any;
-        
+        const venue = (await prisma.venue.findUnique({
+          where: { id: data.venueId },
+        })) as any;
+
         if (venue) {
           venueOpenHour = venue.openHour;
           venueCloseHour = venue.closeHour;
         }
       }
 
-      // 3. Update court basic info
+      // 4. Update court basic info
       console.log("Service update - data received:", data);
       console.log("Service update - price value:", data.price);
       console.log("Service update - price type:", typeof data.price);
-      
+
       const court = await prisma.court.update({
         where: { id },
         data: {
           name: data.courtName,
           price: data.price,
+          image: data.image, // Now mandatory from validation
           openingType: data.openingHours,
-          venueId: data.venueId
-        }
+          venueId: data.venueId,
+        },
       });
 
       console.log("Service update - updated court:", court);
       console.log("Service update - updated price:", court.price);
 
-      // 4. Delete existing operating hours
+      // 5. Delete existing operating hours
       await prisma.courtOperatingHour.deleteMany({
-        where: { courtId: id }
+        where: { courtId: id },
       });
 
-      // 5. Create new operating hours based on type
+      // 6. Create new operating hours based on type
       if (data.openingHours === OpeningHoursType.REGULAR) {
         // Generate REGULAR schedule for all days using venue hours
         const daysOfWeek: DayOfWeek[] = [
-          'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 
-          'FRIDAY', 'SATURDAY', 'SUNDAY'
+          "MONDAY",
+          "TUESDAY",
+          "WEDNESDAY",
+          "THURSDAY",
+          "FRIDAY",
+          "SATURDAY",
+          "SUNDAY",
         ];
-        
+
         for (const dayOfWeek of daysOfWeek) {
           const operatingHour = await prisma.courtOperatingHour.create({
             data: {
               courtId: court.id,
               dayOfWeek,
-              closed: false // All days open for REGULAR
-            }
+              closed: false, // All days open for REGULAR
+            },
           });
 
           // Create time slot using venue hours
@@ -385,21 +437,21 @@ export const courtService = {
             data: {
               courtOperatingHourId: operatingHour.id,
               openHour: venueOpenHour,
-              closeHour: venueCloseHour
-            }
+              closeHour: venueCloseHour,
+            },
           });
         }
       } else if (data.openingHours === OpeningHoursType.WITHOUT_FIXED) {
         // Create custom schedule
         for (const [dayName, dayData] of Object.entries(data.schedule)) {
           const dayOfWeek = dayName.toUpperCase() as DayOfWeek;
-          
+
           const operatingHour = await prisma.courtOperatingHour.create({
             data: {
               courtId: court.id,
               dayOfWeek,
-              closed: dayData.closed
-            }
+              closed: dayData.closed,
+            },
           });
 
           // Create time slots if not closed
@@ -409,8 +461,8 @@ export const courtService = {
                 data: {
                   courtOperatingHourId: operatingHour.id,
                   openHour: slot.openHour,
-                  closeHour: slot.closeHour
-                }
+                  closeHour: slot.closeHour,
+                },
               });
             }
           }
@@ -425,27 +477,31 @@ export const courtService = {
             select: {
               id: true,
               name: true,
-              slug: true
-            }
+              slug: true,
+            },
           },
           operatingHours: {
             include: {
-              slots: true
-            }
-          }
-        }
+              slots: true,
+            },
+          },
+        },
       });
 
-      console.log('updatedCourt', updatedCourt)
+      console.log("updatedCourt", updatedCourt);
 
       // audit log
-      const courtDiff = buildChangesDiff(existingCourt as any, {
-        ...existingCourt,
-        name: data.courtName,
-        price: data.price,
-        openingType: data.openingHours,
-        venueId: data.venueId,
-      } as any, ["name", "price", "openingType", "venueId"] as any);
+      const courtDiff = buildChangesDiff(
+        existingCourt as any,
+        {
+          ...existingCourt,
+          name: data.courtName,
+          price: data.price,
+          openingType: data.openingHours,
+          venueId: data.venueId,
+        } as any,
+        ["name", "price", "openingType", "venueId"] as any
+      );
 
       activityLogService.record({
         context,
@@ -477,7 +533,7 @@ export const courtService = {
 
     try {
       const court = await prisma.court.findUnique({
-        where: { id }
+        where: { id },
       });
 
       if (!court) {
@@ -500,7 +556,10 @@ export const courtService = {
         action: ACTION_TYPES.DELETE_COURT,
         entityType: ENTITY_TYPES.COURT,
         entityId: id,
-        changes: { before: { isArchived: false }, after: { isArchived: true } } as any,
+        changes: {
+          before: { isArchived: false },
+          after: { isArchived: true },
+        } as any,
       });
 
       return {
@@ -519,13 +578,17 @@ export const courtService = {
   },
 
   // Toggle court availability
-  toggleAvailability: async (id: string, isActive: boolean, context: ServiceContext) => {
+  toggleAvailability: async (
+    id: string,
+    isActive: boolean,
+    context: ServiceContext
+  ) => {
     try {
       const accessError = requirePermission(context, Role.SUPER_ADMIN);
       if (accessError) return accessError;
 
       const court = await prisma.court.findUnique({
-        where: { id }
+        where: { id },
       });
 
       if (!court) {
@@ -543,7 +606,10 @@ export const courtService = {
         },
       });
 
-      const toggleDiff = { before: { isActive: court.isActive }, after: { isActive } } as any;
+      const toggleDiff = {
+        before: { isActive: court.isActive },
+        after: { isActive },
+      } as any;
       activityLogService.record({
         context,
         action: ACTION_TYPES.UPDATE_COURT,
@@ -555,15 +621,18 @@ export const courtService = {
       return {
         success: true,
         data: result,
-        message: `Court ${isActive ? 'activated' : 'deactivated'} successful`,
+        message: `Court ${isActive ? "activated" : "deactivated"} successful`,
       };
     } catch (error) {
       console.error("Toggle court availability error:", error);
       return {
         success: false,
         data: null,
-        message: error instanceof Error ? error.message : "Toggle court availability failed",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Toggle court availability failed",
       };
     }
-  }
+  },
 };

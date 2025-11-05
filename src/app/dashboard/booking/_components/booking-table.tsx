@@ -115,7 +115,7 @@ export function BookingCourt() {
         id: b.bookingCode,
         venue: b.court.venue.name,
         courtName: b.court.name,
-        image: b.court.venue.images?.[0],
+        image: b.court.image || "/paddle-court1.svg",
         bookingTime: b.bookingHour || "",
         bookingDate: new Date(b.bookingDate).toISOString().split("T")[0],
         duration: b.duration.toString() + " Hours",

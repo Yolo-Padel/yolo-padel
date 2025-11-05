@@ -135,6 +135,7 @@ model Court {
   isArchived  Boolean  @default(false)
   price       Int
   openingType OpeningHoursType @default(REGULAR)
+  image       String?  // URL gambar court (optional)
 
   venue     Venue   @relation(fields: [venueId], references: [id], onDelete: Cascade)
   venueId   String
