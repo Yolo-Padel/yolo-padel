@@ -27,15 +27,17 @@ export const courtCreateSchema = z
       .string()
       .min(1, "Court image is required")
       .url("Invalid image URL"),
-    schedule: z.object({
-      monday: dayScheduleSchema,
-      tuesday: dayScheduleSchema,
-      wednesday: dayScheduleSchema,
-      thursday: dayScheduleSchema,
-      friday: dayScheduleSchema,
-      saturday: dayScheduleSchema,
-      sunday: dayScheduleSchema,
-    }),
+    schedule: z
+      .object({
+        monday: dayScheduleSchema,
+        tuesday: dayScheduleSchema,
+        wednesday: dayScheduleSchema,
+        thursday: dayScheduleSchema,
+        friday: dayScheduleSchema,
+        saturday: dayScheduleSchema,
+        sunday: dayScheduleSchema,
+      })
+      .optional(),
   })
   .refine(
     (data) => {
@@ -51,10 +53,10 @@ export const courtCreateSchema = z
           "sunday",
         ] as const;
         return days.every((day) => {
-          const dayData = data.schedule[day];
+          const dayData = data.schedule?.[day];
           return (
-            dayData.closed ||
-            (dayData.timeSlots && dayData.timeSlots.length > 0)
+            dayData?.closed ||
+            (dayData?.timeSlots && dayData?.timeSlots.length > 0)
           );
         });
       }
