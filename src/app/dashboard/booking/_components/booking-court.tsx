@@ -22,8 +22,12 @@ import { Court } from "@prisma/client";
 import { useCourt } from "@/hooks/use-court";
 import { BookingEmptyState } from "./booking-empty-state";
 import { DatePicker } from "@/components/ui/date-picker";
-import ComboboxFilter from "@/components/ui/combobox";
-import { SeeBookingDetails } from "./see-detail-modal";
+import { ComboboxFilter } from "@/components/ui/combobox";
+{/*Import Modal*/}
+import { BookingModal } from "./booking-modal";
+import { BookingSummary } from "./booking-summary";
+
+
 
 type BookingCourtRow = {
   id: string;
@@ -34,7 +38,7 @@ type BookingCourtRow = {
   bookingDate: string;
   duration: string;
   totalPayment: number;
-  status: string | "Upcoming" | "Cancelled" | "Completed";
+  status: string | "Upcoming" | "Expired" | "Completed";
   paymentMethod: string | "Credit Card" | "QRIS" | "Bank Transfer";
   paymentStatus: string | "Paid" | "Unpaid";
 };
@@ -42,12 +46,20 @@ type BookingCourtRow = {
 
 const PAGE_SIZE = 10;
 
-export function BookingCourt() {
+export function BookingCourt({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
   const [page, setPage] = React.useState(1);
   const [addSheetOpen, setAddBookingCourtOpen] = React.useState(false);
   const [detailSheetOpen, setDetailSheetOpen] = React.useState(false);
   const [selectedBookingCourt, setSelectedBookingCourt] = React.useState<BookingCourtRow | null>(null);
   const [editSheetOpen, setEditSheetOpen] = React.useState(false);
+  const [modalOpen, setModalOpen] = React.useState (false);
+  const [mode, setMode] = useState<"booking-details" | "order-summary" | "book-again" | "payment-paid" | "payment-pending" | "booking-payment">("booking-details");
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);  
   const { data, isLoading, error } = useCourt();
   const router = useRouter();
@@ -151,52 +163,6 @@ export function BookingCourt() {
   }, [filtered, pageSafe]);
 
 
-  async function handleSubmit() {
-    // Dummy submit: console log value
-    console.log("");
-  }
-
-  async function handleEditDetailsVenue() {
-    console.log("Edit Details");
-    setDetailSheetOpen(false);
-  }
-
-  function handleEditVenue() {
-    console.log("Edit Venue clicked");
-    setEditSheetOpen(true);
-  }
-
-  function handleDeleteVenue() {
-    console.log("Delete Venue clicked");
-    // Close details modal first
-    setDetailSheetOpen(false);
-    // Then open delete modal
-    setDeleteModalOpen(true);
-  }
-  {/* Delete Booking Court Modal 
-  function handleDeleteSuccess() {
-    setSelectedBookingCourt(null);
-    setDeleteModalOpen(false);
-    setDetailSheetOpen(false);
-    // The useVenue hook will automatically refetch data
-  } */}
-
-  {/* Delete Booking Court Modal 
-  function handleDeleteCancel() {
-    setDeleteModalOpen(false);
-    // Reopen details modal if user cancels delete
-    setDetailSheetOpen(true);
-  } */}
-
-  // Show loading state
- {/*loadingState
-  if (isLoading) {
-    return (
-      <BookingCourtTableSkeleton />
-    )
-  }
-*/}
-
   // Show error state
   if (error) {
     return (
@@ -272,7 +238,7 @@ export function BookingCourt() {
         {bookingCourt.status === "Completed" && (
         <CardFooter className="px-1 pt-4 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Button
-            onClick={() => { setSelectedBookingCourt(bookingCourt); setDetailSheetOpen(true); }}
+            onClick={() => { setSelectedBookingCourt(bookingCourt); setModalOpen(true); setMode("booking-details"); }}
             variant="outline"
             size="sm"
             className="rounded-sm border-[#C3D223] text-black w-full"
@@ -283,7 +249,7 @@ export function BookingCourt() {
             variant="default"
             size="sm"
             className="w-full"
-            onClick={() => router.push(`/admin/dashboard/court?bookingCourtId=${bookingCourt.id}`)}
+            onClick={() => onOpenChange(false)}
           >
             Book Again
           </Button>
@@ -292,7 +258,7 @@ export function BookingCourt() {
     {bookingCourt.status === "Upcoming" && (
         <CardFooter className="px-1 pt-4 pb-1 w-full min-w-0">
           <Button
-            onClick={() => { setSelectedBookingCourt(bookingCourt); setDetailSheetOpen(true); }}
+            onClick={() => { setSelectedBookingCourt(bookingCourt); setModalOpen(true); setMode("booking-details"); }}
             variant="default"
             size="sm"
             className="w-full"
@@ -307,7 +273,7 @@ export function BookingCourt() {
             variant="default"
             size="sm"
             className="w-full"
-            onClick={() => router.push(`/admin/dashboard/court?bookingCourtId=${bookingCourt.id}`)}
+            onClick={() => { setSelectedBookingCourt(bookingCourt); setModalOpen(true); setMode("booking-details"); }}
           >
             Book Again
           </Button>
@@ -341,11 +307,15 @@ export function BookingCourt() {
           </Button>
         </div>
       </div>
-      <SeeBookingDetails
-        open={detailSheetOpen}
-        onOpenChange={setDetailSheetOpen}
-        bookingDetails={selectedBookingCourt}
-      />
+      {/*Modal*/}
+        <BookingModal
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          bookingModalProps={selectedBookingCourt}
+          mode={mode}
+          onChangeMode={setMode}
+        />
+
     </div>
   );
 }
