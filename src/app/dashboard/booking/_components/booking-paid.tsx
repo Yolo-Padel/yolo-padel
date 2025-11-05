@@ -2,7 +2,7 @@
 
 import React from 'react'
 import {Button} from '@/components/ui/button'
-import {Dot, X} from 'lucide-react'
+import {Dot} from 'lucide-react'
 
 type SuccessPaymentProps={
   id: string;

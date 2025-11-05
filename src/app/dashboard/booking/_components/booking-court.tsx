@@ -55,14 +55,10 @@ export function BookingCourt({
 }) {
   const [page, setPage] = React.useState(1);
   const [addSheetOpen, setAddBookingCourtOpen] = React.useState(false);
-  const [detailSheetOpen, setDetailSheetOpen] = React.useState(false);
   const [selectedBookingCourt, setSelectedBookingCourt] = React.useState<BookingCourtRow | null>(null);
-  const [editSheetOpen, setEditSheetOpen] = React.useState(false);
   const [modalOpen, setModalOpen] = React.useState (false);
-  const [mode, setMode] = useState<"booking-details" | "order-summary" | "book-again" | "payment-paid" | "payment-pending" | "booking-payment">("booking-details");
-  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);  
+  const [mode, setMode] = useState<"booking-details" | "order-summary" | "book-again" | "payment-paid" | "payment-pending" | "booking-payment">("booking-details"); 
   const { data, isLoading, error } = useCourt();
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const getStatusBadge = (status: string | "Upcoming" | "Expired" | "Completed") => {

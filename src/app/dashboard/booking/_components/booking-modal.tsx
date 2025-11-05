@@ -1,10 +1,8 @@
 "use client"
 
 import React from "react"
-import {Button} from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import {Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/components/ui/dialog"
-import {XIcon, Info} from "lucide-react"
+import {Dialog, DialogContent} from "@/components/ui/dialog"
+import {XIcon} from "lucide-react"
 {/*Import Modal*/}
 import { SeeBookingDetails } from "./booking-details"
 import { BookingSummary } from "./booking-summary"

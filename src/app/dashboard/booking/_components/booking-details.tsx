@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge';
 import { Info, XIcon } from 'lucide-react';
 {/*Import Modal*/}  
-import { BookingSummary } from './booking-summary'
 
 type BookingDetails = {
   id: string;

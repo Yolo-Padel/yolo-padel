@@ -3,9 +3,6 @@
 import React from "react"
 import {Button} from '@/components/ui/button'
 import { ArrowLeftIcon } from "lucide-react"
-import { useState,useEffect } from "react"
-import { PaymentStatus } from "@prisma/client"
-import { SuccessPayment } from "./booking-paid"
 
 type PaymentProps ={
   id: string;
@@ -74,8 +71,8 @@ export function Payment ({
                     </Button>
                     )}
 
-                    {/*Payment Pending*/}
-                    {paymentProps?.paymentStatus === "Pending" && (
+                    {/*Payment Unpaid*/}
+                    {paymentProps?.paymentStatus === "Unpaid" && (
                     <Button 
                         className ="w-full rounded-sm border-primary"
                         variant="outline"
