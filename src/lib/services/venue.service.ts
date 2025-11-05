@@ -5,6 +5,7 @@ import { Role } from "@/types/prisma";
 import { activityLogService, buildChangesDiff } from "@/lib/services/activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
+import { vercelBlobService } from "@/lib/services/vercel-blob.service";
 
 export const venueService = {
   getAll: async (context: ServiceContext) => {
@@ -179,6 +180,25 @@ export const venueService = {
           data: null,
           message: "Venue not found",
         };
+      }
+
+      // Delete old images that are being removed
+      if (payload.images && exist.images) {
+        const oldImages = exist.images as string[];
+        const newImages = payload.images as string[];
+        
+        // Find images that exist in old but not in new (removed images)
+        const removedImages = oldImages.filter(img => !newImages.includes(img));
+        
+        // Delete each removed image from storage
+        for (const imageUrl of removedImages) {
+          console.log("Deleting old venue image:", imageUrl);
+          const deleteResult = await vercelBlobService.deleteFile(imageUrl);
+          if (!deleteResult.success) {
+            console.warn("Failed to delete old venue image:", deleteResult.message);
+            // Continue with update even if delete fails (non-blocking)
+          }
+        }
       }
 
       let slugUpdate: string | undefined;
