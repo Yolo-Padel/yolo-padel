@@ -46,7 +46,7 @@ export function PayNow({
       </div>
       <div className="text-xl gap-4 mt-4 space-y-6 items-center">
         <img
-          src="/scan_me_qr_code.jpg"
+          src="/qris.png"
           alt="barcode"
           className="w-[full] h-[full] rounded-md"
         />

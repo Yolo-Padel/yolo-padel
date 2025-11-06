@@ -65,24 +65,10 @@ export function PaymentInstructions({
       {/* Payment Method Specific Instructions */}
       {paymentMethod === "QRIS" && (
         <div className="space-y-4">
-          <div className="text-center">
+          <div className="flex flex-col items-center justify-center">
             <h3 className="font-semibold mb-3">Scan QR Code</h3>
             {/* Mock QR Code */}
-            <div className="flex justify-center">
-              <div className="bg-white p-4 rounded-lg border inline-block">
-                <div className="w-64 h-64 bg-muted flex items-center justify-center">
-                  {/* Placeholder for QR Code */}
-                  <div className="text-center">
-                    <div className="text-6xl mb-2">⬜⬛⬜⬛</div>
-                    <div className="text-6xl mb-2">⬛⬜⬛⬜</div>
-                    <div className="text-6xl mb-2">⬜⬛⬜⬛</div>
-                    <div className="text-xs text-muted-foreground mt-2">
-                      Mock QR Code
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <Image src="/qris.png" alt="QR Code" width={200} height={200} />
           </div>
         </div>
       )}
