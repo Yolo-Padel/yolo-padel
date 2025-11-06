@@ -253,7 +253,7 @@ export const courtService = {
         }
       } else if (data.openingHours === OpeningHoursType.WITHOUT_FIXED) {
         // Create custom schedule
-        for (const [dayName, dayData] of Object.entries(data.schedule)) {
+        for (const [dayName, dayData] of Object.entries(data.schedule ?? {})) {
           const dayOfWeek = dayName.toUpperCase() as DayOfWeek;
 
           const operatingHour = await prisma.courtOperatingHour.create({
@@ -443,7 +443,7 @@ export const courtService = {
         }
       } else if (data.openingHours === OpeningHoursType.WITHOUT_FIXED) {
         // Create custom schedule
-        for (const [dayName, dayData] of Object.entries(data.schedule)) {
+        for (const [dayName, dayData] of Object.entries(data.schedule ?? {})) {
           const dayOfWeek = dayName.toUpperCase() as DayOfWeek;
 
           const operatingHour = await prisma.courtOperatingHour.create({

@@ -1,97 +1,83 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import { cn } from "@/lib/utils";
+import * as React from "react"
+import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group"
+import { type VariantProps } from "class-variance-authority"
 
-type MultipleValue = string[];
-type SingleValue = string | undefined;
+import { cn } from "@/lib/utils"
+import { toggleVariants } from "@/components/ui/toggle"
 
-type ToggleGroupContextType = {
-  type: "single" | "multiple";
-  value: MultipleValue | SingleValue;
-  onValueChange?: (value: any) => void;
-};
+const ToggleGroupContext = React.createContext<
+  VariantProps<typeof toggleVariants> & {
+    spacing?: number
+  }
+>({
+  size: "default",
+  variant: "default",
+  spacing: 0,
+})
 
-const ToggleGroupContext = React.createContext<ToggleGroupContextType | null>(
-  null
-);
-
-export function ToggleGroup({
-  type = "multiple",
-  value,
-  onValueChange,
+function ToggleGroup({
   className,
+  variant,
+  size,
+  spacing = 0,
   children,
   ...props
-}: React.HTMLAttributes<HTMLDivElement> & {
-  type?: "single" | "multiple";
-  value: MultipleValue | SingleValue;
-  onValueChange?: (value: any) => void;
-}) {
+}: React.ComponentProps<typeof ToggleGroupPrimitive.Root> &
+  VariantProps<typeof toggleVariants> & {
+    spacing?: number
+  }) {
   return (
-    <ToggleGroupContext.Provider value={{ type, value, onValueChange }}>
-      <div className={cn("inline-flex flex-wrap gap-3", className)} {...props}>
-        {children}
-      </div>
-    </ToggleGroupContext.Provider>
-  );
-}
-
-export function ToggleGroupItem({
-  value,
-  className,
-  children,
-  disabled,
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  value: string;
-}) {
-  const ctx = React.useContext(ToggleGroupContext);
-  if (!ctx) {
-    throw new Error("ToggleGroupItem must be used within ToggleGroup");
-  }
-
-  const isSelected = React.useMemo(() => {
-    if (ctx.type === "multiple") {
-      return Array.isArray(ctx.value) && (ctx.value as MultipleValue).includes(value);
-    }
-    return ctx.value === value;
-  }, [ctx.type, ctx.value, value]);
-
-  function handleClick() {
-    if (!ctx.onValueChange || disabled) return;
-    if (ctx.type === "multiple") {
-      const current = Array.isArray(ctx.value) ? (ctx.value as MultipleValue) : [];
-      const next = isSelected
-        ? current.filter((v) => v !== value)
-        : [...current, value];
-      ctx.onValueChange(next);
-    } else {
-      ctx.onValueChange(isSelected ? undefined : value);
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      aria-pressed={isSelected}
-      disabled={disabled}
-      onClick={handleClick}
+    <ToggleGroupPrimitive.Root
+      data-slot="toggle-group"
+      data-variant={variant}
+      data-size={size}
+      data-spacing={spacing}
+      style={{ "--gap": spacing } as React.CSSProperties}
       className={cn(
-        "h-9 items-center justify-center rounded-md border px-3 text-sm transition-colors",
-        "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
-        isSelected
-          ? "bg-primary text-primary-foreground border-primary"
-          : "bg-background text-foreground hover:bg-muted border-input",
-        disabled && "opacity-50 pointer-events-none",
+        "group/toggle-group flex w-fit items-center gap-[--spacing(var(--gap))] rounded-md data-[spacing=default]:data-[variant=outline]:shadow-xs",
         className
       )}
-      data-state={isSelected ? "on" : "off"}
+      {...props}
+    >
+      <ToggleGroupContext.Provider value={{ variant, size, spacing }}>
+        {children}
+      </ToggleGroupContext.Provider>
+    </ToggleGroupPrimitive.Root>
+  )
+}
+
+function ToggleGroupItem({
+  className,
+  children,
+  variant,
+  size,
+  ...props
+}: React.ComponentProps<typeof ToggleGroupPrimitive.Item> &
+  VariantProps<typeof toggleVariants>) {
+  const context = React.useContext(ToggleGroupContext)
+
+  return (
+    <ToggleGroupPrimitive.Item
+      data-slot="toggle-group-item"
+      data-variant={context.variant || variant}
+      data-size={context.size || size}
+      data-spacing={context.spacing}
+      className={cn(
+        toggleVariants({
+          variant: context.variant || variant,
+          size: context.size || size,
+        }),
+        "w-auto min-w-0 shrink-0 px-3 focus:z-10 focus-visible:z-10",
+        "data-[spacing=0]:rounded-none data-[spacing=0]:shadow-none data-[spacing=0]:first:rounded-l-md data-[spacing=0]:last:rounded-r-md data-[spacing=0]:data-[variant=outline]:border-l-0 data-[spacing=0]:data-[variant=outline]:first:border-l",
+        className
+      )}
       {...props}
     >
       {children}
-    </button>
-  );
+    </ToggleGroupPrimitive.Item>
+  )
 }
 
-
+export { ToggleGroup, ToggleGroupItem }

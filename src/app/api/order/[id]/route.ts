@@ -1,19 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrderById, updateOrderStatus } from "@/lib/services/order.service";
 import { updateOrderStatusSchema } from "@/lib/validations/order.validation";
-import { validateRequest } from "@/lib/validate-request";
 import { syncOrderStatusToBookings } from "@/lib/services/status-sync.service";
+import { verifyAuth } from "@/lib/auth-utils";
 
 /**
  * GET /api/order/[id]
  * Get order by ID
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest) {
   try {
-    const user = await validateRequest();
+    const { searchParams } = new URL(request.url);
+    const orderId = searchParams.get("id");
+    const tokenResult = await verifyAuth(request);
+    if (!tokenResult.isValid) {
+      return NextResponse.json(
+        { success: false, message: tokenResult.error },
+        { status: 401 }
+      );
+    }
+    const { user } = tokenResult;
 
     if (!user) {
       return NextResponse.json(
@@ -22,10 +28,8 @@ export async function GET(
       );
     }
 
-    const orderId = params.id;
-
     // Get order
-    const order = await getOrderById(orderId);
+    const order = await getOrderById(orderId ?? "");
 
     if (!order) {
       return NextResponse.json(
@@ -35,7 +39,7 @@ export async function GET(
     }
 
     // Check if user owns this order
-    if (order.userId !== user.id) {
+    if (order.userId !== user.userId) {
       return NextResponse.json(
         { success: false, message: "Forbidden" },
         { status: 403 }
@@ -63,12 +67,18 @@ export async function GET(
  * PATCH /api/order/[id]
  * Update order status (admin only)
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest) {
   try {
-    const user = await validateRequest();
+    const { searchParams } = new URL(request.url);
+    const orderId = searchParams.get("id");
+    const tokenResult = await verifyAuth(request);
+    if (!tokenResult.isValid) {
+      return NextResponse.json(
+        { success: false, message: tokenResult.error },
+        { status: 401 }
+      );
+    }
+    const { user } = tokenResult;
 
     if (!user) {
       return NextResponse.json(
@@ -85,7 +95,6 @@ export async function PATCH(
       );
     }
 
-    const orderId = params.id;
     const body = await request.json();
 
     // Validate request body
@@ -99,7 +108,7 @@ export async function PATCH(
         {
           success: false,
           message: "Validation error",
-          errors: validation.error.errors,
+          errors: validation.error,
         },
         { status: 400 }
       );
@@ -124,10 +133,11 @@ export async function PATCH(
       {
         success: false,
         message:
-          error instanceof Error ? error.message : "Failed to update order status",
+          error instanceof Error
+            ? error.message
+            : "Failed to update order status",
       },
       { status: 500 }
     );
   }
 }
-
