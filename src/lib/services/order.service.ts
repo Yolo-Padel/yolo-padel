@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Order, OrderStatus, BookingStatus } from "@/types/prisma";
 import { customAlphabet } from "nanoid";
-import { createBlocking, releaseBlockingsByBookingIds } from "./blocking.service";
 
 /**
  * Generate unique order code
@@ -10,7 +9,7 @@ import { createBlocking, releaseBlockingsByBookingIds } from "./blocking.service
  */
 export function generateOrderCode(): string {
   const nanoId = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 5);
-  return `#ORD${nanoId()}`;
+  return `#ORD-${nanoId()}`;
 }
 
 /**
@@ -67,7 +66,7 @@ export async function createOrder(data: {
         "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
         5
       );
-      const bookingCode = `#BK${bookingNanoId()}`;
+      const bookingCode = `#BK-${bookingNanoId()}`;
 
       // Parse slots to get time slot data
       const timeSlots = bookingItem.slots.map((slot) => {
@@ -238,6 +237,7 @@ export async function getOrdersByUserId(
                     id: true,
                     name: true,
                     slug: true,
+                    images: true,
                   },
                 },
               },
@@ -256,6 +256,7 @@ export async function getOrdersByUserId(
             status: true,
             amount: true,
             paymentDate: true,
+            channelName: true,
           },
         },
       },
@@ -368,4 +369,3 @@ export async function checkOrderCompletion(orderId: string): Promise<boolean> {
 
   return allFinished;
 }
-

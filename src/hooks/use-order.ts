@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { OrderStatus } from "@/types/prisma";
+import { OrderStatus, PaymentStatus } from "@/types/prisma";
 
 // ════════════════════════════════════════════════════════
 // Types
 // ════════════════════════════════════════════════════════
 
-type CreateOrderInput = {
+export type CreateOrderInput = {
   bookings: Array<{
     courtId: string;
     date: Date;
@@ -16,7 +16,7 @@ type CreateOrderInput = {
   channelName: string;
 };
 
-type Order = {
+export type Order = {
   id: string;
   orderCode: string;
   totalAmount: number;
@@ -34,10 +34,12 @@ type Order = {
     court: {
       id: string;
       name: string;
+      image?: string | null;
       venue: {
         id: string;
         name: string;
         slug: string;
+        images: string[];
       };
     };
     timeSlots: Array<{
@@ -49,7 +51,7 @@ type Order = {
     id: string;
     channelName: string;
     amount: number;
-    status: string;
+    status: PaymentStatus;
     paymentDate: string | null;
   } | null;
 };
@@ -204,8 +206,13 @@ export function useUpdateOrderStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ orderId, status }: { orderId: string; status: OrderStatus }) =>
-      updateOrderStatusApi(orderId, status),
+    mutationFn: ({
+      orderId,
+      status,
+    }: {
+      orderId: string;
+      status: OrderStatus;
+    }) => updateOrderStatusApi(orderId, status),
     onSuccess: (data) => {
       // Invalidate orders list
       queryClient.invalidateQueries({ queryKey: ["orders"] });
@@ -225,4 +232,3 @@ export function useUpdateOrderStatus() {
     },
   });
 }
-
