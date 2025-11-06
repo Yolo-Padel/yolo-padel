@@ -39,6 +39,14 @@ enum PaymentStatus {
   EXPIRED
 }
 
+enum OrderStatus {
+  PENDING
+  PAID
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -61,6 +69,9 @@ model User {
 
   // Relasi ke Booking
   bookings Booking[]
+
+  // Relasi ke Order
+  orders Order[]
 
   // Relasi ke Payment
   payments Payment[]
@@ -135,6 +146,7 @@ model Court {
   isArchived  Boolean  @default(false)
   price       Int
   openingType OpeningHoursType @default(REGULAR)
+  image       String?  // URL gambar court (optional)
 
   venue     Venue   @relation(fields: [venueId], references: [id], onDelete: Cascade)
   venueId   String
@@ -192,10 +204,12 @@ model Booking {
   id               String        @id @default(cuid())
   courtId          String
   userId           String
+  orderId          String?       // Nullable for backward compatibility
   source           String        // flag for booking created by YOLO / Courtside system
   bookingDate      DateTime
-  bookingHour      String
-  duration         Int           // could be handled on the fly (for Courtside)
+  bookingHour      String?       // Deprecated, keep for backward compatibility
+  bookingCode      String        @unique
+  duration         Int           // Total duration: jumlah slots
   totalPrice       Int
   status           BookingStatus
   courtsideCourtId String?
@@ -203,19 +217,36 @@ model Booking {
   updatedAt        DateTime      @updatedAt
 
   // Relations
-  court    Court     @relation(fields: [courtId], references: [id], onDelete: Cascade)
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  payments Payment[]
-  blocking Blocking?
+  court     Court             @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order     Order?            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  payments  Payment[]
+  blocking  Blocking?
+  timeSlots BookingTimeSlot[]  // NEW: Relasi ke time slots
 
   @@map("bookings")
+}
+
+model BookingTimeSlot {
+  id        String   @id @default(cuid())
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId String
+  
+  openHour  String   // "07:00" - format sama dengan CourtTimeSlot
+  closeHour String   // "23:00"
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("booking_time_slots")
+  @@index([bookingId])
 }
 
 model Blocking {
   id          String   @id @default(cuid())
   bookingId   String   @unique
   description String
-  timerange   DateTime
+  // timerange   DateTime  // DEPRECATED - use booking.timeSlots instead
   isBlocking  Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -228,7 +259,8 @@ model Blocking {
 
 model Payment {
   id           String        @id @default(cuid())
-  bookingId    String
+  orderId      String        @unique
+  bookingId    String?       // DEPRECATED - keep for backward compatibility
   channelName  String
   userId       String
   amount       Int
@@ -239,10 +271,28 @@ model Payment {
   updatedAt    DateTime      @updatedAt
 
   // Relations
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("payments")
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  userId      String
+  orderCode   String      @unique
+  totalAmount Int
+  status      OrderStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+  payment  Payment?
+
+  @@map("orders")
 }
 
 model ActivityLog {

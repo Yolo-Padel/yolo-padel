@@ -1,14 +1,11 @@
-"use client"
+"use client";
 
-import { BookingCourt } from "@/app/dashboard/booking/_components/booking-court";
-import { useState } from "react";
+import { BookingCourt } from "@/app/dashboard/booking/_components/booking-table";
 
 export default function BookingPage() {
-  const [open, setOpen] = useState(false);
-
   return (
     <div>
-      <BookingCourt open={open} onOpenChange={setOpen} />
+      <BookingCourt />
     </div>
-  )
+  );
 }

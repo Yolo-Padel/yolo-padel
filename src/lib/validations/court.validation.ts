@@ -13,7 +13,6 @@ const dayScheduleSchema = z.object({
   timeSlots: z.array(timeSlotSchema).optional(),
 });
 
-
 // Main court creation schema
 export const courtCreateSchema = z
   .object({
@@ -24,26 +23,40 @@ export const courtCreateSchema = z
     venueId: z.string().min(1, "Venue ID is required"),
     price: z.number().min(0, "Price must be a positive number"),
     openingHours: z.nativeEnum(OpeningHoursType),
-    schedule: z.object({
-      monday: dayScheduleSchema,
-      tuesday: dayScheduleSchema,
-      wednesday: dayScheduleSchema,
-      thursday: dayScheduleSchema,
-      friday: dayScheduleSchema,
-      saturday: dayScheduleSchema,
-      sunday: dayScheduleSchema,
-    }),
+    image: z
+      .string()
+      .min(1, "Court image is required")
+      .url("Invalid image URL"),
+    schedule: z
+      .object({
+        monday: dayScheduleSchema,
+        tuesday: dayScheduleSchema,
+        wednesday: dayScheduleSchema,
+        thursday: dayScheduleSchema,
+        friday: dayScheduleSchema,
+        saturday: dayScheduleSchema,
+        sunday: dayScheduleSchema,
+      })
+      .optional(),
   })
   .refine(
     (data) => {
       // If opening hours is WITHOUT_FIXED, validate that schedule has proper time slots
       if (data.openingHours === OpeningHoursType.WITHOUT_FIXED) {
-        const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+        const days = [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday",
+        ] as const;
         return days.every((day) => {
-          const dayData = data.schedule[day];
+          const dayData = data.schedule?.[day];
           return (
-            dayData.closed ||
-            (dayData.timeSlots && dayData.timeSlots.length > 0)
+            dayData?.closed ||
+            (dayData?.timeSlots && dayData?.timeSlots.length > 0)
           );
         });
       }

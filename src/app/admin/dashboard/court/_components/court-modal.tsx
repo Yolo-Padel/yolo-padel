@@ -26,6 +26,8 @@ import {
 } from "@/lib/validations/court.validation";
 import { OpeningHoursType } from "@/types/prisma";
 import { useCreateCourt, useUpdateCourt } from "@/hooks/use-court";
+import { FileUploader } from "@/components/file-uploader";
+import { useVenueById } from "@/hooks/use-venue";
 
 interface CourtModalProps {
   open: boolean;
@@ -37,6 +39,7 @@ interface CourtModalProps {
     id?: string;
     name?: string;
     price?: number;
+    image?: string;
     openingHours?: OpeningHoursType;
     operatingHours?: Array<{
       id: string;
@@ -60,13 +63,17 @@ export function CourtModal({
   venueName = "Slipi Padel Center",
   court,
 }: CourtModalProps) {
+  // Fetch venue data to get default hours
+  const { data: venueData } = useVenueById(venueId);
+  const venue = venueData?.data;
+
+  // Get venue hours with fallback
+  const venueOpenHour = venue?.openHour || "07:00";
+  const venueCloseHour = venue?.closeHour || "23:00";
+
   const [timeSlots, setTimeSlots] = useState<{
     [key: string]: Array<{ openHour: string; closeHour: string }>;
-  }>({
-    saturday: [{ openHour: "07:00", closeHour: "07:30" }],
-    sunday: [{ openHour: "07:00", closeHour: "07:30" }],
-    monday: [{ openHour: "07:00", closeHour: "07:30" }],
-  });
+  }>({});
 
   // Add mutation hooks
   const createCourtMutation = useCreateCourt();
@@ -81,92 +88,59 @@ export function CourtModal({
     watch,
   } = useForm<CourtCreateData>({
     resolver: zodResolver(courtCreateSchema),
-    defaultValues: {
-      courtName: "",
-      venueId: venueId,
-      price: 200000,
-      openingHours: OpeningHoursType.REGULAR,
-      schedule: {
-        monday: {
-          closed: false,
-          timeSlots: [{ openHour: "07:00", closeHour: "07:30" }],
-        },
-        tuesday: {
-          closed: false,
-          timeSlots: [{ openHour: "07:00", closeHour: "07:30" }],
-        },
-        wednesday: {
-          closed: false,
-          timeSlots: [{ openHour: "07:00", closeHour: "07:30" }],
-        },
-        thursday: {
-          closed: false,
-          timeSlots: [{ openHour: "07:00", closeHour: "07:30" }],
-        },
-        friday: {
-          closed: false,
-          timeSlots: [{ openHour: "07:00", closeHour: "07:30" }],
-        },
-        saturday: {
-          closed: false,
-          timeSlots: [{ openHour: "07:00", closeHour: "07:30" }],
-        },
-        sunday: {
-          closed: false,
-          timeSlots: [{ openHour: "07:00", closeHour: "07:30" }],
-        },
-      },
-    },
   });
+
+  // Helper to create default schedule from venue hours
+  const createDefaultSchedule = () => {
+    const daysOfWeek = [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday",
+    ];
+
+    const schedule: any = {};
+    const slots: any = {};
+
+    daysOfWeek.forEach((day) => {
+      schedule[day] = {
+        closed: false,
+        timeSlots: [{ openHour: venueOpenHour, closeHour: venueCloseHour }],
+      };
+      slots[day] = [{ openHour: venueOpenHour, closeHour: venueCloseHour }];
+    });
+
+    return { schedule, slots };
+  };
 
   // Reset form when modal opens/closes or court changes
   useEffect(() => {
-    if (open) {
+    if (open && venue) {
       if (mode === "edit" && court) {
         console.log("Edit mode - court data:", court);
-        console.log("Edit mode - court price:", court.price);
 
         setValue("courtName", court.name || "");
         setValue("venueId", venueId);
         setValue("price", court.price || 200000);
+        setValue("image", court.image || "");
         setValue(
           "openingHours",
           court.openingHours || OpeningHoursType.REGULAR
         );
 
-        console.log("Form values after setValue:", {
-          courtName: court.name || "",
-          price: court.price || 200000,
-          openingHours: court.openingHours || OpeningHoursType.REGULAR,
-        });
-
-        // Debug opening hours specifically
-        console.log("Opening hours debug:", {
-          courtOpeningHours: court.openingHours,
-          setValueOpeningHours: court.openingHours || OpeningHoursType.REGULAR,
-          watchOpeningHours: watch("openingHours"),
-        });
-
-        // Force re-render to ensure form updates
-        setTimeout(() => {
-          console.log("Delayed opening hours check:", watch("openingHours"));
-        }, 100);
-
-        // Set schedule data from operatingHours when openingHours is WITHOUT_FIXED
-        if (
-          court.openingHours === OpeningHoursType.WITHOUT_FIXED &&
-          court.operatingHours
-        ) {
+        // Load schedule from operatingHours (for both REGULAR and WITHOUT_FIXED)
+        // This provides baseline when switching from REGULAR to WITHOUT_FIXED
+        if (court.operatingHours && court.operatingHours.length > 0) {
           console.log(
-            "Loading schedule data from operatingHours:",
+            "Loading schedule from DB operatingHours:",
             court.operatingHours
           );
 
-          // Transform operatingHours to schedule format
           const scheduleData: any = {};
           const timeSlotsData: any = {};
-
-          // Initialize all days
           const daysOfWeek = [
             "monday",
             "tuesday",
@@ -197,97 +171,80 @@ export function CourtModal({
                 closeHour: slot.closeHour,
               }));
             } else {
-              // Default values if no operating hour found
+              // Fallback to venue hours
               scheduleData[day] = {
                 closed: false,
-                timeSlots: [{ openHour: "09:00", closeHour: "17:00" }],
+                timeSlots: [
+                  { openHour: venueOpenHour, closeHour: venueCloseHour },
+                ],
               };
-              timeSlotsData[day] = [{ openHour: "09:00", closeHour: "17:00" }];
+              timeSlotsData[day] = [
+                { openHour: venueOpenHour, closeHour: venueCloseHour },
+              ];
             }
           });
 
-          console.log("Transformed schedule data:", scheduleData);
-          console.log("Transformed timeSlots data:", timeSlotsData);
-
-          // Set the schedule data
           setValue("schedule", scheduleData);
           setTimeSlots(timeSlotsData);
+        } else {
+          // No operatingHours yet, use venue defaults
+          const { schedule, slots } = createDefaultSchedule();
+          setValue("schedule", schedule);
+          setTimeSlots(slots);
         }
       } else {
+        // Add mode: Initialize with venue hours
+        const { schedule, slots } = createDefaultSchedule();
+
         reset({
           courtName: "",
           venueId: venueId,
           price: 200000,
+          image: undefined,
           openingHours: OpeningHoursType.REGULAR,
-          schedule: {
-            monday: {
-              closed: false,
-              timeSlots: [{ openHour: "09:00", closeHour: "17:00" }],
-            },
-            tuesday: {
-              closed: false,
-              timeSlots: [{ openHour: "09:00", closeHour: "17:00" }],
-            },
-            wednesday: {
-              closed: false,
-              timeSlots: [{ openHour: "09:00", closeHour: "17:00" }],
-            },
-            thursday: {
-              closed: false,
-              timeSlots: [{ openHour: "09:00", closeHour: "17:00" }],
-            },
-            friday: {
-              closed: false,
-              timeSlots: [{ openHour: "09:00", closeHour: "17:00" }],
-            },
-            saturday: {
-              closed: false,
-              timeSlots: [{ openHour: "09:00", closeHour: "17:00" }],
-            },
-            sunday: {
-              closed: false,
-              timeSlots: [{ openHour: "09:00", closeHour: "17:00" }],
-            },
-          },
+          schedule,
         });
-        setTimeSlots({
-          monday: [{ openHour: "07:00", closeHour: "07:30" }],
-          tuesday: [{ openHour: "07:00", closeHour: "07:30" }],
-          wednesday: [{ openHour: "07:00", closeHour: "07:30" }],
-          thursday: [{ openHour: "07:00", closeHour: "07:30" }],
-          friday: [{ openHour: "07:00", closeHour: "07:30" }],
-          saturday: [{ openHour: "07:00", closeHour: "07:30" }],
-          sunday: [{ openHour: "07:00", closeHour: "07:30" }],
-        });
+        setTimeSlots(slots);
       }
     }
-  }, [open, mode, court, setValue, reset, venueId]);
+  }, [
+    open,
+    mode,
+    court,
+    setValue,
+    reset,
+    venueId,
+    venue,
+    venueOpenHour,
+    venueCloseHour,
+  ]);
 
   const onSubmit: SubmitHandler<CourtCreateData> = async (data) => {
     try {
       console.log("Court Form Data:", data);
-      console.log("Price value:", data.price);
-      console.log("Price type:", typeof data.price);
-      console.log("Opening hours value:", data.openingHours);
-      console.log("Opening hours type:", typeof data.openingHours);
-      console.log("All form values:", watch());
-      console.log("Form errors:", errors);
+
+      // Prepare payload: only include schedule for WITHOUT_FIXED mode
+      const payload = {
+        ...data,
+        // Only send schedule if opening hours is WITHOUT_FIXED
+        // For REGULAR mode, backend will auto-generate from venue hours
+        schedule:
+          data.openingHours === OpeningHoursType.WITHOUT_FIXED
+            ? data.schedule
+            : undefined,
+      };
+
+      console.log("Payload to send:", payload);
 
       if (mode === "add") {
-        console.log("Creating new court:", data);
-        await createCourtMutation.mutateAsync(data);
+        console.log("Creating new court");
+        await createCourtMutation.mutateAsync(payload as CourtCreateData);
         onOpenChange(false);
       } else if (mode === "edit" && court?.id) {
-        console.log("Updating court:", data);
-        console.log("Court ID:", court.id);
-        console.log("Update payload:", {
-          courtId: court.id,
-          ...data,
-        });
-
+        console.log("Updating court");
         await updateCourtMutation.mutateAsync({
           courtId: court.id,
-          ...data,
+          ...(payload as CourtCreateData),
         });
         onOpenChange(false);
       }
@@ -297,16 +254,28 @@ export function CourtModal({
   };
 
   const addTimeSlot = (day: string) => {
+    // Safety check: if timeSlots[day] doesn't exist or is empty, use venue defaults
+    if (!timeSlots[day] || timeSlots[day].length === 0) {
+      const defaultSlot = [
+        { openHour: venueOpenHour, closeHour: venueCloseHour },
+      ];
+      setTimeSlots((prev) => ({ ...prev, [day]: defaultSlot }));
+      setValue(`schedule.${day}.timeSlots` as any, defaultSlot);
+      return;
+    }
+
     const lastSlot = timeSlots[day][timeSlots[day].length - 1];
     const lastCloseIndex = timeOptions.indexOf(lastSlot.closeHour);
+
+    // Next slot starts from last slot's close hour
     const nextOpenHour =
+      lastCloseIndex < timeOptions.length
+        ? timeOptions[lastCloseIndex]
+        : "23:00";
+    const nextCloseHour =
       lastCloseIndex < timeOptions.length - 1
         ? timeOptions[lastCloseIndex + 1]
         : "23:00";
-    const nextCloseHour =
-      lastCloseIndex < timeOptions.length - 2
-        ? timeOptions[lastCloseIndex + 2]
-        : "23:30";
 
     const newSlots = [
       ...timeSlots[day],
@@ -363,14 +332,12 @@ export function CourtModal({
     }
   };
 
-  // Generate time options from 00:00 to 23:30 with 30-minute intervals
+  // Generate time options from 00:00 to 23:00 with 1-hour intervals
   const generateTimeOptions = () => {
     const options = [];
     for (let hour = 0; hour < 24; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const timeString = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
-        options.push(timeString);
-      }
+      const timeString = `${hour.toString().padStart(2, "0")}:00`;
+      options.push(timeString);
     }
     return options;
   };
@@ -411,7 +378,7 @@ export function CourtModal({
     const openIndex = timeOptions.indexOf(openHour);
     if (openIndex === -1) return timeOptions;
 
-    // Return options that are at least 30 minutes after open hour
+    // Return options that are at least 1 hour after open hour
     return timeOptions.slice(openIndex + 1);
   };
 
@@ -425,8 +392,9 @@ export function CourtModal({
     const previousCloseIndex = timeOptions.indexOf(previousSlot.closeHour);
     if (previousCloseIndex === -1) return timeOptions;
 
-    // Return options that start after previous slot ends
-    return timeOptions.slice(previousCloseIndex + 1);
+    // Return options that start from or after previous slot ends
+    // closeHour of previous slot can be openHour of next slot
+    return timeOptions.slice(previousCloseIndex);
   };
 
   const isAddMode = mode === "add";
@@ -536,6 +504,33 @@ export function CourtModal({
                   {errors.price && (
                     <p className="text-sm text-red-600">
                       {errors.price.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Court Image */}
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="image"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Court Image <span className="text-red-500">*</span>
+                  </Label>
+                  <FileUploader
+                    folderPath="court"
+                    value={watch("image") ? [watch("image")] : []}
+                    onChange={(urls) => {
+                      setValue("image", urls[0] || "", {
+                        shouldValidate: true,
+                      });
+                    }}
+                    multiple={false}
+                    accept={{ "image/*": [".png", ".jpg", ".jpeg", ".webp"] }}
+                    maxFiles={1}
+                  />
+                  {errors.image && (
+                    <p className="text-sm text-red-600">
+                      {errors.image.message}
                     </p>
                   )}
                 </div>

@@ -1,9 +1,9 @@
-import OrderHistory from './_components/order-history'
+import OrderHistoryTable from "./_components/order-history-table";
 
 export default function OrderHistoryPage() {
   return (
     <div>
-        <OrderHistory />
+      <OrderHistoryTable />
     </div>
-  )
+  );
 }

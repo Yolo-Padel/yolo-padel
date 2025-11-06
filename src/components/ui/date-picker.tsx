@@ -6,7 +6,6 @@ import { CalendarIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Popover,
   PopoverContent,
@@ -32,7 +31,7 @@ function isValidDate(date: Date | undefined) {
   return !isNaN(date.getTime())
 }
 
-export function Calendar28() {
+export function Calendar28({ disabled = false }: { disabled?: boolean }) {
   const [open, setOpen] = React.useState(false)
   const [date, setDate] = React.useState<Date | undefined>(
     new Date("2025-06-01")
@@ -44,11 +43,13 @@ export function Calendar28() {
     <div className="flex flex-col gap-3">
       <div className="relative flex gap-2">
         <Input
+          disabled={disabled}
           id="date"
           value={value}
           placeholder="Select date"
           className="bg-background pr-10 border-[#C3D223] border-1 rounded-sm"
           onChange={(e) => {
+            if (disabled) return
             const date = new Date(e.target.value)
             setValue(e.target.value)
             if (isValidDate(date)) {
@@ -57,6 +58,7 @@ export function Calendar28() {
             }
           }}
           onKeyDown={(e) => {
+            if (disabled) return
             if (e.key === "ArrowDown") {
               e.preventDefault()
               setOpen(true)
@@ -66,6 +68,7 @@ export function Calendar28() {
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
+              disabled={disabled}
               id="date-picker"
               variant="ghost"
               className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
@@ -99,9 +102,9 @@ export function Calendar28() {
   )
 }
 
-export function DatePicker() {
+export function DatePicker({ disabled = false }: { disabled?: boolean }) {
   return (
-    <Calendar28 />
+    <Calendar28 disabled={disabled} />
   )
 }
 

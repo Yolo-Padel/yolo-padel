@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 
 interface UploadFileData {
   file: File;
+  folderPath: string; // Mandatory folder path for organizing uploads
   filename?: string;
 }
 
@@ -21,6 +22,7 @@ interface UploadResponse {
 const uploadFileApi = async (data: UploadFileData): Promise<UploadResponse> => {
   const formData = new FormData();
   formData.append('file', data.file);
+  formData.append('folderPath', data.folderPath);
   
   if (data.filename) {
     formData.append('filename', data.filename);
