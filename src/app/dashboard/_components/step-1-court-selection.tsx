@@ -458,7 +458,7 @@ export function CourtSelectionStep({
                 <ToggleGroupItem
                   key={slot}
                   value={slot}
-                  className="justify-center"
+                  className="justify-center border rounded-md"
                 >
                   {slot}
                 </ToggleGroupItem>
