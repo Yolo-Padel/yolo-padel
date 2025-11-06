@@ -147,6 +147,41 @@ export function isSlotBooked(slot: string, bookedSlots: string[]): boolean {
 }
 
 /**
+ * Filter out blocked slots from available slots
+ * @param availableSlots Array of available time slots in UI format (e.g., "06.00–07.00")
+ * @param blockedSlots Array of blocked time slots from blocking service (format: {openHour: "06:00", closeHour: "07:00"})
+ * @returns Array of slots that are NOT blocked
+ * @example
+ * // availableSlots: ["06.00–07.00", "07.00–08.00", "08.00–09.00"]
+ * // blockedSlots: [{openHour: "07:00", closeHour: "08:00"}]
+ * // Returns: ["06.00–07.00", "08.00–09.00"]
+ */
+export function filterBlockedSlots(
+  availableSlots: string[],
+  blockedSlots: Array<{ openHour: string; closeHour: string }>
+): string[] {
+  if (blockedSlots.length === 0) return availableSlots;
+
+  return availableSlots.filter((slot) => {
+    const [slotStart, slotEnd] = slot.split("–");
+    // Convert UI format "06.00" to DB format "06:00"
+    const slotStartTime = slotStart.replace(".", ":");
+    const slotEndTime = slotEnd.replace(".", ":");
+
+    // Check if this slot is blocked
+    const isBlocked = blockedSlots.some((blockedSlot) => {
+      return (
+        blockedSlot.openHour === slotStartTime &&
+        blockedSlot.closeHour === slotEndTime
+      );
+    });
+
+    // Keep slot if it's NOT blocked
+    return !isBlocked;
+  });
+}
+
+/**
  * Transform UI slot format to Order API format
  * @param slots Array of UI slot strings like "06.00–07.00"
  * @returns Array of Order API slot strings like "06:00-07:00"

@@ -15,11 +15,10 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useForm } from "react-hook-form";
 import {
   getAvailableSlots,
-  transformDbFormatToUISlots,
-  isSlotBooked,
+  filterBlockedSlots,
   normalizeDateToLocalStartOfDay,
 } from "@/lib/booking-slots-utils";
-import { useBookingByCourt } from "@/hooks/use-booking";
+import { useActiveBlockings } from "@/hooks/use-blocking";
 import { BookingFormSkeleton } from "./booking-form-skeleton";
 import { CartItem } from "./step-2-order-summary";
 
@@ -109,37 +108,22 @@ export function CourtSelectionStep({
   const selectedCourt = courtsData.find((c) => c.id === watchCourtId);
   const operatingHoursSlots = getAvailableSlots(selectedCourt, watchDate);
 
-  // Get existing bookings for the selected court and date
-  const { data: existingBookings } = useBookingByCourt(watchCourtId || "");
-  const bookingsData = Array.isArray(existingBookings?.data)
-    ? existingBookings.data
-    : [];
+  // Get active blockings for the selected court and date
+  const { data: blockingsData } = useActiveBlockings({
+    courtId: watchCourtId || "",
+    date: watchDate || new Date(),
+  });
 
-  // Get booked slots for selected date
-  const bookedSlots = (() => {
-    if (!watchDate || bookingsData.length === 0) return [];
+  // Extract blocked time slots from blocking data
+  const blockedTimeSlots = (() => {
+    if (!blockingsData || blockingsData.length === 0) return [];
 
-    const selectedDateStr = normalizeDateToLocalStartOfDay(watchDate);
-    const bookingsOnDate = bookingsData.filter((booking: any) => {
-      const bookingDate = new Date(booking.bookingDate);
-      const bookingDateStr = normalizeDateToLocalStartOfDay(bookingDate);
-      return (
-        bookingDateStr === selectedDateStr && booking.status !== "CANCELLED"
-      );
-    });
-
-    return bookingsOnDate.flatMap((booking: any) => {
-      if (booking.timeSlots && booking.timeSlots.length > 0) {
-        return transformDbFormatToUISlots(booking.timeSlots);
-      }
-      if (booking.bookingHour) {
-        return [booking.bookingHour];
-      }
-      return [];
-    });
+    // Flatten all time slots from all blockings
+    return blockingsData.flatMap((blocking) => blocking.booking.timeSlots);
   })();
 
-  const allSlots = operatingHoursSlots;
+  // Filter out blocked slots from available slots (HIDE them, don't just disable)
+  const allSlots = filterBlockedSlots(operatingHoursSlots, blockedTimeSlots);
 
   // Calculate total price
   useEffect(() => {
@@ -453,17 +437,10 @@ export function CourtSelectionStep({
               className="border-primary"
               size="sm"
               onClick={() => {
-                const availableOnly = allSlots.filter(
-                  (slot) => !isSlotBooked(slot, bookedSlots)
-                );
-                form.setValue("slots", availableOnly);
+                // All slots in allSlots are already filtered (not blocked)
+                form.setValue("slots", allSlots);
               }}
-              disabled={
-                !watchCourtId ||
-                !watchDate ||
-                allSlots.filter((slot) => !isSlotBooked(slot, bookedSlots))
-                  .length === 0
-              }
+              disabled={!watchCourtId || !watchDate || allSlots.length === 0}
             >
               Select All
             </Button>
@@ -477,17 +454,11 @@ export function CourtSelectionStep({
             className="grid grid-cols-2 gap-3"
           >
             {(allSlots.length ? allSlots : []).map((slot) => {
-              const isBooked = isSlotBooked(slot, bookedSlots);
               return (
                 <ToggleGroupItem
                   key={slot}
                   value={slot}
-                  className={cn(
-                    "justify-center",
-                    isBooked && "opacity-50 cursor-not-allowed"
-                  )}
-                  disabled={isBooked}
-                  title={isBooked ? "This slot is already booked" : undefined}
+                  className="justify-center"
                 >
                   {slot}
                 </ToggleGroupItem>

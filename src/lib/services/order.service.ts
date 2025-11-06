@@ -9,7 +9,7 @@ import { customAlphabet } from "nanoid";
  */
 export function generateOrderCode(): string {
   const nanoId = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 5);
-  return `#ORD-${nanoId()}`;
+  return `ORD-${nanoId()}`;
 }
 
 /**
@@ -66,7 +66,7 @@ export async function createOrder(data: {
         "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
         5
       );
-      const bookingCode = `#BK-${bookingNanoId()}`;
+      const bookingCode = `BK-${bookingNanoId()}`;
 
       // Parse slots to get time slot data
       const timeSlots = bookingItem.slots.map((slot) => {
