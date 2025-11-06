@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 // import { CourtModal } from "../admin/dashboard/court/components/court-modal";
 
+
 export default function PreviewPage() {
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -22,6 +23,9 @@ export default function PreviewPage() {
           mode="add"
           venueName="Slipi Padel Center"
         /> */}
+
+        
+        
       </div>
     </div>
   );
