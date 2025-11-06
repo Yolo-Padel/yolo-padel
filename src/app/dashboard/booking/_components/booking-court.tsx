@@ -202,7 +202,7 @@ export function BookingCourt({
           </Button>
         </div>
       </div>
-      {filtered.length === 1 ? (
+      {filtered.length === 0 ? (
         <BookingEmptyState />
       ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">

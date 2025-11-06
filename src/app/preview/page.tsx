@@ -4,6 +4,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 // import { CourtModal } from "../admin/dashboard/court/components/court-modal";
+import { OrderEmptyState } from "../dashboard/order-history/_components/order-empty-state";
+import {BookingEmptyState} from "../dashboard/booking/_components/booking-empty-state"
 
 
 export default function PreviewPage() {
@@ -23,6 +25,9 @@ export default function PreviewPage() {
           mode="add"
           venueName="Slipi Padel Center"
         /> */}
+
+          <OrderEmptyState/>
+          <BookingEmptyState/>
 
         
         

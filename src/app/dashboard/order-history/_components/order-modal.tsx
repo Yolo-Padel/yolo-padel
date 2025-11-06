@@ -47,7 +47,7 @@ export function OrderModal ({
     return (
         <Dialog open={open} onOpenChange={onOpenChange} key={orderProps?.orderId}>
             <DialogContent showCloseButton={false}>
-                <X className="absolute top-8 right-8 bg-primary rounded-full p-1" onClick={() => onOpenChange(false)} />
+                <X className="absolute top-7 right-8 bg-primary rounded-full p-1" onClick={() => onOpenChange(false)} />
                 
                 {/*Pay Now Content Modal*/}
                 {mode === "paynow" && (
