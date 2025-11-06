@@ -28,7 +28,7 @@ import {
 } from "@/types/prisma";
 import { useCurrentUser } from "@/hooks/use-auth";
 import { BookingModal } from "./booking-modal";
-// import { transformDbFormatToUISlots } from "@/utils/booking-slots-utils";
+import { transformDbFormatToUISlots } from "@/lib/booking-slots-utils";
 
 type BookingCourtRow = {
   id: string;
@@ -103,7 +103,7 @@ export function BookingCourt() {
       let bookingTime: string;
       if (b.timeSlots && b.timeSlots.length > 0) {
         // Multiple slots: join with comma
-        // bookingTime = transformDbFormatToUISlots(b.timeSlots).join(", ");
+        bookingTime = transformDbFormatToUISlots(b.timeSlots).join(", ");
       } else if (b.bookingHour) {
         // Backward compatibility: use bookingHour
         bookingTime = b.bookingHour;
@@ -116,7 +116,7 @@ export function BookingCourt() {
         venue: b.court.venue.name,
         courtName: b.court.name,
         image: b.court.image || "/paddle-court1.svg",
-        bookingTime: b.bookingHour || "",
+        bookingTime,
         bookingDate: new Date(b.bookingDate).toISOString().split("T")[0],
         duration: b.duration.toString() + " Hours",
         totalPayment: b.totalPrice,
