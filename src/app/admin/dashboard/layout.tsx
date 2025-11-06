@@ -12,7 +12,7 @@ export default function AdminDashboardLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="overflow-hidden">
         <Suspense
           fallback={
             <div className="h-full w-full flex items-center justify-center">
@@ -22,7 +22,9 @@ export default function AdminDashboardLayout({
         >
           <Header />
 
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0 w-full max-w-full overflow-x-hidden">
+            {children}
+          </div>
         </Suspense>
       </SidebarInset>
     </SidebarProvider>

@@ -11,10 +11,16 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get("userId");
     const courtId = searchParams.get("courtId");
     const status = searchParams.get("status");
+    const venueId = searchParams.get("venueId");
+    const date = searchParams.get("date");
 
     let result;
 
-    if (userId) {
+    if (venueId && date) {
+      // Get bookings by venue and date
+      const parsedDate = new Date(date);
+      result = await bookingService.getByVenueAndDate(venueId, parsedDate);
+    } else if (userId) {
       result = await bookingService.getByUser(userId);
     } else if (courtId) {
       result = await bookingService.getByCourt(courtId);

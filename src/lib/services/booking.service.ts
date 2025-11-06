@@ -206,6 +206,88 @@ export const bookingService = {
     }
   },
 
+  // Get bookings by venue and date
+  getByVenueAndDate: async (venueId: string, date: Date) => {
+    try {
+      // Normalize date to UTC start/end of day
+      const year = date.getUTCFullYear();
+      const month = date.getUTCMonth();
+      const day = date.getUTCDate();
+
+      const startOfDay = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+      const endOfDay = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
+
+      const bookings = await prisma.booking.findMany({
+        where: {
+          court: {
+            venueId,
+          },
+          bookingDate: {
+            gte: startOfDay,
+            lte: endOfDay,
+          },
+          status: {
+            not: BookingStatus.CANCELLED,
+          },
+        },
+        include: {
+          timeSlots: true,
+          court: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          user: {
+            include: {
+              profile: {
+                select: {
+                  fullName: true,
+                  avatar: true,
+                },
+              },
+            },
+          },
+          blocking: true,
+          order: {
+            select: {
+              id: true,
+              orderCode: true,
+              status: true,
+              totalAmount: true,
+            },
+          },
+          payments: {
+            select: {
+              id: true,
+              amount: true,
+              status: true,
+              paymentDate: true,
+              channelName: true,
+            },
+          },
+        },
+        orderBy: {
+          bookingDate: "asc",
+        },
+      });
+
+      return {
+        success: true,
+        data: bookings,
+        message: "Get venue bookings successful",
+      };
+    } catch (error) {
+      console.error("Get venue bookings error:", error);
+      return {
+        success: false,
+        data: null,
+        message:
+          error instanceof Error ? error.message : "Get venue bookings failed",
+      };
+    }
+  },
+
   // Get bookings by status
   getByStatus: async (status: BookingStatus) => {
     try {

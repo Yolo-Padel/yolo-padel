@@ -48,6 +48,22 @@ const bookingApi = {
     }
     return response.json();
   },
+  getByVenueAndDate: async (venueId: string, date: Date) => {
+    const dateStr = date.toISOString();
+    const response = await fetch(
+      `/api/booking?venueId=${venueId}&date=${dateStr}`,
+      {
+        credentials: "include",
+      }
+    );
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.message || "Failed to fetch bookings by venue and date"
+      );
+    }
+    return response.json();
+  },
   getById: async (id: string) => {
     const response = await fetch(`/api/booking/${id}`, {
       credentials: "include",
@@ -102,6 +118,15 @@ export const useBooking = () => {
     queryKey: ["bookings"],
     queryFn: bookingApi.getAll,
     staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
+
+export const useBookingByVenueAndDate = (venueId: string, date: Date) => {
+  return useQuery({
+    queryKey: ["bookings", "venue", venueId, date.toISOString()],
+    queryFn: () => bookingApi.getByVenueAndDate(venueId, date),
+    enabled: Boolean(venueId),
+    staleTime: 1000 * 60 * 1, // 1 minute (untuk data real-time)
   });
 };
 
