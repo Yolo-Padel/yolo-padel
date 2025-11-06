@@ -37,10 +37,10 @@ export function ChangePaymentMethod ({
     
 
     return (
-        <div className="p-1 space-y-6.5">
+        <div className="p-1 space-y-6">
             <div className="flex items-center gap-2">
                 <Button 
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-md"
+                    className="items-center justify-center w-8 h-8 rounded-md"
                     variant="default"
                     onClick={()=>{onChangeMode("details-payment")}}
                 > <ArrowLeftIcon className="w-4 h-4" />

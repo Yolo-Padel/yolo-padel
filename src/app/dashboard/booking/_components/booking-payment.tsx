@@ -67,7 +67,7 @@ export function Payment ({
                         className ="w-full rounded-sm border-primary"
                         variant="outline"
                         onClick={()=>{onChangeMode("payment-paid")}}>
-                        Payment Status
+                        Status
                     </Button>
                     )}
 
@@ -77,7 +77,7 @@ export function Payment ({
                         className ="w-full rounded-sm border-primary"
                         variant="outline"
                         onClick={()=>{onChangeMode("payment-pending")}}>
-                        Payment Status
+                        Status
                     </Button>
                     )}
                     

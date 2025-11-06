@@ -34,14 +34,14 @@ export function BookingSummary ({
     // Toggle state untuk view all payment method
     const [viewAll, setViewAll] = React.useState(false);
 
-    const paymentMethods = ["QRIS", "Bank Transfer", "BNI Virtual Account", "BCA Virtual Account", "BRI Virtual Account", "Mandiri Virtual Account"]
+    const paymentMethods = ["QRIS", "BNI", "BCA", "BRI",  "Bank Transfer", ]
 
     const displayMethods = viewAll ? paymentMethods : paymentMethods.slice(0, 3)
     
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
                 <Button className="bg-primary" onClick={() => onOpenChange(false)}>
                     <ArrowLeftIcon className="h-4 w-4 mx-2" />
                 </Button>
@@ -74,7 +74,7 @@ export function BookingSummary ({
                 <RadioGroup defaultValue={bookingSummaryProps?.paymentMethod}>
                     {displayMethods.map((pm) => (
                     <div key={pm} className="flex items-center justify-between px-4 py-2 border-b border-border">
-                        <label htmlFor={pm} className="flex items-center"><img src="/qris.png" className="w-4 h-4 mr-2" />{pm}</label>
+                        <label htmlFor={pm} className="flex items-center"><img src={`/${pm.toUpperCase()}.png`} alt={pm} className="w-4 h-4 mr-2" />{pm}</label>
                         <RadioGroupItem value={pm} id={pm} className="h-4 w-4 border-2 [&_svg]:w-3 [&_svg]:h-3"/>
                     </div>
                     ))}
@@ -114,7 +114,7 @@ export function BookingSummary ({
                 <Button 
                     className="bg-primary text-md w-full py-2 rounded-md mt-4"
                     onClick={() => onChangeMode("booking-payment")}>
-                    Book Now <ArrowRightIcon className="h-4 w-4 ml-2" />
+                    Book Now <ArrowRightIcon className="h-4 w-4" />
                 </Button>
             </div>
         </div>

@@ -18,6 +18,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import ComboboxFilter from '@/components/ui/combobox'
 import { SeeOrderDetails } from './order-details'
 import { OrderModal } from './order-modal'
+import { OrderEmptyState } from './order-empty-state'
 
 type OrderData={
     orderId: string;
@@ -104,7 +105,7 @@ export default function OrderHistory() {
             created: "2023-08-18 04:00:00",
         }
     ]
-
+    
     const getPaymentStatus = (paymentStatus: string | "Paid" | "Pending" | "Failed") => {
         switch (paymentStatus) {
           case "Paid":
@@ -136,7 +137,9 @@ export default function OrderHistory() {
                 </Button>
             </div>
         </div>
-        
+        {paginated.length === 0 ? (
+            <OrderEmptyState />
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2">
             {paginated.map((orderData) => (
             <Card key={orderData.orderId} className='gap-1 p-1 border-foreground'>
@@ -145,7 +148,7 @@ export default function OrderHistory() {
                     <CardTitle className='flex justify-between'>ID#{orderData.bookingId} <Badge className={(getPaymentStatus(orderData.paymentStatus))}>{orderData.paymentStatus}</Badge></CardTitle>
                 </CardHeader>
                 <CardContent className='px-2 text-md gap-1'>
-                    <div className='text-foreground text-sm'>{orderData.bookingDate}</div>
+                <div className='text-foreground text-sm'>{orderData.bookingDate}</div>
                     <div className='pt-1 pb-4 font-semibold'>
                         <div className='flex'>
                             {orderData.courtName}
@@ -176,15 +179,13 @@ export default function OrderHistory() {
                     <Button 
                         className ="w-full border-primary"
                         variant="outline"
-                        onClick={()=>{setSelectedOrder(orderData); setOrderModal(true); setModeModal("details-payment")}}
-                    >
+                        onClick={()=>{setSelectedOrder(orderData); setOrderModal(true); setModeModal("details-payment")}}>
                         See Details
                     </Button>
                     <Button 
                         className ="w-full"
                         variant="default"
-                        onClick={()=>{setSelectedOrder(orderData); setOrderModal(true); setModeModal("paynow")}}
-                    >
+                        onClick={()=>{setSelectedOrder(orderData); setOrderModal(true); setModeModal("paynow")}}>
                         Pay Now
                     </Button>
                     </div>
@@ -196,15 +197,13 @@ export default function OrderHistory() {
                     <Button 
                         className="w-full border-primary"
                         variant="outline"
-                        onClick={()=>{setSelectedOrder(orderData); setOrderModal(true); setModeModal("details-payment")}}
-                    >
+                        onClick={()=>{setSelectedOrder(orderData); setOrderModal(true); setModeModal("details-payment")}}>
                         See Details
                     </Button>
                     <Button 
                         className="w-full"
                         variant="default"
-                        onClick={()=>{setSelectedOrder(orderData); setOrderModal(true); setModeModal("paynow")}}
-                    >
+                        onClick={()=>{setSelectedOrder(orderData); setOrderModal(true); setModeModal("paynow")}}>
                         Re-Book
                     </Button>
                     </div>
@@ -213,7 +212,8 @@ export default function OrderHistory() {
             </Card>
             ))}
         </div>
-
+        )}
+        
         {/*Order Modal*/}
         <OrderModal
             open={orderModal}

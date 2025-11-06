@@ -36,21 +36,24 @@ export function ConfirmPaymentMethod ({
     
 
     return (
-        <div className="p-1 space-y-6.5">
-            <div className="flex items-center gap-2">
+        <div className=" space-y-6.5">
+            <div className="flex items-start gap-2">
                 <Button 
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-md"
+                    className="justify-center w-10 h-8 rounded-md mt-1"
                     variant="default"
                     onClick={()=>onChangeMode("change-method")}
                 > <ArrowLeftIcon className="w-4 h-4" />
                 </Button>
 
+                <div className="flex flex-col mr-4">
                 <span className="font-semibold text-xl"> Complete Your Payment </span>
+                <p className="text-sm text-muted-foreground">
+                Complete your payment with payment method you have chosen. follow the instruction below.
+                </p>
+                </div>
             </div>
 
-            <p className="text-sm text-muted-foreground">
-                Complete your payment with selected payment method you have chosen. follow the instruction below.
-            </p>
+            
 
             {/*content confirm payment method*/}
             <div className=" border border-border rounded-md p-4">
