@@ -45,7 +45,7 @@ type BookingCourtRow = {
   paymentStatus: PaymentStatus;
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12;
 
 export function BookingCourt() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -201,16 +201,16 @@ export function BookingCourt() {
       {filtered.length === 0 ? (
         <BookingEmptyState />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {paginated.map((bookingCourt) => (
             <Card
-              className="min-w-0 max-w-[265px] shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-2 border-[1px] border-foreground"
+              className="min-w-0 shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-2 border-[1px] border-foreground"
               key={bookingCourt.id}
             >
               <CardHeader className="p-2">
                 <img
                   src={bookingCourt.image}
-                  className="w-full h-full object-cover rounded-sm"
+                  className="w-full h-[142px] object-cover rounded-sm"
                 />
               </CardHeader>
               <CardContent className="px-2 pt-0 pb-1 text-md text-gray-700 gap-2 space-y-2">

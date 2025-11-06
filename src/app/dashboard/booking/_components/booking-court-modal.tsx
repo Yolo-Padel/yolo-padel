@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { BookingForm } from "../../_components/booking-form";
 
 export function BookingCourtModal({
@@ -12,6 +12,7 @@ export function BookingCourtModal({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTitle className="sr-only">Book your court</DialogTitle>
       <DialogContent
         showCloseButton={false}
         className="p-8 lg:max-w-[600px] max-h-[85vh] overflow-y-auto"

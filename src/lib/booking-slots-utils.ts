@@ -147,6 +147,21 @@ export function isSlotBooked(slot: string, bookedSlots: string[]): boolean {
 }
 
 /**
+ * Transform UI slot format to Order API format
+ * @param slots Array of UI slot strings like "06.00–07.00"
+ * @returns Array of Order API slot strings like "06:00-07:00"
+ * @example
+ * // Input: ["06.00–07.00", "07.00–08.00"]
+ * // Output: ["06:00-07:00", "07:00-08:00"]
+ */
+export function transformUISlotsToOrderFormat(slots: string[]): string[] {
+  return slots.map((slot) => {
+    // "06.00–07.00" → "06:00-07:00"
+    return slot.replace(/\./g, ":").replace("–", "-");
+  });
+}
+
+/**
  * Normalize date to start of day in local timezone, then convert to ISO string
  * This prevents timezone issues when sending dates to the backend
  * @param date Date object (can be in any timezone)
