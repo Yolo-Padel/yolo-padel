@@ -29,6 +29,7 @@ import {
 import { useCurrentUser } from "@/hooks/use-auth";
 import { BookingModal } from "./booking-modal";
 import { transformDbFormatToUISlots } from "@/lib/booking-slots-utils";
+import { BookingCourtModal } from "./booking-court-modal";
 
 type BookingCourtRow = {
   id: string;
@@ -57,7 +58,7 @@ export function BookingCourt() {
     | "booking-payment"
   >("booking-details");
   const [page, setPage] = useState(1);
-  const [addSheetOpen, setAddBookingCourtOpen] = useState(false);
+  const [bookCourtModalOpen, setBookCourtModalOpen] = useState(false);
   const [selectedBookingCourt, setSelectedBookingCourt] =
     useState<BookingCourtRow | null>(null);
   const { data: userData, isLoading: isLoadingUser } = useCurrentUser();
@@ -162,7 +163,7 @@ export function BookingCourt() {
           <h3 className="text-xl font-semibold">Booking Court List</h3>
           <Button
             variant="outline"
-            disabled
+            onClick={() => setBookCourtModalOpen(true)}
             className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
           >
             Book Court
@@ -189,7 +190,7 @@ export function BookingCourt() {
 
           <Button
             variant="outline"
-            onClick={() => setModalOpen(true)}
+            onClick={() => setBookCourtModalOpen(true)}
             className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
           >
             Book Court
@@ -240,7 +241,6 @@ export function BookingCourt() {
                   <Button
                     onClick={() => {
                       setSelectedBookingCourt(bookingCourt);
-                      setModalOpen(true);
                       setMode("booking-details");
                     }}
                     variant="outline"
@@ -253,11 +253,7 @@ export function BookingCourt() {
                     variant="default"
                     size="sm"
                     className="w-full"
-                    onClick={() =>
-                      router.push(
-                        `/admin/dashboard/court?bookingCourtId=${bookingCourt.id}`
-                      )
-                    }
+                    onClick={() => setBookCourtModalOpen(true)}
                   >
                     Book Again
                   </Button>
@@ -285,11 +281,7 @@ export function BookingCourt() {
                     variant="default"
                     size="sm"
                     className="w-full"
-                    onClick={() =>
-                      router.push(
-                        `/admin/dashboard/court?bookingCourtId=${bookingCourt.id}`
-                      )
-                    }
+                    onClick={() => setBookCourtModalOpen(true)}
                   >
                     Book Again
                   </Button>
@@ -330,6 +322,11 @@ export function BookingCourt() {
         bookingModalProps={selectedBookingCourt}
         mode={mode}
         onChangeMode={setMode}
+      />
+      <BookingCourtModal
+        open={bookCourtModalOpen}
+        onOpenChange={setBookCourtModalOpen}
+        onClose={() => setBookCourtModalOpen(false)}
       />
     </div>
   );
