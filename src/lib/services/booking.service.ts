@@ -43,7 +43,6 @@ export const bookingService = {
             select: {
               id: true,
               description: true,
-              timerange: true,
               isBlocking: true
             }
           }
@@ -101,7 +100,6 @@ export const bookingService = {
             select: {
               id: true,
               description: true,
-              timerange: true,
               isBlocking: true
             }
           }
@@ -157,7 +155,6 @@ export const bookingService = {
             select: {
               id: true,
               description: true,
-              timerange: true,
               isBlocking: true
             }
           }
@@ -275,7 +272,15 @@ export const bookingService = {
             }
           },
           payments: true,
-          blocking: true
+          blocking: {
+            select: {
+              id: true,
+              description: true,
+              isBlocking: true,
+              createdAt: true,
+              updatedAt: true
+            }
+          }
         }
       });
 

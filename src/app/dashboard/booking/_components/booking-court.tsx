@@ -5,6 +5,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BookingStatus } from "@prisma/client";
 import { Input } from "@/components/ui/input";
 import { Bell, Dot, LandPlot, LayoutGrid, User } from "lucide-react";
 import {
@@ -19,30 +20,16 @@ import {
 import { Pencil, PlusIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Court } from "@prisma/client";
-import { useCourt } from "@/hooks/use-court";
+import { useBookings } from "@/hooks/use-bookings";
 import { BookingEmptyState } from "./booking-empty-state";
 import { DatePicker } from "@/components/ui/date-picker";
 import { ComboboxFilter } from "@/components/ui/combobox";
-{/*Import Modal*/}
+{
+  /*Import Modal*/
+}
 import { BookingModal } from "./booking-modal";
 import { BookingSummary } from "./booking-summary";
-
-
-
-type BookingCourtRow = {
-  id: string;
-  venue: string;
-  courtName: string;
-  image?: string;
-  bookingTime?: string;
-  bookingDate: string;
-  duration: string;
-  totalPayment: number;
-  status: string | "Upcoming" | "Expired" | "Completed";
-  paymentMethod: string | "Credit Card" | "QRIS" | "Bank Transfer";
-  paymentStatus: string | "Paid" | "Unpaid";
-};
-
+import { BookingWithRelations } from "@/hooks/use-bookings";
 
 const PAGE_SIZE = 10;
 
@@ -55,13 +42,23 @@ export function BookingCourt({
 }) {
   const [page, setPage] = React.useState(1);
   const [addSheetOpen, setAddBookingCourtOpen] = React.useState(false);
-  const [selectedBookingCourt, setSelectedBookingCourt] = React.useState<BookingCourtRow | null>(null);
-  const [modalOpen, setModalOpen] = React.useState (false);
-  const [mode, setMode] = useState<"booking-details" | "order-summary" | "book-again" | "payment-paid" | "payment-pending" | "booking-payment">("booking-details"); 
-  const { data, isLoading, error } = useCourt();
+  const [selectedBookingCourt, setSelectedBookingCourt] =
+    React.useState<BookingWithRelations | null>(null);
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [mode, setMode] = useState<
+    | "booking-details"
+    | "order-summary"
+    | "book-again"
+    | "payment-paid"
+    | "payment-pending"
+    | "booking-payment"
+  >("booking-details");
+  const { data, isLoading, error } = useBookings();
   const searchParams = useSearchParams();
 
-  const getStatusBadge = (status: string | "Upcoming" | "Expired" | "Completed") => {
+  const getStatusBadge = (
+    status: string | "Upcoming" | "Expired" | "Completed"
+  ) => {
     switch (status) {
       case "Upcoming":
         return "bg-[#D5F1FF] text-[#1F7EAD]";
@@ -72,84 +69,32 @@ export function BookingCourt({
       default:
         return "bg-gray-500 text-white";
     }
-  }
-  
-   const DummyData = [
-    {
-    id : "3rfwrwr3",
-    venue: "Slipi",
-    courtName: "Court 3",
-    image: "/paddle-court1.svg",
-    bookingTime: "06:00 - 07:00",
-    bookingDate: "14 OKT 2025", // fallback placeholder
-    duration: "1 Hours", // fallback placeholder
-    totalPayment: 600000,
-    status: "Completed",
-    paymentMethod: "Credit Card",
-    paymentStatus: "Paid",
-  },
-  {
-    id : "3rfwrwr4",
-    venue: "Slipi",
-    courtName: "Court 4",
-    image: "/paddle-court1.svg",
-    bookingTime: "06:00 - 07:00",
-    bookingDate: "14 OKT 2025", // fallback placeholder
-    duration: "1 Hours", // fallback placeholder
-    totalPayment: 600000,
-    status: "Upcoming",
-    paymentMethod: "QRIS",
-    paymentStatus: "Paid",
-  },
-    {
-      id : "3rfwrwr5",
-      venue: "Slipi",
-      courtName: "Court 5",
-      image: "/paddle-court1.svg",
-      bookingTime: "06:00 - 07:00",
-      bookingDate: "14 OKT 2025", // fallback placeholder
-      duration: "1 Hours", // fallback placeholder
-      totalPayment: 600000,
-      status: "Expired",
-      paymentMethod: "Credit Card",
-      paymentStatus: "Unpaid",
-    }]
+  };
 
-  const allBookingCourts = (DummyData as BookingCourtRow[] | undefined) || [];
-  const rows: BookingCourtRow[] = React.useMemo(() => {
-    return allBookingCourts.map((b) => ({
-        id: b.id,
-        venue: b.venue,
-        courtName: b.courtName,
-        image: b.image,
-        bookingTime: b.bookingTime,
-        bookingDate: b.bookingDate,
-        duration: b.duration,
-        totalPayment: b.totalPayment,
-        status: b.status,
-        paymentMethod: b.paymentMethod,
-        paymentStatus: b.paymentStatus,
-  }));
-  }, [allBookingCourts]);
-
- 
+  const allBookings = data?.data || [];
 
   // Frontend filtering and pagination
   const filtered = useMemo(() => {
-    const searchQuery = searchParams.get("search")?.toLowerCase().trim()
-    
+    const searchQuery = searchParams.get("search")?.toLowerCase().trim();
+
     if (!searchQuery) {
-      return rows
+      return allBookings;
     }
 
-    return rows.filter((bookingCourt: BookingCourtRow) => {
-      const courtName = bookingCourt.courtName.toLowerCase()
-      
+    return allBookings.filter((booking: BookingWithRelations) => {
+      const fullName = booking.user?.profile?.fullName?.toUpperCase() || "";
+      const email = booking.user?.email.toLowerCase() || "";
+      const court = booking.court?.name?.toUpperCase() || "";
+      const status = booking.status.toLowerCase();
+
       return (
-        courtName.includes(searchQuery)
-      )
-    })
-  }, [rows, searchParams])
+        fullName.includes(searchQuery) ||
+        email.includes(searchQuery) ||
+        court.includes(searchQuery) ||
+        status.includes(searchQuery)
+      );
+    });
+  }, [allBookings, searchParams]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageSafe = Math.min(page, totalPages);
@@ -157,7 +102,6 @@ export function BookingCourt({
     const start = (pageSafe - 1) * PAGE_SIZE;
     return filtered.slice(start, start + PAGE_SIZE);
   }, [filtered, pageSafe]);
-
 
   // Show error state
   if (error) {
@@ -181,16 +125,16 @@ export function BookingCourt({
           </div>
         </div>
       </div>
-    )
+    );
   }
-  
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-1">
         <h3 className="text-xl font-semibold ">Booking Court List</h3>
         <div className="flex items-center gap-2">
-            <DatePicker/>
-            <ComboboxFilter/>
+          <DatePicker />
+          <ComboboxFilter />
 
           <Button
             variant="outline"
@@ -205,6 +149,7 @@ export function BookingCourt({
       {filtered.length === 1 ? (
         <BookingEmptyState />
       ) : (
+<<<<<<< HEAD
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
       {paginated.map((bookingCourt) => (
       <Card className="min-w-0 max-w-[265px] shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-2 border-[1px] border-foreground" key={bookingCourt.id}>
@@ -230,54 +175,97 @@ export function BookingCourt({
                 <span>Total Payment</span> <span>Rp {bookingCourt.totalPayment}</span>
               </div>
             </CardContent>
+=======
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+          {paginated.map((booking: BookingWithRelations) => (
+            <Card
+              className="min-w-0 max-w-[265px] shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-2 border-[1px]"
+              key={booking.bookingId}
+            >
+              <CardHeader className="p-2">
+                {/* <img
+                  src={booking.court.image || ""}
+                  className="w-full h-full object-cover rounded-sm"
+                /> */}
+              </CardHeader>
+              <CardContent className="px-2 pt-0 pb-1 text-md text-gray-700 gap-2 space-y-2">
+                <CardTitle className="text-md font-semibold truncate">
+                  <span className="justify-between flex items-center gap-1">
+                    ID:{booking.bookingId}{" "}
+                    <Badge className={getStatusBadge(booking.status)}>
+                      <p className="capitalize">{booking.status}</p>
+                    </Badge>
+                  </span>
+                </CardTitle>
+                <div className="mt-0 justify-between flex items-center gap-1 text-sm">
+                  <span>{booking.court.name}</span>{" "}
+                  {/* <span> {booking.bookingDate.toLocaleDateString()}</span> */}
+                </div>
+                <div className="mt-0 flex items-center gap-1 justify-between text-sm">
+                  <span>Hours</span> <span>{booking.duration}</span>
+                </div>
+              </CardContent>
+>>>>>>> 103e223 (added new booking list for admin)
 
-        {bookingCourt.status === "Completed" && (
-        <CardFooter className="px-1 pt-4 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Button
-            onClick={() => { setSelectedBookingCourt(bookingCourt); setModalOpen(true); setMode("booking-details"); }}
-            variant="outline"
-            size="sm"
-            className="rounded-sm border-[#C3D223] text-black w-full"
-          >
-            See Details
-          </Button>
-          <Button
-            variant="default"
-            size="sm"
-            className="w-full"
-            onClick={() => onOpenChange(false)}
-          >
-            Book Again
-          </Button>
-        </CardFooter>
-    )}
-    {bookingCourt.status === "Upcoming" && (
-        <CardFooter className="px-1 pt-4 pb-1 w-full min-w-0">
-          <Button
-            onClick={() => { setSelectedBookingCourt(bookingCourt); setModalOpen(true); setMode("booking-details"); }}
-            variant="default"
-            size="sm"
-            className="w-full"
-          >
-            See Details
-          </Button>
-        </CardFooter>
-    )}
-    {bookingCourt.status === "Expired" && (
-        <CardFooter className="px-1 pt-4 pb-1 w-full min-w-0">
-          <Button
-            variant="default"
-            size="sm"
-            className="w-full"
-            onClick={() => { setSelectedBookingCourt(bookingCourt); setModalOpen(true); setMode("booking-details"); }}
-          >
-            Book Again
-          </Button>
-        </CardFooter>
-    )}
-      </Card>
-      ))}
-      </div>
+              {booking.status === BookingStatus.COMPLETED && (
+                <CardFooter className="px-1 pt-4 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Button
+                    onClick={() => {
+                      setSelectedBookingCourt(booking);
+                      setModalOpen(true);
+                      setMode("booking-details");
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="rounded-sm border-[#C3D223] text-black w-full"
+                  >
+                    See Details
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    Book Again
+                  </Button>
+                </CardFooter>
+              )}
+              {/* {booking.status === BookingStatus.UPCOMING && (
+                <CardFooter className="px-1 pt-4 pb-1 w-full min-w-0">
+                  <Button
+                    onClick={() => {
+                      setSelectedBookingCourt(booking);
+                      setModalOpen(true);
+                      setMode("booking-details");
+                    }}
+                    variant="default"
+                    size="sm"
+                    className="w-full"
+                  >
+                    See Details
+                  </Button>
+                </CardFooter>
+              )} */}
+              {booking.status === BookingStatus.CANCELLED && (
+                <CardFooter className="px-1 pt-4 pb-1 w-full min-w-0">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      setSelectedBookingCourt(booking);
+                      setModalOpen(true);
+                      setMode("booking-details");
+                    }}
+                  >
+                    Book Again
+                  </Button>
+                </CardFooter>
+              )}
+            </Card>
+          ))}
+        </div>
       )}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
@@ -304,14 +292,27 @@ export function BookingCourt({
         </div>
       </div>
       {/*Modal*/}
-        <BookingModal
-          open={modalOpen}
-          onOpenChange={setModalOpen}
-          bookingModalProps={selectedBookingCourt}
-          mode={mode}
-          onChangeMode={setMode}
-        />
-
+      <BookingModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        bookingModalProps={{
+          id: selectedBookingCourt?.id || "",
+          venue: selectedBookingCourt?.court.venue.name || "",
+          courtName: selectedBookingCourt?.court.name || "",
+          image: "",
+          bookingTime:
+            selectedBookingCourt?.bookingDate?.toLocaleTimeString() || "",
+          bookingDate:
+            selectedBookingCourt?.bookingDate?.toLocaleDateString() || "",
+          duration: selectedBookingCourt?.duration?.toString() || "",
+          totalPayment: 0,
+          status: selectedBookingCourt?.status || "",
+          paymentMethod: "",
+          paymentStatus: "",
+        }}
+        mode={mode}
+        onChangeMode={setMode}
+      />
     </div>
   );
 }

@@ -190,11 +190,12 @@ model MagicLink {
 
 model Booking {
   id               String        @id @default(cuid())
+  bookingId        String        @unique
   courtId          String
   userId           String
   source           String        // flag for booking created by YOLO / Courtside system
   bookingDate      DateTime
-  bookingHour      String
+  bookingHour      String?
   duration         Int           // could be handled on the fly (for Courtside)
   totalPrice       Int
   status           BookingStatus
