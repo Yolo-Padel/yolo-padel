@@ -1,25 +1,51 @@
 import { prisma } from "@/lib/prisma";
 import { Payment, PaymentStatus } from "@/types/prisma";
 import { syncPaymentStatusToOrder } from "./status-sync.service";
+import type { PrismaTransaction } from "@/types/prisma-transaction";
 
 /**
  * Create payment for an order
  * Payment is created with PENDING status and 15 minutes expiry
+ * Supports both standalone mode (uses prisma) and transaction mode (uses tx parameter)
+ * 
+ * @param data - Payment creation data
+ * @param tx - Optional transaction client. If provided, uses transaction; otherwise uses prisma directly
+ * @returns Created payment
+ * 
+ * @example
+ * // Standalone mode
+ * const payment = await createPayment({
+ *   orderId: "order-1",
+ *   userId: "user-1",
+ *   channelName: "QRIS",
+ *   amount: 200000
+ * });
+ * 
+ * @example
+ * // Transaction mode
+ * await prisma.$transaction(async (tx) => {
+ *   const payment = await createPayment({...}, tx);
+ * });
  */
-export async function createPayment(data: {
-  orderId: string;
-  userId: string;
-  channelName: string;
-  amount: number;
-}): Promise<Payment> {
-  const payment = await prisma.payment.create({
+export async function createPayment(
+  data: {
+    orderId: string;
+    userId: string;
+    channelName: string;
+    amount: number;
+  },
+  tx?: PrismaTransaction
+): Promise<Payment> {
+  const client = tx || prisma;
+
+  const payment = await client.payment.create({
     data: {
       orderId: data.orderId,
       userId: data.userId,
       channelName: data.channelName,
       amount: data.amount,
       status: PaymentStatus.PENDING,
-      expiredAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+      expiredAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes from now
     },
   });
 

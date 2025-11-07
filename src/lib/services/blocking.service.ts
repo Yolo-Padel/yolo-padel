@@ -1,16 +1,36 @@
 import { prisma } from "@/lib/prisma";
 import { Blocking } from "@/types/prisma";
 import { normalizeDateToUTC } from "@/lib/date-utils";
+import type { PrismaTransaction } from "@/types/prisma-transaction";
 
 /**
  * Create a blocking for a booking
  * Locks the time slots so they're not available for other bookings
+ * Supports both standalone mode (uses prisma) and transaction mode (uses tx parameter)
+ *
+ * @param bookingId - ID of the booking to create blocking for
+ * @param description - Optional description for the blocking
+ * @param tx - Optional transaction client. If provided, uses transaction; otherwise uses prisma directly
+ * @returns Created blocking
+ *
+ * @example
+ * // Standalone mode
+ * const blocking = await createBlocking("booking-1", "Blocked for order ORD-123");
+ *
+ * @example
+ * // Transaction mode
+ * await prisma.$transaction(async (tx) => {
+ *   const blocking = await createBlocking("booking-1", "Blocked for order", tx);
+ * });
  */
 export async function createBlocking(
   bookingId: string,
-  description: string = "Booking slot locked"
+  description: string = "Booking slot locked",
+  tx?: PrismaTransaction
 ): Promise<Blocking> {
-  const blocking = await prisma.blocking.create({
+  const client = tx || prisma;
+
+  const blocking = await client.blocking.create({
     data: {
       bookingId,
       description,
@@ -55,9 +75,7 @@ export async function releaseBlockingByBookingId(
  * Release multiple blockings at once (bulk operation)
  * Used when cancelling multiple bookings in an order
  */
-export async function releaseBlockings(
-  blockingIds: string[]
-): Promise<number> {
+export async function releaseBlockings(blockingIds: string[]): Promise<number> {
   const result = await prisma.blocking.updateMany({
     where: {
       id: { in: blockingIds },
@@ -162,10 +180,7 @@ export async function isSlotBlocked(
   // Check if any blocking overlaps with the requested slot
   for (const blocking of activeBlockings) {
     for (const slot of blocking.booking.timeSlots) {
-      if (
-        slot.openHour === slotOpenHour &&
-        slot.closeHour === slotCloseHour
-      ) {
+      if (slot.openHour === slotOpenHour && slot.closeHour === slotCloseHour) {
         return true; // Slot is blocked
       }
     }
@@ -290,4 +305,3 @@ export async function getActiveBlockingsByVenueAndDate(
 
   return blockings;
 }
-

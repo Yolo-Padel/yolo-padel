@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { Order, OrderStatus, BookingStatus } from "@/types/prisma";
 import { customAlphabet } from "nanoid";
+import { createBooking } from "./booking.service";
+import { createPayment } from "./payment.service";
+import { createBlocking } from "./blocking.service";
 
 /**
  * Generate unique order code
@@ -14,6 +17,31 @@ export function generateOrderCode(): string {
 
 /**
  * Create order with multiple bookings
+ *
+ * This is an orchestration function that coordinates the creation of:
+ * - Order entry
+ * - Multiple booking entries (with time slots)
+ * - Blockings for each booking
+ * - Payment entry
+ *
+ * All operations are performed in a single transaction (all-or-nothing).
+ *
+ * @param data - Order creation data
+ * @returns Created order with bookings and payment relations
+ *
+ * @example
+ * const order = await createOrder({
+ *   userId: "user-1",
+ *   bookings: [
+ *     {
+ *       courtId: "court-1",
+ *       date: new Date("2024-11-07"),
+ *       slots: ["10:00-11:00", "11:00-12:00"],
+ *       price: 100000
+ *     }
+ *   ],
+ *   channelName: "QRIS"
+ * });
  */
 export async function createOrder(data: {
   userId: string;
@@ -37,18 +65,18 @@ export async function createOrder(data: {
 > {
   const { userId, bookings: bookingData, channelName } = data;
 
-  // Generate order code
+  // Generate order code (orchestration responsibility)
   const orderCode = generateOrderCode();
 
-  // Calculate total amount
+  // Calculate total amount (orchestration responsibility)
   const totalAmount = bookingData.reduce(
     (sum, booking) => sum + booking.price * booking.slots.length,
     0
   );
 
-  // Create order with bookings, payment, and blockings in a transaction
+  // All operations in a single transaction (all-or-nothing)
   const order = await prisma.$transaction(async (tx) => {
-    // 1. Create Order
+    // 1. Create Order entry
     const newOrder = await tx.order.create({
       data: {
         userId,
@@ -58,73 +86,67 @@ export async function createOrder(data: {
       },
     });
 
-    // 2. Create Bookings
-    const createdBookings = [];
-    for (const bookingItem of bookingData) {
-      // Generate booking code
-      const bookingNanoId = customAlphabet(
-        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-        5
-      );
-      const bookingCode = `BK-${bookingNanoId()}`;
+    // 2. Create Bookings (using extracted service)
+    const createdBookings = await Promise.all(
+      bookingData.map(async (bookingItem) => {
+        // Generate booking code (orchestration responsibility)
+        const bookingNanoId = customAlphabet(
+          "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+          5
+        );
+        const bookingCode = `BK-${bookingNanoId()}`;
 
-      // Parse slots to get time slot data
-      const timeSlots = bookingItem.slots.map((slot) => {
-        const [openHour, closeHour] = slot.split("-");
-        return { openHour, closeHour };
-      });
+        // Parse slots to get time slot data (orchestration responsibility)
+        const timeSlots = bookingItem.slots.map((slot) => {
+          const [openHour, closeHour] = slot.split("-");
+          return { openHour, closeHour };
+        });
 
-      // Create booking
-      const booking = await tx.booking.create({
-        data: {
-          courtId: bookingItem.courtId,
-          userId,
-          orderId: newOrder.id,
-          source: "YOLO",
-          bookingDate: bookingItem.date,
-          bookingCode,
-          duration: bookingItem.slots.length,
-          totalPrice: bookingItem.price * bookingItem.slots.length,
-          status: BookingStatus.PENDING,
-          timeSlots: {
-            create: timeSlots,
+        // Create booking using extracted service
+        const booking = await createBooking(
+          {
+            courtId: bookingItem.courtId,
+            userId,
+            orderId: newOrder.id,
+            bookingDate: bookingItem.date,
+            bookingCode,
+            duration: bookingItem.slots.length,
+            totalPrice: bookingItem.price * bookingItem.slots.length,
+            timeSlots,
+            source: "YOLO",
+            status: BookingStatus.PENDING,
           },
-        },
-        include: {
-          timeSlots: true,
-        },
-      });
+          tx // Pass transaction client
+        );
 
-      // Create blocking for this booking
-      const blocking = await tx.blocking.create({
-        data: {
-          bookingId: booking.id,
-          description: `Blocked for order ${orderCode}`,
-          isBlocking: true,
-        },
-      });
+        // Create blocking for this booking (using extracted service)
+        const blocking = await createBlocking(
+          booking.id,
+          `Blocked for order ${orderCode}`,
+          tx // Pass transaction client
+        );
 
-      createdBookings.push({
-        id: booking.id,
-        courtId: booking.courtId,
-        bookingCode: booking.bookingCode,
-        blocking: { id: blocking.id },
-      });
-    }
+        return {
+          id: booking.id,
+          courtId: booking.courtId,
+          bookingCode: booking.bookingCode,
+          blocking: { id: blocking.id },
+        };
+      })
+    );
 
-    // 3. Create Payment
-    const payment = await tx.payment.create({
-      data: {
+    // 3. Create Payment (using extracted service)
+    const payment = await createPayment(
+      {
         orderId: newOrder.id,
         userId,
         channelName,
         amount: totalAmount,
-        status: "PENDING",
-        expiredAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes from now
       },
-    });
+      tx // Pass transaction client
+    );
 
-    // Return order with relations
+    // Return order with relations (backward compatibility)
     return {
       ...newOrder,
       bookings: createdBookings,
