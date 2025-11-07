@@ -5,15 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LandPlot, Dot } from "lucide-react";
 import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-} from "@/components/ui/card";
-import { DatePicker } from "@/components/ui/date-picker";
-import ComboboxFilter from "@/components/ui/combobox";
+import { Card, CardFooter } from "@/components/ui/card";
 import { OrderHistoryModal } from "./order-history-modal";
 import { OrderHistorySkeleton } from "./order-history-skeleton";
 import { useOrders, type Order } from "@/hooks/use-order";
@@ -22,6 +14,7 @@ import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import Image from "next/image";
 import { stringUtils } from "@/lib/format/string";
+import { OrderEmptyState } from "./order-empty-state";
 
 const PAGE_SIZE = 10;
 
@@ -119,14 +112,6 @@ export default function OrderHistoryTable() {
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center">
         <h3 className="text-foreground text-2xl">My Order</h3>
-        <div className="flex gap-2">
-          <DatePicker />
-          <ComboboxFilter />
-          <Button className="bg-primary">
-            <LandPlot className="w-4 h-4" />
-            Book Court
-          </Button>
-        </div>
       </div>
 
       {/* Loading State */}
@@ -143,15 +128,7 @@ export default function OrderHistoryTable() {
       )}
 
       {/* Empty State */}
-      {!isLoading && !error && orders.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No orders found</p>
-          <Button className="mt-4 bg-primary">
-            <LandPlot className="w-4 h-4 mr-2" />
-            Book Your First Court
-          </Button>
-        </div>
-      )}
+      {!isLoading && !error && orders.length === 0 && <OrderEmptyState />}
 
       {/* Orders Grid */}
       {!isLoading && !error && orders.length > 0 && (

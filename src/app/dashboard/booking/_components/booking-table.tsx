@@ -203,7 +203,7 @@ export function BookingCourt() {
         </div>
       </div>
       {filtered.length === 0 ? (
-        <BookingEmptyState />
+        <BookingEmptyState onBookCourt={() => setBookCourtModalOpen(true)} />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {paginated.map((bookingCourt) => (
