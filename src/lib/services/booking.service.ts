@@ -420,7 +420,7 @@ export const bookingService = {
       const nanoId = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 5);
 
       const currentDate = new Date();
-      const bookingCode = `#BK-${nanoId()}`;
+      const bookingCode = `BK-${nanoId()}`;
 
       // Parse booking date - handle both ISO format and YYYY-MM-DD format
       // This ensures timezone issues are resolved
