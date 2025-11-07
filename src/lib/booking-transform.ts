@@ -3,7 +3,7 @@ import type {
   Booking as TimetableBooking,
   Court as TimetableCourt,
 } from "@/components/timetable-types";
-import type { BookingDetail } from "@/app/admin/dashboard/booking/_components/booking-detail-modal";
+import type { BookingDetail } from "@/app/admin/dashboard/timetable/_components/booking-detail-modal";
 
 // Type untuk Prisma booking result dari API
 type PrismaBooking = {
