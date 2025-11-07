@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { Role } from "./types/prisma";
 
 const JWT_SECRET =
   process.env.JWT_SECRET ||
   "your-super-secret-jwt-key-here-make-it-long-and-random";
 
 // Routes configuration
-const PROTECTED_ROUTES = ["/admin/dashboard"];
+const PROTECTED_ROUTES = ["/admin", "/dashboard"];
 const PUBLIC_ROUTES = ["/auth"];
 
 export async function middleware(request: NextRequest) {
@@ -22,16 +23,15 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith(route)
   );
 
-  console.log("execute public route");
   if (isPublicRoute) {
-    console.log("isPublicRoute", pathname);
     if (pathname.startsWith("/auth")) {
       if (token) {
         try {
           const secret = new TextEncoder().encode(JWT_SECRET);
           const { payload } = await jwtVerify(token, secret);
           const role = (payload as any).role as string | undefined;
-          const redirectTo = role === "USER" ? "/dashboard" : "/admin/dashboard";
+          const redirectTo =
+            role === "USER" ? "/dashboard/booking" : "/admin/dashboard";
           const url = new URL(redirectTo, request.url);
           return NextResponse.redirect(url);
         } catch (error) {
@@ -54,7 +54,25 @@ export async function middleware(request: NextRequest) {
     try {
       // Verify token with jose (Edge compatible)
       const secret = new TextEncoder().encode(JWT_SECRET);
-      await jwtVerify(token, secret);
+      const { payload } = await jwtVerify(token, secret);
+      console.log("payload", payload);
+      const role = (payload as any).role as string | undefined;
+
+      // Role-based access control
+      const isAdminRoute = pathname.startsWith("/admin");
+      const isUserRoute = pathname.startsWith("/dashboard");
+
+      // Redirect admin if trying to access user dashboard
+      if (role !== Role.USER && isUserRoute) {
+        const adminUrl = new URL("/admin/dashboard", request.url);
+        return NextResponse.redirect(adminUrl);
+      }
+
+      // Redirect user if trying to access admin dashboard
+      if (role === Role.USER && isAdminRoute) {
+        const userUrl = new URL("/dashboard", request.url);
+        return NextResponse.redirect(userUrl);
+      }
     } catch (error) {
       console.error("Token verification error:", error);
       // If token is invalid, redirect to login
@@ -63,14 +81,11 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // If token is valid, continue to protected route
+  // If token is valid and role matches, continue to protected route
   return NextResponse.next();
 }
 
 // Only run middleware on protected routes
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/auth/:path*",
-  ],
+  matcher: ["/admin/:path*", "/dashboard/:path*", "/auth/:path*"],
 };
