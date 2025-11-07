@@ -8,7 +8,7 @@ import { useVenue } from "@/hooks/use-venue";
 import { Court, Venue } from "@prisma/client";
 import { Separator } from "@/components/ui/separator";
 import { useCourtByVenue } from "@/hooks/use-court";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { Calendar } from "@/components/ui/calendar";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -16,11 +16,14 @@ import { useForm } from "react-hook-form";
 import {
   getAvailableSlots,
   filterBlockedSlots,
-  normalizeDateToLocalStartOfDay,
 } from "@/lib/booking-slots-utils";
 import { useActiveBlockings } from "@/hooks/use-blocking";
 import { BookingFormSkeleton } from "./booking-form-skeleton";
 import { CartItem } from "./step-2-order-summary";
+import { useBookingDefaults } from "@/hooks/use-booking-defaults";
+import { useBookingPricing } from "@/hooks/use-booking-pricing";
+import { useCourtSlotsPersistence } from "@/hooks/use-court-slots-persistence";
+import { useBookingCartSync } from "@/hooks/use-booking-cart-sync";
 
 type BookingFormValues = {
   venueId: string;
@@ -29,9 +32,6 @@ type BookingFormValues = {
   slots: string[];
   totalPrice: number;
 };
-
-// Track selections per court (courtId → CartItem)
-type CourtSelections = Map<string, CartItem>;
 
 type CourtSelectionStepProps = {
   onClose: () => void;
@@ -64,10 +64,6 @@ export function CourtSelectionStep({
     >
   >(new Map());
 
-  // Use ref to track previous sync state to prevent infinite loops
-  const previousSyncRef = useRef<string>("");
-  const previousLoadRef = useRef<string>("");
-
   const form = useForm<BookingFormValues>({
     defaultValues: {
       venueId: "",
@@ -84,25 +80,9 @@ export function CourtSelectionStep({
   const { data: venues, isLoading: isLoadingVenues } = useVenue();
   const venuesData: Venue[] = Array.isArray(venues?.data) ? venues.data : [];
 
-  // Set default venue on mount
-  useEffect(() => {
-    if (venuesData.length > 0 && !selectedVenueId) {
-      const firstId = venuesData[0].id;
-      setSelectedVenueId(firstId);
-      form.setValue("venueId", firstId);
-    }
-  }, [venuesData, selectedVenueId]);
-
   const { data: courts, isLoading: isLoadingCourts } =
     useCourtByVenue(selectedVenueId);
   const courtsData: Court[] = Array.isArray(courts?.data) ? courts.data : [];
-
-  // Set default court when courts are loaded
-  useEffect(() => {
-    if (courtsData.length > 0 && !watchCourtId) {
-      form.setValue("courtId", courtsData[0].id);
-    }
-  }, [courtsData, watchCourtId]);
 
   // Get available slots based on selected court + date
   const selectedCourt = courtsData.find((c) => c.id === watchCourtId);
@@ -125,187 +105,32 @@ export function CourtSelectionStep({
   // Filter out blocked slots from available slots (HIDE them, don't just disable)
   const allSlots = filterBlockedSlots(operatingHoursSlots, blockedTimeSlots);
 
-  // Calculate total price
-  useEffect(() => {
-    if (selectedCourt && watchSlots.length > 0) {
-      const totalPrice = watchSlots.length * selectedCourt.price;
-      form.setValue("totalPrice", totalPrice);
-    } else {
-      form.setValue("totalPrice", 0);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchSlots, selectedCourt]); // Don't include form - it's stable
+  // Custom hooks untuk manage effects (separation of concerns)
+  useBookingDefaults(
+    form,
+    venuesData,
+    courtsData,
+    selectedVenueId,
+    setSelectedVenueId,
+    watchCourtId
+  );
 
-  // When switching courts or dates, load previous selections if any
-  useEffect(() => {
-    if (!watchCourtId || !watchDate) return;
+  useBookingPricing(form, selectedCourt, watchSlots);
 
-    // Use normalized date for consistent comparison
-    const dateKey = watchDate.toDateString(); // More stable than toISOString
-    const selectionKey = `${watchCourtId}-${dateKey}`;
+  useCourtSlotsPersistence(form, watchCourtId, watchDate, courtSelections);
 
-    // Prevent infinite loop - only load if court/date actually changed
-    if (previousLoadRef.current === selectionKey) {
-      return;
-    }
-    previousLoadRef.current = selectionKey;
-
-    // Find previous selection with same court and date
-    let previousSelection:
-      | { courtId: string; date: Date; slots: string[] }
-      | undefined;
-    for (const [key, value] of courtSelections.entries()) {
-      if (
-        value.courtId === watchCourtId &&
-        value.date.toDateString() === dateKey
-      ) {
-        previousSelection = value;
-        break;
-      }
-    }
-
-    if (previousSelection) {
-      // Load previous slots for this court
-      form.setValue("slots", previousSelection.slots);
-    } else {
-      // No previous selection, reset slots
-      form.setValue("slots", []);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchCourtId, watchDate]); // Don't include courtSelections or form
-
-  // Combined Effect: Update courtSelections AND sync to cart
-  useEffect(() => {
-    if (!watchCourtId || !watchDate || !selectedCourt) return;
-
-    const dateKey = watchDate.toDateString();
-    const selectionKey = `${watchCourtId}-${dateKey}`;
-    const slotsKey = watchSlots.join(",");
-    const syncKey = `${selectionKey}:${slotsKey}`;
-
-    // Prevent infinite loop: only process if state actually changed
-    if (previousSyncRef.current === syncKey) {
-      return;
-    }
-
-    // CRITICAL: Validate that watchSlots BELONG to THIS court selection
-    // This prevents Court B from being added with Court A's slots during transition
-    if (watchSlots.length > 0) {
-      // FIRST CHECK: Does this court already have a selection?
-      const existingSelection = courtSelections.get(selectionKey);
-
-      if (!existingSelection) {
-        // No selection for THIS court yet. Check if slots exist on ANOTHER court
-        let slotsFromAnotherCourt = false;
-
-        for (const [key, value] of courtSelections.entries()) {
-          if (key !== selectionKey) {
-            // Check if any of watchSlots exist in this other court's selection
-            const hasMatchingSlots = value.slots.some((s) =>
-              watchSlots.includes(s)
-            );
-            if (hasMatchingSlots) {
-              slotsFromAnotherCourt = true;
-              break;
-            }
-          }
-        }
-
-        if (slotsFromAnotherCourt) {
-          // Slots exist on another court → cross-court contamination → BLOCK
-          return;
-        }
-      }
-
-      // FINAL CHECK: Are the slots valid for this court's operating hours?
-      const currentAvailableSlots = getAvailableSlots(selectedCourt, watchDate);
-      const allSlotsValid = watchSlots.every((slot) =>
-        currentAvailableSlots.includes(slot)
-      );
-
-      if (!allSlotsValid) {
-        // Slots not valid for this court's operating hours → BLOCK
-        return;
-      }
-    }
-
-    previousSyncRef.current = syncKey;
-
-    // Step 1: Update courtSelections map (source of truth)
-    if (watchSlots.length > 0) {
-      setCourtSelections((prev) => {
-        const newMap = new Map(prev);
-        newMap.set(selectionKey, {
-          courtId: watchCourtId,
-          date: watchDate,
-          slots: watchSlots,
-        });
-        return newMap;
-      });
-    } else {
-      setCourtSelections((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(selectionKey);
-        return newMap;
-      });
-    }
-
-    // Step 2: Sync to cart (in same effect to avoid race condition)
-    if (watchSlots.length > 0) {
-      // Create cart item
-      const cartItem: CartItem = {
-        courtId: selectedCourt.id,
-        courtName: selectedCourt.name,
-        courtImage: selectedCourt.image,
-        venueName:
-          venuesData.find((v) => v.id === selectedVenueId)?.name || "Unknown",
-        date: watchDate,
-        slots: watchSlots,
-        pricePerSlot: selectedCourt.price,
-        totalPrice: watchSlots.length * selectedCourt.price,
-      };
-
-      // Remove existing entry for this court/date combo
-      const existingIndex = cart.findIndex(
-        (item) =>
-          item.courtId === watchCourtId &&
-          item.date.toDateString() === watchDate.toDateString()
-      );
-
-      if (existingIndex >= 0) {
-        onRemoveFromCart(existingIndex);
-      }
-      // Add updated cart item
-      setTimeout(() => onAddToCart(cartItem), 0);
-    } else {
-      // No slots selected, remove from cart if exists
-      const existingIndex = cart.findIndex(
-        (item) =>
-          item.courtId === watchCourtId &&
-          item.date.toDateString() === watchDate.toDateString()
-      );
-
-      if (existingIndex >= 0) {
-        onRemoveFromCart(existingIndex);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
+  useBookingCartSync(
     watchSlots,
     watchCourtId,
     watchDate,
     selectedCourt,
     selectedVenueId,
     venuesData,
+    courtSelections,
+    setCourtSelections,
+    cart,
     onAddToCart,
-    onRemoveFromCart,
-  ]);
-
-  // Check if current court is in cart
-  const courtInCart = cart.some(
-    (item) =>
-      item.courtId === watchCourtId &&
-      item.date.toDateString() === watchDate?.toDateString()
+    onRemoveFromCart
   );
 
   return isLoadingVenues ? (
@@ -336,10 +161,24 @@ export function CourtSelectionStep({
       <Tabs
         defaultValue={venuesData[0]?.id}
         onValueChange={(value) => {
+          // Business Rule: 1 order = 1 venue
+          // When switching venue, force reset all data and cart
+
+          // 1. Clear all cart items (remove from end to start to avoid index issues)
+          for (let i = cart.length - 1; i >= 0; i--) {
+            onRemoveFromCart(i);
+          }
+
+          // 2. Clear court selections state
+          setCourtSelections(new Map());
+
+          // 3. Reset all form fields
           setSelectedVenueId(value);
           form.setValue("venueId", value);
           form.setValue("courtId", "");
-          // Slots will be reset when courtId changes
+          form.setValue("slots", []);
+          form.setValue("date", new Date());
+          form.setValue("totalPrice", 0);
         }}
       >
         <div>

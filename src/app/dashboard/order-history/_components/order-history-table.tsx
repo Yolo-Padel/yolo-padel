@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import ComboboxFilter from "@/components/ui/combobox";
-import { OrderModal } from "./order-modal";
+import { OrderHistoryModal } from "./order-history-modal";
 import { OrderHistorySkeleton } from "./order-history-skeleton";
 import { useOrders, type Order } from "@/hooks/use-order";
 import { PaymentStatus } from "@/types/prisma";
@@ -28,14 +28,12 @@ export default function OrderHistoryTable() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderModal, setOrderModal] = useState(false);
   const [modeModal, setModeModal] = useState<
-    | "details-payment"
-    | "paynow"
-    | "payment-success"
-    | "payment-pending"
+    | "order-details"
+    | "payment-instruction"
+    | "payment-status"
     | "view-booking"
-    | "change-method"
-    | "confirm-method"
-  >("paynow");
+    | "change-payment-method"
+  >("payment-instruction");
 
   // Fetch orders from API
   const {
@@ -167,7 +165,7 @@ export default function OrderHistoryTable() {
                     alt={`Order ${order.orderCode}`}
                   />
                   <CardTitle className="flex justify-between text-sm font-normal">
-                    {order.orderCode}
+                    #{order.orderCode}
                     <Badge className={getPaymentStatus(paymentStatus)}>
                       {getPaymentStatusLabel(paymentStatus)}
                     </Badge>
@@ -195,7 +193,7 @@ export default function OrderHistoryTable() {
                       onClick={() => {
                         setSelectedOrder(order);
                         setOrderModal(true);
-                        setModeModal("details-payment");
+                        setModeModal("order-details");
                       }}
                     >
                       See Details
@@ -211,7 +209,7 @@ export default function OrderHistoryTable() {
                         onClick={() => {
                           setSelectedOrder(order);
                           setOrderModal(true);
-                          setModeModal("details-payment");
+                          setModeModal("order-details");
                         }}
                       >
                         See Details
@@ -222,7 +220,7 @@ export default function OrderHistoryTable() {
                         onClick={() => {
                           setSelectedOrder(order);
                           setOrderModal(true);
-                          setModeModal("paynow");
+                          setModeModal("payment-instruction");
                         }}
                       >
                         Pay Now
@@ -240,7 +238,7 @@ export default function OrderHistoryTable() {
                         onClick={() => {
                           setSelectedOrder(order);
                           setOrderModal(true);
-                          setModeModal("details-payment");
+                          setModeModal("order-details");
                         }}
                       >
                         See Details
@@ -251,7 +249,7 @@ export default function OrderHistoryTable() {
                         onClick={() => {
                           setSelectedOrder(order);
                           setOrderModal(true);
-                          setModeModal("paynow");
+                          setModeModal("payment-instruction");
                         }}
                       >
                         Re-Book
@@ -267,7 +265,7 @@ export default function OrderHistoryTable() {
                       onClick={() => {
                         setSelectedOrder(order);
                         setOrderModal(true);
-                        setModeModal("details-payment");
+                        setModeModal("order-details");
                       }}
                     >
                       See Details
@@ -280,12 +278,10 @@ export default function OrderHistoryTable() {
         </div>
       )}
 
-      {/* Order Modal */}
-      {/* TODO: Refactor OrderModal to accept Order type from new schema */}
-      <OrderModal
+      <OrderHistoryModal
         open={orderModal}
         onOpenChange={setOrderModal}
-        orderProps={selectedOrder as any}
+        orderProps={selectedOrder}
         mode={modeModal}
         onChangeMode={setModeModal}
       />

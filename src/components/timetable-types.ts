@@ -24,8 +24,15 @@ export type Booking = {
   status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "NO_SHOW";
 };
 
+export type Venue = {
+  id: string;
+  name: string;
+};
+
 export type TimetableProps = {
-  venueName?: string;
+  venues?: Venue[];
+  selectedVenueId?: string;
+  onVenueChange?: (venueId: string) => void;
   courts?: Court[];
   bookings?: Booking[];
   selectedDate?: Date;

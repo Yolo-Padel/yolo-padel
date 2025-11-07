@@ -41,7 +41,7 @@ const getBookingStatus = (bookingStatus: BookingStatus) => {
       return "bg-gray-500 text-white";
   }
 };
-export function SeeOrderDetails({
+export function OrderDetailsContainer({
   onOpenChange,
   orderDetails,
   mode,
@@ -50,26 +50,24 @@ export function SeeOrderDetails({
   onOpenChange: (open: boolean) => void;
   orderDetails: Order | null;
   mode:
-    | "details-payment"
-    | "paynow"
-    | "payment-success"
+    | "order-details"
+    | "payment-instruction"
+    | "payment-status"
     | "view-booking"
-    | "change-method"
-    | "confirm-method";
+    | "change-payment-method";
   onChangeMode: (
     mode:
-      | "details-payment"
-      | "paynow"
-      | "payment-success"
+      | "order-details"
+      | "payment-instruction"
+      | "payment-status"
       | "view-booking"
-      | "change-method"
-      | "confirm-method"
+      | "change-payment-method"
   ) => void;
 }) {
   return (
     <div>
       <div className="grid grid-cols-1">
-        {mode === "details-payment" && (
+        {mode === "order-details" && (
           <div className="relative flex flex-row">
             <div className="space-y-2 text-2xl">
               Payment Details
@@ -256,7 +254,7 @@ export function SeeOrderDetails({
             <Button
               className="w-full border-primary rounded-sm"
               variant="outline"
-              onClick={() => onChangeMode("change-method")}
+              onClick={() => onChangeMode("change-payment-method")}
             >
               Change Payment Method
             </Button>
@@ -265,7 +263,7 @@ export function SeeOrderDetails({
               className="w-full rounded-sm"
               variant="default"
               onClick={() => {
-                onChangeMode("paynow");
+                onChangeMode("payment-instruction");
               }}
             >
               Pay Now

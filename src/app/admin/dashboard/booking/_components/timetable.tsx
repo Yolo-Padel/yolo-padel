@@ -9,6 +9,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, CalendarIcon, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -27,6 +34,7 @@ import { getTimeSlotBooking } from "@/components/timetable-booking-helpers";
 export type {
   Court,
   Booking,
+  Venue,
   TimetableProps,
 } from "@/components/timetable-types";
 
@@ -52,7 +60,9 @@ function defaultTransformBookingToDetail(
 }
 
 export function Timetable({
-  venueName = "Slipi Padel Center",
+  venues = [],
+  selectedVenueId,
+  onVenueChange,
   courts = [],
   bookings = [],
   selectedDate: initialDate,
@@ -98,6 +108,10 @@ export function Timetable({
     handleDateChange(tomorrow);
   };
 
+  // Get selected venue name
+  const selectedVenue = venues.find((v) => v.id === selectedVenueId);
+  const venueName = selectedVenue?.name || "";
+
   // Handle cell click
   const handleCellClick = (booking: Booking | null, courtName: string) => {
     if (!booking) return;
@@ -124,17 +138,28 @@ export function Timetable({
   const formattedDate = format(selectedDate, "EEE, d MMM", { locale: id });
 
   return (
-    <div className="space-y-4 min-w-0">
+    <div className="space-y-4 w-full max-w-full">
       {/* Header */}
-      <div className="flex flex-col gap-4 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <h1 className="text-lg font-semibold truncate">{venueName}</h1>
+      <div className="flex flex-col gap-4 w-full max-w-full">
+        <div className="flex items-center gap-2 w-full flex-wrap">
+          <Select value={selectedVenueId} onValueChange={onVenueChange}>
+            <SelectTrigger className="w-[280px]">
+              <SelectValue placeholder="Pilih Venue" />
+            </SelectTrigger>
+            <SelectContent>
+              {venues.map((venue) => (
+                <SelectItem key={venue.id} value={venue.id}>
+                  {venue.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 min-w-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full max-w-full">
           {/* Date Navigation */}
-          <div className="flex flex-wrap items-center gap-2 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -212,11 +237,11 @@ export function Timetable({
       </div>
 
       {/* Timetable Table */}
-      <div className="border rounded-lg overflow-hidden min-w-0">
+      <div className="border rounded-lg w-full max-w-full overflow-hidden">
         <div className="overflow-x-auto">
           <table
-            className="border-collapse"
-            // style={{ minWidth: "max-content", width: "100%" }}
+            className="border-collapse w-full"
+            style={{ minWidth: "max-content" }}
           >
             <thead>
               <tr className="bg-muted/50">
