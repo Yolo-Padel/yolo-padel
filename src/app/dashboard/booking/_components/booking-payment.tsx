@@ -3,6 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from "lucide-react";
+import { BookingStatus, PaymentStatus } from "@/types/prisma";
 
 type PaymentProps = {
   id: string;
@@ -13,7 +14,7 @@ type PaymentProps = {
   bookingDate: string;
   duration: string;
   totalPayment: number;
-  status: string | "Upcoming" | "Expired" | "Completed";
+  status: BookingStatus;
   paymentMethod: string | "Credit Card" | "QRIS" | "Bank Transfer";
   paymentStatus: string | "Paid" | "Unpaid";
 };
@@ -39,9 +40,9 @@ export function Payment({
 }) {
   return (
     <div>
-      <div className="flex items-center gap-4">
-        <Button className="bg-primary" onClick={() => onOpenChange(false)}>
-          <ArrowLeftIcon className="h-4 w-4 mx-2" />
+      <div className="flex gap-4">
+        <Button className="bg-primary w-12 h-8 mt-1" onClick={() => onOpenChange(false)}>
+          <ArrowLeftIcon className="h-4 w-4" />
         </Button>
         <div>
           <h2 className="text-2xl font-semibold">Finish this Payment</h2>
@@ -54,7 +55,7 @@ export function Payment({
         <img
           src="/qris.png"
           alt="barcode"
-          className="w-[full] h-[full] rounded-md"
+          className="w-[full] h-[full] rounded-md mx-auto"
         />
 
         <div className="flex flex-col items-center gap-2 text-sm text-foreground">
@@ -72,8 +73,8 @@ export function Payment({
             Download QRIS
           </Button>
 
-          {/*Payment Paid*/}
-          {paymentProps?.paymentStatus === "Paid" && (
+          {/*Payment Confirmed*/}
+          {paymentProps?.status === BookingStatus.CONFIRMED && (
             <Button
               className="w-full rounded-sm border-primary"
               variant="outline"
@@ -85,8 +86,21 @@ export function Payment({
             </Button>
           )}
 
-          {/*Payment Unpaid*/}
-          {paymentProps?.paymentStatus === "Unpaid" && (
+          {/*Payment Completed*/}
+          {paymentProps?.status === BookingStatus.COMPLETED && (
+            <Button
+              className="w-full rounded-sm border-primary"
+              variant="outline"
+              onClick={() => {
+                onChangeMode("payment-paid");
+              }}
+            >
+              Payment Status
+            </Button>
+          )}
+
+          {/*Payment Pending*/}
+          {paymentProps?.status === BookingStatus.PENDING && (
             <Button
               className="w-full rounded-sm border-primary"
               variant="outline"

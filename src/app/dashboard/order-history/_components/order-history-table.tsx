@@ -20,6 +20,7 @@ import { useOrders, type Order } from "@/hooks/use-order";
 import { PaymentStatus } from "@/types/prisma";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import Image from "next/image";
 
 const PAGE_SIZE = 10;
 
@@ -157,34 +158,36 @@ export default function OrderHistoryTable() {
           {orders.map((order) => {
             const paymentStatus = order.payment?.status || "PENDING";
             return (
-              <Card key={order.id} className="gap-3 p-1 border-foreground">
-                <CardHeader className="p-2 pb-0 gap-3">
-                  <img
-                    className="w-full h-[142px] object-cover rounded-md"
-                    src={getOrderImage(order)}
-                    alt={`Order ${order.orderCode}`}
+              <Card key={order.id} className="gap-3 p-3 hover:shadow-xl transition-shadow duration-300">
+                <div className="flex flex-col px-0">
+                  <Image
+                    src={order.bookings[0].court.image || "/paddle-court1.svg"}
+                  alt={order.bookings[0].court.name}
+                  className="flex-1 w-full rounded-sm"
+                  width={500}
+                  height={500}
                   />
-                  <CardTitle className="flex justify-between text-sm font-normal">
+                </div>
+                <div className="flex flex-col text-md gap-1 px-2">
+                  <div className="flex justify-between text-xs">
                     #{order.orderCode}
                     <Badge className={getPaymentStatus(paymentStatus)}>
                       {getPaymentStatusLabel(paymentStatus)}
                     </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-2 gap-2">
-                  <div className="text-foreground text-sm">
+                  </div>
+                  <div className="text-foreground text-xs">
                     {formatOrderDate(order)}
                   </div>
-                  <div className="pt-1 pb-2 gap-2 text-sm font-medium">
-                    <div className="flex items-center">
+                  <div className="flex flex-col gap-1 text-sm">
+                    <div className="flex font-medium items-center">
                       {getBookingCountText(order)}
                       <Dot width={16} height={24} strokeWidth={4} />
                       {getVenueName(order)}
                     </div>
                     <div>Rp {order.totalAmount.toLocaleString("id-ID")}</div>
-                    <div>{order.payment?.channelName || "N/A"}</div>
+                    <div className="font-regular">{order.payment?.channelName || "N/A"}</div>
                   </div>
-                </CardContent>
+                </div>
                 <CardFooter className="min-w-0 px-1 mb-1">
                   {/* Payment Paid Button */}
                   {paymentStatus === "PAID" && (

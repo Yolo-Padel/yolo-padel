@@ -2,10 +2,10 @@
 
 import React from 'react'
 import {Button} from '@/components/ui/button'
-import {Dot} from 'lucide-react'
+import {Dot, ArrowLeftIcon} from 'lucide-react'
 import {BookingStatus} from '@/types/prisma'
 
-type SuccessPaymentProps={
+type PendingPaymentProps={
   id: string;
   venue: string;
   courtName: string;
@@ -19,71 +19,79 @@ type SuccessPaymentProps={
   paymentStatus: string | "Paid" | "Unpaid";
 }
 
-export function SuccessPayment ({
+export function PendingPayment ({
 
     open,
     onOpenChange,
-    successPaymentProps,
+    pendingPaymentProps,
     onChangeMode,
 }: {
     open: boolean;
     onOpenChange: (open:boolean)=>void;
-    successPaymentProps: SuccessPaymentProps | null;
+    pendingPaymentProps: PendingPaymentProps | null;
     onChangeMode: (mode: "booking-details" | "order-summary" | "book-again" | "payment-paid" | "payment-pending" | "booking-payment") => void;
 }) {
     return (
               
             <div className='flex flex-col gap-8'>
                 {/* Header*/}
-                <span className='text-2xl font-semibold'>Payment Status</span>
 
+                <div className="flex items-center gap-4">
+                    <Button
+                        className="items-center justify-center w-12 h-8 rounded-md"
+                        variant="default"
+                        onClick={() => {
+                        onChangeMode("booking-payment");
+                        }}
+                    >
+                        {" "}
+                        <ArrowLeftIcon className="w-4 h-4" />
+                    </Button>
+            
+                    <span className="font-semibold text-xl"> Waiting for Payment </span>
+                </div>
+                
                 {/* Content*/}
             <div className='text-center flex flex-col items-center gap-4'>
                 {/* Content Image*/}
-                
                 <div className='flex flex-col items-center gap-4'>
-                    <img src="/payment-success.svg" className='w-[100px] h-[100px] mx-auto'/>
+                    <img src="/payment-waiting.svg" className='w-[100px] h-[100px] mx-auto'/>
                     <div className='flex flex-col items-center gap-2'>
-                        <span className='text-lg text-foreground font-semibold'>Booking Confirmed</span>
-                        <span className='text-sm text-muted-foreground font-normal mx-6'>Your padel court is ready — see you on the court!</span>
+                        <span className='text-lg text-foreground font-semibold'>Waiting for Payment</span>
+                        <span className='text-sm text-muted-foreground font-normal mx-4'>We're waiting for your payment to be completed. Once confirmed, your booking will be secured automatically.</span>
                     </div>
                     
                 {/* Content Info*/}
                     <div className='grid grid-cols-2 w-full border border-primary rounded-md p-4 px-auto gap-2 place-items-center'>
                     <div className='flex flex-col items-start gap-1'>
                         <div className='flex min-w-0 truncate items-center text-foreground font-normal'>
-                            {successPaymentProps?.courtName} 
+                            {pendingPaymentProps?.courtName} 
                             <Dot width={12} height={18} strokeWidth={4}/> 
-                            {successPaymentProps?.venue}
+                            {pendingPaymentProps?.venue}
                         </div>
-                        <span className='text-foreground font-normal'>{successPaymentProps?.bookingTime}</span>
+                        <span className='text-foreground font-normal'>{pendingPaymentProps?.bookingTime}</span>
                         <span className='text-foreground font-normal'>Payment Method</span>
                         <span className='text-foreground font-normal'>Total Payment</span>
                     </div>
 
                     <div className='flex flex-col items-end gap-1 font-normal'>
-                        <span> {successPaymentProps?.bookingDate}</span>
-                        <span> {successPaymentProps?.duration}</span>
-                        <span> {successPaymentProps?.paymentMethod}</span>
-                        <span>Rp {successPaymentProps?.totalPayment}</span> 
+                        <span> {pendingPaymentProps?.bookingDate}</span>
+                        <span> {pendingPaymentProps?.duration}</span>
+                        <span> {pendingPaymentProps?.paymentMethod}</span>
+                        <span>Rp {pendingPaymentProps?.totalPayment}</span> 
                     </div>
                         </div>
-                    <span className='text-muted-foreground font-normal mx-12'>An e-receipt has been sent to your email. Please check in at the front desk upon arrival.</span>
+                    <span className='text-sm text-muted-foreground font-normal mx-4'>Make sure to transfer the exact amount shown above. Your booking will be confirmed automatically once payment is received.</span>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
+                <div className="w-full gap-2">
                 <Button 
-                    className ="w-full border-primary rounded-sm"
+                    className ="w-full bg-primary border-primary rounded-sm"
                     variant="outline"
                     onClick={()=> onOpenChange(false)}>
-                        Book Again
+                        Cancel Payment
                 </Button>
-                <Button 
-                    onClick={()=>onChangeMode("booking-details")} 
-                    variant="default" 
-                    className='w-full bg-primary text-primary-foreground'>
-                        My Booking
-                </Button>
+                
                 </div>
             </div>
         </div>
