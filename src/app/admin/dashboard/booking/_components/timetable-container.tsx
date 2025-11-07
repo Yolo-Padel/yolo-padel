@@ -103,13 +103,11 @@ export function TimetableContainer({
 
   return (
     <div className="space-y-4 w-full max-w-full">
-      {/* Header: Venue Selector + Date Navigation */}
+      {/* Header: Venue Selector */}
       <TimetableHeader
         venues={venues}
         selectedVenueId={selectedVenueId}
         onVenueChange={onVenueChange}
-        selectedDate={selectedDate}
-        onDateChange={handleDateChange}
         isLoading={isLoadingTable}
       />
 
@@ -120,6 +118,7 @@ export function TimetableContainer({
         selectedDate={selectedDate}
         isLoading={isLoadingTable}
         onCellClick={handleCellClick}
+        onDateChange={handleDateChange}
       />
 
       {/* Modal: Booking Detail */}
