@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { BookingDetailModal, BookingDetail } from "./booking-detail-modal";
+import { TimetableTableSkeleton } from "./timetable-table-skeleton";
 import type { TimetableProps, Booking } from "@/components/timetable-types";
 import {
   generateTimeSlots,
@@ -70,6 +71,7 @@ export function Timetable({
   onDateChange,
   transformBookingToDetail = defaultTransformBookingToDetail,
   onMarkAsComplete,
+  isLoadingTable = false,
 }: TimetableProps) {
   const [selectedDate, setSelectedDate] = React.useState<Date>(
     initialDate || new Date()
@@ -148,6 +150,25 @@ export function Timetable({
       </div>
       {/* Header */}
       <div className="flex flex-col gap-4 w-full max-w-full">
+        <div className="flex items-center gap-2 w-full flex-wrap">
+          <Select
+            value={selectedVenueId}
+            onValueChange={onVenueChange}
+            disabled={isLoadingTable}
+          >
+            <SelectTrigger className="w-[280px]">
+              <SelectValue placeholder="Pilih Venue" />
+            </SelectTrigger>
+            <SelectContent>
+              {venues.map((venue) => (
+                <SelectItem key={venue.id} value={venue.id}>
+                  {venue.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full max-w-full">
           {/* Date Navigation */}
           <div className="flex flex-wrap items-center gap-2">
@@ -156,6 +177,7 @@ export function Timetable({
               size="sm"
               onClick={goToPreviousDay}
               className="border-[#C3D223]"
+              disabled={isLoadingTable}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -166,6 +188,7 @@ export function Timetable({
                   variant="outline"
                   size="sm"
                   className="border-[#C3D223] gap-2"
+                  disabled={isLoadingTable}
                 >
                   <CalendarIcon className="h-4 w-4" />
                   <span>{formattedDate}</span>
@@ -183,6 +206,7 @@ export function Timetable({
                     }
                   }}
                   locale={id}
+                  disabled={isLoadingTable}
                 />
               </PopoverContent>
             </Popover>
@@ -192,6 +216,7 @@ export function Timetable({
               size="sm"
               onClick={goToNextDay}
               className="border-[#C3D223]"
+              disabled={isLoadingTable}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -201,6 +226,7 @@ export function Timetable({
               size="sm"
               onClick={goToToday}
               className="border-[#C3D223]"
+              disabled={isLoadingTable}
             >
               Go to Today
             </Button>
@@ -210,113 +236,112 @@ export function Timetable({
               size="sm"
               onClick={goToTomorrow}
               className="border-[#C3D223]"
+              disabled={isLoadingTable}
             >
               Tomorrow
             </Button>
           </div>
 
-          <Select value={selectedVenueId} onValueChange={onVenueChange}>
-            <SelectTrigger className="w-[280px]">
-              <SelectValue placeholder="Pilih Venue" />
-            </SelectTrigger>
-            <SelectContent>
-              {venues.map((venue) => (
-                <SelectItem key={venue.id} value={venue.id}>
-                  {venue.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Filter Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-[#C3D223] gap-2 shrink-0"
+            disabled={isLoadingTable}
+          >
+            <Filter className="h-4 w-4" />
+            Filter
+          </Button>
         </div>
       </div>
 
-      {/* Timetable Table */}
-      <div className="border rounded-lg w-full max-w-full overflow-hidden">
-        <div className="overflow-x-auto">
-          <table
-            className="border-collapse w-full"
-            style={{ minWidth: "max-content" }}
-          >
-            <thead>
-              <tr className="bg-muted/50">
-                <th className="border p-3 text-left font-semibold sticky left-0 bg-background z-10 min-w-[180px]">
-                  Court Name
-                </th>
-                {timeSlots.map((time) => (
-                  <th
-                    key={time}
-                    className="border p-3 text-center font-semibold min-w-[100px]"
-                  >
-                    {formatTimeDisplay(time)}
+      {/* Timetable Table - Show skeleton when loading */}
+      {isLoadingTable ? (
+        <TimetableTableSkeleton />
+      ) : (
+        <div className="border rounded-lg w-full max-w-full overflow-hidden">
+          <div className="overflow-x-auto">
+            <table
+              className="border-collapse w-full"
+              style={{ minWidth: "max-content" }}
+            >
+              <thead>
+                <tr className="bg-muted/50">
+                  <th className="border p-3 text-left font-semibold sticky left-0 bg-background z-10 min-w-[180px]">
+                    Court Name
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {courts.map((court) => {
-                const courtOperatingHours = court.operatingHours || {
-                  openHour: "10:00",
-                  closeHour: "20:00",
-                };
+                  {timeSlots.map((time) => (
+                    <th
+                      key={time}
+                      className="border p-3 text-center font-semibold min-w-[100px]"
+                    >
+                      {formatTimeDisplay(time)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {courts.map((court) => {
+                  const courtOperatingHours = court.operatingHours || {
+                    openHour: "10:00",
+                    closeHour: "20:00",
+                  };
 
-                return (
-                  <tr key={court.id} className="hover:bg-muted/30">
-                    <td className="border p-3 sticky left-0 bg-background z-10">
-                      <div className="font-semibold">{court.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Hours{" "}
-                        {formatOperatingHours(
-                          courtOperatingHours.openHour,
-                          courtOperatingHours.closeHour
-                        )}
-                      </div>
-                    </td>
-                    {timeSlots.map((time, timeIndex) => {
-                      const bookingInfo = getTimeSlotBooking(
-                        time,
-                        timeIndex,
-                        court.id,
-                        bookings,
-                        selectedDate,
-                        timeSlots
-                      );
-
-                      const isBooked = bookingInfo !== null;
-                      const isFirstSlot = bookingInfo?.isFirstSlot ?? false;
-                      const span = bookingInfo?.span ?? 1;
-                      const booking = bookingInfo?.booking;
-
-                      // Check if this cell is part of a booking that starts earlier
-                      // If so, skip rendering (it's already merged with colspan from first cell)
-                      if (isBooked && !isFirstSlot && span === 0) {
-                        return null;
-                      }
-
-                      return (
-                        <td
-                          key={`${court.id}-${time}`}
-                          colSpan={isBooked && isFirstSlot ? span : 1}
-                          className={cn(
-                            "border p-2",
-                            isBooked &&
-                              "bg-[#ECF1BB]  border-l border-l-4 border-primary",
-                            isBooked &&
-                              "cursor-pointer hover:bg-[#D4E6D5] transition-colors"
+                  return (
+                    <tr key={court.id} className="hover:bg-muted/30">
+                      <td className="border p-3 sticky left-0 bg-background z-10">
+                        <div className="font-semibold">{court.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Hours{" "}
+                          {formatOperatingHours(
+                            courtOperatingHours.openHour,
+                            courtOperatingHours.closeHour
                           )}
-                          onClick={() =>
-                            handleCellClick(booking ?? null, court.name)
-                          }
-                        >
-                          {isBooked && isFirstSlot && booking ? (
-                            <div className="flex flex-col gap-1 p-2">
-                              <div className="flex flex-row space-x-1 items-center">
-                                <Avatar className="size-6">
+                        </div>
+                      </td>
+                      {timeSlots.map((time, timeIndex) => {
+                        const bookingInfo = getTimeSlotBooking(
+                          time,
+                          timeIndex,
+                          court.id,
+                          bookings,
+                          selectedDate,
+                          timeSlots
+                        );
+
+                        const isBooked = bookingInfo !== null;
+                        const isFirstSlot = bookingInfo?.isFirstSlot ?? false;
+                        const span = bookingInfo?.span ?? 1;
+                        const booking = bookingInfo?.booking;
+
+                        // Check if this cell is part of a booking that starts earlier
+                        // If so, skip rendering (it's already merged with colspan from first cell)
+                        if (isBooked && !isFirstSlot && span === 0) {
+                          return null;
+                        }
+
+                        return (
+                          <td
+                            key={`${court.id}-${time}`}
+                            colSpan={isBooked && isFirstSlot ? span : 1}
+                            className={cn(
+                              "border p-2 text-center align-middle",
+                              isBooked && "bg-[#E8F5E9]",
+                              isBooked &&
+                                "cursor-pointer hover:bg-[#D4E6D5] transition-colors"
+                            )}
+                            onClick={() =>
+                              handleCellClick(booking ?? null, court.name)
+                            }
+                          >
+                            {isBooked && isFirstSlot && booking ? (
+                              <div className="flex flex-col items-center gap-1 p-2">
+                                <Avatar className="h-8 w-8">
                                   <AvatarImage
                                     src={booking.userAvatar}
                                     alt={booking.userName}
-                                    sizes="sm"
                                   />
-                                  <AvatarFallback className="text-xs">
+                                  <AvatarFallback>
                                     {booking.userName
                                       .split(" ")
                                       .map((n) => n[0])
@@ -327,26 +352,27 @@ export function Timetable({
                                 <div className="text-xs font-medium">
                                   {booking.userName}
                                 </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {formatTimeRange(booking.timeSlots)}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {court.name}
+                                </div>
                               </div>
-
-                              <div className="text-xs font-medium text-muted-foreground">
-                                {formatTimeRange(booking.timeSlots)}
-                              </div>
-                              {/* <div className="text-xs">{court.name}</div> */}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Booking Detail Modal */}
       <BookingDetailModal

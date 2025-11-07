@@ -186,3 +186,112 @@ export async function getBlockingByBookingId(
   return blocking;
 }
 
+/**
+ * Get active blockings for ALL courts in a venue for specific date
+ * With full booking details including user profile and court info
+ * Used for timetable display in admin dashboard
+ */
+export async function getActiveBlockingsByVenueAndDate(
+  venueId: string,
+  date: Date
+): Promise<
+  Array<{
+    id: string;
+    bookingId: string;
+    isBlocking: boolean;
+    booking: {
+      id: string;
+      courtId: string;
+      userId: string;
+      bookingDate: Date;
+      status: string;
+      timeSlots: Array<{
+        openHour: string;
+        closeHour: string;
+      }>;
+      user: {
+        profile: {
+          fullName: string | null;
+          avatar: string | null;
+        } | null;
+      };
+      court: {
+        id: string;
+        name: string;
+      };
+    };
+  }>
+> {
+  // Normalize date to UTC start/end of day (consistent with booking service)
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  const day = date.getUTCDate();
+
+  const startOfDay = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+  const endOfDay = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
+
+  const blockings = await prisma.blocking.findMany({
+    where: {
+      isBlocking: true, // Filter at database level
+      booking: {
+        court: {
+          venueId, // Filter by venue
+        },
+        bookingDate: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+        status: {
+          not: "CANCELLED",
+        },
+      },
+    },
+    select: {
+      id: true,
+      bookingId: true,
+      isBlocking: true,
+      booking: {
+        select: {
+          id: true,
+          courtId: true,
+          userId: true,
+          bookingDate: true,
+          status: true,
+          timeSlots: {
+            select: {
+              openHour: true,
+              closeHour: true,
+            },
+            orderBy: {
+              openHour: "asc",
+            },
+          },
+          user: {
+            select: {
+              profile: {
+                select: {
+                  fullName: true,
+                  avatar: true,
+                },
+              },
+            },
+          },
+          court: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      booking: {
+        bookingDate: "asc",
+      },
+    },
+  });
+
+  return blockings;
+}
+

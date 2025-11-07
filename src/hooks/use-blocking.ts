@@ -21,6 +21,33 @@ export type ActiveBlocking = {
   };
 };
 
+export type VenueBlockingData = {
+  id: string;
+  bookingId: string;
+  isBlocking: boolean;
+  booking: {
+    id: string;
+    courtId: string;
+    userId: string;
+    bookingDate: string | Date;
+    status: string;
+    timeSlots: Array<{
+      openHour: string;
+      closeHour: string;
+    }>;
+    user: {
+      profile: {
+        fullName: string | null;
+        avatar: string | null;
+      } | null;
+    };
+    court: {
+      id: string;
+      name: string;
+    };
+  };
+};
+
 type GetBlockingsParams = {
   courtId: string;
   date: Date;
@@ -71,3 +98,42 @@ export function useActiveBlockings(params: GetBlockingsParams) {
   });
 }
 
+/**
+ * Fetch blockings for all courts in a venue
+ */
+async function getBlockingsByVenueAndDateApi(
+  venueId: string,
+  date: Date
+): Promise<VenueBlockingData[]> {
+  const dateStr = date.toISOString();
+
+  const url = `/api/blocking/venue?venueId=${encodeURIComponent(venueId)}&date=${encodeURIComponent(dateStr)}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "Failed to fetch venue blockings");
+  }
+
+  return result.data;
+}
+
+/**
+ * Hook to get active blockings for all courts in a venue
+ * Used for timetable display in admin dashboard
+ */
+export function useBlockingByVenueAndDate(venueId: string, date: Date) {
+  return useQuery({
+    queryKey: ["blockings", "venue", venueId, date.toISOString()],
+    queryFn: () => getBlockingsByVenueAndDateApi(venueId, date),
+    staleTime: 1000 * 30, // 30 seconds - blockings change frequently
+    enabled: !!venueId && !!date,
+  });
+}

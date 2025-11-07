@@ -4,6 +4,7 @@ import type {
   Court as TimetableCourt,
 } from "@/components/timetable-types";
 import type { BookingDetail } from "@/app/admin/dashboard/timetable/_components/booking-detail-modal";
+import type { VenueBlockingData } from "@/hooks/use-blocking";
 
 // Type untuk Prisma booking result dari API
 type PrismaBooking = {
@@ -68,6 +69,10 @@ type PrismaCourt = {
  * Transform Prisma booking ke format Timetable
  * HANYA tampilkan booking yang memiliki blocking aktif (isBlocking = true)
  * Booking tanpa blocking atau dengan isBlocking = false TIDAK akan ditampilkan
+ *
+ * @deprecated Use transformPrismaBlockingToTimetable instead
+ * This function fetches from booking table and filters client-side (inefficient).
+ * The new function fetches from blocking table directly (more efficient).
  */
 export function transformPrismaBookingToTimetable(
   bookings: PrismaBooking[]
@@ -176,5 +181,48 @@ export function transformPrismaBookingToDetail(
     createdAt: payment?.paymentDate
       ? new Date(payment.paymentDate)
       : new Date(booking.bookingDate),
+  };
+}
+
+/**
+ * Transform Prisma blocking (from venue query) ke format Timetable
+ * Data sudah ter-filter di backend (isBlocking = true)
+ * This replaces transformPrismaBookingToTimetable for timetable display
+ */
+export function transformPrismaBlockingToTimetable(
+  blockings: VenueBlockingData[]
+): TimetableBooking[] {
+  return blockings.map((blocking) => ({
+    id: blocking.booking.id,
+    courtId: blocking.booking.courtId,
+    userId: blocking.booking.userId,
+    userName: blocking.booking.user.profile?.fullName || "Unknown User",
+    userAvatar: blocking.booking.user.profile?.avatar || undefined,
+    bookingDate: new Date(blocking.booking.bookingDate),
+    timeSlots: blocking.booking.timeSlots,
+    status: blocking.booking.status as TimetableBooking["status"],
+  }));
+}
+
+/**
+ * Transform Prisma blocking ke BookingDetail untuk modal
+ * Used when user clicks on a booking slot in timetable
+ */
+export function transformPrismaBlockingToDetail(
+  blocking: VenueBlockingData,
+  venueName: string
+): BookingDetail {
+  return {
+    id: blocking.booking.id,
+    userName: blocking.booking.user.profile?.fullName || "Unknown User",
+    venueName,
+    courtName: blocking.booking.court.name,
+    bookingDate: new Date(blocking.booking.bookingDate),
+    timeSlots: blocking.booking.timeSlots,
+    duration: blocking.booking.timeSlots.length,
+    totalAmount: 0, // Will be fetched separately if needed
+    paymentMethod: "N/A",
+    paymentStatus: "PENDING",
+    createdAt: new Date(blocking.booking.bookingDate),
   };
 }
