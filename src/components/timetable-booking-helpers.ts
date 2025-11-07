@@ -3,8 +3,23 @@ import type { Booking } from "./timetable-types";
 import type { BookingSlotInfo } from "./timetable-types";
 import { getNextHour } from "./timetable-utils";
 
-// Calculate how many hourly time slots a booking spans
-// Example: booking 06:00-08:00 spans 2 hourly slots (06:00-07:00, 07:00-08:00)
+/**
+ * Calculate how many hourly time slots a booking spans
+ * 
+ * @param booking - The booking to calculate span for
+ * @param timeSlots - Array of all available time slots (e.g., ["06:00", "07:00", ...])
+ * @returns Number of hourly time slots the booking spans
+ * 
+ * @example
+ * // Booking from 06:00-08:00 spans 2 hourly slots
+ * const booking = {
+ *   timeSlots: [
+ *     { openHour: "06:00", closeHour: "07:00" },
+ *     { openHour: "07:00", closeHour: "08:00" }
+ *   ]
+ * };
+ * calculateBookingSpan(booking, ["06:00", "07:00", "08:00"]); // Returns: 2
+ */
 export function calculateBookingSpan(
   booking: Booking,
   timeSlots: string[]
@@ -57,11 +72,36 @@ export function calculateBookingSpan(
   return Math.max(1, durationHours);
 }
 
-// Check if a time slot overlaps with booking and return booking info
-// Returns { booking, isFirstSlot, span } where:
-// - isFirstSlot: indicates if this is the first slot of the booking
-// - span: number of cells this booking spans
-// Returns null if this slot is not part of any booking, or is a continuation slot
+/**
+ * Determines if a time slot contains a booking and calculates rendering information
+ * 
+ * This function checks if a given time slot overlaps with any booking and returns
+ * information needed for rendering (span, whether it's the first cell, etc.)
+ * 
+ * @param timeSlot - Current time slot being checked (format: "HH:00", e.g., "10:00")
+ * @param timeSlotIndex - Index of the time slot in the allTimeSlots array
+ * @param courtId - ID of the court to check bookings for
+ * @param bookings - Array of all bookings for the selected date
+ * @param selectedDate - Date being displayed in the timetable
+ * @param allTimeSlots - Complete array of time slots for span calculation
+ * 
+ * @returns BookingSlotInfo object if slot contains a booking, null otherwise
+ *          - booking: The booking object
+ *          - isFirstSlot: true if this is the first cell of a multi-hour booking
+ *          - span: number of cells this booking should span (for colspan attribute)
+ *                  - > 0 for first slot (actual span count)
+ *                  - = 0 for continuation slots (should not render, merged via colspan)
+ * 
+ * @example
+ * // Booking from 10:00-12:00 on Court 1, checking 10:00 slot
+ * getTimeSlotBooking("10:00", 4, "court-1", bookings, date, slots)
+ * // Returns: { booking: {...}, isFirstSlot: true, span: 2 }
+ * 
+ * @example
+ * // Same booking, checking 11:00 slot (continuation)
+ * getTimeSlotBooking("11:00", 5, "court-1", bookings, date, slots)
+ * // Returns: { booking: {...}, isFirstSlot: false, span: 0 }
+ */
 export function getTimeSlotBooking(
   timeSlot: string,
   timeSlotIndex: number,

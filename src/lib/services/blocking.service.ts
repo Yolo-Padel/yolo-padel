@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Blocking } from "@/types/prisma";
+import { normalizeDateToUTC } from "@/lib/date-utils";
 
 /**
  * Create a blocking for a booking
@@ -223,12 +224,7 @@ export async function getActiveBlockingsByVenueAndDate(
   }>
 > {
   // Normalize date to UTC start/end of day (consistent with booking service)
-  const year = date.getUTCFullYear();
-  const month = date.getUTCMonth();
-  const day = date.getUTCDate();
-
-  const startOfDay = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
-  const endOfDay = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
+  const { startOfDay, endOfDay } = normalizeDateToUTC(date);
 
   const blockings = await prisma.blocking.findMany({
     where: {

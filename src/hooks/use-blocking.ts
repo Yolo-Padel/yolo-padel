@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { TIMETABLE_CACHE } from "@/constants/timetable";
 
 // ════════════════════════════════════════════════════════
 // Types
@@ -93,8 +94,8 @@ export function useActiveBlockings(params: GetBlockingsParams) {
   return useQuery({
     queryKey: ["blockings", params.courtId, params.date.toISOString()],
     queryFn: () => getActiveBlockingsApi(params),
-    staleTime: 1000 * 30, // 30 seconds - blockings change frequently
-    enabled: !!params.courtId && !!params.date, // Only fetch if both params are provided
+    staleTime: TIMETABLE_CACHE.BLOCKING_STALE_TIME,
+    enabled: !!params.courtId && !!params.date,
   });
 }
 
@@ -133,7 +134,7 @@ export function useBlockingByVenueAndDate(venueId: string, date: Date) {
   return useQuery({
     queryKey: ["blockings", "venue", venueId, date.toISOString()],
     queryFn: () => getBlockingsByVenueAndDateApi(venueId, date),
-    staleTime: 1000 * 30, // 30 seconds - blockings change frequently
+    staleTime: TIMETABLE_CACHE.BLOCKING_STALE_TIME,
     enabled: !!venueId && !!date,
   });
 }

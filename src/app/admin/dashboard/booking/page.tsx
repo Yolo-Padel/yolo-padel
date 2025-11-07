@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Timetable } from "../timetable/_components/timetable";
+import { TimetableContainer } from "./_components/timetable-container";
 import { TimetableSkeleton } from "./_components/timetable-skeleton";
 import { TimetableHeaderSkeleton } from "./_components/timetable-header-skeleton";
 import { TimetableTableSkeleton } from "./_components/timetable-table-skeleton";
+import { TimetableError } from "./_components/timetable-error";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { useVenue } from "@/hooks/use-venue";
 import { useCourtByVenue } from "@/hooks/use-court";
 import { useBlockingByVenueAndDate } from "@/hooks/use-blocking";
@@ -23,11 +25,22 @@ export default function AdminBookingPage() {
   const isFirstRenderRef = useRef(true);
 
   // Fetch venues
-  const { data: venuesData, isLoading: venuesLoading } = useVenue();
+  const {
+    data: venuesData,
+    isLoading: venuesLoading,
+    isError: venuesError,
+    error: venuesErrorData,
+    refetch: refetchVenues,
+  } = useVenue();
 
   // Fetch courts by venue
-  const { data: courtsData, isLoading: courtsLoading } =
-    useCourtByVenue(selectedVenueId);
+  const {
+    data: courtsData,
+    isLoading: courtsLoading,
+    isError: courtsError,
+    error: courtsErrorData,
+    refetch: refetchCourts,
+  } = useCourtByVenue(selectedVenueId);
 
   // Fetch blockings by venue and date
   // Normalize date to prevent multiple fetches from time differences
@@ -37,8 +50,13 @@ export default function AdminBookingPage() {
     return d;
   }, [selectedDate]);
 
-  const { data: blockingsData, isLoading: blockingsLoading } =
-    useBlockingByVenueAndDate(selectedVenueId, normalizedDate);
+  const {
+    data: blockingsData,
+    isLoading: blockingsLoading,
+    isError: blockingsError,
+    error: blockingsErrorData,
+    refetch: refetchBlockings,
+  } = useBlockingByVenueAndDate(selectedVenueId, normalizedDate);
 
   // Transform venues data
   const venues: Venue[] = useMemo(() => {
@@ -147,6 +165,34 @@ export default function AdminBookingPage() {
     venueChanged && (courtsLoading || blockingsLoading);
   const isDateChangeLoading = dateChanged && blockingsLoading;
 
+  // Handle errors
+  if (venuesError) {
+    return (
+      <TimetableError
+        error={venuesErrorData as Error}
+        onRetry={refetchVenues}
+      />
+    );
+  }
+
+  if (courtsError && !courtsLoading) {
+    return (
+      <TimetableError
+        error={courtsErrorData as Error}
+        onRetry={refetchCourts}
+      />
+    );
+  }
+
+  if (blockingsError && !blockingsLoading) {
+    return (
+      <TimetableError
+        error={blockingsErrorData as Error}
+        onRetry={refetchBlockings}
+      />
+    );
+  }
+
   // Show full skeleton for initial load
   if (isInitialLoad) {
     return <TimetableSkeleton />;
@@ -163,19 +209,21 @@ export default function AdminBookingPage() {
   }
 
   return (
-    <div className="space-y-6 w-full">
-      <Timetable
-        venues={venues}
-        selectedVenueId={selectedVenueId}
-        onVenueChange={handleVenueChange}
-        courts={courts}
-        bookings={bookings}
-        selectedDate={selectedDate}
-        onDateChange={handleDateChange}
-        transformBookingToDetail={transformBooking}
-        onMarkAsComplete={handleMarkAsComplete}
-        isLoadingTable={isDateChangeLoading}
-      />
-    </div>
+    <ErrorBoundary>
+      <div className="space-y-6 w-full">
+        <TimetableContainer
+          venues={venues}
+          selectedVenueId={selectedVenueId}
+          onVenueChange={handleVenueChange}
+          courts={courts}
+          bookings={bookings}
+          selectedDate={selectedDate}
+          onDateChange={handleDateChange}
+          transformBookingToDetail={transformBooking}
+          onMarkAsComplete={handleMarkAsComplete}
+          isLoadingTable={isDateChangeLoading}
+        />
+      </div>
+    </ErrorBoundary>
   );
 }

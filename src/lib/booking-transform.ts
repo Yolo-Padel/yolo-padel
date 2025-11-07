@@ -185,9 +185,22 @@ export function transformPrismaBookingToDetail(
 }
 
 /**
- * Transform Prisma blocking (from venue query) ke format Timetable
- * Data sudah ter-filter di backend (isBlocking = true)
- * This replaces transformPrismaBookingToTimetable for timetable display
+ * Transform Prisma blocking data (from venue query) to Timetable format
+ * 
+ * This function converts blocking records from the database into the format
+ * required by the Timetable component. The data is already filtered at the
+ * database level (WHERE isBlocking = true), so no client-side filtering needed.
+ * 
+ * This replaces the deprecated transformPrismaBookingToTimetable function,
+ * which was inefficient (fetched all bookings and filtered client-side).
+ * 
+ * @param blockings - Array of blocking records with full booking details
+ * @returns Array of TimetableBooking objects ready for display
+ * 
+ * @example
+ * const blockingsFromAPI = await fetchBlockings(venueId, date);
+ * const timetableData = transformPrismaBlockingToTimetable(blockingsFromAPI);
+ * // Returns: Array of bookings with userName, userAvatar, timeSlots, etc.
  */
 export function transformPrismaBlockingToTimetable(
   blockings: VenueBlockingData[]

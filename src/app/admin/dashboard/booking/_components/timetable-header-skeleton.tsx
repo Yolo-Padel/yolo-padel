@@ -22,7 +22,6 @@ export function TimetableHeaderSkeleton({
       {showVenueSelector && (
         <div className="flex items-center gap-2 w-full flex-wrap">
           <Skeleton className="h-10 w-[280px]" />
-          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
         </div>
       )}
 
@@ -43,4 +42,3 @@ export function TimetableHeaderSkeleton({
     </div>
   );
 }
-
