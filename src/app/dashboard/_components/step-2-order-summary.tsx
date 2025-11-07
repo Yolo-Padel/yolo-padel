@@ -9,6 +9,7 @@ import { id as idLocale } from "date-fns/locale";
 import { ChevronLeft, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
+import { formatTimeSlots } from "@/lib/time-slots-formatter";
 
 export type CartItem = {
   courtId: string;
@@ -45,11 +46,7 @@ const PAYMENT_METHODS = [
   },
 ];
 
-export function OrderSummary({
-  cartItems,
-  onBack,
-  onNext,
-}: OrderSummaryProps) {
+export function OrderSummary({ cartItems, onBack, onNext }: OrderSummaryProps) {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("QRIS");
   const [showAllMethods, setShowAllMethods] = useState(false);
 
@@ -93,9 +90,8 @@ export function OrderSummary({
           const formattedDate = format(item.date, "d MMM yyyy", {
             locale: idLocale,
           });
-          const timeRange = `${item.slots[0]?.split("–")[0] || ""} - ${
-            item.slots[item.slots.length - 1]?.split("–")[1] || ""
-          }`.replace(/\./g, ":");
+          // Enhanced: Handle both continuous and non-continuous time slots
+          const timeRange = formatTimeSlots(item.slots);
           const duration = item.slots.length;
 
           return (
@@ -173,11 +169,9 @@ export function OrderSummary({
                 >
                   {/* Payment Icon Placeholder */}
                   <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
-                    <span className="text-xs font-mono">
-                      {method.id.slice(0, 2)}
-                    </span>
+                    <span className="text-xs font-mono">TBC</span>
                   </div>
-                  <span className="font-medium">{method.name}</span>
+                  <span className="font-medium">TBC</span>
                 </Label>
               </div>
             ))}
@@ -240,4 +234,3 @@ export function OrderSummary({
     </div>
   );
 }
-
