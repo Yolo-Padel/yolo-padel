@@ -21,6 +21,7 @@ import { PaymentStatus } from "@/types/prisma";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import Image from "next/image";
+import { stringUtils } from "@/lib/format/string";
 
 const PAGE_SIZE = 10;
 
@@ -187,10 +188,8 @@ export default function OrderHistoryTable() {
                       <Dot width={16} height={24} strokeWidth={4} />
                       {getVenueName(order)}
                     </div>
-                    <div>Rp {order.totalAmount.toLocaleString("id-ID")}</div>
-                    <div className="font-regular">
-                      {order.payment?.channelName || "N/A"}
-                    </div>
+                    <div>{stringUtils.formatRupiah(order.totalAmount)}</div>
+                    <div>{order.payment?.channelName || "N/A"}</div>
                   </div>
                 </div>
                 <CardFooter className="min-w-0 px-1 mb-1">

@@ -4,6 +4,7 @@ import React from "react"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ArrowLeftIcon, ArrowRightIcon, ChevronDown, ChevronUp, Dot } from "lucide-react"
+import { stringUtils } from "@/lib/format/string"
 {/*Import Modal*/}
 
 type BookingSummaryProps = {
@@ -63,7 +64,7 @@ export function BookingSummary ({
                 <div className='flex flex-col items-end gap-1 font-normal text-foreground'>
                     <span> {bookingSummaryProps?.bookingDate}</span>
                     <span> {bookingSummaryProps?.duration}</span> 
-                    <span>Rp {bookingSummaryProps?.totalPayment}</span>
+                    <span>{bookingSummaryProps?.totalPayment ? stringUtils.formatRupiah(bookingSummaryProps.totalPayment) : "N/A"}</span>
                 </div>
             </div>
 

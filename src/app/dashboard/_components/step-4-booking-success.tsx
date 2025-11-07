@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import { CartItem } from "./step-2-order-summary";
+import { stringUtils } from "@/lib/format/string";
 
 type BookingSuccessProps = {
   orderCode: string;
@@ -113,7 +114,7 @@ export function BookingSuccess({
           <div className="flex justify-between text-sm mt-2">
             <span className="text-muted-foreground">Total Payment</span>
             <span className="font-semibold">
-              Rp {totalAmount.toLocaleString("id-ID")}
+              {stringUtils.formatRupiah(totalAmount)}
             </span>
           </div>
         </div>

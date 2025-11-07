@@ -14,6 +14,7 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
+import { stringUtils } from "@/lib/format/string";
 import {
   Pencil,
   Plus,
@@ -325,7 +326,7 @@ export function CourtTable() {
                     </TableCell>
                     <TableCell>
                       <span>
-                        Rp {court.pricePerHour.toLocaleString("id-ID")}
+                        {stringUtils.formatRupiah(court.pricePerHour)}
                       </span>
                     </TableCell>
                     <TableCell>

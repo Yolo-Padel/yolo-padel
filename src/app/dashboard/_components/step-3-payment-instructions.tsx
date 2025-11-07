@@ -5,6 +5,7 @@ import { Copy, Check } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
+import { stringUtils } from "@/lib/format/string";
 
 type PaymentInstructionsProps = {
   paymentMethod: string;
@@ -56,7 +57,7 @@ export function PaymentInstructions({
           <div className="text-right">
             <div className="text-muted-foreground">Total Amount</div>
             <div className="font-semibold mt-1">
-              Rp{totalAmount.toLocaleString("id-ID")}
+              {stringUtils.formatRupiah(totalAmount)}
             </div>
           </div>
         </div>
@@ -105,7 +106,7 @@ export function PaymentInstructions({
               </div>
               <div className="flex items-center justify-between">
                 <div className="font-mono text-lg font-semibold">
-                  Rp {totalAmount.toLocaleString("id-ID")}
+                  {stringUtils.formatRupiah(totalAmount)}
                 </div>
                 <Button
                   variant="outline"

@@ -14,6 +14,7 @@ import { X } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { stringUtils } from "@/lib/format/string";
 
 // Extended booking type dengan payment info
 export type BookingDetail = {
@@ -55,7 +56,9 @@ function formatTimeWithAMPM(time: string): string {
 }
 
 // Format time range: ["06:00", "07:00"] -> "06.00-07.00"
-function formatTimeRange(timeSlots: Array<{ openHour: string; closeHour: string }>): string {
+function formatTimeRange(
+  timeSlots: Array<{ openHour: string; closeHour: string }>
+): string {
   if (timeSlots.length === 0) return "";
   const first = timeSlots[0];
   const last = timeSlots[timeSlots.length - 1];
@@ -103,10 +106,7 @@ export function BookingDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="sm:max-w-[500px]"
-        showCloseButton={false}
-      >
+      <DialogContent className="sm:max-w-[500px]" showCloseButton={false}>
         {/* Custom Close Button */}
         <Button
           variant="ghost"
@@ -146,11 +146,15 @@ export function BookingDetailModal({
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Date</span>
-                <span className="font-medium">{formatDate(booking.bookingDate)}</span>
+                <span className="font-medium">
+                  {formatDate(booking.bookingDate)}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Time</span>
-                <span className="font-medium">{formatTimeRange(booking.timeSlots)}</span>
+                <span className="font-medium">
+                  {formatTimeRange(booking.timeSlots)}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Duration</span>
@@ -166,7 +170,7 @@ export function BookingDetailModal({
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Total Amount</span>
                 <span className="font-medium">
-                  Rp{booking.totalAmount.toLocaleString("id-ID")}
+                  {stringUtils.formatRupiah(booking.totalAmount)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -181,12 +185,16 @@ export function BookingDetailModal({
                     getPaymentStatusBadgeClass(booking.paymentStatus)
                   )}
                 >
-                  {booking.paymentStatus === "PAID" ? "Paid" : booking.paymentStatus}
+                  {booking.paymentStatus === "PAID"
+                    ? "Paid"
+                    : booking.paymentStatus}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Created On</span>
-                <span className="font-medium">{formatDateTime(booking.createdAt)}</span>
+                <span className="font-medium">
+                  {formatDateTime(booking.createdAt)}
+                </span>
               </div>
             </div>
           </div>
@@ -214,4 +222,3 @@ export function BookingDetailModal({
     </Dialog>
   );
 }
-

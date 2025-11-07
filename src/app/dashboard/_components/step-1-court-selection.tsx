@@ -18,6 +18,7 @@ import {
   filterBlockedSlots,
 } from "@/lib/booking-slots-utils";
 import { useActiveBlockings } from "@/hooks/use-blocking";
+import { stringUtils } from "@/lib/format/string";
 import { BookingFormSkeleton } from "./booking-form-skeleton";
 import { CartItem } from "./step-2-order-summary";
 import { useBookingDefaults } from "@/hooks/use-booking-defaults";
@@ -318,10 +319,9 @@ export function CourtSelectionStep({
           <p className="text-sm">Total Payment</p>
         </div>
         <p className="text-sm font-medium">
-          Rp
-          {cart
-            .reduce((sum, item) => sum + item.totalPrice, 0)
-            .toLocaleString("id-ID")}
+          {stringUtils.formatRupiah(
+            cart.reduce((sum, item) => sum + item.totalPrice, 0)
+          )}
         </p>
       </div>
 

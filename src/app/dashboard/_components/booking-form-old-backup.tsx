@@ -18,6 +18,7 @@ import {
   normalizeDateToLocalStartOfDay,
 } from "@/lib/booking-slots-utils";
 import { useCreateBooking, useBookingByCourt } from "@/hooks/use-booking";
+import { stringUtils } from "@/lib/format/string";
 import { useAuth } from "@/hooks/use-auth";
 import { BookingFormSkeleton } from "./booking-form-skeleton";
 
@@ -348,7 +349,7 @@ export const BookingForm = ({
           <p className="text-sm">Total Payment</p>
         </div>
         <p className="text-sm font-medium">
-          Rp{form.watch("totalPrice").toLocaleString("id-ID")}
+          {stringUtils.formatRupiah(form.watch("totalPrice"))}
         </p>
       </div>
 

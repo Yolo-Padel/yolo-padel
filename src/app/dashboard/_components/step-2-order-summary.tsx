@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import { formatTimeSlots } from "@/lib/time-slots-formatter";
+import { stringUtils } from "@/lib/format/string";
 
 export type CartItem = {
   courtId: string;
@@ -136,7 +137,7 @@ export function OrderSummary({ cartItems, onBack, onNext }: OrderSummaryProps) {
                       {timeRange}
                     </div>
                     <div className="font-semibold text-sm">
-                      Rp{item.totalPrice.toLocaleString("id-ID")}
+                      {stringUtils.formatRupiah(item.totalPrice)}
                     </div>
                   </div>
                 </div>
@@ -200,7 +201,7 @@ export function OrderSummary({ cartItems, onBack, onNext }: OrderSummaryProps) {
           <div className="flex justify-between">
             <span className="text-muted-foreground">Court Fee</span>
             <span className="font-medium">
-              Rp{courtFeesTotal.toLocaleString("id-ID")}
+              {stringUtils.formatRupiah(courtFeesTotal)}
             </span>
           </div>
           <div className="flex justify-between">
@@ -218,7 +219,7 @@ export function OrderSummary({ cartItems, onBack, onNext }: OrderSummaryProps) {
         <div className="flex justify-between text-lg">
           <span className="font-semibold">Total Transaction</span>
           <span className="font-bold">
-            Rp{grandTotal.toLocaleString("id-ID")}
+            {stringUtils.formatRupiah(grandTotal)}
           </span>
         </div>
       </div>

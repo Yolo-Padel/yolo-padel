@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Order } from "@/hooks/use-order";
 import { PaymentStatus } from "@/types/prisma";
 import { X } from "lucide-react";
+import { stringUtils } from "@/lib/format/string";
 
 export function PaymentInstructionContainer({
   onOpenChange,
@@ -51,8 +52,7 @@ export function PaymentInstructionContainer({
 
         <div className="flex flex-col items-center gap-2 text-sm text-foreground">
           <div>
-            Total Payment Rp{" "}
-            {paymentInstructionProps?.totalAmount.toLocaleString("id-ID")}
+            Total Payment {paymentInstructionProps?.totalAmount ? stringUtils.formatRupiah(paymentInstructionProps.totalAmount) : "N/A"}
           </div>
           <div>Expires in X minutes</div>
         </div>

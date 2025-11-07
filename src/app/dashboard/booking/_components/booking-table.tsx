@@ -19,6 +19,7 @@ import { BookingEmptyState } from "./booking-empty-state";
 import { DatePicker } from "@/components/ui/date-picker";
 import ComboboxFilter from "@/components/ui/combobox";
 import BookingTableLoading from "./booking-table-loading";
+import { stringUtils } from "@/lib/format/string";
 import {
   Booking,
   BookingStatus,
@@ -253,7 +254,7 @@ export function BookingCourt() {
                 <div className="mt-0 flex items-center gap-1 justify-between text-sm">
                   <span>Total Payment</span>{" "}
                   <span>
-                    Rp {bookingCourt.totalPayment.toLocaleString("id-ID")}
+                    {stringUtils.formatRupiah(bookingCourt.totalPayment)}
                   </span>
                 </div>
               </div>

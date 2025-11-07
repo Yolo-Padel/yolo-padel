@@ -8,6 +8,7 @@ import { BookingStatus, PaymentStatus } from "@/types/prisma";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { X } from "lucide-react";
+import { stringUtils } from "@/lib/format/string";
 
 const getPaymentStatus = (paymentStatus: PaymentStatus) => {
   switch (paymentStatus) {
@@ -168,7 +169,7 @@ export function OrderDetailsContainer({
                       </span>
                     </div>
                     <span className="font-semibold text-sm text-foreground">
-                      Rp {booking.totalPrice.toLocaleString("id-ID")}
+                      {stringUtils.formatRupiah(booking.totalPrice)}
                     </span>
                   </div>
                 </div>
@@ -183,7 +184,7 @@ export function OrderDetailsContainer({
         <div className="grid grid-cols-2 gap-2 mt-2 text-sm text-foreground">
           <div>Total Amount</div>
           <div className="font-medium">
-            Rp {orderDetails?.totalAmount?.toLocaleString("id-ID")}
+            {stringUtils.formatRupiah(orderDetails?.totalAmount || 0)}
           </div>
 
           <div>Payment Method</div>
