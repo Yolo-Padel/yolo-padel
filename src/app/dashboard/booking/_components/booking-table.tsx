@@ -280,6 +280,34 @@ export function BookingCourt() {
                   </Button>
                 </CardFooter>
               )}
+              {bookingCourt.status === BookingStatus.PENDING && (
+                <CardFooter className="px-1 pt-4 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Button
+                    onClick={() => {
+                      setSelectedBookingCourt(bookingCourt);
+                      setModalOpen(true);
+                      setMode("booking-details");
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="rounded-sm border-[#C3D223] text-black w-full"
+                  >
+                    See Details
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      setSelectedBookingCourt(bookingCourt);
+                      setModalOpen(true);
+                      setMode("booking-payment");
+                    }}
+                  >
+                    Pay Now
+                  </Button>
+                </CardFooter>
+              )}
               {bookingCourt.status === BookingStatus.CONFIRMED && (
                 <CardFooter className="px-1 pt-4 pb-1 w-full min-w-0">
                   <Button
