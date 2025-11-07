@@ -167,7 +167,7 @@ export default function OrderHistoryTable() {
                     alt={`Order ${order.orderCode}`}
                   />
                   <CardTitle className="flex justify-between text-sm font-normal">
-                    {order.orderCode}
+                    #{order.orderCode}
                     <Badge className={getPaymentStatus(paymentStatus)}>
                       {getPaymentStatusLabel(paymentStatus)}
                     </Badge>

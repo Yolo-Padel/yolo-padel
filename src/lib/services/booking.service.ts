@@ -118,20 +118,8 @@ export const bookingService = {
             },
           },
           order: {
-            select: {
-              id: true,
-              orderCode: true,
-              status: true,
-              totalAmount: true,
-            },
-          },
-          payments: {
-            select: {
-              id: true,
-              amount: true,
-              status: true,
-              paymentDate: true,
-              channelName: true,
+            include: {
+              payment: true,
             },
           },
         },

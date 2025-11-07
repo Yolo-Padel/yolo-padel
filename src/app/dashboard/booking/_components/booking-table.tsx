@@ -25,6 +25,7 @@ import {
   Court,
   Venue,
   Payment,
+  Order,
 } from "@/types/prisma";
 import { useCurrentUser } from "@/hooks/use-auth";
 import { BookingModal } from "./booking-modal";
@@ -74,16 +75,19 @@ export function BookingCourt() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const getStatusBadge = (
-    status: string | "Upcoming" | "Expired" | "Completed"
-  ) => {
+  const getStatusBadge = (status: BookingStatus) => {
     switch (status) {
-      case "Upcoming":
-        return "bg-[#D5F1FF] text-[#1F7EAD]";
-      case "Expired":
+      case BookingStatus.PENDING:
+        return "bg-[#FFF4D5] text-[#8B6F00]";
+
+      case BookingStatus.CANCELLED:
         return "bg-[#FFD5D5] text-[#AD1F1F]";
-      case "Completed":
+      case BookingStatus.COMPLETED:
         return "bg-[#D5FFD5] text-[#1FAD53]";
+      case BookingStatus.CONFIRMED:
+        return "bg-[#D5F1FF] text-[#1F7EAD]";
+      case BookingStatus.NO_SHOW:
+        return "bg-[#E0E0E0] text-[#666666]";
       default:
         return "bg-gray-500 text-white";
     }
@@ -92,8 +96,8 @@ export function BookingCourt() {
   const allBookingCourts =
     (data?.data as
       | (Booking & {
+          order: Order & { payment: Payment };
           court: Court & { venue: Venue };
-          payments: Payment[];
           timeSlots?: Array<{ openHour: string; closeHour: string }>;
         })[]
       | undefined) || [];
@@ -122,8 +126,8 @@ export function BookingCourt() {
         duration: b.duration.toString() + " Hours",
         totalPayment: b.totalPrice,
         status: b.status,
-        paymentMethod: b.payments[0]?.channelName || "N/A",
-        paymentStatus: b.payments[0]?.status || "PENDING",
+        paymentMethod: b.order?.payment?.channelName || "N/A",
+        paymentStatus: b.order?.payment?.status || PaymentStatus.PENDING,
       };
     });
   }, [allBookingCourts]);
@@ -204,27 +208,42 @@ export function BookingCourt() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {paginated.map((bookingCourt) => (
             <Card
-              className="min-w-0 shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-2 border-[1px] border-foreground"
+              className="min-w-0 shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-1 border-[1px] border-foreground"
               key={bookingCourt.id}
             >
-              <CardHeader className="p-2">
+              <CardHeader className="p-2 pb-0 ">
                 <img
                   src={bookingCourt.image}
                   className="w-full h-[142px] object-cover rounded-sm"
                 />
               </CardHeader>
               <CardContent className="px-2 pt-0 pb-1 text-md text-gray-700 gap-2 space-y-2">
-                <CardTitle className="text-md font-semibold truncate">
+                <CardTitle className="text-xs truncate font-normal">
                   <span className="justify-between flex items-center gap-1">
-                    {bookingCourt.id}{" "}
+                    ID: #{bookingCourt.id}{" "}
                     <Badge className={getStatusBadge(bookingCourt.status)}>
-                      <p className="capitalize">{bookingCourt.status}</p>
+                      <p className="text-sm">
+                        {bookingCourt.status.charAt(0).toUpperCase() +
+                          bookingCourt.status.slice(1).toLowerCase()}
+                      </p>
                     </Badge>
                   </span>
                 </CardTitle>
                 <div className="mt-0 justify-between flex items-center gap-1 text-sm">
-                  <span>{bookingCourt.courtName}</span>{" "}
-                  <span> {bookingCourt.bookingDate}</span>
+                  <span className="text-sm font-medium text-black">
+                    {bookingCourt.courtName} • {bookingCourt.venue}
+                  </span>{" "}
+                  <span>
+                    {" "}
+                    {new Date(bookingCourt.bookingDate).toLocaleDateString(
+                      "id-ID",
+                      {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      }
+                    )}
+                  </span>
                 </div>
                 <div className="mt-0 flex items-center gap-1 justify-between text-sm">
                   <span>{bookingCourt.bookingTime}</span>{" "}
@@ -232,7 +251,9 @@ export function BookingCourt() {
                 </div>
                 <div className="mt-0 flex items-center gap-1 justify-between text-sm">
                   <span>Total Payment</span>{" "}
-                  <span>Rp {bookingCourt.totalPayment}</span>
+                  <span>
+                    Rp {bookingCourt.totalPayment.toLocaleString("id-ID")}
+                  </span>
                 </div>
               </CardContent>
 

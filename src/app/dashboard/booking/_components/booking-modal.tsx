@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { XIcon } from "lucide-react";
 {
   /*Import Modal*/
@@ -10,6 +10,7 @@ import { SeeBookingDetails } from "./booking-details";
 import { BookingSummary } from "./booking-summary";
 import { Payment } from "./booking-payment";
 import { SuccessPayment } from "./booking-paid";
+import { BookingStatus, PaymentStatus } from "@/types/prisma";
 
 type BookingModalProps = {
   id: string;
@@ -20,35 +21,9 @@ type BookingModalProps = {
   bookingDate: string;
   duration: string;
   totalPayment: number;
-  status: string | "Upcoming" | "Expired" | "Completed";
+  status: BookingStatus;
   paymentMethod: string | "Credit Card" | "QRIS" | "Bank Transfer";
-  paymentStatus: string | "Paid" | "Unpaid";
-};
-
-const getStatusBadge = (
-  status: string | "Upcoming" | "Expired" | "Completed"
-) => {
-  switch (status) {
-    case "Upcoming":
-      return "bg-[#D5F1FF] text-[#1F7EAD]";
-    case "Expired":
-      return "bg-[#FFD5D5] text-[#AD1F1F]";
-    case "Completed":
-      return "bg-[#D5FFD5] text-[#1FAD53]";
-    default:
-      return "bg-gray-500 text-white";
-  }
-};
-
-const getPaymentStatus = (paymentStatus: string | "Paid" | "Unpaid") => {
-  switch (paymentStatus) {
-    case "Paid":
-      return "bg-[#D0FBE9] text-[#1A7544]";
-    case "Unpaid":
-      return "bg-[#FFD5D5] text-[#AD1F1F]";
-    default:
-      return "bg-gray-500 text-white";
-  }
+  paymentStatus: PaymentStatus;
 };
 
 export function BookingModal({
@@ -80,6 +55,9 @@ export function BookingModal({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange} key={bookingModalProps?.id}>
+      <DialogTitle className="sr-only" aria-hidden="true">
+        Booking Details
+      </DialogTitle>
       <DialogContent showCloseButton={false} className="p-8">
         <XIcon
           className="absolute top-8 right-6 cursor-pointer bg-primary rounded-full p-1"
