@@ -6,22 +6,20 @@ import { Order } from "@/hooks/use-order";
 import { PaymentStatus } from "@/types/prisma";
 import { X } from "lucide-react";
 
-export function PayNow({
-  open,
+export function PaymentInstructionContainer({
   onOpenChange,
-  payNowProps,
+  paymentInstructionProps,
   onChangeMode,
 }: {
-  open: boolean;
   onOpenChange: (open: boolean) => void;
-  payNowProps: Order | null;
+  paymentInstructionProps: Order | null;
   onChangeMode: (
     mode:
-      | "details-payment"
-      | "paynow"
-      | "payment-success"
-      | "payment-pending"
+      | "order-details"
+      | "payment-instruction"
+      | "payment-status"
       | "view-booking"
+      | "change-payment-method"
   ) => void;
 }) {
   return (
@@ -53,7 +51,8 @@ export function PayNow({
 
         <div className="flex flex-col items-center gap-2 text-sm text-foreground">
           <div>
-            Total Payment Rp {payNowProps?.totalAmount.toLocaleString("id-ID")}
+            Total Payment Rp{" "}
+            {paymentInstructionProps?.totalAmount.toLocaleString("id-ID")}
           </div>
           <div>Expires in X minutes</div>
         </div>
@@ -67,32 +66,15 @@ export function PayNow({
           >
             Close
           </Button>
-
-          {/*Payment Paid*/}
-          {payNowProps?.payment?.status === PaymentStatus.PAID && (
-            <Button
-              className="w-full rounded-sm"
-              variant="default"
-              onClick={() => {
-                onChangeMode("payment-success");
-              }}
-            >
-              Payment Status
-            </Button>
-          )}
-
-          {/*Payment Pending*/}
-          {payNowProps?.payment?.status === PaymentStatus.PENDING && (
-            <Button
-              className="w-full rounded-sm"
-              variant="default"
-              onClick={() => {
-                onChangeMode("payment-pending");
-              }}
-            >
-              Payment Status
-            </Button>
-          )}
+          <Button
+            className="w-full rounded-sm"
+            variant="default"
+            onClick={() => {
+              onChangeMode("payment-status");
+            }}
+          >
+            Payment Status
+          </Button>
         </div>
       </div>
     </div>

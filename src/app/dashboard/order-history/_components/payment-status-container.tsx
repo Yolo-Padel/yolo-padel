@@ -2,38 +2,43 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Dot, X } from "lucide-react";
+import { Dot } from "lucide-react";
 import { Order } from "@/hooks/use-order";
 
-export function OrderPending({
-  open,
+export function PaymentStatusContainer({
   onOpenChange,
   paymentProps,
+  onChangeMode,
 }: {
-  open: boolean;
   onOpenChange: (open: boolean) => void;
   paymentProps: Order | null;
+  onChangeMode: (
+    mode:
+      | "order-details"
+      | "payment-instruction"
+      | "payment-status"
+      | "view-booking"
+      | "change-payment-method"
+  ) => void;
 }) {
   return (
     <div className="flex flex-col gap-8">
       {/* Header*/}
       <span className="text-2xl font-semibold">Payment Status</span>
-
       {/* Content*/}
       <div className="text-center flex flex-col items-center gap-4">
         {/* Content Image*/}
         <div className="flex flex-col items-center gap-4">
           <img
-            src="/payment-waiting.svg"
+            src="/payment-success.svg"
             className="w-[100px] h-[100px] mx-auto"
           />
           <div className="flex flex-col items-center gap-2">
             <span className="text-lg text-foreground font-semibold">
-              Waiting for payment
+              Payment Successful
             </span>
             <span className="text-sm text-muted-foreground font-normal mx-6">
-              We're waiting for your payment to be completed. Once confirmed,
-              your booking will be secured automatically.
+              Your payment has been received and your booking is confirmed.
             </span>
           </div>
           {/* Content Info*/}
@@ -58,23 +63,29 @@ export function OrderPending({
               <span> {paymentProps?.bookings[0]?.bookingDate}</span>
               <span> {paymentProps?.bookings[0]?.duration} hours</span>
               <span> {paymentProps?.payment?.channelName}</span>
-              <span>Rp {paymentProps?.totalAmount}</span>
+              <span>Rp {paymentProps?.payment?.amount}</span>
             </div>
           </div>
-
-          <span className="text-sm text-muted-foreground font-normal mx-6">
-            Make sure to transfer the exact amount shown above. Your booking
-            will be confirmed automatically once payment is received.
+          <span className="text-muted-foreground font-normal mx-12">
+            An e-receipt has been sent to your email. Please check in at the
+            front desk upon arrival.
           </span>
         </div>
-        {/* Button Action*/}
-        <div className="w-full">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
           <Button
+            className="w-full border-primary rounded-sm"
+            variant="outline"
             onClick={() => onOpenChange(false)}
+          >
+            Download Receipt
+          </Button>
+          <Button
+            onClick={() => onChangeMode("view-booking")}
             variant="default"
             className="w-full bg-primary text-primary-foreground"
           >
-            Cancel Payment
+            View Booking
           </Button>
         </div>
       </div>

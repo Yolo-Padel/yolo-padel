@@ -6,23 +6,20 @@ import { ArrowLeftIcon } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Order } from "@/hooks/use-order";
 
-export function ChangePaymentMethod({
-  open,
+export function ChangePaymentMethodContainer({
   onOpenChange,
-  paymentMethodProps,
+  changePaymentMethodProps,
   onChangeMode,
 }: {
-  open: boolean;
   onOpenChange: (open: boolean) => void;
-  paymentMethodProps: Order | null;
+  changePaymentMethodProps: Order | null;
   onChangeMode: (
     mode:
-      | "details-payment"
-      | "paynow"
-      | "payment-success"
+      | "order-details"
+      | "payment-instruction"
+      | "payment-status"
       | "view-booking"
-      | "change-method"
-      | "confirm-method"
+      | "change-payment-method"
   ) => void;
 }) {
   return (
@@ -32,7 +29,7 @@ export function ChangePaymentMethod({
           className="inline-flex items-center justify-center w-8 h-8 rounded-md"
           variant="default"
           onClick={() => {
-            onChangeMode("details-payment");
+            onChangeMode("order-details");
           }}
         >
           {" "}
@@ -51,7 +48,9 @@ export function ChangePaymentMethod({
       <div className="text-foreground">
         <h3 className="mb-3 text-md font-semibold"> Payment Method </h3>
 
-        <RadioGroup defaultValue={paymentMethodProps?.payment?.channelName}>
+        <RadioGroup
+          defaultValue={changePaymentMethodProps?.payment?.channelName}
+        >
           <div className="flex items-center justify-between px-4 py-2 border-b border-border">
             <label htmlFor="QRIS" className="flex items-center">
               <img src="/qris.png" className="w-4 h-4 mr-2" />
@@ -113,7 +112,7 @@ export function ChangePaymentMethod({
             className="w-full"
             variant="default"
             onClick={() => {
-              onChangeMode("confirm-method");
+              onChangeMode("payment-instruction");
             }}
           >
             Confirm Change
