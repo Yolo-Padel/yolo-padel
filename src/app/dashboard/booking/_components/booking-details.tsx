@@ -185,6 +185,16 @@ export function SeeBookingDetails({
             </Button>
           </div>
         )}
+        {bookingDetails?.status === BookingStatus.PENDING && (
+          <div>
+            <Button
+              onClick={() => onOpenChange(false)}
+              className="w-full p-4 rounded-sm"
+            >
+              Close
+            </Button>
+          </div>
+        )}
         {bookingDetails?.status === BookingStatus.COMPLETED && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center justify-center">
             <Button

@@ -46,7 +46,7 @@ export function PaymentInstructionContainer({
         <img
           src="/qris.png"
           alt="barcode"
-          className="w-[full] h-[full] rounded-md"
+          className="w-[full] h-[full] rounded-md mx-auto"
         />
 
         <div className="flex flex-col items-center gap-2 text-sm text-foreground">

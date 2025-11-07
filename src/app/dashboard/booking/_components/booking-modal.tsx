@@ -10,6 +10,7 @@ import { SeeBookingDetails } from "./booking-details";
 import { BookingSummary } from "./booking-summary";
 import { Payment } from "./booking-payment";
 import { SuccessPayment } from "./booking-paid";
+import { PendingPayment } from "./booking-pending";
 import { BookingStatus, PaymentStatus } from "@/types/prisma";
 
 type BookingModalProps = {
@@ -100,6 +101,16 @@ export function BookingModal({
             open={open}
             onOpenChange={onOpenChange}
             successPaymentProps={bookingModalProps}
+            onChangeMode={onChangeMode}
+          />
+        )}
+
+        {/*Payment Pending Modal*/}
+        {mode === "payment-pending" && (
+          <PendingPayment
+            open={open}
+            onOpenChange={onOpenChange}
+            pendingPaymentProps={bookingModalProps}
             onChangeMode={onChangeMode}
           />
         )}

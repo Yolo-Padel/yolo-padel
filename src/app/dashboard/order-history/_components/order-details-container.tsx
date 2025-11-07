@@ -81,7 +81,7 @@ export function OrderDetailsContainer({
               size="icon"
               onClick={() => onOpenChange(false)}
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </Button>
           </div>
         )}
