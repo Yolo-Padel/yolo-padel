@@ -1,22 +1,6 @@
 import { useEffect, useRef } from "react";
 import { UseFormReturn } from "react-hook-form";
-
-type BookingFormValues = {
-  venueId: string;
-  courtId: string;
-  date: Date | undefined;
-  slots: string[];
-  totalPrice: number;
-};
-
-type CourtSelections = Map<
-  string,
-  {
-    courtId: string;
-    date: Date;
-    slots: string[];
-  }
->;
+import { BookingFormValues, CourtSelections } from "@/types/booking";
 
 /**
  * Hook untuk load previous selections saat switching courts atau dates
@@ -68,4 +52,3 @@ export function useCourtSlotsPersistence(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchCourtId, watchDate]); // Don't include courtSelections or form
 }
-

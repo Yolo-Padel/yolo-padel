@@ -1,16 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { Court, Venue } from "@prisma/client";
 import { getAvailableSlots } from "@/lib/booking-slots-utils";
-import { CartItem } from "@/app/dashboard/_components/step-2-order-summary";
-
-type CourtSelections = Map<
-  string,
-  {
-    courtId: string;
-    date: Date;
-    slots: string[];
-  }
->;
+import { CartItem } from "@/app/dashboard/_components/order-summary-container";
+import { CourtSelections } from "@/types/booking";
 
 /**
  * Hook untuk sync selections ke cart dan update courtSelections
@@ -29,11 +21,16 @@ export function useBookingCartSync(
   courtSelections: CourtSelections,
   setCourtSelections: React.Dispatch<React.SetStateAction<CourtSelections>>,
   cart: CartItem[],
-  onAddToCart: (item: CartItem) => void,
-  onRemoveFromCart: (index: number) => void
+  onAddToCart: (item: CartItem | ((prev: CartItem[]) => CartItem[])) => void,
+  onRemoveFromCart: (index: number | ((prev: CartItem[]) => CartItem[])) => void
 ) {
   // Use ref to track previous sync state to prevent infinite loops
   const previousSyncRef = useRef<string>("");
+
+  // Memoize venue lookup untuk avoid re-computation
+  const venueName = useMemo(() => {
+    return venuesData.find((v) => v.id === selectedVenueId)?.name || "Unknown";
+  }, [venuesData, selectedVenueId]);
 
   useEffect(() => {
     if (!watchCourtId || !watchDate || !selectedCourt) return;
@@ -110,55 +107,54 @@ export function useBookingCartSync(
       });
     }
 
-    // Step 2: Sync to cart (in same effect to avoid race condition)
+    // Step 2: Sync to cart (use functional update untuk avoid race condition)
     if (watchSlots.length > 0) {
       // Create cart item
       const cartItem: CartItem = {
         courtId: selectedCourt.id,
         courtName: selectedCourt.name,
         courtImage: selectedCourt.image,
-        venueName:
-          venuesData.find((v) => v.id === selectedVenueId)?.name || "Unknown",
+        venueName,
         date: watchDate,
         slots: watchSlots,
         pricePerSlot: selectedCourt.price,
         totalPrice: watchSlots.length * selectedCourt.price,
       };
 
-      // Remove existing entry for this court/date combo
-      const existingIndex = cart.findIndex(
-        (item) =>
-          item.courtId === watchCourtId &&
-          item.date.toDateString() === watchDate.toDateString()
-      );
-
-      if (existingIndex >= 0) {
-        onRemoveFromCart(existingIndex);
-      }
-      // Add updated cart item
-      setTimeout(() => onAddToCart(cartItem), 0);
+      // Use functional update untuk ensure consistency
+      onAddToCart((prevCart) => {
+        // Remove existing entry for this court/date combo
+        const filteredCart = prevCart.filter(
+          (item) =>
+            !(
+              item.courtId === watchCourtId &&
+              item.date.toDateString() === watchDate.toDateString()
+            )
+        );
+        return [...filteredCart, cartItem];
+      });
     } else {
       // No slots selected, remove from cart if exists
-      const existingIndex = cart.findIndex(
-        (item) =>
-          item.courtId === watchCourtId &&
-          item.date.toDateString() === watchDate.toDateString()
+      onRemoveFromCart((prevCart) =>
+        prevCart.filter(
+          (item) =>
+            !(
+              item.courtId === watchCourtId &&
+              item.date.toDateString() === watchDate.toDateString()
+            )
+        )
       );
-
-      if (existingIndex >= 0) {
-        onRemoveFromCart(existingIndex);
-      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     watchSlots,
     watchCourtId,
     watchDate,
     selectedCourt,
-    selectedVenueId,
-    venuesData,
+    venueName,
+    courtSelections,
+    cart,
+    setCourtSelections,
     onAddToCart,
     onRemoveFromCart,
   ]);
 }
-

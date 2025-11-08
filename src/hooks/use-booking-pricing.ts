@@ -1,14 +1,7 @@
 import { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Court } from "@prisma/client";
-
-type BookingFormValues = {
-  venueId: string;
-  courtId: string;
-  date: Date | undefined;
-  slots: string[];
-  totalPrice: number;
-};
+import { BookingFormValues } from "@/types/booking";
 
 /**
  * Hook untuk calculate total price based on selected slots

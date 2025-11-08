@@ -63,14 +63,14 @@ export async function middleware(request: NextRequest) {
       const isUserRoute = pathname.startsWith("/dashboard");
 
       // Redirect admin if trying to access user dashboard
-      if (role !== Role.USER && isUserRoute) {
-        const adminUrl = new URL("/admin/dashboard", request.url);
-        return NextResponse.redirect(adminUrl);
-      }
+      // if (role !== Role.USER && isUserRoute) {
+      //   const adminUrl = new URL("/admin/dashboard", request.url);
+      //   return NextResponse.redirect(adminUrl);
+      // }
 
       // Redirect user if trying to access admin dashboard
       if (role === Role.USER && isAdminRoute) {
-        const userUrl = new URL("/dashboard", request.url);
+        const userUrl = new URL("/dashboard/booking", request.url);
         return NextResponse.redirect(userUrl);
       }
     } catch (error) {

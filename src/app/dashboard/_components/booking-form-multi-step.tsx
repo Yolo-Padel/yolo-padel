@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { CartItem, OrderSummary } from "./step-2-order-summary";
-import { PaymentInstructions } from "./step-3-payment-instructions";
-import { BookingSuccess } from "./step-4-booking-success";
-import { CourtSelectionStep } from "./step-1-court-selection";
+import { CartItem, OrderSummaryContainer } from "./order-summary-container";
+import { PaymentInstructionsContainer } from "./payment-instructions-container";
+import { BookingSuccessContainer } from "./booking-success-container";
+import { CourtSelectionContainer } from "./court-selection-container";
 import { useCreateOrder } from "@/hooks/use-order";
 import { transformUISlotsToOrderFormat } from "@/lib/booking-slots-utils";
 import { toast } from "sonner";
@@ -34,14 +34,30 @@ export function BookingFormMultiStep({
   const { mutate: createOrder, isPending: isCreatingOrder } = useCreateOrder();
 
   // Handle adding items to cart (memoized to prevent infinite loops)
-  const handleAddToCart = useCallback((item: CartItem) => {
-    setCart((prev) => [...prev, item]);
-  }, []);
+  // Support both direct item and functional update
+  const handleAddToCart = useCallback(
+    (item: CartItem | ((prev: CartItem[]) => CartItem[])) => {
+      if (typeof item === "function") {
+        setCart(item);
+      } else {
+        setCart((prev) => [...prev, item]);
+      }
+    },
+    []
+  );
 
   // Handle removing item from cart (memoized to prevent infinite loops)
-  const handleRemoveFromCart = useCallback((index: number) => {
-    setCart((prev) => prev.filter((_, i) => i !== index));
-  }, []);
+  // Support both index-based and functional update
+  const handleRemoveFromCart = useCallback(
+    (indexOrUpdater: number | ((prev: CartItem[]) => CartItem[])) => {
+      if (typeof indexOrUpdater === "function") {
+        setCart(indexOrUpdater);
+      } else {
+        setCart((prev) => prev.filter((_, i) => i !== indexOrUpdater));
+      }
+    },
+    []
+  );
 
   // Navigate to Order Summary
   const handleProceedToSummary = () => {
@@ -115,7 +131,7 @@ export function BookingFormMultiStep({
   return (
     <div>
       {currentStep === 1 && (
-        <CourtSelectionStep
+        <CourtSelectionContainer
           onClose={onClose}
           isModal={isModal}
           cart={cart}
@@ -126,7 +142,7 @@ export function BookingFormMultiStep({
       )}
 
       {currentStep === 2 && (
-        <OrderSummary
+        <OrderSummaryContainer
           cartItems={cart}
           onBack={handleBackToSelection}
           onNext={handleSubmitOrder}
@@ -134,7 +150,7 @@ export function BookingFormMultiStep({
       )}
 
       {currentStep === 3 && orderData && (
-        <PaymentInstructions
+        <PaymentInstructionsContainer
           paymentMethod={selectedPaymentMethod}
           orderCode={orderData.orderCode}
           totalAmount={orderData.totalAmount}
@@ -143,7 +159,7 @@ export function BookingFormMultiStep({
       )}
 
       {currentStep === 4 && orderData && (
-        <BookingSuccess
+        <BookingSuccessContainer
           orderCode={orderData.orderCode}
           cartItems={cart}
           paymentMethod={selectedPaymentMethod}
