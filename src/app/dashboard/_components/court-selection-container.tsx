@@ -1,43 +1,57 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
-import { Loader2, X } from "lucide-react";
+import { X, ShoppingCart, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVenue } from "@/hooks/use-venue";
 import { Court, Venue } from "@prisma/client";
 import { Separator } from "@/components/ui/separator";
 import { useCourtByVenue } from "@/hooks/use-court";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { Calendar } from "@/components/ui/calendar";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useForm } from "react-hook-form";
 import {
   getAvailableSlots,
-  transformDbFormatToUISlots,
-  isSlotBooked,
-  normalizeDateToLocalStartOfDay,
+  filterBlockedSlots,
 } from "@/lib/booking-slots-utils";
-import { useCreateBooking, useBookingByCourt } from "@/hooks/use-booking";
+import { useActiveBlockings } from "@/hooks/use-blocking";
 import { stringUtils } from "@/lib/format/string";
-import { useAuth } from "@/hooks/use-auth";
 import { BookingFormSkeleton } from "./booking-form-skeleton";
+import { CartItem } from "./order-summary-container";
+import { useBookingDefaults } from "@/hooks/use-booking-defaults";
+import { useBookingPricing } from "@/hooks/use-booking-pricing";
+import { useCourtSlotsPersistence } from "@/hooks/use-court-slots-persistence";
+import { useBookingCartSync } from "@/hooks/use-booking-cart-sync";
+import { BookingFormValues, CourtSelections } from "@/types/booking";
 
-type BookingFormValues = {
-  venueId: string;
-  courtId: string;
-  date: Date | undefined;
-  slots: string[];
-  totalPrice: number;
-};
-
-export const BookingForm = ({
-  onClose,
-  isModal = false,
-}: {
+type CourtSelectionContainerProps = {
   onClose: () => void;
   isModal?: boolean;
-}) => {
+  cart: CartItem[];
+  onAddToCart: (item: CartItem | ((prev: CartItem[]) => CartItem[])) => void;
+  onRemoveFromCart: (
+    index: number | ((prev: CartItem[]) => CartItem[])
+  ) => void;
+  onProceedToSummary: () => void;
+};
+
+export function CourtSelectionContainer({
+  onClose,
+  isModal = false,
+  cart,
+  onAddToCart,
+  onRemoveFromCart,
+  onProceedToSummary,
+}: CourtSelectionContainerProps) {
   const [selectedVenueId, setSelectedVenueId] = useState<string>("");
+
+  // Track selections per court (courtId + date as key)
+  const [courtSelections, setCourtSelections] = useState<CourtSelections>(
+    new Map()
+  );
 
   const form = useForm<BookingFormValues>({
     defaultValues: {
@@ -55,132 +69,69 @@ export const BookingForm = ({
   const { data: venues, isLoading: isLoadingVenues } = useVenue();
   const venuesData: Venue[] = Array.isArray(venues?.data) ? venues.data : [];
 
-  useEffect(() => {
-    if (venuesData.length > 0) {
-      const firstId = venuesData[0].id;
-      setSelectedVenueId(firstId);
-      form.setValue("venueId", firstId);
-    }
-  }, [venuesData]);
-
   const { data: courts, isLoading: isLoadingCourts } =
     useCourtByVenue(selectedVenueId);
   const courtsData: Court[] = Array.isArray(courts?.data) ? courts.data : [];
-  const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
-
-  // Set default court when courts are loaded
-  useEffect(() => {
-    if (courtsData.length > 0 && !watchCourtId) {
-      form.setValue("courtId", courtsData[0].id);
-    }
-  }, [courtsData, watchCourtId]);
 
   // Get available slots based on selected court + date
   const selectedCourt = courtsData.find((c) => c.id === watchCourtId);
   const operatingHoursSlots = getAvailableSlots(selectedCourt, watchDate);
 
-  // Get existing bookings for the selected court and date
-  const { data: existingBookings } = useBookingByCourt(watchCourtId || "");
-  const bookingsData = Array.isArray(existingBookings?.data)
-    ? existingBookings.data
-    : [];
+  // Get active blockings for the selected court and date
+  const { data: blockingsData } = useActiveBlockings({
+    courtId: watchCourtId || "",
+    date: watchDate || new Date(),
+  });
 
-  // Get booked slots for selected date
-  const bookedSlots = (() => {
-    if (!watchDate || bookingsData.length === 0) return [];
+  // Extract blocked time slots from blocking data
+  const blockedTimeSlots = (() => {
+    if (!blockingsData || blockingsData.length === 0) return [];
 
-    // Use normalized date format for consistent comparison
-    // This prevents timezone issues when comparing dates
-    const selectedDateStr = normalizeDateToLocalStartOfDay(watchDate);
-    const bookingsOnDate = bookingsData.filter((booking: any) => {
-      const bookingDate = new Date(booking.bookingDate);
-      const bookingDateStr = normalizeDateToLocalStartOfDay(bookingDate);
-      return (
-        bookingDateStr === selectedDateStr && booking.status !== "CANCELLED"
-      );
-    });
-
-    return bookingsOnDate.flatMap((booking: any) => {
-      if (booking.timeSlots && booking.timeSlots.length > 0) {
-        return transformDbFormatToUISlots(booking.timeSlots);
-      }
-      // Backward compatibility: use bookingHour if timeSlots not available
-      if (booking.bookingHour) {
-        return [booking.bookingHour];
-      }
-      return [];
-    });
+    // Flatten all time slots from all blockings
+    return blockingsData.flatMap((blocking) => blocking.booking.timeSlots);
   })();
 
-  // Show all slots from operating hours, but mark booked ones as disabled
-  // This allows users to see what's available vs what's booked
-  const allSlots = operatingHoursSlots;
+  // Filter out blocked slots from available slots (HIDE them, don't just disable)
+  const allSlots = filterBlockedSlots(operatingHoursSlots, blockedTimeSlots);
 
-  // Calculate total price: slots count × court price
-  useEffect(() => {
-    if (selectedCourt && watchSlots.length > 0) {
-      const totalPrice = watchSlots.length * selectedCourt.price;
-      form.setValue("totalPrice", totalPrice);
-    } else {
-      form.setValue("totalPrice", 0);
-    }
-  }, [watchSlots, selectedCourt, form]);
+  // Custom hooks untuk manage effects (separation of concerns)
+  useBookingDefaults(
+    form,
+    venuesData,
+    courtsData,
+    selectedVenueId,
+    setSelectedVenueId,
+    watchCourtId
+  );
 
-  // Booking mutation
-  const { mutate: createBooking, isPending: isCreatingBooking } =
-    useCreateBooking();
-  const { user } = useAuth();
+  useBookingPricing(form, selectedCourt, watchSlots);
 
-  // Handle form submit
-  const handleSubmit = form.handleSubmit((data) => {
-    if (!user?.id) {
-      // Should not happen if user is authenticated, but handle gracefully
-      console.error("User not authenticated");
-      return;
-    }
+  useCourtSlotsPersistence(form, watchCourtId, watchDate, courtSelections);
 
-    if (data.slots.length === 0) {
-      return;
-    }
-
-    if (!data.date) {
-      return;
-    }
-
-    if (!data.courtId) {
-      return;
-    }
-
-    if (!data.totalPrice || data.totalPrice <= 0) {
-      return;
-    }
-
-    createBooking(
-      {
-        courtId: data.courtId,
-        date: data.date,
-        slots: data.slots,
-        totalPrice: data.totalPrice,
-        userId: user.id,
-      },
-      {
-        onSuccess: () => {
-          form.reset();
-          onClose();
-        },
-      }
-    );
-  });
+  useBookingCartSync(
+    watchSlots,
+    watchCourtId,
+    watchDate,
+    selectedCourt,
+    selectedVenueId,
+    venuesData,
+    courtSelections,
+    setCourtSelections,
+    cart,
+    onAddToCart,
+    onRemoveFromCart
+  );
 
   return isLoadingVenues ? (
     <BookingFormSkeleton isModal={isModal} />
   ) : (
     <div className="flex flex-col gap-4">
+      {/* Header */}
       <div className="relative">
         <div className={cn(isModal ? "pr-8 gap-0" : "")}>
           <h3 className="text-2xl font-semibold">Book your court</h3>
           <p className="text-sm text-muted-foreground">
-            Enter the location and select a field for booking
+            Select venue, court, date and time slots
           </p>
         </div>
         {isModal && (
@@ -194,13 +145,28 @@ export const BookingForm = ({
           </Button>
         )}
       </div>
+
+      {/* Venue Tabs */}
       <Tabs
-        defaultValue={venuesData[0].id}
+        defaultValue={venuesData[0]?.id}
         onValueChange={(value) => {
+          // Business Rule: 1 order = 1 venue
+          // When switching venue, force reset all data and cart
+
+          // 1. Clear all cart items (remove from end to start to avoid index issues)
+          for (let i = cart.length - 1; i >= 0; i--) {
+            onRemoveFromCart(i);
+          }
+
+          // 2. Clear court selections state
+          setCourtSelections(new Map());
+
+          // 3. Reset all form fields
           setSelectedVenueId(value);
           form.setValue("venueId", value);
           form.setValue("courtId", "");
           form.setValue("slots", []);
+          form.setValue("date", new Date());
           form.setValue("totalPrice", 0);
         }}
       >
@@ -221,6 +187,8 @@ export const BookingForm = ({
           <Separator />
         </div>
       </Tabs>
+
+      {/* Courts Grid */}
       <div className="flex flex-col gap-2">
         <p className="text-sm">Available Court</p>
         {courtsData.length === 0 ? (
@@ -230,21 +198,26 @@ export const BookingForm = ({
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 h-[80px]">
             {courtsData.map((court: Court) => {
-              const active = watchCourtId === court.id;
+              const isActive = watchCourtId === court.id;
+              // Check both courtId AND date untuk accurate cart status
+              const isInCart = cart.some(
+                (item) =>
+                  item.courtId === court.id &&
+                  item.date.toDateString() === watchDate?.toDateString()
+              );
+
               return (
                 <div
                   key={court.id}
                   className={cn(
-                    "relative rounded-lg overflow-hidden group cursor-pointer border",
-                    active
-                      ? "ring-2 ring-primary border-primary"
-                      : "border-transparent"
+                    "relative rounded-lg overflow-hidden group cursor-pointer border transition-all",
+                    isActive
+                      ? "ring-2 ring-primary border-primary shadow-lg"
+                      : ""
                   )}
                   onClick={() => {
                     form.setValue("courtId", court.id);
-                    setSelectedSlots([]);
-                    form.setValue("slots", []);
-                    form.setValue("totalPrice", 0);
+                    // Don't reset slots here - will be loaded by useEffect
                   }}
                 >
                   <Image
@@ -258,6 +231,11 @@ export const BookingForm = ({
                   <div className="absolute bottom-2 left-2 right-2 text-white text-sm font-medium truncate text-center">
                     {court.name}
                   </div>
+                  {isInCart && (
+                    <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1.5 shadow-md">
+                      <Check className="h-3 w-3 text-white" />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -265,6 +243,7 @@ export const BookingForm = ({
         )}
       </div>
 
+      {/* Date & Time Selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
           <p className="text-sm">Available Date</p>
@@ -274,9 +253,8 @@ export const BookingForm = ({
               selected={watchDate}
               onSelect={(d) => {
                 form.setValue("date", d);
-                form.setValue("slots", []);
-                form.setValue("totalPrice", 0);
-                setSelectedSlots([]);
+                // Slots will be loaded by useEffect if there's a previous selection
+                // Otherwise will be reset to empty
               }}
               showOutsideDays
               className="w-full"
@@ -292,19 +270,10 @@ export const BookingForm = ({
               className="border-primary"
               size="sm"
               onClick={() => {
-                // Only select available (non-booked) slots
-                const availableOnly = allSlots.filter(
-                  (slot) => !isSlotBooked(slot, bookedSlots)
-                );
-                form.setValue("slots", availableOnly);
-                setSelectedSlots(availableOnly);
+                // All slots in allSlots are already filtered (not blocked)
+                form.setValue("slots", allSlots);
               }}
-              disabled={
-                !watchCourtId ||
-                !watchDate ||
-                allSlots.filter((slot) => !isSlotBooked(slot, bookedSlots))
-                  .length === 0
-              }
+              disabled={!watchCourtId || !watchDate || allSlots.length === 0}
             >
               Select All
             </Button>
@@ -313,23 +282,16 @@ export const BookingForm = ({
             type="multiple"
             value={form.watch("slots")}
             onValueChange={(val) => {
-              setSelectedSlots(val as string[]);
               form.setValue("slots", val as string[]);
             }}
             className="grid grid-cols-2 gap-3"
           >
             {(allSlots.length ? allSlots : []).map((slot) => {
-              const isBooked = isSlotBooked(slot, bookedSlots);
               return (
                 <ToggleGroupItem
                   key={slot}
                   value={slot}
-                  className={cn(
-                    "justify-center",
-                    isBooked && "opacity-50 cursor-not-allowed"
-                  )}
-                  disabled={isBooked}
-                  title={isBooked ? "This slot is already booked" : undefined}
+                  className="justify-center border rounded-md"
                 >
                   {slot}
                 </ToggleGroupItem>
@@ -344,35 +306,27 @@ export const BookingForm = ({
         </div>
       </div>
 
+      {/* Total Price */}
       <div className="flex items-center justify-between pt-2">
         <div>
           <p className="text-sm">Total Payment</p>
         </div>
         <p className="text-sm font-medium">
-          {stringUtils.formatRupiah(form.watch("totalPrice"))}
+          {stringUtils.formatRupiah(
+            cart.reduce((sum, item) => sum + item.totalPrice, 0)
+          )}
         </p>
       </div>
 
+      {/* Action Button */}
       <Button
-        className="h-11"
-        onClick={handleSubmit}
-        disabled={
-          isCreatingBooking ||
-          !watchCourtId ||
-          !watchDate ||
-          watchSlots.length === 0 ||
-          !user?.id
-        }
+        className="w-full h-11"
+        onClick={onProceedToSummary}
+        disabled={cart.length === 0}
       >
-        {isCreatingBooking ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Creating...
-          </>
-        ) : (
-          "Book Now"
-        )}
+        <ShoppingCart className="mr-2 h-4 w-4" />
+        Book
       </Button>
     </div>
   );
-};
+}

@@ -7,19 +7,19 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { stringUtils } from "@/lib/format/string";
 
-type PaymentInstructionsProps = {
+type PaymentInstructionsContainerProps = {
   paymentMethod: string;
   orderCode: string;
   totalAmount: number;
   onComplete: () => void;
 };
 
-export function PaymentInstructions({
+export function PaymentInstructionsContainer({
   paymentMethod,
   orderCode,
   totalAmount,
   onComplete,
-}: PaymentInstructionsProps) {
+}: PaymentInstructionsContainerProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const handleCopy = async (text: string, fieldName: string) => {

@@ -23,7 +23,7 @@ export type CartItem = {
   totalPrice: number;
 };
 
-type OrderSummaryProps = {
+type OrderSummaryContainerProps = {
   cartItems: CartItem[];
   onBack: () => void;
   onNext: (paymentMethod: string) => void;
@@ -47,7 +47,11 @@ const PAYMENT_METHODS = [
   },
 ];
 
-export function OrderSummary({ cartItems, onBack, onNext }: OrderSummaryProps) {
+export function OrderSummaryContainer({
+  cartItems,
+  onBack,
+  onNext,
+}: OrderSummaryContainerProps) {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("QRIS");
   const [showAllMethods, setShowAllMethods] = useState(false);
 

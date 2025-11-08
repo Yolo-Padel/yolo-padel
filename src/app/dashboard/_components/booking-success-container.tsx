@@ -5,10 +5,10 @@ import { CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { useRouter } from "next/navigation";
-import { CartItem } from "./step-2-order-summary";
+import { CartItem } from "./order-summary-container";
 import { stringUtils } from "@/lib/format/string";
 
-type BookingSuccessProps = {
+type BookingSuccessContainerProps = {
   orderCode: string;
   cartItems: CartItem[];
   paymentMethod: string;
@@ -16,13 +16,13 @@ type BookingSuccessProps = {
   onBookAgain: () => void;
 };
 
-export function BookingSuccess({
+export function BookingSuccessContainer({
   orderCode,
   cartItems,
   paymentMethod,
   totalAmount,
   onBookAgain,
-}: BookingSuccessProps) {
+}: BookingSuccessContainerProps) {
   const router = useRouter();
 
   // Format booking summary
@@ -35,7 +35,10 @@ export function BookingSuccess({
         firstItem.slots[firstItem.slots.length - 1]?.split("–")[1] || ""
       }`.replace(/\./g, ":")
     : "";
-  const totalDuration = cartItems.reduce((sum, item) => sum + item.slots.length, 0);
+  const totalDuration = cartItems.reduce(
+    (sum, item) => sum + item.slots.length,
+    0
+  );
 
   return (
     <div className="flex flex-col gap-6 items-center text-center py-8">
@@ -107,8 +110,8 @@ export function BookingSuccess({
               {paymentMethod === "QRIS"
                 ? "QRIS"
                 : paymentMethod === "BNI_VA"
-                ? "BNI Virtual Account"
-                : "BCA Virtual Account"}
+                  ? "BNI Virtual Account"
+                  : "BCA Virtual Account"}
             </span>
           </div>
           <div className="flex justify-between text-sm mt-2">
@@ -128,11 +131,7 @@ export function BookingSuccess({
 
       {/* Action Buttons */}
       <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Button
-          variant="outline"
-          className="w-full h-11"
-          onClick={onBookAgain}
-        >
+        <Button variant="outline" className="w-full h-11" onClick={onBookAgain}>
           Booking Again
         </Button>
         <Button
@@ -145,4 +144,3 @@ export function BookingSuccess({
     </div>
   );
 }
-
