@@ -1,4 +1,4 @@
-import type { BookingDetail } from "../app/admin/dashboard/booking/_components/booking-detail-modal";
+import type { BookingDetail } from "../app/admin/dashboard/timetable/_components/booking-detail-modal";
 
 // Types berdasarkan schema Prisma
 export type Court = {

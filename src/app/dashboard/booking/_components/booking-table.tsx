@@ -77,19 +77,17 @@ export function BookingCourt() {
 
   const getStatusBadge = (status: BookingStatus) => {
     switch (status) {
-      case BookingStatus.PENDING:
-        return "bg-[#FFF4D5] text-[#8B6F00]";
-
+      case BookingStatus.CONFIRMED:
+        return "bg-[#D0FBE9] text-[#1A7544]";
+      case BookingStatus.COMPLETED:
+        return "bg-[#E7F0FE] text-[#194185]";
       case BookingStatus.CANCELLED:
         return "bg-[#FFD5D5] text-[#AD1F1F]";
-      case BookingStatus.COMPLETED:
-        return "bg-[#D5FFD5] text-[#1FAD53]";
-      case BookingStatus.CONFIRMED:
-        return "bg-[#D5F1FF] text-[#1F7EAD]";
       case BookingStatus.NO_SHOW:
-        return "bg-[#E0E0E0] text-[#666666]";
+        return "bg-[#FFF4D5] text-[#8B6F00]";
+      case BookingStatus.PENDING:
       default:
-        return "bg-gray-500 text-white";
+        return "bg-gray-200 text-gray-700";
     }
   };
 
@@ -221,11 +219,10 @@ export function BookingCourt() {
                 <CardTitle className="text-xs truncate font-normal">
                   <span className="justify-between flex items-center gap-1">
                     ID: #{bookingCourt.id}{" "}
-                    <Badge className={getStatusBadge(bookingCourt.status)}>
-                      <p className="text-sm">
-                        {bookingCourt.status.charAt(0).toUpperCase() +
-                          bookingCourt.status.slice(1).toLowerCase()}
-                      </p>
+                    <Badge
+                      className={`rounded-md px-3 py-1 text-xs font-medium ${getStatusBadge(bookingCourt.status)}`}
+                    >
+                      {bookingCourt.status}
                     </Badge>
                   </span>
                 </CardTitle>

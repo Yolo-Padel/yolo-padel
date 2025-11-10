@@ -73,7 +73,7 @@ function formatGroup(group: string[]): string {
 
 /**
  * Format time slots dengan handle continuous dan non-continuous
- * 
+ *
  * Examples:
  * - Continuous: ["07:00-08:00", "08:00-09:00"] → "07:00-09:00"
  * - Non-continuous: ["07:00-08:00", "09:00-10:00"] → "07:00-08:00, 09:00-10:00"
@@ -118,3 +118,24 @@ export function getTimeRangeDisplay(slots: string[]): string {
   return formatTimeSlots(slots);
 }
 
+/**
+ * Convert time from "HH:MM" format to "HH.MM" format for display
+ * Example: "07:00" → "07.00"
+ */
+export function formatTimeDisplay(time: string): string {
+  return time.replace(":", ".");
+}
+
+/**
+ * Format time slots array from database into display format
+ * Converts array of {openHour, closeHour} objects to "HH.MM-HH.MM" format
+ * Example: [{openHour: "07:00", closeHour: "08:00"}, {openHour: "08:00", closeHour: "09:00"}] → "07.00-09.00"
+ */
+export function formatTimeRange(
+  timeSlots: { openHour: string; closeHour: string }[]
+): string {
+  if (timeSlots.length === 0) return "N/A";
+  const first = timeSlots[0];
+  const last = timeSlots[timeSlots.length - 1];
+  return `${formatTimeDisplay(first.openHour)}-${formatTimeDisplay(last.closeHour)}`;
+}

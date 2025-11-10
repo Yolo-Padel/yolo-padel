@@ -1,5 +1,5 @@
 import type { Booking } from "./timetable-types";
-import type { BookingDetail } from "../app/admin/dashboard/booking/_components/booking-detail-modal";
+import type { BookingDetail } from "../app/admin/dashboard/timetable/_components/booking-detail-modal";
 
 // Helper untuk transform Booking ke BookingDetail dengan data lengkap
 // Untuk preview/dummy data, kita bisa menambahkan payment info secara manual

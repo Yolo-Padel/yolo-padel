@@ -4,7 +4,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Info, XIcon } from "lucide-react";
-import { BookingStatus, PaymentStatus } from "@/types/prisma";
+import { BookingStatus } from "@/types/prisma";
 {
   /*Import Modal*/
 }
@@ -18,10 +18,7 @@ type BookingDetails = {
   bookingTime?: string;
   bookingDate: string;
   duration: string;
-  totalPayment: number;
   status: BookingStatus;
-  paymentMethod: string | "Credit Card" | "PayPal" | "Bank Transfer" | "QRIS";
-  paymentStatus: PaymentStatus;
 };
 
 const getStatusBadge = (status: BookingStatus) => {
@@ -36,22 +33,6 @@ const getStatusBadge = (status: BookingStatus) => {
       return "bg-[#D5F1FF] text-[#1F7EAD]";
     case BookingStatus.NO_SHOW:
       return "bg-[#E0E0E0] text-[#666666]";
-    default:
-      return "bg-gray-500 text-white";
-  }
-};
-
-const getPaymentStatus = (paymentStatus: PaymentStatus) => {
-  switch (paymentStatus) {
-    case PaymentStatus.PAID:
-      return "bg-[#D0FBE9] text-[#1A7544]";
-    case PaymentStatus.PENDING:
-      return "bg-[#FFD5D5] text-[#AD1F1F]";
-    case PaymentStatus.FAILED:
-    case PaymentStatus.EXPIRED:
-      return "bg-[#FFD5D5] text-[#AD1F1F]";
-    case PaymentStatus.REFUNDED:
-      return "bg-gray-200 text-gray-700";
     default:
       return "bg-gray-500 text-white";
   }
@@ -128,33 +109,6 @@ export function SeeBookingDetails({
           <div>Duration</div>
           <div className="font-medium text-foreground min-w-0">
             {bookingDetails?.duration || "-"}
-          </div>
-
-          <div>Total Payment</div>
-          <div className="font-medium text-foreground min-w-0">
-            Rp {bookingDetails?.totalPayment.toLocaleString("id-ID") || "-"}
-          </div>
-
-          <div>Payment Status</div>
-          <div className="font-medium text-foreground min-w-0">
-            <Badge
-              className={
-                getPaymentStatus(
-                  bookingDetails?.paymentStatus || PaymentStatus.PENDING
-                ) + " rounded-md"
-              }
-            >
-              <span className="text-xs">
-                {stringUtils.toTitleCase(
-                  bookingDetails?.paymentStatus || PaymentStatus.PENDING
-                )}
-              </span>
-            </Badge>
-          </div>
-
-          <div>Payment Method</div>
-          <div className="font-medium text-foreground min-w-0 truncate">
-            {bookingDetails?.paymentMethod || "-"}
           </div>
         </div>
 
