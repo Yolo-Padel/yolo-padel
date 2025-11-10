@@ -46,6 +46,7 @@ export function OrderDetailsContainer({
   orderDetails,
   mode,
   onChangeMode,
+  showButtons,
 }: {
   onOpenChange: (open: boolean) => void;
   orderDetails: Order | null;
@@ -63,6 +64,7 @@ export function OrderDetailsContainer({
       | "view-booking"
       | "change-payment-method"
   ) => void;
+  showButtons?: boolean;
 }) {
   return (
     <div>
@@ -224,10 +226,78 @@ export function OrderDetailsContainer({
         </div>
       </div>
 
-      <div className="mt-4">
-        {/*Payment Paid Button*/}
-        {orderDetails?.payment?.status === PaymentStatus.PAID && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
+      {showButtons === true && (
+        <div className="mt-4">
+          {/*Payment Paid Button*/}
+          {orderDetails?.payment?.status === PaymentStatus.PAID && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
+              <Button
+                className="w-full border-primary rounded-sm"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Close
+              </Button>
+
+              <Button
+                className="w-full rounded-sm"
+                variant="default"
+                onClick={() =>
+                  window.open(`/api/order/${orderDetails?.id}/receipt`)
+                }
+              >
+                Download Receipt
+              </Button>
+            </div>
+          )}
+
+          {/*Pending Payment Button*/}
+          {orderDetails?.payment?.status === PaymentStatus.PENDING && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
+              <Button
+                className="w-full border-primary rounded-sm"
+                variant="outline"
+                onClick={() => onChangeMode("change-payment-method")}
+              >
+                Change Payment Method
+              </Button>
+
+              <Button
+                className="w-full rounded-sm"
+                variant="default"
+                onClick={() => {
+                  onChangeMode("payment-instruction");
+                }}
+              >
+                Pay Now
+              </Button>
+            </div>
+          )}
+
+          {/*Payment Failed/Expired Button*/}
+          {(orderDetails?.payment?.status === PaymentStatus.FAILED ||
+            orderDetails?.payment?.status === PaymentStatus.EXPIRED) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
+              <Button
+                className="w-full border-primary rounded-sm"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Close
+              </Button>
+
+              <Button
+                className="w-full rounded-sm"
+                variant="default"
+                onClick={() => ""}
+              >
+                Book Again
+              </Button>
+            </div>
+          )}
+
+          {/*Payment Refunded Button*/}
+          {orderDetails?.payment?.status === PaymentStatus.REFUNDED && (
             <Button
               className="w-full border-primary rounded-sm"
               variant="outline"
@@ -235,75 +305,9 @@ export function OrderDetailsContainer({
             >
               Close
             </Button>
-
-            <Button
-              className="w-full rounded-sm"
-              variant="default"
-              onClick={() =>
-                window.open(`/api/order/${orderDetails?.id}/receipt`)
-              }
-            >
-              Download Receipt
-            </Button>
-          </div>
-        )}
-
-        {/*Pending Payment Button*/}
-        {orderDetails?.payment?.status === PaymentStatus.PENDING && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
-            <Button
-              className="w-full border-primary rounded-sm"
-              variant="outline"
-              onClick={() => onChangeMode("change-payment-method")}
-            >
-              Change Payment Method
-            </Button>
-
-            <Button
-              className="w-full rounded-sm"
-              variant="default"
-              onClick={() => {
-                onChangeMode("payment-instruction");
-              }}
-            >
-              Pay Now
-            </Button>
-          </div>
-        )}
-
-        {/*Payment Failed/Expired Button*/}
-        {(orderDetails?.payment?.status === PaymentStatus.FAILED ||
-          orderDetails?.payment?.status === PaymentStatus.EXPIRED) && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
-            <Button
-              className="w-full border-primary rounded-sm"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Close
-            </Button>
-
-            <Button
-              className="w-full rounded-sm"
-              variant="default"
-              onClick={() => ""}
-            >
-              Book Again
-            </Button>
-          </div>
-        )}
-
-        {/*Payment Refunded Button*/}
-        {orderDetails?.payment?.status === PaymentStatus.REFUNDED && (
-          <Button
-            className="w-full border-primary rounded-sm"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
-            Close
-          </Button>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

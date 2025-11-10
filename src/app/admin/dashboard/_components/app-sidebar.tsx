@@ -54,6 +54,12 @@ const menuConfig: MenuItem[] = [
     roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN],
   },
   {
+    name: "Order List",
+    url: "/admin/dashboard/order",
+    icon: CalendarDays,
+    roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN],
+  },
+  {
     name: "Venue Management",
     url: "/admin/dashboard/venue",
     icon: TableCellsMerge,
