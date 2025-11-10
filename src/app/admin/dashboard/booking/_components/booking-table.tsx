@@ -19,7 +19,7 @@ import {
   generatePageNumbers,
   getPaginatedData,
 } from "@/lib/pagination-utils";
-import { BookingStatus, PaymentStatus } from "@/types/prisma";
+import { BookingStatus } from "@/types/prisma";
 import { useBooking } from "@/hooks/use-booking";
 import { BookingTableLoading } from "./booking-table-loading";
 import { BookingEmptyState } from "./booking-empty-state";
@@ -31,7 +31,6 @@ type BookingWithRelations = {
   bookingCode: string;
   bookingDate: Date;
   duration: number;
-  totalPrice: number;
   status: BookingStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -57,19 +56,6 @@ type BookingWithRelations = {
       city: string;
     };
   };
-  order: {
-    id: string;
-    orderCode: string;
-    status: string;
-    totalAmount: number;
-  } | null;
-  payments: {
-    id: string;
-    amount: number;
-    status: PaymentStatus;
-    paymentDate: Date | null;
-    channelName: string;
-  }[];
 };
 
 const PAGE_SIZE = 10;
@@ -94,23 +80,6 @@ function getStatusBadgeClass(status: BookingStatus): string {
     case "NO_SHOW":
       return "bg-[#FFF4D5] text-[#8B6F00]";
     case "PENDING":
-    default:
-      return "bg-gray-200 text-gray-700";
-  }
-}
-
-function getPaymentStatusBadgeClass(status: PaymentStatus): string {
-  switch (status) {
-    case "PAID":
-      return "bg-[#D0FBE9] text-[#1A7544]";
-    case "PENDING":
-      return "bg-[#FFF4D5] text-[#8B6F00]";
-    case "FAILED":
-      return "bg-[#FFD5D5] text-[#AD1F1F]";
-    case "REFUNDED":
-      return "bg-[#E0E0E0] text-[#666666]";
-    case "EXPIRED":
-      return "bg-[#FFD5D5] text-[#AD1F1F]";
     default:
       return "bg-gray-200 text-gray-700";
   }
@@ -144,16 +113,13 @@ export function BookingTable() {
       const userName = b.user?.profile?.fullName || "N/A";
       const venueName = b.court?.venue?.name || "";
       const courtName = b.court?.name || "";
-      const channelName = b.payments?.[0]?.channelName || "";
 
       return (
         b.bookingCode.toLowerCase().includes(q) ||
         userName.toLowerCase().includes(q) ||
         courtName.toLowerCase().includes(q) ||
         venueName.toLowerCase().includes(q) ||
-        channelName.toLowerCase().includes(q) ||
-        b.status.toLowerCase().includes(q) ||
-        (b.payments?.[0]?.status || "").toLowerCase().includes(q)
+        b.status.toLowerCase().includes(q)
       );
     });
   }, [allBookings, searchParams]);
@@ -173,7 +139,6 @@ export function BookingTable() {
     "Customer",
     "Date & Time",
     "Status",
-    "Payment",
     "Actions",
   ];
 
@@ -254,7 +219,6 @@ export function BookingTable() {
               <TableHead className="h-11">Customer</TableHead>
               <TableHead className="h-11">Date & Time</TableHead>
               <TableHead className="h-11">Status</TableHead>
-              <TableHead className="h-11">Payment</TableHead>
               <TableHead className="h-11 text-right"></TableHead>
             </TableRow>
           </TableHeader>
@@ -263,8 +227,6 @@ export function BookingTable() {
               const userName = b.user?.profile?.fullName || "N/A";
               const venueName = b.court?.venue?.name || "N/A";
               const courtName = b.court?.name || "N/A";
-              const paymentStatus =
-                b.payments?.[0]?.status || PaymentStatus.PENDING;
 
               return (
                 <TableRow key={b.id}>
@@ -293,18 +255,6 @@ export function BookingTable() {
                     >
                       {b.status}
                     </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        className={`rounded-full px-3 py-1 text-xs font-medium ${getPaymentStatusBadgeClass(paymentStatus)}`}
-                      >
-                        {paymentStatus === "PAID" ? "Paid" : paymentStatus}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        Rp{b.totalPrice.toLocaleString("id-ID")}
-                      </span>
-                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
@@ -388,7 +338,7 @@ export function BookingTable() {
       <BookingDetailsModal
         open={viewOpen}
         onOpenChange={setViewOpen}
-        booking={selected}
+        booking={selected as any}
       />
     </div>
   );
