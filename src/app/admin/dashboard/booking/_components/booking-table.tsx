@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,47 +19,64 @@ import {
   generatePageNumbers,
   getPaginatedData,
 } from "@/lib/pagination-utils";
-import { BookingStatus, PaymentStatus, BookingTimeSlot } from "@/types/prisma";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { BookingStatus, PaymentStatus } from "@/types/prisma";
+import { useBooking } from "@/hooks/use-booking";
+import { BookingTableLoading } from "./booking-table-loading";
+import { BookingEmptyState } from "./booking-empty-state";
+import { BookingDetailsModal } from "./booking-details-modal";
+import { formatTimeRange } from "@/lib/time-slots-formatter";
 
-type BookingRow = {
+type BookingWithRelations = {
   id: string;
   bookingCode: string;
-  userName: string;
-  venueName: string;
-  courtName: string;
   bookingDate: Date;
-  timeSlots: Pick<BookingTimeSlot, "openHour" | "closeHour">[];
   duration: number;
   totalPrice: number;
-  channelName: string;
-  paymentStatus: PaymentStatus;
   status: BookingStatus;
   createdAt: Date;
+  updatedAt: Date;
+  timeSlots: {
+    id: string;
+    openHour: string;
+    closeHour: string;
+  }[];
+  user: {
+    id: string;
+    email: string;
+    profile: {
+      fullName: string;
+      avatar: string | null;
+    } | null;
+  };
+  court: {
+    id: string;
+    name: string;
+    venue: {
+      id: string;
+      name: string;
+      city: string;
+    };
+  };
+  order: {
+    id: string;
+    orderCode: string;
+    status: string;
+    totalAmount: number;
+  } | null;
+  payments: {
+    id: string;
+    amount: number;
+    status: PaymentStatus;
+    paymentDate: Date | null;
+    channelName: string;
+  }[];
 };
 
 const PAGE_SIZE = 10;
 
-function formatTimeDisplay(time: string): string {
-  return time.replace(":", ".");
-}
-
-function formatTimeRange(
-  timeSlots: Pick<BookingTimeSlot, "openHour" | "closeHour">[]
-): string {
-  if (timeSlots.length === 0) return "";
-  const first = timeSlots[0];
-  const last = timeSlots[timeSlots.length - 1];
-  return `${formatTimeDisplay(first.openHour)}-${formatTimeDisplay(last.closeHour)}`;
-}
-
-function formatDate(date: Date): string {
-  return date.toLocaleDateString("id-ID", {
+function formatDate(date: Date | string): string {
+  const dateObj = date instanceof Date ? date : new Date(date);
+  return dateObj.toLocaleDateString("id-ID", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -99,106 +116,44 @@ function getPaymentStatusBadgeClass(status: PaymentStatus): string {
   }
 }
 
-function makeDummyBookings(): BookingRow[] {
-  const base: Omit<BookingRow, "id" | "bookingCode" | "createdAt">[] = [
-    {
-      userName: "Ari",
-      venueName: "Yolo Padel Jakarta",
-      courtName: "Court A",
-      bookingDate: new Date(2025, 9, 14),
-      timeSlots: [{ openHour: "06:00", closeHour: "07:00" }],
-      duration: 1,
-      totalPrice: 150000,
-      channelName: "QRIS",
-      paymentStatus: "PAID",
-      status: "CONFIRMED",
-    },
-    {
-      userName: "Budi",
-      venueName: "Yolo Padel Jakarta",
-      courtName: "Court B",
-      bookingDate: new Date(2025, 9, 15),
-      timeSlots: [
-        { openHour: "07:00", closeHour: "08:00" },
-        { openHour: "08:00", closeHour: "09:00" },
-      ],
-      duration: 2,
-      totalPrice: 300000,
-      channelName: "Bank Transfer",
-      paymentStatus: "PENDING",
-      status: "PENDING",
-    },
-    {
-      userName: "Citra",
-      venueName: "Yolo Padel Bandung",
-      courtName: "Court 1",
-      bookingDate: new Date(2025, 9, 16),
-      timeSlots: [{ openHour: "18:00", closeHour: "19:00" }],
-      duration: 1,
-      totalPrice: 180000,
-      channelName: "QRIS",
-      paymentStatus: "FAILED",
-      status: "CANCELLED",
-    },
-    {
-      userName: "Dewi",
-      venueName: "Yolo Padel Bandung",
-      courtName: "Court 2",
-      bookingDate: new Date(2025, 9, 17),
-      timeSlots: [{ openHour: "20:00", closeHour: "21:00" }],
-      duration: 1,
-      totalPrice: 200000,
-      channelName: "QRIS",
-      paymentStatus: "EXPIRED",
-      status: "NO_SHOW",
-    },
-    {
-      userName: "Eka",
-      venueName: "Yolo Padel Surabaya",
-      courtName: "Court X",
-      bookingDate: new Date(2025, 9, 18),
-      timeSlots: [{ openHour: "09:00", closeHour: "10:00" }],
-      duration: 1,
-      totalPrice: 160000,
-      channelName: "Bank Transfer",
-      paymentStatus: "PAID",
-      status: "COMPLETED",
-    },
-  ];
-
-  const rows: BookingRow[] = [];
-  for (let i = 0; i < 24; i++) {
-    const b = base[i % base.length];
-    rows.push({
-      id: `b-${i + 1}`,
-      bookingCode: `BK-${2025}${String(i + 1).padStart(4, "0")}`,
-      createdAt: new Date(2025, 9, 10, 14, 7),
-      ...b,
-    });
-  }
-  return rows;
-}
-
 export function BookingTable() {
   const [page, setPage] = useState(1);
   const [viewOpen, setViewOpen] = useState(false);
-  const [selected, setSelected] = useState<BookingRow | null>(null);
+  const [selected, setSelected] = useState<BookingWithRelations | null>(null);
   const searchParams = useSearchParams();
 
-  const allBookings = useMemo(() => makeDummyBookings(), []);
+  // Fetch booking data using the hook
+  const { data: response, isLoading, error } = useBooking();
 
+  // Reset page to 1 when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchParams]);
+
+  // Extract bookings from response
+  const allBookings = useMemo(() => {
+    if (!response?.success || !response?.data) return [];
+    return response.data as BookingWithRelations[];
+  }, [response]);
+
+  // Filter bookings based on search query
   const filtered = useMemo(() => {
     const q = searchParams.get("search")?.toLowerCase().trim();
     if (!q) return allBookings;
     return allBookings.filter((b) => {
+      const userName = b.user?.profile?.fullName || "N/A";
+      const venueName = b.court?.venue?.name || "";
+      const courtName = b.court?.name || "";
+      const channelName = b.payments?.[0]?.channelName || "";
+
       return (
         b.bookingCode.toLowerCase().includes(q) ||
-        b.userName.toLowerCase().includes(q) ||
-        b.courtName.toLowerCase().includes(q) ||
-        b.venueName.toLowerCase().includes(q) ||
-        b.channelName.toLowerCase().includes(q) ||
+        userName.toLowerCase().includes(q) ||
+        courtName.toLowerCase().includes(q) ||
+        venueName.toLowerCase().includes(q) ||
+        channelName.toLowerCase().includes(q) ||
         b.status.toLowerCase().includes(q) ||
-        b.paymentStatus.toLowerCase().includes(q)
+        (b.payments?.[0]?.status || "").toLowerCase().includes(q)
       );
     });
   }, [allBookings, searchParams]);
@@ -222,13 +177,68 @@ export function BookingTable() {
     "Actions",
   ];
 
+  // Show loading state
+  if (isLoading) {
+    return <BookingTableLoading />;
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold">Booking List</h2>
+          </div>
+          <Button className="text-black" disabled>
+            Add Booking
+          </Button>
+        </div>
+        <div className="rounded-2xl border border-[#E9EAEB] p-8 text-center">
+          <p className="text-red-600 font-medium mb-2">
+            Failed to load bookings
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {error instanceof Error
+              ? error.message
+              : "An error occurred while fetching bookings"}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state
+  const isFiltered = Boolean(searchParams.get("search"));
+  if (filtered.length === 0) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold">Booking List</h2>
+            <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
+              {allBookings.length}{" "}
+              {allBookings.length === 1 ? "booking" : "bookings"}
+            </Badge>
+          </div>
+          <Button className="text-black" disabled>
+            Add Booking
+          </Button>
+        </div>
+        <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
+          <BookingEmptyState isFiltered={isFiltered} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-semibold">Booking List</h2>
           <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
-            {allBookings.length} bookings
+            {filtered.length} {filtered.length === 1 ? "booking" : "bookings"}
           </Badge>
         </div>
         <Button className="text-black" disabled>
@@ -249,61 +259,69 @@ export function BookingTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginated.map((b) => (
-              <TableRow key={b.id}>
-                <TableCell>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{b.bookingCode}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {b.courtName} · {b.venueName}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell>{b.userName}</TableCell>
-                <TableCell>
-                  <div className="flex flex-col">
-                    <span className="text-muted-foreground">
-                      {formatDate(b.bookingDate)}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatTimeRange(b.timeSlots)}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusBadgeClass(b.status)}`}
-                  >
-                    {b.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
+            {paginated.map((b) => {
+              const userName = b.user?.profile?.fullName || "N/A";
+              const venueName = b.court?.venue?.name || "N/A";
+              const courtName = b.court?.name || "N/A";
+              const paymentStatus =
+                b.payments?.[0]?.status || PaymentStatus.PENDING;
+
+              return (
+                <TableRow key={b.id}>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{b.bookingCode}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {courtName} · {venueName}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{userName}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground">
+                        {formatDate(b.bookingDate)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatTimeRange(b.timeSlots)}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <Badge
-                      className={`rounded-full px-3 py-1 text-xs font-medium ${getPaymentStatusBadgeClass(b.paymentStatus)}`}
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusBadgeClass(b.status)}`}
                     >
-                      {b.paymentStatus === "PAID" ? "Paid" : b.paymentStatus}
+                      {b.status}
                     </Badge>
-                    <span className="text-sm text-muted-foreground">
-                      Rp{b.totalPrice.toLocaleString("id-ID")}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelected(b);
-                      setViewOpen(true);
-                    }}
-                    className="border-none shadow-none"
-                  >
-                    <Eye className="size-4 text-[#A4A7AE]" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        className={`rounded-full px-3 py-1 text-xs font-medium ${getPaymentStatusBadgeClass(paymentStatus)}`}
+                      >
+                        {paymentStatus === "PAID" ? "Paid" : paymentStatus}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">
+                        Rp{b.totalPrice.toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelected(b);
+                        setViewOpen(true);
+                      }}
+                      className="border-none shadow-none"
+                    >
+                      <Eye className="size-4 text-[#A4A7AE]" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
           <TableFooter className="bg-transparent">
             <TableRow>
@@ -366,6 +384,12 @@ export function BookingTable() {
           </TableFooter>
         </Table>
       </div>
+
+      <BookingDetailsModal
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+        booking={selected}
+      />
     </div>
   );
 }
