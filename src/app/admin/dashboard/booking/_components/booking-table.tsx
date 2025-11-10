@@ -13,19 +13,19 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
-import {
-  ChevronLeft,
-  ChevronRight,
-  MoreHorizontal,
-  Eye,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, MoreHorizontal, Eye } from "lucide-react";
 import {
   calculatePaginationInfo,
   generatePageNumbers,
   getPaginatedData,
 } from "@/lib/pagination-utils";
 import { BookingStatus, PaymentStatus, BookingTimeSlot } from "@/types/prisma";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type BookingRow = {
   id: string;
@@ -106,9 +106,7 @@ function makeDummyBookings(): BookingRow[] {
       venueName: "Yolo Padel Jakarta",
       courtName: "Court A",
       bookingDate: new Date(2025, 9, 14),
-      timeSlots: [
-        { openHour: "06:00", closeHour: "07:00" },
-      ],
+      timeSlots: [{ openHour: "06:00", closeHour: "07:00" }],
       duration: 1,
       totalPrice: 150000,
       channelName: "QRIS",
@@ -135,9 +133,7 @@ function makeDummyBookings(): BookingRow[] {
       venueName: "Yolo Padel Bandung",
       courtName: "Court 1",
       bookingDate: new Date(2025, 9, 16),
-      timeSlots: [
-        { openHour: "18:00", closeHour: "19:00" },
-      ],
+      timeSlots: [{ openHour: "18:00", closeHour: "19:00" }],
       duration: 1,
       totalPrice: 180000,
       channelName: "QRIS",
@@ -149,9 +145,7 @@ function makeDummyBookings(): BookingRow[] {
       venueName: "Yolo Padel Bandung",
       courtName: "Court 2",
       bookingDate: new Date(2025, 9, 17),
-      timeSlots: [
-        { openHour: "20:00", closeHour: "21:00" },
-      ],
+      timeSlots: [{ openHour: "20:00", closeHour: "21:00" }],
       duration: 1,
       totalPrice: 200000,
       channelName: "QRIS",
@@ -163,9 +157,7 @@ function makeDummyBookings(): BookingRow[] {
       venueName: "Yolo Padel Surabaya",
       courtName: "Court X",
       bookingDate: new Date(2025, 9, 18),
-      timeSlots: [
-        { openHour: "09:00", closeHour: "10:00" },
-      ],
+      timeSlots: [{ openHour: "09:00", closeHour: "10:00" }],
       duration: 1,
       totalPrice: 160000,
       channelName: "Bank Transfer",
@@ -270,18 +262,26 @@ export function BookingTable() {
                 <TableCell>{b.userName}</TableCell>
                 <TableCell>
                   <div className="flex flex-col">
-                    <span className="text-muted-foreground">{formatDate(b.bookingDate)}</span>
-                    <span className="text-xs text-muted-foreground">{formatTimeRange(b.timeSlots)}</span>
+                    <span className="text-muted-foreground">
+                      {formatDate(b.bookingDate)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatTimeRange(b.timeSlots)}
+                    </span>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusBadgeClass(b.status)}`}>
+                  <Badge
+                    className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusBadgeClass(b.status)}`}
+                  >
                     {b.status}
                   </Badge>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <Badge className={`rounded-full px-3 py-1 text-xs font-medium ${getPaymentStatusBadgeClass(b.paymentStatus)}`}>
+                    <Badge
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${getPaymentStatusBadgeClass(b.paymentStatus)}`}
+                    >
                       {b.paymentStatus === "PAID" ? "Paid" : b.paymentStatus}
                     </Badge>
                     <span className="text-sm text-muted-foreground">
@@ -366,28 +366,6 @@ export function BookingTable() {
           </TableFooter>
         </Table>
       </div>
-
-      {/* Simple view modal */}
-      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle>Booking Detail</DialogTitle>
-          </DialogHeader>
-          {selected && (
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Code</span><span className="font-medium">{selected.bookingCode}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Name</span><span className="font-medium">{selected.userName}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Venue</span><span className="font-medium">{selected.venueName}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Court</span><span className="font-medium">{selected.courtName}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span className="font-medium">{formatDate(selected.bookingDate)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Time</span><span className="font-medium">{formatTimeRange(selected.timeSlots)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Amount</span><span className="font-medium">Rp{selected.totalPrice.toLocaleString("id-ID")}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Payment</span><span className="font-medium">{selected.channelName}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Status</span><span className="font-medium">{selected.status}</span></div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
