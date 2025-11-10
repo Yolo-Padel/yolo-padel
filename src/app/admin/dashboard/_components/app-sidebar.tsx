@@ -1,7 +1,14 @@
 "use client";
 //
 import * as React from "react";
-import { Home, Users, Crown, TableCellsMerge, LandPlot } from "lucide-react";
+import {
+  Home,
+  Users,
+  Crown,
+  TableCellsMerge,
+  LandPlot,
+  CalendarDays,
+} from "lucide-react";
 
 import { MenuItems } from "@/app/admin/dashboard/_components/menu-items";
 import { MenuItemsSkeleton } from "@/app/admin/dashboard/_components/menu-items-skeleton";
@@ -35,9 +42,15 @@ const menuConfig: MenuItem[] = [
     roles: [Role.SUPER_ADMIN],
   },
   {
-    name: "Booking Management",
+    name: "Booking List",
     url: "/admin/dashboard/booking",
     icon: LandPlot,
+    roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN],
+  },
+  {
+    name: "Time Table",
+    url: "/admin/dashboard/timetable",
+    icon: CalendarDays,
     roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN],
   },
   {
