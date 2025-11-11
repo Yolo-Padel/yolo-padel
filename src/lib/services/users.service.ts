@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { UserCreateData, UserDeleteData, UserUpdateData } from "../validations/user.validation";
+import {
+  UserCreateData,
+  UserDeleteData,
+  UserUpdateData,
+} from "../validations/user.validation";
 import { Prisma } from "@prisma/client";
 import { UserStatus } from "@/types/prisma";
 import { ServiceContext, requirePermission } from "@/types/service-context";
@@ -12,7 +16,7 @@ export const usersService = {
   getUsers: async (context: ServiceContext) => {
     try {
       const accessError = requirePermission(context, Role.ADMIN);
-      
+
       if (accessError) return accessError;
       // Get all users
       const users = await prisma.user.findMany({
@@ -25,33 +29,39 @@ export const usersService = {
 
       // Build invitation state for INVITED users (no schema changes)
       const invitedEmails = usersWithoutPasswords
-        .filter(u => u.userStatus === UserStatus.INVITED)
-        .map(u => u.email);
+        .filter((u) => u.userStatus === UserStatus.INVITED)
+        .map((u) => u.email);
 
-      const emailToLatestLink: Record<string, { used: boolean; expiresAt: Date } | undefined> = {};
+      const emailToLatestLink: Record<
+        string,
+        { used: boolean; expiresAt: Date } | undefined
+      > = {};
       if (invitedEmails.length > 0) {
         const links = await prisma.magicLink.findMany({
           where: { email: { in: invitedEmails } },
-          orderBy: [{ email: 'asc' }, { createdAt: 'desc' }],
+          orderBy: [{ email: "asc" }, { createdAt: "desc" }],
         });
         for (const link of links) {
           if (!emailToLatestLink[link.email]) {
-            emailToLatestLink[link.email] = { used: link.used, expiresAt: link.expiresAt } as any;
+            emailToLatestLink[link.email] = {
+              used: link.used,
+              expiresAt: link.expiresAt,
+            } as any;
           }
         }
       }
 
       const now = new Date();
-      const usersWithInvitation = usersWithoutPasswords.map(u => {
+      const usersWithInvitation = usersWithoutPasswords.map((u) => {
         if (u.userStatus !== UserStatus.INVITED) return u as any;
         const latest = emailToLatestLink[u.email];
-        let state: 'valid' | 'expired' | 'used' | 'none' = 'none';
+        let state: "valid" | "expired" | "used" | "none" = "none";
         let expiresAt: Date | undefined = undefined;
         if (latest) {
           expiresAt = latest.expiresAt;
-          if (latest.used) state = 'used';
-          else if (latest.expiresAt < now) state = 'expired';
-          else state = 'valid';
+          if (latest.used) state = "used";
+          else if (latest.expiresAt < now) state = "expired";
+          else state = "valid";
         }
         return {
           ...u,
@@ -79,7 +89,11 @@ export const usersService = {
     }
   },
 
-  createUser: async (data: UserCreateData, context: ServiceContext, tx?: Prisma.TransactionClient) => {
+  createUser: async (
+    data: UserCreateData,
+    context: ServiceContext,
+    tx?: Prisma.TransactionClient
+  ) => {
     try {
       const accessError = requirePermission(context, Role.SUPER_ADMIN);
       if (accessError) return accessError;
@@ -89,7 +103,7 @@ export const usersService = {
           email: data.email,
           role: data.role,
           userStatus: UserStatus.INVITED,
-          assignedVenueId: data.assignedVenueId || null,
+          assignedVenueIds: data.assignedVenueIds || [],
         },
       });
       // audit log (non-blocking)
@@ -103,9 +117,9 @@ export const usersService = {
           after: {
             email: user.email,
             role: user.role,
-            assignedVenueId: user.assignedVenueId,
+            assignedVenueIds: user.assignedVenueIds,
             userStatus: user.userStatus,
-          }
+          },
         } as any,
       });
       return {
@@ -117,10 +131,11 @@ export const usersService = {
       console.error("Create user error:", error);
 
       return {
-          success: false,
-          data: null,
-          message: error instanceof Error ? error.message : "Failed to create user",
-      }
+        success: false,
+        data: null,
+        message:
+          error instanceof Error ? error.message : "Failed to create user",
+      };
     }
   },
 
@@ -137,14 +152,15 @@ export const usersService = {
         return { success: false, data: null, message: "User not found" } as any;
       }
 
-      const assignedVenueId = data.role === Role.USER ? null : (data.assignedVenueId ?? null);
+      const assignedVenueIds =
+        data.role === Role.USER ? [] : (data.assignedVenueIds ?? []);
 
       const updated = await prisma.user.update({
         where: { id: data.userId },
         data: {
           email: data.email,
           role: data.role,
-          assignedVenueId,
+          assignedVenueIds,
         },
         include: { profile: true },
       });
@@ -153,9 +169,14 @@ export const usersService = {
       if (data.fullName) {
         const hasProfile = !!existing.profile;
         if (hasProfile) {
-          await prisma.profile.update({ where: { userId: data.userId }, data: { fullName: data.fullName } });
+          await prisma.profile.update({
+            where: { userId: data.userId },
+            data: { fullName: data.fullName },
+          });
         } else {
-          await prisma.profile.create({ data: { userId: data.userId, fullName: data.fullName } });
+          await prisma.profile.create({
+            data: { userId: data.userId, fullName: data.fullName },
+          });
         }
       }
 
@@ -169,13 +190,13 @@ export const usersService = {
           before: {
             email: existing.email,
             role: existing.role,
-            assignedVenueId: existing.assignedVenueId,
+            assignedVenueIds: existing.assignedVenueIds,
             fullName: existing.profile?.fullName ?? null,
           },
           after: {
             email: data.email,
             role: data.role,
-            assignedVenueId,
+            assignedVenueIds,
             fullName: data.fullName,
           },
         } as any,
@@ -191,7 +212,8 @@ export const usersService = {
       return {
         success: false,
         data: null,
-        message: error instanceof Error ? error.message : "Failed to update user",
+        message:
+          error instanceof Error ? error.message : "Failed to update user",
       } as any;
     }
   },
@@ -213,7 +235,7 @@ export const usersService = {
         entityId: data.userId,
         changes: {
           before: { isArchived: false },
-          after: { isArchived: true }
+          after: { isArchived: true },
         } as any,
       });
       return {
@@ -224,7 +246,8 @@ export const usersService = {
       console.error("Delete user error:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Failed to delete user",
+        message:
+          error instanceof Error ? error.message : "Failed to delete user",
       };
     }
   },

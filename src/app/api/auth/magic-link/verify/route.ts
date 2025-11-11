@@ -41,12 +41,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate JWT token using jose
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || "your-super-secret-key");
+    const secret = new TextEncoder().encode(
+      process.env.JWT_SECRET || "your-super-secret-key"
+    );
     const jwtToken = await new SignJWT({
       userId: user.id,
       email: user.email,
       role: user.role,
-      assignedVenueId: user.assignedVenueId,
+      assignedVenueId: user.assignedVenueIds,
     })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
