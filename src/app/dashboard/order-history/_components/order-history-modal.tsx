@@ -54,6 +54,7 @@ export function OrderHistoryModal({
         {mode === "order-details" && (
           <div>
             <OrderDetailsContainer
+              showButtons={true}
               onOpenChange={onOpenChange}
               orderDetails={orderProps}
               onChangeMode={onChangeMode}

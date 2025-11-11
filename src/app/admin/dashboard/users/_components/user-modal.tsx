@@ -1,127 +1,138 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Button } from "@/components/ui/button"
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { X } from "lucide-react"
-import { User, Profile, Role, Venue } from "@/types/prisma"
-import { useInviteUser, useUpdateUser } from "@/hooks/use-users"
-import { userCreateSchema, UserCreateData, UserUpdateData } from "@/lib/validations/user.validation"
-import { useVenue } from "@/hooks/use-venue"
+} from "@/components/ui/select";
+import {
+  MultiSelect,
+  MultiSelectTrigger,
+  MultiSelectValue,
+  MultiSelectContent,
+  MultiSelectItem,
+} from "@/components/ui/multi-select";
+import { X } from "lucide-react";
+import { User, Profile, Role, Venue } from "@/types/prisma";
+import { useInviteUser, useUpdateUser } from "@/hooks/use-users";
+import {
+  userCreateSchema,
+  UserCreateData,
+  UserUpdateData,
+} from "@/lib/validations/user.validation";
+import { useVenue } from "@/hooks/use-venue";
 
 interface UserModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  mode: "add" | "edit"
-  user?: User & { profile?: Profile | null }
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  mode: "add" | "edit";
+  user?: User & { profile?: Profile | null };
 }
 
-export function UserModal({ 
-  open, 
-  onOpenChange, 
-  mode, 
-  user
-}: UserModalProps) {
-  const inviteUserMutation = useInviteUser()
-  const updateUserMutation = useUpdateUser()
-  const { data: venues, isLoading: isLoadingVenues } = useVenue()
-  
+type UserFormData = {
+  email: string;
+  role: Role;
+  fullName: string;
+  assignedVenueIds: string[];
+};
+
+export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
+  const inviteUserMutation = useInviteUser();
+  const updateUserMutation = useUpdateUser();
+  const { data: venues, isLoading: isLoadingVenues } = useVenue();
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
     setValue,
-    watch
-  } = useForm<UserCreateData>({
-    resolver: zodResolver(userCreateSchema),
+    watch,
+  } = useForm<UserFormData>({
+    resolver: zodResolver(userCreateSchema) as any,
     defaultValues: {
       fullName: "",
       email: "",
       role: Role.USER,
-      assignedVenueId: undefined
-    }
-  })
+      assignedVenueIds: [],
+    },
+  });
 
   // Reset form when modal opens/closes or user changes
   useEffect(() => {
     if (open) {
       if (mode === "edit" && user) {
-        setValue("fullName", user.profile?.fullName || "")
-        setValue("email", user.email)
-        setValue("role", user.role)
-        setValue("assignedVenueId", user.assignedVenueId || undefined)
+        setValue("fullName", user.profile?.fullName || "");
+        setValue("email", user.email);
+        setValue("role", user.role);
+        setValue("assignedVenueIds", user.assignedVenueIds || []);
       } else {
         reset({
           fullName: "",
           email: "",
           role: Role.USER,
-          assignedVenueId: undefined
-        })
+          assignedVenueIds: [],
+        });
       }
     }
-  }, [open, mode, user, setValue, reset])
+  }, [open, mode, user, setValue, reset]);
 
-  const onSubmit = async (data: UserCreateData) => {
+  const onSubmit = async (data: UserFormData) => {
     try {
       if (mode === "add") {
-        await inviteUserMutation.mutateAsync(data)
-        onOpenChange(false)
+        await inviteUserMutation.mutateAsync(data);
+        onOpenChange(false);
       } else {
-        if (!user) return
+        if (!user) return;
         const payload: UserUpdateData = {
           userId: user.id,
           email: data.email,
           role: data.role,
           fullName: data.fullName,
-          assignedVenueId: data.assignedVenueId,
-        }
-        await updateUserMutation.mutateAsync(payload)
-        onOpenChange(false)
+          assignedVenueIds: data.assignedVenueIds,
+        };
+        await updateUserMutation.mutateAsync(payload);
+        onOpenChange(false);
       }
     } catch (error) {
       // Error handling is done in the mutation
-      console.error("Submit error:", error)
+      console.error("Submit error:", error);
     }
-  }
+  };
 
-  const isAddMode = mode === "add"
-  const title = isAddMode ? "Invite New User" : "Edit User"
-  const description = isAddMode 
+  const isAddMode = mode === "add";
+  const title = isAddMode ? "Invite New User" : "Edit User";
+  const description = isAddMode
     ? "Add a new member or admin to your YOLO Padel system. They'll receive an email invitation to join right away."
-    : "Update user information, role, or access permissions."
-  const primaryButtonText = isAddMode ? "Send Invitation" : "Save Changes"
+    : "Update user information, role, or access permissions.";
+  const primaryButtonText = isAddMode ? "Send Invitation" : "Save Changes";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[545px]" showCloseButton={false}>
         <div className="relative">
           <DialogHeader className="pr-8 gap-0">
-            <DialogTitle className="text-xl font-semibold">
-              {title}
-            </DialogTitle>
+            <DialogTitle className="text-xl font-semibold">{title}</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground mt-2">
               {description}
             </DialogDescription>
           </DialogHeader>
-          
+
           <Button
             variant="ghost"
             size="icon"
@@ -158,10 +169,10 @@ export function UserModal({
             <Select
               value={watch("role")}
               onValueChange={(value) => {
-                setValue("role", value as Role)
-                // Reset assignedVenueId if role is USER
+                setValue("role", value as Role);
+                // Reset assignedVenueIds if role is USER
                 if (value === Role.USER) {
-                  setValue("assignedVenueId", undefined)
+                  setValue("assignedVenueIds", []);
                 }
               }}
             >
@@ -183,28 +194,39 @@ export function UserModal({
           {/* Venue Assignment - Only show if role is not USER */}
           {watch("role") !== Role.USER && (
             <div className="space-y-2">
-              <Label htmlFor="assignedVenueId" className="text-sm font-medium">
-                Assigned Venue
+              <Label htmlFor="assignedVenueIds" className="text-sm font-medium">
+                Assigned Venues
               </Label>
-              <Select
-                value={watch("assignedVenueId") || "none"}
-                onValueChange={(value) => setValue("assignedVenueId", value === "none" ? undefined : value)}
-                disabled={isLoadingVenues}
+              <MultiSelect
+                values={watch("assignedVenueIds")}
+                onValuesChange={(values) =>
+                  setValue("assignedVenueIds", values)
+                }
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={isLoadingVenues ? "Loading venues..." : "Select Venue"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No Venue Assignment</SelectItem>
+                <MultiSelectTrigger className="w-full">
+                  <MultiSelectValue
+                    placeholder={
+                      isLoadingVenues ? "Loading venues..." : "Select venues"
+                    }
+                  />
+                </MultiSelectTrigger>
+                <MultiSelectContent
+                  search={{
+                    placeholder: "Search venues...",
+                    emptyMessage: "No venues found",
+                  }}
+                >
                   {venues?.data?.map((venue: Venue) => (
-                    <SelectItem key={venue.id} value={venue.id}>
+                    <MultiSelectItem key={venue.id} value={venue.id}>
                       {venue.name}
-                    </SelectItem>
+                    </MultiSelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-              {errors.assignedVenueId && (
-                <p className="text-sm text-red-500">{errors.assignedVenueId.message}</p>
+                </MultiSelectContent>
+              </MultiSelect>
+              {errors.assignedVenueIds && (
+                <p className="text-sm text-red-500">
+                  {errors.assignedVenueIds.message}
+                </p>
               )}
             </div>
           )}
@@ -246,5 +268,5 @@ export function UserModal({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
