@@ -1,7 +1,12 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { CourtSkeleton } from "./court-skeleton";
 
-export const BookingFormSkeleton = ({ isModal = false }: { isModal?: boolean }) => {
+export const BookingFormSkeleton = ({
+  isModal = false,
+}: {
+  isModal?: boolean;
+}) => {
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
@@ -26,14 +31,7 @@ export const BookingFormSkeleton = ({ isModal = false }: { isModal?: boolean }) 
       </div>
 
       {/* Available Court */}
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-4 w-32" />
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 h-[80px]">
-          {[...Array(4)].map((_, idx) => (
-            <Skeleton key={idx} className="h-28 w-full rounded-lg" />
-          ))}
-        </div>
-      </div>
+      <CourtSkeleton />
 
       {/* Calendar and Time Slots */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -47,7 +45,7 @@ export const BookingFormSkeleton = ({ isModal = false }: { isModal?: boolean }) 
               ))}
             </div>
             <div className="grid grid-cols-7 gap-2">
-              {[...Array(35)].map((_, idx) => (
+              {[...Array(49)].map((_, idx) => (
                 <Skeleton key={idx} className="h-8 w-full" />
               ))}
             </div>
@@ -79,4 +77,3 @@ export const BookingFormSkeleton = ({ isModal = false }: { isModal?: boolean }) 
     </div>
   );
 };
-

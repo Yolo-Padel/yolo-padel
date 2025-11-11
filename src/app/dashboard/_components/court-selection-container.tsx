@@ -26,6 +26,7 @@ import { useBookingPricing } from "@/hooks/use-booking-pricing";
 import { useCourtSlotsPersistence } from "@/hooks/use-court-slots-persistence";
 import { useBookingCartSync } from "@/hooks/use-booking-cart-sync";
 import { BookingFormValues, CourtSelections } from "@/types/booking";
+import { CourtSkeleton } from "./court-skeleton";
 
 type CourtSelectionContainerProps = {
   onClose: () => void;
@@ -189,59 +190,63 @@ export function CourtSelectionContainer({
       </Tabs>
 
       {/* Courts Grid */}
-      <div className="flex flex-col gap-2">
-        <p className="text-sm">Available Court</p>
-        {courtsData.length === 0 ? (
-          <div className="text-sm text-muted-foreground">
-            No court available
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 h-[80px]">
-            {courtsData.map((court: Court) => {
-              const isActive = watchCourtId === court.id;
-              // Check both courtId AND date untuk accurate cart status
-              const isInCart = cart.some(
-                (item) =>
-                  item.courtId === court.id &&
-                  item.date.toDateString() === watchDate?.toDateString()
-              );
+      {isLoadingCourts ? (
+        <CourtSkeleton />
+      ) : (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm">Available Court</p>
+          {courtsData.length === 0 ? (
+            <div className="text-sm text-muted-foreground">
+              No court available
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 h-[80px]">
+              {courtsData.map((court: Court) => {
+                const isActive = watchCourtId === court.id;
+                // Check both courtId AND date untuk accurate cart status
+                const isInCart = cart.some(
+                  (item) =>
+                    item.courtId === court.id &&
+                    item.date.toDateString() === watchDate?.toDateString()
+                );
 
-              return (
-                <div
-                  key={court.id}
-                  className={cn(
-                    "relative rounded-lg overflow-hidden group cursor-pointer border transition-all",
-                    isActive
-                      ? "ring-2 ring-primary border-primary shadow-lg"
-                      : ""
-                  )}
-                  onClick={() => {
-                    form.setValue("courtId", court.id);
-                    // Don't reset slots here - will be loaded by useEffect
-                  }}
-                >
-                  <Image
-                    src={court.image || "/paddle-court1.svg"}
-                    alt={court.name}
-                    width={100}
-                    height={70}
-                    className="h-28 w-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10" />
-                  <div className="absolute bottom-2 left-2 right-2 text-white text-sm font-medium truncate text-center">
-                    {court.name}
-                  </div>
-                  {isInCart && (
-                    <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1.5 shadow-md">
-                      <Check className="h-3 w-3 text-white" />
+                return (
+                  <div
+                    key={court.id}
+                    className={cn(
+                      "relative rounded-lg overflow-hidden group cursor-pointer border transition-all",
+                      isActive
+                        ? "ring-2 ring-primary border-primary shadow-lg"
+                        : ""
+                    )}
+                    onClick={() => {
+                      form.setValue("courtId", court.id);
+                      // Don't reset slots here - will be loaded by useEffect
+                    }}
+                  >
+                    <Image
+                      src={court.image || "/paddle-court1.svg"}
+                      alt={court.name}
+                      width={100}
+                      height={70}
+                      className="h-28 w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10" />
+                    <div className="absolute bottom-2 left-2 right-2 text-white text-sm font-medium truncate text-center">
+                      {court.name}
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                    {isInCart && (
+                      <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1.5 shadow-md">
+                        <Check className="h-3 w-3 text-white" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Date & Time Selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
