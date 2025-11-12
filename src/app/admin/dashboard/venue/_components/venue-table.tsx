@@ -2,11 +2,11 @@
 
 import * as React from "react";
 import { useState, useMemo, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Bell, Dot, LandPlot, LayoutGrid, User } from "lucide-react";
+import Image from "next/image";
 import {
   Card,
   CardHeader,
@@ -48,14 +48,18 @@ export function VenueTable() {
   const [page, setPage] = React.useState(1);
   const [addSheetOpen, setAddVenueOpen] = React.useState(false);
   const [detailSheetOpen, setDetailSheetOpen] = React.useState(false);
-  const [selectedVenue, setSelectedVenue] = React.useState<VenueRow | null>(null);
+  const [selectedVenue, setSelectedVenue] = React.useState<VenueRow | null>(
+    null
+  );
   const [editSheetOpen, setEditSheetOpen] = React.useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);  
+  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
   const { data, isLoading, error } = useVenue();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  const allVenues = (data?.data as (Venue & { _counts?: { courts: number; bookingsToday: number } })[] | undefined) || [];
+  const allVenues =
+    (data?.data as
+      | (Venue & { _counts?: { courts: number; bookingsToday: number } })[]
+      | undefined) || [];
 
   const rows: VenueRow[] = React.useMemo(() => {
     return allVenues.map((v) => ({
@@ -77,20 +81,8 @@ export function VenueTable() {
 
   // Frontend filtering and pagination
   const filtered = useMemo(() => {
-    const searchQuery = searchParams.get("search")?.toLowerCase().trim()
-    
-    if (!searchQuery) {
-      return rows
-    }
-
-    return rows.filter((venue: VenueRow) => {
-      const venueName = venue.venueName.toLowerCase()
-      
-      return (
-        venueName.includes(searchQuery)
-      )
-    })
-  }, [rows, searchParams])
+    return rows;
+  }, [rows]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageSafe = Math.min(page, totalPages);
@@ -98,7 +90,6 @@ export function VenueTable() {
     const start = (pageSafe - 1) * PAGE_SIZE;
     return filtered.slice(start, start + PAGE_SIZE);
   }, [filtered, pageSafe]);
-
 
   async function handleSubmit() {
     // Dummy submit: console log value
@@ -138,9 +129,7 @@ export function VenueTable() {
 
   // Show loading state
   if (isLoading) {
-    return (
-      <VenueTableSkeleton />
-    )
+    return <VenueTableSkeleton />;
   }
 
   // Show error state
@@ -148,7 +137,7 @@ export function VenueTable() {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-1">
-          <h3 className="text-xl font-semibold">Venue List</h3>
+          <h3 className="text-2xl font-semibold">Venue List</h3>
           <Button
             variant="outline"
             onClick={() => setAddVenueOpen(true)}
@@ -165,15 +154,19 @@ export function VenueTable() {
           </div>
         </div>
       </div>
-    )
+    );
   }
-  
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-1">
-        <h3 className="text-xl font-semibold ">Venue List</h3>
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          
+          <h2 className="text-2xl font-semibold ">Venue List</h2>
+          <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
+            2 venues
+          </Badge>
+        </div>
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             onClick={() => setAddVenueOpen(true)}
@@ -187,47 +180,58 @@ export function VenueTable() {
       {filtered.length === 0 ? (
         <VenueEmptyState />
       ) : (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-      {paginated.map((venue) => (
-      <Card className="min-w-0 max-w-[265px] shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-4.5" key={venue.id}>
-        <CardHeader className="px-2 pt-2 gap-0">
-            <img
-              src={venue.image}
-              className="w-full h-full object-cover rounded-sm aspect-square"
-            />
-        </CardHeader>
-        <CardContent className="px-2 text-sm text-gray-700 gap-4">
-              <CardTitle className="text-sm font-semibold truncate">
-                {venue.venueName}
-              </CardTitle>
-              <div className="mt-0 flex items-left gap-1 text-gray-600 text-xs items-center">
-                <LandPlot className="size-4" />
-                <span>{venue.courtsCount ?? 0} Court{(venue.courtsCount ?? 0) === 1 ? '' : 's'}</span>
-                <Dot />
-                <span>{venue.bookingsToday ?? 0} Booking Today</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {paginated.map((venue) => (
+            <Card
+              className="gap-3 p-4 hover:shadow-xl transition-shadow duration-300"
+              key={venue.id}
+            >
+              <div className="flex flex-col px-0">
+                <Image
+                  src={venue.image}
+                  alt=""
+                  className="flex-1 w-full rounded-sm aspect-square"
+                  width={500}
+                  height={500}
+                />
               </div>
-            </CardContent>
-        <CardFooter className="px-1 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Button
-            onClick={() => { setSelectedVenue(venue); setDetailSheetOpen(true); }}
-            variant="outline"
-            size="sm"
-            className="rounded-sm border-[#C3D223] text-black w-full font-normal text-xs"
-          >
-            See Detail
-          </Button>
-          <Button
-            variant="default"
-            size="sm"
-            className="rounded-sm bg-[#C3D223] hover:bg-[#A9B920] text-black w-full font-normal text-xs"
-            onClick={() => router.push(`/admin/dashboard/court?venueId=${venue.id}`)}
-          >
-            Manage Court
-          </Button>
-        </CardFooter>
-      </Card>
-      ))}
-      </div>
+              <div className="flex flex-col text-md gap-1">
+                <CardTitle className="text-sm font-semibold truncate">
+                  {venue.venueName}
+                </CardTitle>
+                <div className="mt-0 flex items-left gap-1 text-gray-600 text-xs items-center">
+                  <LandPlot className="size-4" />
+                  <span>
+                    {venue.courtsCount ?? 0} Court
+                    {(venue.courtsCount ?? 0) === 1 ? "" : "s"}
+                  </span>
+                  <Dot />
+                  <span>{venue.bookingsToday ?? 0} Booking Today</span>
+                </div>
+              </div>
+              <div className="flex w-full grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Button
+                  onClick={() => {
+                    setSelectedVenue(venue);
+                    setDetailSheetOpen(true);
+                  }}
+                  className="w-full border-primary"
+                  variant="outline"
+                >
+                  See Detail
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={() =>
+                    router.push(`/admin/dashboard/court?venueId=${venue.id}`)
+                  }
+                >
+                  Manage Court
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
       )}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
@@ -267,35 +271,43 @@ export function VenueTable() {
         onEditVenue={handleEditVenue}
         onDeleteVenue={handleDeleteVenue}
       />
-      
+
       {/* Edit Venue Sheet */}
       <VenueFormSheet
         open={editSheetOpen}
         onOpenChange={setEditSheetOpen}
-        venueData={selectedVenue ? {
-          id: selectedVenue.id,
-          name: selectedVenue.venueName,
-          address: selectedVenue.address || "",
-          description: selectedVenue.description || "",
-          images: selectedVenue.images || [],
-          city: selectedVenue.city || "",
-          phone: selectedVenue.phoneNumber || "",
-          openHour: selectedVenue.openHour || "07:00",
-          closeHour: selectedVenue.closeHour || "23:00",
-          isActive: selectedVenue.isActive ?? true,
-        } : null}
+        venueData={
+          selectedVenue
+            ? {
+                id: selectedVenue.id,
+                name: selectedVenue.venueName,
+                address: selectedVenue.address || "",
+                description: selectedVenue.description || "",
+                images: selectedVenue.images || [],
+                city: selectedVenue.city || "",
+                phone: selectedVenue.phoneNumber || "",
+                openHour: selectedVenue.openHour || "07:00",
+                closeHour: selectedVenue.closeHour || "23:00",
+                isActive: selectedVenue.isActive ?? true,
+              }
+            : null
+        }
         mode="edit"
       />
-      
+
       {/* Delete Venue Modal */}
       <DeleteVenue
         deleteSheetOpen={deleteModalOpen}
         onOpenChange={handleDeleteCancel}
-        venueData={selectedVenue ? {
-          id: selectedVenue.id,
-          name: selectedVenue.venueName,
-          address: selectedVenue.address
-        } : null}
+        venueData={
+          selectedVenue
+            ? {
+                id: selectedVenue.id,
+                name: selectedVenue.venueName,
+                address: selectedVenue.address,
+              }
+            : null
+        }
         onSuccess={handleDeleteSuccess}
       />
     </div>

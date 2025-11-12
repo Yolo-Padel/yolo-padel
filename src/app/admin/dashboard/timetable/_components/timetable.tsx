@@ -4,6 +4,7 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
 import {
   Popover,
   PopoverContent,
@@ -138,25 +139,15 @@ export function Timetable({
   const formattedDate = format(selectedDate, "EEE, d MMM", { locale: id });
 
   return (
-    <div className="space-y-4 w-full max-w-full">
+    <div className="space-y-6 w-full max-w-full">
+      <div className="flex items-center gap-2">
+        <h2 className="text-2xl font-semibold">Time Table</h2>
+        <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
+          10 bookings
+        </Badge>
+      </div>
       {/* Header */}
       <div className="flex flex-col gap-4 w-full max-w-full">
-        <div className="flex items-center gap-2 w-full flex-wrap">
-          <Select value={selectedVenueId} onValueChange={onVenueChange}>
-            <SelectTrigger className="w-[280px]">
-              <SelectValue placeholder="Pilih Venue" />
-            </SelectTrigger>
-            <SelectContent>
-              {venues.map((venue) => (
-                <SelectItem key={venue.id} value={venue.id}>
-                  {venue.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-        </div>
-
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full max-w-full">
           {/* Date Navigation */}
           <div className="flex flex-wrap items-center gap-2">
@@ -224,15 +215,18 @@ export function Timetable({
             </Button>
           </div>
 
-          {/* Filter Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-[#C3D223] gap-2 shrink-0"
-          >
-            <Filter className="h-4 w-4" />
-            Filter
-          </Button>
+          <Select value={selectedVenueId} onValueChange={onVenueChange}>
+            <SelectTrigger className="w-[280px]">
+              <SelectValue placeholder="Pilih Venue" />
+            </SelectTrigger>
+            <SelectContent>
+              {venues.map((venue) => (
+                <SelectItem key={venue.id} value={venue.id}>
+                  {venue.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -338,7 +332,7 @@ export function Timetable({
                               <div className="text-xs font-medium text-muted-foreground">
                                 {formatTimeRange(booking.timeSlots)}
                               </div>
-                              <div className="text-xs">{court.name}</div>
+                              {/* <div className="text-xs">{court.name}</div> */}
                             </div>
                           ) : (
                             <span className="text-muted-foreground">-</span>

@@ -226,6 +226,18 @@ export async function getOrdersByUserId(
     prisma.order.findMany({
       where,
       include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            profile: {
+              select: {
+                fullName: true,
+                avatar: true,
+              },
+            },
+          },
+        },
         bookings: {
           include: {
             court: {

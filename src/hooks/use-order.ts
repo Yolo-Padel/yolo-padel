@@ -23,6 +23,14 @@ export type Order = {
   status: OrderStatus;
   createdAt: string;
   updatedAt: string;
+  user?: {
+    id: string;
+    email: string;
+    profile: {
+      fullName: string;
+      avatar: string | null;
+    } | null;
+  };
   bookings: Array<{
     id: string;
     bookingCode: string;

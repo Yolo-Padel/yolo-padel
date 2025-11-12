@@ -158,14 +158,17 @@ export default function OrderHistoryTable() {
           {orders.map((order) => {
             const paymentStatus = order.payment?.status || "PENDING";
             return (
-              <Card key={order.id} className="gap-3 p-3 hover:shadow-xl transition-shadow duration-300">
+              <Card
+                key={order.id}
+                className="gap-3 p-3 hover:shadow-xl transition-shadow duration-300"
+              >
                 <div className="flex flex-col px-0">
                   <Image
                     src={order.bookings[0].court.image || "/paddle-court1.svg"}
-                  alt={order.bookings[0].court.name}
-                  className="flex-1 w-full rounded-sm"
-                  width={500}
-                  height={500}
+                    alt={order.bookings[0].court.name}
+                    className="flex-1 w-full rounded-sm"
+                    width={500}
+                    height={500}
                   />
                 </div>
                 <div className="flex flex-col text-md gap-1 px-2">
@@ -185,14 +188,16 @@ export default function OrderHistoryTable() {
                       {getVenueName(order)}
                     </div>
                     <div>Rp {order.totalAmount.toLocaleString("id-ID")}</div>
-                    <div className="font-regular">{order.payment?.channelName || "N/A"}</div>
+                    <div className="font-regular">
+                      {order.payment?.channelName || "N/A"}
+                    </div>
                   </div>
                 </div>
                 <CardFooter className="min-w-0 px-1 mb-1">
                   {/* Payment Paid Button */}
                   {paymentStatus === "PAID" && (
                     <Button
-                      className="w-full bg-primary"
+                      className="w-full border-primary"
                       onClick={() => {
                         setSelectedOrder(order);
                         setOrderModal(true);

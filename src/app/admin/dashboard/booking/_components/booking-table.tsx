@@ -153,7 +153,7 @@ export function BookingTable() {
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-semibold">Booking List</h2>
+            <h2 className="text-2xl font-semibold">Booking List</h2>
           </div>
           <Button className="text-black" disabled>
             Add Booking
@@ -177,10 +177,10 @@ export function BookingTable() {
   const isFiltered = Boolean(searchParams.get("search"));
   if (filtered.length === 0) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col space-y-6">
         <div className="flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-semibold">Booking List</h2>
+            <h2 className="text-2xl font-semibold">Booking List</h2>
             <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
               {allBookings.length}{" "}
               {allBookings.length === 1 ? "booking" : "bookings"}
@@ -198,10 +198,10 @@ export function BookingTable() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col space-y-6">
       <div className="flex items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">Booking List</h2>
+          <h2 className="text-2xl font-semibold">Booking List</h2>
           <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
             {filtered.length} {filtered.length === 1 ? "booking" : "bookings"}
           </Badge>
