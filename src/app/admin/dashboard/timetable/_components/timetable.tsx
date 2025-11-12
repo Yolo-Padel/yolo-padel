@@ -303,8 +303,9 @@ export function Timetable({
                           key={`${court.id}-${time}`}
                           colSpan={isBooked && isFirstSlot ? span : 1}
                           className={cn(
-                            "border p-2 text-center align-middle",
-                            isBooked && "bg-[#E8F5E9]",
+                            "border p-2",
+                            isBooked &&
+                              "bg-[#ECF1BB]  border-l border-l-4 border-primary",
                             isBooked &&
                               "cursor-pointer hover:bg-[#D4E6D5] transition-colors"
                           )}
@@ -313,29 +314,31 @@ export function Timetable({
                           }
                         >
                           {isBooked && isFirstSlot && booking ? (
-                            <div className="flex flex-col items-center gap-1 p-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage
-                                  src={booking.userAvatar}
-                                  alt={booking.userName}
-                                />
-                                <AvatarFallback>
-                                  {booking.userName
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")
-                                    .toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="text-xs font-medium">
-                                {booking.userName}
+                            <div className="flex flex-col gap-1 p-2">
+                              <div className="flex flex-row space-x-1 items-center">
+                                <Avatar className="size-6">
+                                  <AvatarImage
+                                    src={booking.userAvatar}
+                                    alt={booking.userName}
+                                    sizes="sm"
+                                  />
+                                  <AvatarFallback className="text-xs">
+                                    {booking.userName
+                                      .split(" ")
+                                      .map((n) => n[0])
+                                      .join("")
+                                      .toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="text-xs font-medium">
+                                  {booking.userName}
+                                </div>
                               </div>
-                              <div className="text-xs text-muted-foreground">
+
+                              <div className="text-xs font-medium text-muted-foreground">
                                 {formatTimeRange(booking.timeSlots)}
                               </div>
-                              <div className="text-xs text-muted-foreground">
-                                {court.name}
-                              </div>
+                              <div className="text-xs">{court.name}</div>
                             </div>
                           ) : (
                             <span className="text-muted-foreground">-</span>
