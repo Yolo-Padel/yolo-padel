@@ -20,11 +20,11 @@ export default function AdminAuthLayout({
           alt="Image"
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
         />
-        <div className="absolute top-10 left-10">
+        <div className="absolute top-4 left-10">
           <img
-            src="/yolo-black.png"
+            src="/yolo-yellow-transparent.png"
             alt="Yolo Logo"
-            className="w-[100px] h-[38px]"
+            className="w-[100px] h-[100px]"
           />
         </div>
       </div>
