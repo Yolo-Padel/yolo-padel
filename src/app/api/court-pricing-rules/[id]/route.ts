@@ -7,9 +7,10 @@ import { courtPricingRuleUpdateSchema } from "@/lib/validations/court-pricing-ru
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const tokenResult = await verifyAuth(request);
     if (!tokenResult.isValid) {
       return NextResponse.json(
@@ -25,10 +26,7 @@ export async function GET(
       user.assignedVenueId
     );
 
-    const result = await courtPricingRuleService.getById(
-      params.id,
-      serviceContext
-    );
+    const result = await courtPricingRuleService.getById(id, serviceContext);
 
     if (!result.success) {
       return NextResponse.json(
@@ -49,10 +47,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json();
+    const { id } = await params;
     const payload = courtPricingRuleUpdateSchema.parse(body);
 
     const tokenResult = await verifyAuth(request);
@@ -71,7 +70,7 @@ export async function PUT(
     );
 
     const result = await courtPricingRuleService.update(
-      params.id,
+      id,
       payload,
       serviceContext
     );
@@ -107,9 +106,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const tokenResult = await verifyAuth(request);
     if (!tokenResult.isValid) {
       return NextResponse.json(
@@ -125,10 +125,7 @@ export async function DELETE(
       user.assignedVenueId
     );
 
-    const result = await courtPricingRuleService.delete(
-      params.id,
-      serviceContext
-    );
+    const result = await courtPricingRuleService.delete(id, serviceContext);
 
     if (!result.success) {
       return NextResponse.json(
@@ -146,5 +143,3 @@ export async function DELETE(
     );
   }
 }
-
-
