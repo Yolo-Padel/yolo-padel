@@ -152,6 +152,7 @@ model Court {
 
   // Relasi ke Booking
   bookings Booking[]
+  pricingRules CourtPricingOverride[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -183,6 +184,25 @@ model CourtTimeSlot {
   closeHour String // "23:00"
 
   @@map("court_time_slots")
+}
+
+model CourtPricingOverride {
+  id        String    @id @default(cuid())
+  courtId   String
+  dayOfWeek DayOfWeek?
+  date      DateTime?
+  startHour String
+  endHour   String
+  price     Int
+  isActive  Boolean   @default(true)
+
+  court Court @relation(fields: [courtId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("court_pricing_overrides")
+  @@index([courtId, dayOfWeek, date])
 }
 
 model MagicLink {
