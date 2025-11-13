@@ -108,7 +108,7 @@ export default function OrderPage() {
     );
   }
 
-  // Main UI rendering
+  // Main UI renderings
   return (
     <div className="flex flex-col gap-4">
       <OrderHeader orderCount={filtered.length} />
