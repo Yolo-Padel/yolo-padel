@@ -53,6 +53,24 @@ export function getOrderStatusClass(status: OrderStatus): string {
 }
 
 /**
+ * Formats payment status to normal capitalized case
+ * @param status - The payment status
+ * @returns Formatted status string (e.g., "Paid", "Pending")
+ */
+export function formatPaymentStatus(status: PaymentStatus): string {
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+}
+
+/**
+ * Formats order status to normal capitalized case
+ * @param status - The order status
+ * @returns Formatted status string (e.g., "Paid", "Pending")
+ */
+export function formatOrderStatus(status: OrderStatus): string {
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+}
+
+/**
  * Filters orders based on search query from URL search parameters
  * Searches across order code, payment status, and order status
  * @param orders - Array of orders to filter

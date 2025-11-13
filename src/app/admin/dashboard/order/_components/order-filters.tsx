@@ -38,7 +38,7 @@ export function OrderFilters({
     <div className="flex items-center gap-4 py-4">
       <InputGroup>
         <InputGroupInput
-          placeholder="Contoh: Produk 1..."
+          placeholder="Search by order number or customer name..."
           className="w-full"
           value={searchValue}
           onChange={(event) => onSearchChange(event.target.value)}
@@ -48,7 +48,7 @@ export function OrderFilters({
         </InputGroupAddon>
       </InputGroup>
       <Select value={venueFilter} onValueChange={onVenueFilterChange}>
-        <SelectTrigger className="max-w-[240px]">
+        <SelectTrigger className="w-full max-w-[240px]">
           <SelectValue placeholder="Filter by venue" />
         </SelectTrigger>
         <SelectContent>
@@ -69,7 +69,7 @@ export function OrderFilters({
         value={paymentStatusFilter}
         onValueChange={onPaymentStatusFilterChange}
       >
-        <SelectTrigger className="max-w-[240px]">
+        <SelectTrigger className="w-full max-w-[240px]">
           <SelectValue placeholder="Filter by status" />
         </SelectTrigger>
         <SelectContent>

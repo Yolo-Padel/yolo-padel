@@ -65,49 +65,6 @@ type Court = {
   }>;
 };
 
-const DUMMY_DATA: Court[] = [
-  {
-    id: "A12QCxxxxx",
-    courtName: "Court 1",
-    status: "Available",
-    pricePerHour: 150000,
-    availability: true,
-    availabilityTime: "09:00 - 21:00",
-  },
-  {
-    id: "S12QCxxxxx",
-    courtName: "Court 2",
-    status: "Booked",
-    pricePerHour: 175000,
-    availability: false,
-    availabilityTime: "10:00 - 22:00",
-  },
-  {
-    id: "C12QCxxxxx",
-    courtName: "Court 3",
-    status: "Available",
-    pricePerHour: 200000,
-    availability: true,
-    availabilityTime: "08:00 - 20:00",
-  },
-  {
-    id: "D12QCxxxxx",
-    courtName: "Court 4",
-    status: "Maintenance",
-    pricePerHour: 160000,
-    availability: false,
-    availabilityTime: "09:00 - 21:00",
-  },
-  {
-    id: "E12QCxxxxx",
-    courtName: "Court 5",
-    status: "Available",
-    pricePerHour: 180000,
-    availability: true,
-    availabilityTime: "07:00 - 23:00",
-  },
-];
-
 const PAGE_SIZE = 10;
 
 export function CourtTable() {
@@ -284,40 +241,14 @@ export function CourtTable() {
     );
   }
 
-  // Show empty state
-  // if (courts.length === 0) {
-  //   return (
-  //     <div className="flex flex-col gap-4">
-  //       <div className="flex items-center gap-2 justify-between">
-  //         <Breadcrumb>
-  //           <BreadcrumbList>
-  //             <BreadcrumbItem>
-  //               <BreadcrumbLink href="/admin/dashboard/venue">Venue Management</BreadcrumbLink>
-  //             </BreadcrumbItem>
-  //             <BreadcrumbSeparator>/</BreadcrumbSeparator>
-  //             <BreadcrumbItem>
-  //               <BreadcrumbLink href="/admin/dashboard/court" className="text-primary hover:text-primary/80">Court Management</BreadcrumbLink>
-  //             </BreadcrumbItem>
-  //           </BreadcrumbList>
-  //         </Breadcrumb>
-  //       </div>
-  //       <Button
-  //         onClick={() => setSheetOpen(true)}
-  //         className="text-black"
-  //       >
-  //         Add Court
-  //         <Plus className="ml-2 size-4" />
-  //       </Button>
-  //       <CourtEmptyState
-  //         onAddCourt={() => setSheetOpen(true)}
-  //         venueName={courtData?.data?.[0]?.venue?.name}
-  //       />
-  //     </div>
-  //   )
-  // }
-
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col space-y-6">
+      <div className="flex items-center gap-2">
+        <h2 className="text-2xl font-semibold ">Court List</h2>
+        <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
+          {courts.length} courts
+        </Badge>
+      </div>
       <div className="flex items-center gap-2 justify-between">
         <Breadcrumb>
           <BreadcrumbList>

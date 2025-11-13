@@ -18,7 +18,7 @@ import { type Order } from "@/hooks/use-order";
 import {
   formatCurrency,
   getPaymentStatusClass,
-  getOrderStatusClass,
+  formatPaymentStatus,
 } from "@/lib/order-utils";
 
 export interface PaginationInfo {
@@ -48,17 +48,18 @@ export function OrderTable({
           <TableRow>
             <TableHead className="h-11">Order Code</TableHead>
             <TableHead className="h-11">Customer</TableHead>
+            <TableHead className="h-11">Total Booking</TableHead>
             <TableHead className="h-11">Amount</TableHead>
             <TableHead className="h-11">Payment Status</TableHead>
-            <TableHead className="h-11">Order Status</TableHead>
+
             <TableHead className="h-11 text-right"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {orders.map((order) => {
             const bookingCount = order.bookings.length;
-            // Customer name will be available when API includes user data
-            const customerName = "N/A";
+            const customerName =
+              order.user?.profile?.fullName || order.user?.email || "N/A";
             const paymentStatus =
               order.payment?.status || PaymentStatus.PENDING;
 
@@ -67,26 +68,18 @@ export function OrderTable({
                 <TableCell>
                   <div className="flex flex-col">
                     <span className="font-medium">{order.orderCode}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {bookingCount}{" "}
-                      {bookingCount === 1 ? "booking" : "bookings"}
-                    </span>
                   </div>
                 </TableCell>
                 <TableCell>{customerName}</TableCell>
+                <TableCell>
+                  {bookingCount} {bookingCount === 1 ? "booking" : "bookings"}
+                </TableCell>
                 <TableCell>{formatCurrency(order.totalAmount)}</TableCell>
                 <TableCell>
                   <Badge
                     className={`rounded-full px-3 py-1 text-xs font-medium ${getPaymentStatusClass(paymentStatus)}`}
                   >
-                    {paymentStatus}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${getOrderStatusClass(order.status)}`}
-                  >
-                    {order.status}
+                    {formatPaymentStatus(paymentStatus)}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { useState, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableHeader,
@@ -38,15 +37,17 @@ import { ResendInviteButton } from "@/app/admin/dashboard/users/_components/rese
 const PAGE_SIZE = 10;
 
 export function UsersTable() {
-  const [page, setPage] = useState(1)
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const [selected, setSelected] = useState<User & { profile?: Profile | null } | null>(null)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [modalMode, setModalMode] = useState<"add" | "edit">("add")
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [userToDelete, setUserToDelete] = useState<User & { profile?: Profile | null } | null>(null)
-  const searchParams = useSearchParams()
-  
+  const [page, setPage] = useState(1);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [selected, setSelected] = useState<
+    (User & { profile?: Profile | null }) | null
+  >(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"add" | "edit">("add");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<
+    (User & { profile?: Profile | null }) | null
+  >(null);
 
   // Define table columns for colSpan
   const columns = [
@@ -66,26 +67,8 @@ export function UsersTable() {
 
   // Frontend filtering and pagination
   const filtered = useMemo(() => {
-    const searchQuery = searchParams.get("search")?.toLowerCase().trim()
-    
-    if (!searchQuery) {
-      return allUsers
-    }
-
-    return allUsers.filter((user: User & { profile?: Profile | null }) => {
-      const fullName = user.profile?.fullName?.toUpperCase() || ""
-      const email = user.email.toLowerCase()
-      const role = user.role === Role.ADMIN ? "admin" : "user"
-      const status = user.userStatus.toLowerCase()
-      
-      return (
-        fullName.includes(searchQuery) ||
-        email.includes(searchQuery) ||
-        role.includes(searchQuery) ||
-        status.includes(searchQuery)
-      )
-    })
-  }, [allUsers, searchParams])
+    return allUsers;
+  }, [allUsers]);
 
   const paginationInfo = useMemo(
     () => calculatePaginationInfo(page, filtered.length, PAGE_SIZE),
@@ -96,11 +79,6 @@ export function UsersTable() {
     () => getPaginatedData(filtered, page, PAGE_SIZE),
     [filtered, page]
   );
-
-  // Reset page to 1 when search changes
-  useEffect(() => {
-    setPage(1)
-  }, [searchParams])
 
   async function handleSubmit() {
     // Dummy submit: console log value
@@ -155,15 +133,21 @@ export function UsersTable() {
   };
 
   const renderStatusBadge = (
-    user: (User & { profile?: Profile | null } & { invitation?: { state: 'valid' | 'expired' | 'used' | 'none'; expiresAt?: string } })
+    user: User & { profile?: Profile | null } & {
+      invitation?: {
+        state: "valid" | "expired" | "used" | "none";
+        expiresAt?: string;
+      };
+    }
   ) => {
-    if (user.userStatus !== UserStatus.INVITED) return getStatusBadge(user.userStatus);
-    const state = user.invitation?.state || 'none';
+    if (user.userStatus !== UserStatus.INVITED)
+      return getStatusBadge(user.userStatus);
+    const state = user.invitation?.state || "none";
 
     return (
       <Badge variant="outline">
         <div className="flex items-center gap-2">
-          {state === 'expired' ? (
+          {state === "expired" ? (
             <>
               <div className="w-2 h-2 rounded-full bg-red-500" />
               <span>Link Expired</span>
@@ -193,10 +177,10 @@ export function UsersTable() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col space-y-6">
       <div className="flex items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">User List</h2>
+          <h2 className="text-2xl font-semibold">User List</h2>
           <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
             {allUsers.length} users
           </Badge>
@@ -246,7 +230,9 @@ export function UsersTable() {
                   <TableCell className="text-muted-foreground">
                     {getRole(u.role)}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{u.email}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {u.email}
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     {u.joinDate
                       ? new Date(u.joinDate).toLocaleDateString()

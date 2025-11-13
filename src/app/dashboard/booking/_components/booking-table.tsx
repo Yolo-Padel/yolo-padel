@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LandPlot } from "lucide-react";
+import Image from "next/image";
 import {
   Card,
   CardHeader,
@@ -206,16 +207,19 @@ export function BookingCourt() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {paginated.map((bookingCourt) => (
             <Card
-              className="min-w-0 shadow-lg hover:shadow-xl transition-shadow duration-300 p-1 gap-1 border-[1px] border-foreground"
+              className="gap-3 p-3 hover:shadow-xl transition-shadow duration-300"
               key={bookingCourt.id}
             >
-              <CardHeader className="p-2 pb-0 ">
-                <img
-                  src={bookingCourt.image}
-                  className="w-full h-[142px] object-cover rounded-sm"
+              <div className="flex flex-col px-0">
+                <Image
+                  src={bookingCourt.image || "/paddle-court1.svg"}
+                  alt=""
+                  className="flex-1 w-full rounded-sm aspect-square"
+                  width={500}
+                  height={500}
                 />
-              </CardHeader>
-              <CardContent className="px-2 pt-0 pb-1 text-md text-gray-700 gap-2 space-y-2">
+              </div>
+              <div className="flex flex-col text-md gap-1 px-2">
                 <CardTitle className="text-xs truncate font-normal">
                   <span className="justify-between flex items-center gap-1">
                     ID: #{bookingCourt.id}{" "}
@@ -252,18 +256,17 @@ export function BookingCourt() {
                     Rp {bookingCourt.totalPayment.toLocaleString("id-ID")}
                   </span>
                 </div>
-              </CardContent>
+              </div>
 
               {bookingCourt.status === BookingStatus.COMPLETED && (
-                <CardFooter className="px-1 pt-4 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <CardFooter className="px-1 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Button
                     onClick={() => {
                       setSelectedBookingCourt(bookingCourt);
                       setMode("booking-details");
                     }}
+                    className="w-full border-primary"
                     variant="outline"
-                    size="sm"
-                    className="rounded-sm border-[#C3D223] text-black w-full"
                   >
                     See Details
                   </Button>
@@ -278,16 +281,15 @@ export function BookingCourt() {
                 </CardFooter>
               )}
               {bookingCourt.status === BookingStatus.PENDING && (
-                <CardFooter className="px-1 pt-4 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <CardFooter className="px-1 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Button
                     onClick={() => {
                       setSelectedBookingCourt(bookingCourt);
                       setModalOpen(true);
                       setMode("booking-details");
                     }}
+                    className="w-full border-primary"
                     variant="outline"
-                    size="sm"
-                    className="rounded-sm border-[#C3D223] text-black w-full"
                   >
                     See Details
                   </Button>
@@ -313,9 +315,8 @@ export function BookingCourt() {
                       setModalOpen(true);
                       setMode("booking-details");
                     }}
-                    variant="default"
-                    size="sm"
-                    className="w-full"
+                    className="w-full border-primary"
+                    variant="outline"
                   >
                     See Details
                   </Button>
