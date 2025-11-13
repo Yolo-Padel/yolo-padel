@@ -5,9 +5,9 @@ import {
   requirePermission,
 } from "@/types/service-context";
 import {
-  CourtPricingOverrideCreateData,
-  CourtPricingOverrideUpdateData,
-} from "@/lib/validations/court-pricing-rule.validation";
+  CourtDynamicPriceCreateData,
+  CourtDynamicPriceUpdateData,
+} from "@/lib/validations/court-dynamic-price.validation";
 
 const buildSuccess = <T>(data: T, message: string) => ({
   success: true,
@@ -52,8 +52,11 @@ const ensureCourtAccess = async (
   return { court };
 };
 
-const ensureRuleAccess = async (id: string, context: ServiceContext) => {
-  const rule = await prisma.courtPricingOverride.findUnique({
+const ensureDynamicPriceAccess = async (
+  id: string,
+  context: ServiceContext
+) => {
+  const dynamicPrice = await prisma.courtDynamicPrice.findUnique({
     where: { id },
     include: {
       court: {
@@ -65,26 +68,26 @@ const ensureRuleAccess = async (id: string, context: ServiceContext) => {
     },
   });
 
-  if (!rule) {
+  if (!dynamicPrice) {
     return {
-      error: buildError("Pricing rule not found"),
+      error: buildError("Dynamic price not found"),
     };
   }
 
   if (
     (context.userRole === Role.ADMIN || context.userRole === Role.FINANCE) &&
     context.assignedVenueId &&
-    rule.court.venueId !== context.assignedVenueId
+    dynamicPrice.court.venueId !== context.assignedVenueId
   ) {
     return {
-      error: buildError("You are not authorized to access this pricing rule"),
+      error: buildError("You are not authorized to access this dynamic price"),
     };
   }
 
-  return { rule };
+  return { dynamicPrice };
 };
 
-export const courtPricingRuleService = {
+export const courtDynamicPriceService = {
   listByCourt: async (courtId: string, context: ServiceContext) => {
     try {
       const accessError = requirePermission(context, Role.FINANCE);
@@ -93,7 +96,7 @@ export const courtPricingRuleService = {
       const { error } = await ensureCourtAccess(courtId, context);
       if (error) return error;
 
-      const rules = await prisma.courtPricingOverride.findMany({
+      const dynamicPrices = await prisma.courtDynamicPrice.findMany({
         where: { courtId },
         orderBy: [
           { dayOfWeek: "asc" },
@@ -102,10 +105,10 @@ export const courtPricingRuleService = {
         ],
       });
 
-      return buildSuccess(rules, "Pricing rules fetched successfully");
+      return buildSuccess(dynamicPrices, "Dynamic prices fetched successfully");
     } catch (err) {
-      console.error("listByCourt pricing rules error:", err);
-      return buildError("Failed to fetch pricing rules");
+      console.error("listByCourt dynamic prices error:", err);
+      return buildError("Failed to fetch dynamic prices");
     }
   },
 
@@ -114,18 +117,21 @@ export const courtPricingRuleService = {
       const accessError = requirePermission(context, Role.FINANCE);
       if (accessError) return accessError;
 
-      const { rule, error } = await ensureRuleAccess(id, context);
+      const { dynamicPrice, error } = await ensureDynamicPriceAccess(
+        id,
+        context
+      );
       if (error) return error;
 
-      return buildSuccess(rule, "Pricing rule fetched successfully");
+      return buildSuccess(dynamicPrice, "Dynamic price fetched successfully");
     } catch (err) {
-      console.error("getById pricing rule error:", err);
-      return buildError("Failed to fetch pricing rule");
+      console.error("getById dynamic price error:", err);
+      return buildError("Failed to fetch dynamic price");
     }
   },
 
   create: async (
-    data: CourtPricingOverrideCreateData,
+    data: CourtDynamicPriceCreateData,
     context: ServiceContext
   ) => {
     try {
@@ -135,7 +141,7 @@ export const courtPricingRuleService = {
       const { error } = await ensureCourtAccess(data.courtId, context);
       if (error) return error;
 
-      const rule = await prisma.courtPricingOverride.create({
+      const dynamicPrice = await prisma.courtDynamicPrice.create({
         data: {
           courtId: data.courtId,
           dayOfWeek: data.dayOfWeek ?? null,
@@ -147,26 +153,29 @@ export const courtPricingRuleService = {
         },
       });
 
-      return buildSuccess(rule, "Pricing rule created successfully");
+      return buildSuccess(dynamicPrice, "Dynamic price created successfully");
     } catch (err) {
-      console.error("create pricing rule error:", err);
-      return buildError("Failed to create pricing rule");
+      console.error("create dynamic price error:", err);
+      return buildError("Failed to create dynamic price");
     }
   },
 
   update: async (
     id: string,
-    data: CourtPricingOverrideUpdateData,
+    data: CourtDynamicPriceUpdateData,
     context: ServiceContext
   ) => {
     try {
       const accessError = requirePermission(context, Role.ADMIN);
       if (accessError) return accessError;
 
-      const { rule, error } = await ensureRuleAccess(id, context);
+      const { dynamicPrice, error } = await ensureDynamicPriceAccess(
+        id,
+        context
+      );
       if (error) return error;
 
-      const updateData: CourtPricingOverrideUpdateData = {
+      const updateData: CourtDynamicPriceUpdateData = {
         dayOfWeek:
           data.dayOfWeek !== undefined ? data.dayOfWeek ?? null : undefined,
         date: data.date !== undefined ? data.date ?? null : undefined,
@@ -176,15 +185,18 @@ export const courtPricingRuleService = {
         isActive: data.isActive,
       };
 
-      const updatedRule = await prisma.courtPricingOverride.update({
-        where: { id: rule.id },
+      const updatedDynamicPrice = await prisma.courtDynamicPrice.update({
+        where: { id: dynamicPrice.id },
         data: updateData,
       });
 
-      return buildSuccess(updatedRule, "Pricing rule updated successfully");
+      return buildSuccess(
+        updatedDynamicPrice,
+        "Dynamic price updated successfully"
+      );
     } catch (err) {
-      console.error("update pricing rule error:", err);
-      return buildError("Failed to update pricing rule");
+      console.error("update dynamic price error:", err);
+      return buildError("Failed to update dynamic price");
     }
   },
 
@@ -193,19 +205,21 @@ export const courtPricingRuleService = {
       const accessError = requirePermission(context, Role.ADMIN);
       if (accessError) return accessError;
 
-      const { rule, error } = await ensureRuleAccess(id, context);
+      const { dynamicPrice, error } = await ensureDynamicPriceAccess(
+        id,
+        context
+      );
       if (error) return error;
 
-      await prisma.courtPricingOverride.delete({
-        where: { id: rule.id },
+      await prisma.courtDynamicPrice.delete({
+        where: { id: dynamicPrice.id },
       });
 
-      return buildSuccess(null, "Pricing rule deleted successfully");
+      return buildSuccess(null, "Dynamic price deleted successfully");
     } catch (err) {
-      console.error("delete pricing rule error:", err);
-      return buildError("Failed to delete pricing rule");
+      console.error("delete dynamic price error:", err);
+      return buildError("Failed to delete dynamic price");
     }
   },
 };
-
 

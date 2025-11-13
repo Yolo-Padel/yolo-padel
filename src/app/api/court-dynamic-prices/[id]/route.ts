@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { verifyAuth } from "@/lib/auth-utils";
 import { createServiceContext } from "@/types/service-context";
-import { courtPricingRuleService } from "@/lib/services/court-pricing-rule.service";
-import { courtPricingRuleUpdateSchema } from "@/lib/validations/court-pricing-rule.validation";
+import { courtDynamicPriceService } from "@/lib/services/court-dynamic-price.service";
+import { courtDynamicPriceUpdateSchema } from "@/lib/validations/court-dynamic-price.validation";
 
 export async function GET(
   request: NextRequest,
@@ -26,7 +26,7 @@ export async function GET(
       user.assignedVenueId
     );
 
-    const result = await courtPricingRuleService.getById(id, serviceContext);
+    const result = await courtDynamicPriceService.getById(id, serviceContext);
 
     if (!result.success) {
       return NextResponse.json(
@@ -37,7 +37,7 @@ export async function GET(
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("GET /api/court-pricing-rules/[id] error:", error);
+    console.error("GET /api/court-dynamic-prices/[id] error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }
@@ -52,7 +52,7 @@ export async function PUT(
   try {
     const body = await request.json();
     const { id } = await params;
-    const payload = courtPricingRuleUpdateSchema.parse(body);
+    const payload = courtDynamicPriceUpdateSchema.parse(body);
 
     const tokenResult = await verifyAuth(request);
     if (!tokenResult.isValid) {
@@ -69,7 +69,7 @@ export async function PUT(
       user.assignedVenueId
     );
 
-    const result = await courtPricingRuleService.update(
+    const result = await courtDynamicPriceService.update(
       id,
       payload,
       serviceContext
@@ -84,7 +84,7 @@ export async function PUT(
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("PUT /api/court-pricing-rules/[id] error:", error);
+    console.error("PUT /api/court-dynamic-prices/[id] error:", error);
 
     if (error instanceof ZodError) {
       return NextResponse.json(
@@ -125,7 +125,7 @@ export async function DELETE(
       user.assignedVenueId
     );
 
-    const result = await courtPricingRuleService.delete(id, serviceContext);
+    const result = await courtDynamicPriceService.delete(id, serviceContext);
 
     if (!result.success) {
       return NextResponse.json(
@@ -136,7 +136,7 @@ export async function DELETE(
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("DELETE /api/court-pricing-rules/[id] error:", error);
+    console.error("DELETE /api/court-dynamic-prices/[id] error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-utils";
 import { createServiceContext } from "@/types/service-context";
-import { courtPricingRuleService } from "@/lib/services/court-pricing-rule.service";
+import { courtDynamicPriceService } from "@/lib/services/court-dynamic-price.service";
 import {
-  courtPricingRuleCreateSchema,
-  CourtPricingOverrideCreateData,
-} from "@/lib/validations/court-pricing-rule.validation";
+  courtDynamicPriceCreateSchema,
+  CourtDynamicPriceCreateData,
+} from "@/lib/validations/court-dynamic-price.validation";
 import { ZodError } from "zod";
 
 export async function GET(request: NextRequest) {
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       user.assignedVenueId
     );
 
-    const result = await courtPricingRuleService.listByCourt(
+    const result = await courtDynamicPriceService.listByCourt(
       courtId,
       serviceContext
     );
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("GET /api/court-pricing-rules error:", error);
+    console.error("GET /api/court-dynamic-prices error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }
@@ -63,9 +63,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const payload = courtPricingRuleCreateSchema.parse(
+    const payload = courtDynamicPriceCreateSchema.parse(
       body
-    ) as CourtPricingOverrideCreateData;
+    ) as CourtDynamicPriceCreateData;
 
     const tokenResult = await verifyAuth(request);
     if (!tokenResult.isValid) {
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       user.assignedVenueId
     );
 
-    const result = await courtPricingRuleService.create(
+    const result = await courtDynamicPriceService.create(
       payload,
       serviceContext
     );
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    console.error("POST /api/court-pricing-rules error:", error);
+    console.error("POST /api/court-dynamic-prices error:", error);
 
     if (error instanceof ZodError) {
       return NextResponse.json(

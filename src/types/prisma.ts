@@ -12,6 +12,7 @@ export type {
   Order,
   Blocking,
   ActivityLog,
+  CourtDynamicPrice,
 } from "@prisma/client";
 
 export {

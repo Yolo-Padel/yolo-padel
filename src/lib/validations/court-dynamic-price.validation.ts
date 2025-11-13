@@ -18,7 +18,7 @@ const dateSchema = z
     return !Number.isNaN(value.getTime());
   }, "Invalid date format");
 
-export const courtPricingRuleCreateSchema = z
+export const courtDynamicPriceCreateSchema = z
   .object({
     courtId: z.string().min(1, "courtId is required"),
     dayOfWeek: dayOfWeekSchema,
@@ -50,7 +50,7 @@ export const courtPricingRuleCreateSchema = z
     }
   });
 
-export const courtPricingRuleUpdateSchema = courtPricingRuleCreateSchema
+export const courtDynamicPriceUpdateSchema = courtDynamicPriceCreateSchema
   .omit({ courtId: true })
   .partial()
   .superRefine((data, ctx) => {
@@ -82,11 +82,11 @@ export const courtPricingRuleUpdateSchema = courtPricingRuleCreateSchema
     }
   });
 
-export type CourtPricingOverrideCreateData = z.infer<
-  typeof courtPricingRuleCreateSchema
+export type CourtDynamicPriceCreateData = z.infer<
+  typeof courtDynamicPriceCreateSchema
 >;
 
-export type CourtPricingOverrideUpdateData = z.infer<
-  typeof courtPricingRuleUpdateSchema
+export type CourtDynamicPriceUpdateData = z.infer<
+  typeof courtDynamicPriceUpdateSchema
 >;
 
