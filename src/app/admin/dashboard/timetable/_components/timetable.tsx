@@ -85,20 +85,17 @@ export function Timetable({
           style={{ minWidth: "max-content" }}
         >
           <thead>
-            {/* Row 1: Court Name + Date Navigation */}
+            {/* Row 1: Time Slot + Date Navigation */}
             <tr className="bg-muted/50">
-              <th className="border p-3 text-left font-semibold sticky left-0 bg-background z-10 min-w-[180px]">
-                Court Name
+              <th className="border p-3 text-left font-semibold min-w-[120px]">
+                Time
               </th>
               <th
-                colSpan={timeSlots.length}
+                colSpan={courts.length}
                 className="border p-3 text-left font-semibold relative"
                 style={{ padding: 0 }}
               >
-                <div
-                  className="sticky left-[180px] bg-background z-10 p-3"
-                  style={{ width: "fit-content" }}
-                >
+                <div className="p-3" style={{ width: "fit-content" }}>
                   <div className="flex flex-wrap items-center gap-2">
                     <Button
                       variant="outline"
@@ -172,70 +169,69 @@ export function Timetable({
                 </div>
               </th>
             </tr>
-            {/* Row 2: Time Slots */}
+            {/* Row 2: Court Names */}
             <tr className="bg-muted/50">
-              <th className="border p-3 text-left font-semibold sticky left-0 bg-background z-10 min-w-[180px]">
-                {/* Empty cell for Court Name column */}
+              <th className="border p-3 text-left font-semibold sticky left-0 top-0 bg-background z-20 min-w-[120px]">
+                {/* Empty cell for Time Slot column */}
               </th>
-              {timeSlots.map((time) => (
-                <th
-                  key={time}
-                  className="border p-3 text-center font-semibold min-w-[100px]"
-                >
-                  {formatTimeDisplay(time)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {courts.map((court) => {
-              const courtOperatingHours = court.operatingHours || {
-                openHour: "10:00",
-                closeHour: "20:00",
-              };
+              {courts.map((court) => {
+                const courtOperatingHours = court.operatingHours || {
+                  openHour: "10:00",
+                  closeHour: "20:00",
+                };
 
-              return (
-                <tr key={court.id} className="hover:bg-muted/30">
-                  <td className="border p-3 sticky left-0 bg-background z-10">
+                return (
+                  <th
+                    key={court.id}
+                    className="border p-3 text-center font-semibold min-w-[150px] sticky top-0 bg-background z-20"
+                  >
                     <div className="font-semibold">{court.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Hours{" "}
+                    <div className="text-xs text-muted-foreground">
                       {formatOperatingHours(
                         courtOperatingHours.openHour,
                         courtOperatingHours.closeHour
                       )}
                     </div>
-                  </td>
-                  {timeSlots.map((time, timeIndex) => {
-                    const bookingInfo = getTimeSlotBooking(
-                      time,
-                      timeIndex,
-                      court.id,
-                      bookings,
-                      selectedDate,
-                      timeSlots
-                    );
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {timeSlots.map((time, timeIndex) => (
+              <tr key={time} className="hover:bg-muted/30">
+                <td className="border p-3 sticky left-0 bg-background z-10 font-semibold text-center min-w-[120px]">
+                  {formatTimeDisplay(time)}
+                </td>
+                {courts.map((court) => {
+                  const bookingInfo = getTimeSlotBooking(
+                    time,
+                    timeIndex,
+                    court.id,
+                    bookings,
+                    selectedDate,
+                    timeSlots
+                  );
 
-                    const isFirstSlot = bookingInfo?.isFirstSlot ?? false;
-                    const span = bookingInfo?.span ?? 1;
-                    const booking = bookingInfo?.booking ?? null;
+                  const isFirstSlot = bookingInfo?.isFirstSlot ?? false;
+                  const span = bookingInfo?.span ?? 1;
+                  const booking = bookingInfo?.booking ?? null;
 
-                    return (
-                      <TimetableCell
-                        key={`${court.id}-${time}`}
-                        courtId={court.id}
-                        courtName={court.name}
-                        timeSlot={time}
-                        booking={booking}
-                        isFirstSlot={isFirstSlot}
-                        span={span}
-                        onCellClick={onCellClick}
-                      />
-                    );
-                  })}
-                </tr>
-              );
-            })}
+                  return (
+                    <TimetableCell
+                      key={`${court.id}-${time}`}
+                      courtId={court.id}
+                      courtName={court.name}
+                      timeSlot={time}
+                      booking={booking}
+                      isFirstSlot={isFirstSlot}
+                      span={span}
+                      onCellClick={onCellClick}
+                    />
+                  );
+                })}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

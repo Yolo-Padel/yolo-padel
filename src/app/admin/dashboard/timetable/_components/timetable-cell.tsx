@@ -30,7 +30,7 @@ export function TimetableCell({
 }: TimetableCellProps) {
   const isBooked = booking !== null;
 
-  // Skip rendering continuation cells (they're merged with colspan)
+  // Skip rendering continuation cells (they're merged with rowspan)
   if (isBooked && !isFirstSlot && span === 0) {
     return null;
   }
@@ -38,9 +38,9 @@ export function TimetableCell({
   return (
     <td
       key={`${courtId}-${timeSlot}`}
-      colSpan={isBooked && isFirstSlot ? span : 1}
+      rowSpan={isBooked && isFirstSlot ? span : 1}
       className={cn(
-        "border p-2 text-center align-middle",
+        "border h-[80px]",
         isBooked && `bg-[${BOOKING_COLORS.BOOKED_BG}]`,
         isBooked &&
           `cursor-pointer hover:bg-[${BOOKING_COLORS.BOOKED_HOVER}] transition-colors`
@@ -48,30 +48,28 @@ export function TimetableCell({
       onClick={() => onCellClick(booking, courtName)}
     >
       {isBooked && isFirstSlot && booking ? (
-        <div className="flex flex-col items-center gap-1 p-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage
-              src={booking.userAvatar}
-              alt={booking.userName}
-            />
-            <AvatarFallback>
-              {booking.userName
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="text-xs font-medium">{booking.userName}</div>
-          <div className="text-xs text-muted-foreground">
+        <div className="flex flex-col gap-1 p-2">
+          <div className="flex flex-row items-center gap-2">
+            <Avatar className="h-5 w-5">
+              <AvatarImage src={booking.userAvatar} alt={booking.userName} />
+              <AvatarFallback className="text-[10px]">
+                {booking.userName
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="text-xs font-medium">{booking.userName}</div>
+          </div>
+          <div className="text-xs font-medium">
             {formatTimeRange(booking.timeSlots)}
           </div>
-          <div className="text-xs text-muted-foreground">{courtName}</div>
+          <div className="text-xs">{courtName}</div>
         </div>
       ) : (
-        <span className="text-muted-foreground">-</span>
+        <span className="text-muted-foreground p-2">-</span>
       )}
     </td>
   );
 }
-
