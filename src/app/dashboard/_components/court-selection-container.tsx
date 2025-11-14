@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { X, ShoppingCart, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useVenue } from "@/hooks/use-venue";
+import { usePublicVenues } from "@/hooks/use-venue";
 import { Court, Venue } from "@prisma/client";
 import { Separator } from "@/components/ui/separator";
-import { useCourtByVenue } from "@/hooks/use-court";
+import { usePublicCourtByVenue } from "@/hooks/use-court";
 import { useState } from "react";
 import Image from "next/image";
 import { Calendar } from "@/components/ui/calendar";
@@ -67,11 +67,11 @@ export function CourtSelectionContainer({
   const watchDate = form.watch("date");
   const watchSlots = form.watch("slots");
 
-  const { data: venues, isLoading: isLoadingVenues } = useVenue();
+  const { data: venues, isLoading: isLoadingVenues } = usePublicVenues();
   const venuesData: Venue[] = Array.isArray(venues?.data) ? venues.data : [];
 
   const { data: courts, isLoading: isLoadingCourts } =
-    useCourtByVenue(selectedVenueId);
+    usePublicCourtByVenue(selectedVenueId);
   const courtsData: Court[] = Array.isArray(courts?.data)
     ? courts.data.filter((court: Court) => court.isActive === true)
     : [];

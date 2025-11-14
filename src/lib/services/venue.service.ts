@@ -1,8 +1,15 @@
 import { prisma } from "../prisma";
-import { VenueCreateData, VenueDeleteData, VenueUpdateData } from "../validations/venue.validation";
+import {
+  VenueCreateData,
+  VenueDeleteData,
+  VenueUpdateData,
+} from "../validations/venue.validation";
 import { ServiceContext, requirePermission } from "@/types/service-context";
 import { Role } from "@/types/prisma";
-import { activityLogService, buildChangesDiff } from "@/lib/services/activity-log.service";
+import {
+  activityLogService,
+  buildChangesDiff,
+} from "@/lib/services/activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 import { vercelBlobService } from "@/lib/services/vercel-blob.service";
@@ -20,36 +27,43 @@ export const venueService = {
 
       // Filter venues berdasarkan role
       const filteredVenues = venues.filter((venue) => {
-        if (context.userRole === Role.ADMIN || context.userRole === Role.FINANCE) {
+        if (
+          context.userRole === Role.ADMIN ||
+          context.userRole === Role.FINANCE
+        ) {
           return venue.id === context.assignedVenueId;
         }
         return true; // USER dan SUPER_ADMIN bisa akses semua venue
       });
-      
+
       // Enrich with counts: courts count and today's bookings count per venue
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date();
       endOfDay.setHours(23, 59, 59, 999);
 
-      const enriched = await Promise.all(filteredVenues.map(async (venue) => {
-        const [courtsCount, bookingsToday] = await Promise.all([
-          prisma.court.count({ where: { venueId: venue.id, isArchived: false } }),
-          prisma.booking.count({
-            where: {
-              bookingDate: { gte: startOfDay, lte: endOfDay },
-              court: { venueId: venue.id },
+      const enriched = await Promise.all(
+        filteredVenues.map(async (venue) => {
+          const [courtsCount, bookingsToday] = await Promise.all([
+            prisma.court.count({
+              where: { venueId: venue.id, isArchived: false },
+            }),
+            prisma.booking.count({
+              where: {
+                bookingDate: { gte: startOfDay, lte: endOfDay },
+                court: { venueId: venue.id },
+              },
+            }),
+          ]);
+          return {
+            ...venue,
+            _counts: {
+              courts: courtsCount,
+              bookingsToday,
             },
-          }),
-        ]);
-        return {
-          ...venue,
-          _counts: {
-            courts: courtsCount,
-            bookingsToday,
-          },
-        } as any;
-      }));
+          } as any;
+        })
+      );
 
       return {
         success: true,
@@ -61,7 +75,42 @@ export const venueService = {
       return {
         success: false,
         data: null,
-        message: error instanceof Error ? error.message : "Get all venues failed",
+        message:
+          error instanceof Error ? error.message : "Get all venues failed",
+      };
+    }
+  },
+  getPublicList: async () => {
+    try {
+      const venues = await prisma.venue.findMany({
+        where: { isArchived: false, isActive: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          address: true,
+          city: true,
+          description: true,
+          images: true,
+          openHour: true,
+          closeHour: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return {
+        success: true,
+        data: venues,
+        message: "Get public venues successful",
+      };
+    } catch (error) {
+      console.error("Get public venues error:", error);
+      return {
+        success: false,
+        data: null,
+        message:
+          error instanceof Error ? error.message : "Get public venues failed",
       };
     }
   },
@@ -83,7 +132,11 @@ export const venueService = {
       }
 
       // Check venue access untuk ADMIN/FINANCE roles
-      if ((context.userRole === Role.ADMIN || context.userRole === Role.FINANCE) && venue.id !== context.assignedVenueId) {
+      if (
+        (context.userRole === Role.ADMIN ||
+          context.userRole === Role.FINANCE) &&
+        venue.id !== context.assignedVenueId
+      ) {
         return {
           success: false,
           data: null,
@@ -101,11 +154,16 @@ export const venueService = {
       return {
         success: false,
         data: null,
-        message: error instanceof Error ? error.message : "Get venue by id failed",
+        message:
+          error instanceof Error ? error.message : "Get venue by id failed",
       };
     }
   },
-  create: async (data: VenueCreateData, context: ServiceContext, userId: string) => {
+  create: async (
+    data: VenueCreateData,
+    context: ServiceContext,
+    userId: string
+  ) => {
     try {
       const accessError = requirePermission(context, Role.SUPER_ADMIN);
       if (accessError) return accessError;
@@ -117,7 +175,7 @@ export const venueService = {
         select: { slug: true },
       });
 
-      const existingSet = new Set(existing.map(e => e.slug));
+      const existingSet = new Set(existing.map((e) => e.slug));
       const nextUniqueSlug = (() => {
         if (!existingSet.has(baseSlug)) return baseSlug;
         let suffix = 2;
@@ -186,16 +244,21 @@ export const venueService = {
       if (payload.images && exist.images) {
         const oldImages = exist.images as string[];
         const newImages = payload.images as string[];
-        
+
         // Find images that exist in old but not in new (removed images)
-        const removedImages = oldImages.filter(img => !newImages.includes(img));
-        
+        const removedImages = oldImages.filter(
+          (img) => !newImages.includes(img)
+        );
+
         // Delete each removed image from storage
         for (const imageUrl of removedImages) {
           console.log("Deleting old venue image:", imageUrl);
           const deleteResult = await vercelBlobService.deleteFile(imageUrl);
           if (!deleteResult.success) {
-            console.warn("Failed to delete old venue image:", deleteResult.message);
+            console.warn(
+              "Failed to delete old venue image:",
+              deleteResult.message
+            );
             // Continue with update even if delete fails (non-blocking)
           }
         }
@@ -212,8 +275,9 @@ export const venueService = {
           },
           select: { slug: true },
         });
-        const existingSet = new Set(existing.map(e => e.slug));
-        if (!existingSet.has(baseSlug)) slugUpdate = baseSlug; else {
+        const existingSet = new Set(existing.map((e) => e.slug));
+        if (!existingSet.has(baseSlug)) slugUpdate = baseSlug;
+        else {
           let suffix = 2;
           while (existingSet.has(`${baseSlug}-${suffix}`)) suffix += 1;
           slugUpdate = `${baseSlug}-${suffix}`;
@@ -229,7 +293,11 @@ export const venueService = {
         where: { id: venueId },
         data: updateData,
       });
-      const diff = buildChangesDiff(exist as any, { ...exist, ...updateData } as any, Object.keys(updateData) as any);
+      const diff = buildChangesDiff(
+        exist as any,
+        { ...exist, ...updateData } as any,
+        Object.keys(updateData) as any
+      );
       activityLogService.record({
         context,
         action: ACTION_TYPES.UPDATE_VENUE,
@@ -266,7 +334,10 @@ export const venueService = {
         action: ACTION_TYPES.DELETE_VENUE,
         entityType: ENTITY_TYPES.VENUE,
         entityId: data.venueId,
-        changes: { before: { isArchived: false }, after: { isArchived: true } } as any,
+        changes: {
+          before: { isArchived: false },
+          after: { isArchived: true },
+        } as any,
       });
       return {
         success: true,
@@ -280,4 +351,4 @@ export const venueService = {
       };
     }
   },
-}
+};

@@ -83,6 +83,19 @@ const courtApi = {
   },
 };
 
+const courtPublicApi = {
+  getByVenue: async (venueId: string) => {
+    const response = await fetch(`/api/public/court?venueId=${venueId}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.message || "Failed to fetch public courts by venue"
+      );
+    }
+    return response.json();
+  },
+};
+
 export const useCourt = () => {
   return useQuery({
     queryKey: ["court"],
@@ -95,6 +108,15 @@ export const useCourtByVenue = (venueId: string) => {
   return useQuery({
     queryKey: ["court", "venue", venueId],
     queryFn: () => courtApi.getByVenue(venueId),
+    enabled: Boolean(venueId),
+    staleTime: 1000 * 60 * 2,
+  });
+};
+
+export const usePublicCourtByVenue = (venueId: string) => {
+  return useQuery({
+    queryKey: ["public-court", "venue", venueId],
+    queryFn: () => courtPublicApi.getByVenue(venueId),
     enabled: Boolean(venueId),
     staleTime: 1000 * 60 * 2,
   });
