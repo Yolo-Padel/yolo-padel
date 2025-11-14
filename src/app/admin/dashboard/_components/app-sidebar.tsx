@@ -8,6 +8,7 @@ import {
   TableCellsMerge,
   LandPlot,
   CalendarDays,
+  DollarSign,
 } from "lucide-react";
 
 import { MenuItems } from "@/app/admin/dashboard/_components/menu-items";
@@ -51,6 +52,12 @@ const menuConfig: MenuItem[] = [
     name: "Time Table",
     url: "/admin/dashboard/timetable",
     icon: CalendarDays,
+    roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN],
+  },
+  {
+    name: "Price Config",
+    url: "/admin/dashboard/price",
+    icon: DollarSign,
     roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN],
   },
   {

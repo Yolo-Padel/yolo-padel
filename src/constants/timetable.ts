@@ -46,11 +46,11 @@ export const TIMETABLE_SKELETON = {
  */
 export const TIMETABLE_UI = {
   /** Width of venue selector dropdown */
-  VENUE_SELECTOR_WIDTH: '280px',
+  VENUE_SELECTOR_WIDTH: "280px",
   /** Minimum width of court name column */
-  COURT_COLUMN_MIN_WIDTH: '180px',
+  COURT_COLUMN_MIN_WIDTH: "180px",
   /** Minimum width of time slot columns */
-  TIME_SLOT_MIN_WIDTH: '100px',
+  TIME_SLOT_MIN_WIDTH: "100px",
 } as const;
 
 /**
@@ -58,11 +58,11 @@ export const TIMETABLE_UI = {
  */
 export const TIME_FORMAT = {
   /** Standard 24-hour format (HH:mm) */
-  STANDARD: 'HH:mm',
+  STANDARD: "HH:mm",
   /** Display format with dots (HH.mm) */
-  DISPLAY: 'HH.mm',
+  DISPLAY: "HH.mm",
   /** Display format with AM/PM */
-  DISPLAY_AMPM: 'hh.mmA',
+  DISPLAY_AMPM: "hh.mmA",
 } as const;
 
 /**
@@ -70,11 +70,11 @@ export const TIME_FORMAT = {
  */
 export const DATE_FORMAT = {
   /** Short format: "Mon, 14 Oct" */
-  SHORT: 'EEE, d MMM',
+  SHORT: "EEE, d MMM",
   /** Full format: "Monday, October 14, 2024" */
-  FULL: 'EEEE, MMMM d, yyyy',
+  FULL: "EEEE, MMMM d, yyyy",
   /** ISO format for API calls */
-  ISO: 'yyyy-MM-dd',
+  ISO: "yyyy-MM-dd",
 } as const;
 
 /**
@@ -82,10 +82,25 @@ export const DATE_FORMAT = {
  */
 export const BOOKING_COLORS = {
   /** Background color for booked cells */
-  BOOKED_BG: '#E8F5E9',
+  BOOKED_BG: "#E8F5E9",
   /** Hover background color for booked cells */
-  BOOKED_HOVER: '#D4E6D5',
+  BOOKED_HOVER: "#D4E6D5",
   /** Border color for primary actions */
-  PRIMARY_BORDER: '#C3D223',
+  PRIMARY_BORDER: "#C3D223",
 } as const;
 
+/**
+ * Dynamic price cell colors and styles
+ */
+export const DYNAMIC_PRICE_COLORS = {
+  /** Background color for dynamic price cells */
+  ACTIVE_BG: "#FFF5E6",
+  /** Hover background color for dynamic price cells */
+  ACTIVE_HOVER: "#FFE8CC",
+  /** Background color for inactive dynamic price cells */
+  INACTIVE_BG: "#F2F4F7",
+  /** Text color for inactive dynamic price cells */
+  INACTIVE_TEXT: "#98A2B3",
+  /** Border color for price configuration actions */
+  PRIMARY_BORDER: "#F97316",
+} as const;

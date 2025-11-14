@@ -4,7 +4,13 @@ import * as React from "react";
 import { BookingDetailModal, BookingDetail } from "./booking-detail-modal";
 import { TimetableHeader } from "./timetable-header";
 import { Timetable } from "./timetable";
-import type { TimetableProps, Booking } from "@/components/timetable-types";
+import { TimetableBookingCell } from "./timetable-booking-cell";
+import type {
+  TimetableProps,
+  Booking,
+  TimetableRenderCell,
+} from "@/components/timetable-types";
+import { getTimeSlotBooking } from "@/components/timetable-booking-helpers";
 
 // Re-export types untuk backward compatibility
 export type {
@@ -74,17 +80,20 @@ export function TimetableContainer({
   const venueName = selectedVenue?.name || "";
 
   // Handle cell click - open booking detail modal
-  const handleCellClick = (booking: Booking | null, courtName: string) => {
-    if (!booking) return;
+  const handleCellClick = React.useCallback(
+    (booking: Booking | null, courtName: string) => {
+      if (!booking) return;
 
-    const bookingDetail = transformBookingToDetail(
-      booking,
-      venueName,
-      courtName
-    );
-    setSelectedBooking(bookingDetail);
-    setModalOpen(true);
-  };
+      const bookingDetail = transformBookingToDetail(
+        booking,
+        venueName,
+        courtName
+      );
+      setSelectedBooking(bookingDetail);
+      setModalOpen(true);
+    },
+    [transformBookingToDetail, venueName]
+  );
 
   // Handle mark booking as complete
   const handleMarkAsComplete = () => {
@@ -101,6 +110,37 @@ export function TimetableContainer({
     onDateChange?.(date);
   };
 
+  const renderBookingCell = React.useCallback<TimetableRenderCell>(
+    ({ court, timeSlot, timeIndex, timeSlots, selectedDate }) => {
+      const bookingInfo = getTimeSlotBooking(
+        timeSlot,
+        timeIndex,
+        court.id,
+        bookings ?? [],
+        selectedDate,
+        timeSlots
+      );
+
+      const isFirstSlot = bookingInfo?.isFirstSlot ?? false;
+      const span = bookingInfo?.span ?? 1;
+      const booking = bookingInfo?.booking ?? null;
+
+      return (
+        <TimetableBookingCell
+          court={court}
+          timeSlot={timeSlot}
+          booking={booking}
+          isFirstSlot={isFirstSlot}
+          span={span}
+          onClick={(selectedBooking, selectedCourt) =>
+            handleCellClick(selectedBooking, selectedCourt.name)
+          }
+        />
+      );
+    },
+    [bookings, handleCellClick]
+  );
+
   return (
     <div className="space-y-4 w-full max-w-full">
       {/* Header: Venue Selector */}
@@ -114,11 +154,10 @@ export function TimetableContainer({
       {/* Table: Courts x Time Slots Grid */}
       <Timetable
         courts={courts}
-        bookings={bookings}
         selectedDate={selectedDate}
         isLoading={isLoadingTable}
-        onCellClick={handleCellClick}
         onDateChange={handleDateChange}
+        renderCell={renderBookingCell}
       />
 
       {/* Modal: Booking Detail */}

@@ -10,24 +10,27 @@ import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { addDays } from "@/lib/date-utils";
-import { TimetableCell } from "./timetable-cell";
 import { TimetableTableSkeleton } from "./timetable-table-skeleton";
 import {
   generateTimeSlots,
   formatTimeDisplay,
   formatOperatingHours,
 } from "@/components/timetable-utils";
-import { getTimeSlotBooking } from "@/components/timetable-booking-helpers";
 import { BOOKING_COLORS } from "@/constants/timetable";
-import type { Court, Booking } from "@/components/timetable-types";
+import type { Court, TimetableRenderCell } from "@/components/timetable-types";
 
 type TimetableProps = {
   courts: Court[];
-  bookings: Booking[];
   selectedDate: Date;
   isLoading?: boolean;
-  onCellClick: (booking: Booking | null, courtName: string) => void;
   onDateChange?: (date: Date) => void;
+  renderCell: TimetableRenderCell;
+  showQuickJumpButtons?: boolean;
+  primaryAction?: {
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+  };
 };
 
 /**
@@ -36,11 +39,12 @@ type TimetableProps = {
  */
 export function Timetable({
   courts,
-  bookings,
   selectedDate,
   isLoading = false,
-  onCellClick,
   onDateChange,
+  renderCell,
+  showQuickJumpButtons = true,
+  primaryAction,
 }: TimetableProps) {
   const timeSlots = React.useMemo(() => generateTimeSlots(), []);
   const [calendarOpen, setCalendarOpen] = React.useState(false);
@@ -146,25 +150,40 @@ export function Timetable({
                       <ChevronRight className="h-4 w-4" />
                     </Button>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={goToToday}
-                      className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}]`}
-                      disabled={isLoading}
-                    >
-                      Go to Today
-                    </Button>
+                    {showQuickJumpButtons && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToToday}
+                          className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}]`}
+                          disabled={isLoading}
+                        >
+                          Go to Today
+                        </Button>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={goToTomorrow}
-                      className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}]`}
-                      disabled={isLoading}
-                    >
-                      Tomorrow
-                    </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToTomorrow}
+                          className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}]`}
+                          disabled={isLoading}
+                        >
+                          Tomorrow
+                        </Button>
+                      </>
+                    )}
+
+                    {primaryAction && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={primaryAction.onClick}
+                        disabled={primaryAction.disabled}
+                      >
+                        {primaryAction.label}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </th>
@@ -204,30 +223,16 @@ export function Timetable({
                   {formatTimeDisplay(time)}
                 </td>
                 {courts.map((court) => {
-                  const bookingInfo = getTimeSlotBooking(
-                    time,
-                    timeIndex,
-                    court.id,
-                    bookings,
-                    selectedDate,
-                    timeSlots
-                  );
-
-                  const isFirstSlot = bookingInfo?.isFirstSlot ?? false;
-                  const span = bookingInfo?.span ?? 1;
-                  const booking = bookingInfo?.booking ?? null;
-
                   return (
-                    <TimetableCell
-                      key={`${court.id}-${time}`}
-                      courtId={court.id}
-                      courtName={court.name}
-                      timeSlot={time}
-                      booking={booking}
-                      isFirstSlot={isFirstSlot}
-                      span={span}
-                      onCellClick={onCellClick}
-                    />
+                    <React.Fragment key={`${court.id}-${time}`}>
+                      {renderCell({
+                        court,
+                        timeSlot: time,
+                        timeIndex,
+                        timeSlots,
+                        selectedDate,
+                      })}
+                    </React.Fragment>
                   );
                 })}
               </tr>

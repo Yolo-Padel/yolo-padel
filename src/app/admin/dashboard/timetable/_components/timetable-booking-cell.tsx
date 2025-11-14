@@ -2,42 +2,37 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { formatTimeRange } from "@/components/timetable-utils";
 import { BOOKING_COLORS } from "@/constants/timetable";
-import type { Booking } from "@/components/timetable-types";
+import type { Booking, Court } from "@/components/timetable-types";
 
-type TimetableCellProps = {
-  courtId: string;
-  courtName: string;
+type TimetableBookingCellProps = {
+  court: Court;
   timeSlot: string;
   booking: Booking | null;
   isFirstSlot: boolean;
   span: number;
-  onCellClick: (booking: Booking | null, courtName: string) => void;
+  onClick?: (booking: Booking | null, court: Court) => void;
 };
 
 /**
- * TimetableCell Component
- * Renders a single time slot cell in the timetable
- * Handles both empty and booked cell states
+ * TimetableBookingCell
+ * Render khusus untuk menampilkan booking pada timetable grid.
  */
-export function TimetableCell({
-  courtId,
-  courtName,
+export function TimetableBookingCell({
+  court,
   timeSlot,
   booking,
   isFirstSlot,
   span,
-  onCellClick,
-}: TimetableCellProps) {
+  onClick,
+}: TimetableBookingCellProps) {
   const isBooked = booking !== null;
 
-  // Skip rendering continuation cells (they're merged with rowspan)
   if (isBooked && !isFirstSlot && span === 0) {
     return null;
   }
 
   return (
     <td
-      key={`${courtId}-${timeSlot}`}
       rowSpan={isBooked && isFirstSlot ? span : 1}
       className={cn(
         "border h-[80px]",
@@ -45,7 +40,7 @@ export function TimetableCell({
         isBooked &&
           `cursor-pointer hover:bg-[${BOOKING_COLORS.BOOKED_HOVER}] transition-colors`
       )}
-      onClick={() => onCellClick(booking, courtName)}
+      onClick={() => onClick?.(booking, court)}
     >
       {isBooked && isFirstSlot && booking ? (
         <div className="flex flex-col gap-1 p-2">
@@ -65,7 +60,7 @@ export function TimetableCell({
           <div className="text-xs font-medium">
             {formatTimeRange(booking.timeSlots)}
           </div>
-          <div className="text-xs">{courtName}</div>
+          <div className="text-xs">{court.name}</div>
         </div>
       ) : (
         <span className="text-muted-foreground p-2">-</span>
