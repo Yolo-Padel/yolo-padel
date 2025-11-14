@@ -232,10 +232,13 @@ export function BookingCourt() {
                   </span>
                 </CardTitle>
                 <div className="mt-0 justify-between flex items-center gap-1 text-sm">
-                  <span className="text-sm font-medium text-black">
+                  <span
+                    className="text-sm font-medium text-black truncate flex-1 min-w-0"
+                    title={`${bookingCourt.courtName} • ${bookingCourt.venue}`}
+                  >
                     {bookingCourt.courtName} • {bookingCourt.venue}
                   </span>{" "}
-                  <span>
+                  <span className="flex-shrink-0">
                     {" "}
                     {new Date(bookingCourt.bookingDate).toLocaleDateString(
                       "id-ID",

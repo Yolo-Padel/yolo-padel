@@ -275,6 +275,11 @@ export function PriceContent() {
 
   return (
     <div className="space-y-4 w-full max-w-full">
+      <div className="flex items-center gap-2 justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-semibold">Custom Price Configuration</h2>
+        </div>
+      </div>
       <TimetableHeader
         venues={venues}
         selectedVenueId={selectedVenueId}

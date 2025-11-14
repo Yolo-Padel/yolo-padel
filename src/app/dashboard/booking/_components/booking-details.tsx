@@ -92,10 +92,11 @@ export function SeeBookingDetails({
           <div>Booking Date</div>
           <div className="font-medium text-foreground min-w-0">
             {new Date(bookingDetails?.bookingDate || "").toLocaleDateString(
-              "id-ID",
+              "en-US",
               {
+                weekday: "long",
                 day: "numeric",
-                month: "short",
+                month: "long",
                 year: "numeric",
               }
             ) || "-"}

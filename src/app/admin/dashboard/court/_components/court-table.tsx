@@ -30,18 +30,12 @@ import {
   calculatePaginationInfo,
   getPaginatedData,
 } from "@/lib/pagination-utils";
-import {
-  Breadcrumb,
-  BreadcrumbLink,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { useCourtByVenue, useToggleCourtAvailability } from "@/hooks/use-court";
 import { useVenueById } from "@/hooks/use-venue";
 import { Court as PrismaCourt, OpeningHoursType } from "@/types/prisma";
 import { CourtTableSkeleton } from "@/app/admin/dashboard/court/_components/court-skeleton";
 import { CourtEmptyState } from "@/app/admin/dashboard/court/_components/court-empty-state";
+import { CourtBreadcrumb } from "@/app/admin/dashboard/court/_components/court-breadcrumb";
 import { formatOperatingHours } from "@/lib/operating-hours-utils";
 
 // Types
@@ -202,24 +196,7 @@ export function CourtTable() {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2 justify-between">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/admin/dashboard/venue">
-                  Venue Management
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator>/</BreadcrumbSeparator>
-              <BreadcrumbItem>
-                <BreadcrumbLink
-                  href="/admin/dashboard/court"
-                  className="text-primary hover:text-primary/80"
-                >
-                  {venueData?.data?.name || "Court Management"}
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
+          <CourtBreadcrumb venueName={venueData?.data?.name} />
         </div>
         <Button
           onClick={() => {
@@ -251,24 +228,7 @@ export function CourtTable() {
         </Badge>
       </div>
       <div className="flex items-center gap-2 justify-between">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/admin/dashboard/venue">
-                Venue Management
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator>/</BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                href="/admin/dashboard/court"
-                className="text-primary hover:text-primary/80"
-              >
-                {venueData?.data?.name || "Court Management"}
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <CourtBreadcrumb venueName={venueData?.data?.name} />
         <div className="flex items-center gap-2">
           <Button
             onClick={() => {

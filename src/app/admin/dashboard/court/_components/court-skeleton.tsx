@@ -9,7 +9,7 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table"
-import { Breadcrumb, BreadcrumbLink, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
+import { CourtBreadcrumb } from "@/app/admin/dashboard/court/_components/court-breadcrumb"
 import { Plus } from "lucide-react"
 
 export function CourtTableSkeleton() {
@@ -17,17 +17,7 @@ export function CourtTableSkeleton() {
     <div className="flex flex-col gap-4">
       {/* Header Section */}
       <div className="flex items-center gap-2 justify-between">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/admin/dashboard/venue">Venue Management</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator>/</BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/admin/dashboard/court" className="text-primary hover:text-primary/80">Court Management</BreadcrumbLink>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <CourtBreadcrumb />
         <Button disabled className="text-black bg-gray-100">
           Add Court
           <Plus className="ml-2 size-4" />

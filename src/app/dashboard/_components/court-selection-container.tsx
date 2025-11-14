@@ -72,7 +72,9 @@ export function CourtSelectionContainer({
 
   const { data: courts, isLoading: isLoadingCourts } =
     useCourtByVenue(selectedVenueId);
-  const courtsData: Court[] = Array.isArray(courts?.data) ? courts.data : [];
+  const courtsData: Court[] = Array.isArray(courts?.data)
+    ? courts.data.filter((court: Court) => court.isActive === true)
+    : [];
 
   // Get available slots based on selected court + date
   const selectedCourt = courtsData.find((c) => c.id === watchCourtId);
@@ -200,7 +202,13 @@ export function CourtSelectionContainer({
               No court available
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 h-[80px]">
+            <div
+              className="flex flex-row gap-3 overflow-x-auto py-2 px-1 scrollbar-hide"
+              style={{
+                scrollbarWidth: "none" /* Firefox */,
+                msOverflowStyle: "none" /* IE and Edge */,
+              }}
+            >
               {courtsData.map((court: Court) => {
                 const isActive = watchCourtId === court.id;
                 // Check both courtId AND date untuk accurate cart status
@@ -214,11 +222,12 @@ export function CourtSelectionContainer({
                   <div
                     key={court.id}
                     className={cn(
-                      "relative rounded-lg overflow-hidden group cursor-pointer border transition-all",
+                      "relative rounded-lg overflow-hidden group cursor-pointer border transition-all flex-shrink-0",
                       isActive
                         ? "ring-2 ring-primary border-primary shadow-lg"
                         : ""
                     )}
+                    style={{ width: "140px", height: "90px" }}
                     onClick={() => {
                       form.setValue("courtId", court.id);
                       // Don't reset slots here - will be loaded by useEffect
@@ -236,8 +245,8 @@ export function CourtSelectionContainer({
                       {court.name}
                     </div>
                     {isInCart && (
-                      <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1.5 shadow-md">
-                        <Check className="h-3 w-3 text-white" />
+                      <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1.5 shadow-md">
+                        <Check className="h-3 w-3 text-black" />
                       </div>
                     )}
                   </div>
@@ -263,6 +272,13 @@ export function CourtSelectionContainer({
               }}
               showOutsideDays
               className="w-full"
+              disabled={(date) => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const compareDate = new Date(date);
+                compareDate.setHours(0, 0, 0, 0);
+                return compareDate < today;
+              }}
             />
           </div>
         </div>

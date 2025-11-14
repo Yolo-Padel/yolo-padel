@@ -83,7 +83,7 @@ export function Timetable({
 
   return (
     <div className="border rounded-lg w-full max-w-full overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-200px)]">
         <table
           className="border-collapse w-full"
           style={{ minWidth: "max-content" }}
@@ -91,12 +91,12 @@ export function Timetable({
           <thead>
             {/* Row 1: Time Slot + Date Navigation */}
             <tr className="bg-muted/50">
-              <th className="border p-3 text-left font-semibold min-w-[120px]">
+              <th className="border p-3 text-left font-semibold sticky left-0 top-0 bg-muted/50 z-30 min-w-[120px]">
                 Time
               </th>
               <th
                 colSpan={courts.length}
-                className="border p-3 text-left font-semibold relative"
+                className="border p-3 text-left font-semibold sticky top-0 bg-muted/50 z-20"
                 style={{ padding: 0 }}
               >
                 <div className="p-3" style={{ width: "fit-content" }}>
@@ -190,7 +190,7 @@ export function Timetable({
             </tr>
             {/* Row 2: Court Names */}
             <tr className="bg-muted/50">
-              <th className="border p-3 text-left font-semibold sticky left-0 top-0 bg-background z-20 min-w-[120px]">
+              <th className="border p-3 text-left font-semibold sticky left-0 top-[57px] bg-muted/50 z-30 min-w-[120px]">
                 {/* Empty cell for Time Slot column */}
               </th>
               {courts.map((court) => {
@@ -202,7 +202,7 @@ export function Timetable({
                 return (
                   <th
                     key={court.id}
-                    className="border p-3 text-center font-semibold min-w-[150px] sticky top-0 bg-background z-20"
+                    className="border p-3 text-center font-semibold min-w-[150px] sticky top-[57px] bg-muted/50 z-20"
                   >
                     <div className="font-semibold">{court.name}</div>
                     <div className="text-xs text-muted-foreground">

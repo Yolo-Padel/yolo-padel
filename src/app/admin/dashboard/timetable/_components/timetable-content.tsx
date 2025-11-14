@@ -212,6 +212,11 @@ export function TimetableContent() {
   return (
     <ErrorBoundary>
       <div className="space-y-6 w-full">
+        <div className="flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-semibold">Booking Time Table</h2>
+          </div>
+        </div>
         <TimetableContainer
           venues={venues}
           selectedVenueId={selectedVenueId}
@@ -228,4 +233,3 @@ export function TimetableContent() {
     </ErrorBoundary>
   );
 }
-
