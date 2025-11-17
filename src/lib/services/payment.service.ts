@@ -5,13 +5,13 @@ import type { PrismaTransaction } from "@/types/prisma-transaction";
 
 /**
  * Create payment for an order
- * Payment is created with PENDING status and 15 minutes expiry
+ * Payment is created with UNPAID status and 15 minutes expiry
  * Supports both standalone mode (uses prisma) and transaction mode (uses tx parameter)
- * 
+ *
  * @param data - Payment creation data
  * @param tx - Optional transaction client. If provided, uses transaction; otherwise uses prisma directly
  * @returns Created payment
- * 
+ *
  * @example
  * // Standalone mode
  * const payment = await createPayment({
@@ -20,7 +20,7 @@ import type { PrismaTransaction } from "@/types/prisma-transaction";
  *   channelName: "QRIS",
  *   amount: 200000
  * });
- * 
+ *
  * @example
  * // Transaction mode
  * await prisma.$transaction(async (tx) => {
@@ -44,7 +44,7 @@ export async function createPayment(
       userId: data.userId,
       channelName: data.channelName,
       amount: data.amount,
-      status: PaymentStatus.PENDING,
+      status: PaymentStatus.UNPAID,
       expiredAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes from now
     },
   });
@@ -135,7 +135,9 @@ export async function updatePaymentStatus(
  * Handle payment success
  * Called from webhook when payment is confirmed
  */
-export async function handlePaymentSuccess(paymentId: string): Promise<Payment> {
+export async function handlePaymentSuccess(
+  paymentId: string
+): Promise<Payment> {
   return await updatePaymentStatus(paymentId, PaymentStatus.PAID);
 }
 
@@ -143,7 +145,9 @@ export async function handlePaymentSuccess(paymentId: string): Promise<Payment> 
  * Handle payment expiry
  * Called from cron job when payment timeout (15 minutes)
  */
-export async function handlePaymentExpired(paymentId: string): Promise<Payment> {
+export async function handlePaymentExpired(
+  paymentId: string
+): Promise<Payment> {
   return await updatePaymentStatus(paymentId, PaymentStatus.EXPIRED);
 }
 
@@ -156,14 +160,6 @@ export async function handlePaymentFailed(paymentId: string): Promise<Payment> {
 }
 
 /**
- * Handle payment refund
- * Called when user cancels order after payment
- */
-export async function handlePaymentRefund(paymentId: string): Promise<Payment> {
-  return await updatePaymentStatus(paymentId, PaymentStatus.REFUNDED);
-}
-
-/**
  * Get expired payments
  * Used by cron job to find payments that need to be expired
  */
@@ -172,7 +168,7 @@ export async function getExpiredPendingPayments(): Promise<Payment[]> {
 
   const expiredPayments = await prisma.payment.findMany({
     where: {
-      status: PaymentStatus.PENDING,
+      status: PaymentStatus.UNPAID,
       expiredAt: {
         lte: now,
       },
@@ -214,4 +210,3 @@ export async function processExpiredPayments(): Promise<{
     expiredPaymentIds,
   };
 }
-

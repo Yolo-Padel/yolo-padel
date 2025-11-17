@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { Order, OrderStatus, BookingStatus } from "@/types/prisma";
+import {
+  Order,
+  OrderStatus,
+  BookingStatus,
+  PaymentStatus,
+} from "@/types/prisma";
 import { customAlphabet } from "nanoid";
 import { createBooking } from "./booking.service";
 import { createPayment } from "./payment.service";
@@ -352,7 +357,7 @@ export async function cancelOrder(orderId: string): Promise<Order> {
     // Update order status
     const updatedOrder = await tx.order.update({
       where: { id: orderId },
-      data: { status: OrderStatus.CANCELLED },
+      data: { status: OrderStatus.FAILED },
     });
 
     // Update all bookings status
@@ -372,11 +377,9 @@ export async function cancelOrder(orderId: string): Promise<Order> {
 
     // Update payment status
     if (orderData.payment) {
-      const newPaymentStatus =
-        orderData.payment.status === "PAID" ? "REFUNDED" : "EXPIRED";
       await tx.payment.update({
         where: { id: orderData.payment.id },
-        data: { status: newPaymentStatus },
+        data: { status: PaymentStatus.EXPIRED },
       });
     }
 

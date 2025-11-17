@@ -61,7 +61,7 @@ export function OrderTable({
             const customerName =
               order.user?.profile?.fullName || order.user?.email || "N/A";
             const paymentStatus =
-              order.payment?.status || PaymentStatus.PENDING;
+              order.payment?.status || PaymentStatus.UNPAID;
 
             return (
               <TableRow key={order.id}>

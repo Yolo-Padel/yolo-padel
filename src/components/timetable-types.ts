@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { DayOfWeek } from "@/types/prisma";
+import type { BookingStatus, DayOfWeek } from "@/types/prisma";
 import type { BookingDetail } from "../app/admin/dashboard/timetable/_components/booking-detail-modal";
 
 // Types berdasarkan schema Prisma
@@ -23,7 +23,7 @@ export type Booking = {
     openHour: string; // Format: "06:00"
     closeHour: string; // Format: "07:00"
   }>;
-  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "NO_SHOW";
+  status: BookingStatus;
 };
 
 export type Venue = {

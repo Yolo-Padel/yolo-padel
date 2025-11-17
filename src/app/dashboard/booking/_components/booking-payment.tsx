@@ -3,7 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from "lucide-react";
-import { BookingStatus } from "@/types/prisma";
+import { BookingStatus, PaymentStatus } from "@/types/prisma";
 import { stringUtils } from "@/lib/format/string";
 
 type PaymentProps = {
@@ -17,7 +17,7 @@ type PaymentProps = {
   totalPayment: number;
   status: BookingStatus;
   paymentMethod: string | "Credit Card" | "QRIS" | "Bank Transfer";
-  paymentStatus: string | "Paid" | "Unpaid";
+  paymentStatus: PaymentStatus;
 };
 
 export function Payment({
@@ -83,7 +83,7 @@ export function Payment({
           </Button>
 
           {/*Payment Confirmed*/}
-          {paymentProps?.status === BookingStatus.CONFIRMED && (
+          {paymentProps?.status === BookingStatus.UPCOMING && (
             <Button
               className="w-full rounded-sm border-primary"
               variant="outline"

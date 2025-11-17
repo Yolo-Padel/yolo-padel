@@ -25,17 +25,16 @@ enum UserStatus {
 
 enum BookingStatus {
   PENDING
-  CONFIRMED
+  UPCOMING
   CANCELLED
   COMPLETED
   NO_SHOW
 }
 
 enum PaymentStatus {
-  PENDING
+  UNPAID
   PAID
   FAILED
-  REFUNDED
   EXPIRED
 }
 
@@ -43,7 +42,7 @@ enum OrderStatus {
   PENDING
   PAID
   COMPLETED
-  CANCELLED
+  FAILED
   EXPIRED
 }
 

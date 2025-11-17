@@ -14,13 +14,11 @@ const getPaymentStatus = (paymentStatus: PaymentStatus) => {
   switch (paymentStatus) {
     case PaymentStatus.PAID:
       return "bg-[#D5FFD5] text-[#1FAD53]";
-    case PaymentStatus.PENDING:
+    case PaymentStatus.UNPAID:
       return "bg-[#FFF5D5] text-[#AD751F]";
     case PaymentStatus.FAILED:
     case PaymentStatus.EXPIRED:
       return "bg-[#FFD5D5] text-[#AD1F1F]";
-    case PaymentStatus.REFUNDED:
-      return "bg-gray-200 text-gray-700";
     default:
       return "bg-gray-500 text-white";
   }
@@ -28,7 +26,7 @@ const getPaymentStatus = (paymentStatus: PaymentStatus) => {
 
 const getBookingStatus = (bookingStatus: BookingStatus) => {
   switch (bookingStatus) {
-    case BookingStatus.CONFIRMED:
+    case BookingStatus.UPCOMING:
       return "bg-[#D5FFD5] text-[#1FAD53]";
     case BookingStatus.PENDING:
       return "bg-[#FFF5D5] text-[#AD751F]";
@@ -195,8 +193,8 @@ export function OrderDetailsContainer({
           <div>Payment Status</div>
           <div className={`font-medium`}>
             <Badge
-              className={getPaymentStatus(
-                orderDetails?.payment?.status || PaymentStatus.PENDING
+              className=              {getPaymentStatus(
+                orderDetails?.payment?.status || PaymentStatus.UNPAID
               )}
             >
               {orderDetails?.payment?.status}
@@ -253,7 +251,7 @@ export function OrderDetailsContainer({
           )}
 
           {/*Pending Payment Button*/}
-          {orderDetails?.payment?.status === PaymentStatus.PENDING && (
+          {orderDetails?.payment?.status === PaymentStatus.UNPAID && (
             <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
               <Button
                 className="w-full border-primary rounded-sm"
@@ -297,16 +295,6 @@ export function OrderDetailsContainer({
             </div>
           )}
 
-          {/*Payment Refunded Button*/}
-          {orderDetails?.payment?.status === PaymentStatus.REFUNDED && (
-            <Button
-              className="w-full border-primary rounded-sm"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Close
-            </Button>
-          )}
         </div>
       )}
     </div>

@@ -55,10 +55,10 @@ export async function syncPaymentStatusToOrder(
           data: { status: OrderStatus.PAID },
         });
 
-        // Update all bookings to CONFIRMED
+        // Update all bookings to UPCOMING
         await tx.booking.updateMany({
           where: { id: { in: bookingIds } },
-          data: { status: BookingStatus.CONFIRMED },
+          data: { status: BookingStatus.UPCOMING },
         });
 
         // Blockings remain active (keep slots locked)
@@ -87,31 +87,10 @@ export async function syncPaymentStatusToOrder(
 
       case PaymentStatus.FAILED:
         // Payment FAILED (gateway error)
-        // Update order status to CANCELLED
+        // Update order status to FAILED
         await tx.order.update({
           where: { id: payment.orderId },
-          data: { status: OrderStatus.CANCELLED },
-        });
-
-        // Update all bookings to CANCELLED
-        await tx.booking.updateMany({
-          where: { id: { in: bookingIds } },
-          data: { status: BookingStatus.CANCELLED },
-        });
-
-        // Release all blockings
-        await tx.blocking.updateMany({
-          where: { bookingId: { in: bookingIds } },
-          data: { isBlocking: false },
-        });
-        break;
-
-      case PaymentStatus.REFUNDED:
-        // Payment REFUNDED (user cancelled after payment)
-        // Update order status to CANCELLED
-        await tx.order.update({
-          where: { id: payment.orderId },
-          data: { status: OrderStatus.CANCELLED },
+          data: { status: OrderStatus.FAILED },
         });
 
         // Update all bookings to CANCELLED
@@ -128,7 +107,7 @@ export async function syncPaymentStatusToOrder(
         break;
 
       default:
-        // PENDING - no action needed
+        // UNPAID - no action needed
         break;
     }
   });
@@ -221,7 +200,8 @@ export async function syncOrderStatusToBookings(
 
     // Handle different order statuses
     switch (newOrderStatus) {
-      case OrderStatus.CANCELLED:
+      case OrderStatus.FAILED:
+      case OrderStatus.EXPIRED:
         // Cancel entire order
         // Update all bookings to CANCELLED
         await tx.booking.updateMany({
@@ -239,7 +219,7 @@ export async function syncOrderStatusToBookings(
         if (order.payment) {
           const newPaymentStatus =
             order.payment.status === PaymentStatus.PAID
-              ? PaymentStatus.REFUNDED
+              ? PaymentStatus.EXPIRED
               : PaymentStatus.EXPIRED;
 
           await tx.payment.update({

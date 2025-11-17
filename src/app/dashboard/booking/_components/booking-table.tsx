@@ -79,7 +79,7 @@ export function BookingCourt() {
 
   const getStatusBadge = (status: BookingStatus) => {
     switch (status) {
-      case BookingStatus.CONFIRMED:
+      case BookingStatus.UPCOMING:
         return "bg-[#D0FBE9] text-[#1A7544]";
       case BookingStatus.COMPLETED:
         return "bg-[#E7F0FE] text-[#194185]";
@@ -127,7 +127,7 @@ export function BookingCourt() {
         totalPayment: b.totalPrice,
         status: b.status,
         paymentMethod: b.order?.payment?.channelName || "N/A",
-        paymentStatus: b.order?.payment?.status || PaymentStatus.PENDING,
+        paymentStatus: b.order?.payment?.status || PaymentStatus.UNPAID,
       };
     });
   }, [allBookingCourts]);
@@ -311,7 +311,7 @@ export function BookingCourt() {
                   </Button>
                 </CardFooter>
               )}
-              {bookingCourt.status === BookingStatus.CONFIRMED && (
+              {bookingCourt.status === BookingStatus.UPCOMING && (
                 <CardFooter className="px-1 pt-4 pb-1 w-full min-w-0">
                   <Button
                     onClick={() => {

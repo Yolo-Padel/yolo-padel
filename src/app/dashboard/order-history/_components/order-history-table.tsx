@@ -43,15 +43,13 @@ export default function OrderHistoryTable() {
   // Map PaymentStatus enum to display styles
   const getPaymentStatus = (paymentStatus: PaymentStatus) => {
     switch (paymentStatus) {
-      case "PAID":
+      case PaymentStatus.PAID:
         return "bg-[#D0FBE9] text-[#1A7544]";
-      case "PENDING":
+      case PaymentStatus.UNPAID:
         return "bg-[#FFF5D5] text-[#AD751F]";
-      case "FAILED":
-      case "EXPIRED":
+      case PaymentStatus.FAILED:
+      case PaymentStatus.EXPIRED:
         return "bg-[#FFD5D5] text-[#AD1F1F]";
-      case "REFUNDED":
-        return "bg-[#E5E7EB] text-[#374151]";
       default:
         return "bg-gray-500 text-white";
     }
@@ -60,16 +58,14 @@ export default function OrderHistoryTable() {
   // Get display label for payment status
   const getPaymentStatusLabel = (status: PaymentStatus) => {
     switch (status) {
-      case "PAID":
+      case PaymentStatus.PAID:
         return "Paid";
-      case "PENDING":
-        return "Pending";
-      case "FAILED":
+      case PaymentStatus.UNPAID:
+        return "Unpaid";
+      case PaymentStatus.FAILED:
         return "Failed";
-      case "EXPIRED":
+      case PaymentStatus.EXPIRED:
         return "Expired";
-      case "REFUNDED":
-        return "Refunded";
       default:
         return status;
     }
@@ -134,7 +130,7 @@ export default function OrderHistoryTable() {
       {!isLoading && !error && orders.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {orders.map((order) => {
-            const paymentStatus = order.payment?.status || "PENDING";
+            const paymentStatus = order.payment?.status || "UNPAID";
             return (
               <Card
                 key={order.id}
@@ -185,7 +181,7 @@ export default function OrderHistoryTable() {
                   )}
 
                   {/* Payment Pending Button */}
-                  {paymentStatus === "PENDING" && (
+                  {paymentStatus === "UNPAID" && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
                       <Button
                         className="w-full border-primary"
@@ -239,21 +235,6 @@ export default function OrderHistoryTable() {
                         Re-Book
                       </Button>
                     </div>
-                  )}
-
-                  {/* Payment Refunded - Show Details Only */}
-                  {paymentStatus === "REFUNDED" && (
-                    <Button
-                      className="w-full border-primary"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        setOrderModal(true);
-                        setModeModal("order-details");
-                      }}
-                    >
-                      See Details
-                    </Button>
                   )}
                 </CardFooter>
               </Card>

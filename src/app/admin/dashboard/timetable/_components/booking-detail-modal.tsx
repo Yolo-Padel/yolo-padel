@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { stringUtils } from "@/lib/format/string";
+import { PaymentStatus } from "@/types/prisma";
 
 // Extended booking type dengan payment info
 export type BookingDetail = {
@@ -30,7 +31,7 @@ export type BookingDetail = {
   duration: number; // dalam jam
   totalAmount: number;
   paymentMethod: string;
-  paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED" | "EXPIRED";
+  paymentStatus: PaymentStatus;
   createdAt: Date;
 };
 
@@ -79,17 +80,15 @@ function formatDateTime(date: Date): string {
 }
 
 // Get payment status badge styling
-function getPaymentStatusBadgeClass(status: string): string {
+function getPaymentStatusBadgeClass(status: PaymentStatus): string {
   switch (status) {
-    case "PAID":
+    case PaymentStatus.PAID:
       return "bg-[#D0FBE9] text-[#1A7544]";
-    case "PENDING":
+    case PaymentStatus.UNPAID:
       return "bg-[#FFF4D5] text-[#8B6F00]";
-    case "FAILED":
+    case PaymentStatus.FAILED:
       return "bg-[#FFD5D5] text-[#AD1F1F]";
-    case "REFUNDED":
-      return "bg-[#E0E0E0] text-[#666666]";
-    case "EXPIRED":
+    case PaymentStatus.EXPIRED:
       return "bg-[#FFD5D5] text-[#AD1F1F]";
     default:
       return "bg-gray-200 text-gray-700";
@@ -185,7 +184,7 @@ export function BookingDetailModal({
                     getPaymentStatusBadgeClass(booking.paymentStatus)
                   )}
                 >
-                  {booking.paymentStatus === "PAID"
+                  {booking.paymentStatus === PaymentStatus.PAID
                     ? "Paid"
                     : booking.paymentStatus}
                 </Badge>
@@ -208,14 +207,15 @@ export function BookingDetailModal({
             >
               Close
             </Button>
-            {onMarkAsComplete && booking.paymentStatus === "PAID" && (
-              <Button
-                className="flex-1 bg-[#C3D223] hover:bg-[#A9B920] text-white"
-                onClick={onMarkAsComplete}
-              >
-                Mark as Complete
-              </Button>
-            )}
+            {onMarkAsComplete &&
+              booking.paymentStatus === PaymentStatus.PAID && (
+                <Button
+                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920] text-white"
+                  onClick={onMarkAsComplete}
+                >
+                  Mark as Complete
+                </Button>
+              )}
           </div>
         </div>
       </DialogContent>
