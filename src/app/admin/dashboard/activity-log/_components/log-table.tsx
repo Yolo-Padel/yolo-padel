@@ -21,12 +21,19 @@ import {
   MoreHorizontal,
   Trash,
 } from "lucide-react";
-import { User, Profile, Role, UserStatus } from "@/types/prisma";
-
+import { User, Profile, Role, UserStatus, ActivityLog } from "@/types/prisma";
+import { useActivityLogsAdmin } from "@/hooks/use-activity-log";
 
 const PAGE_SIZE = 10;
 
 export function ActivityLogTable() {
+  const { data, isLoading, error } = useActivityLogsAdmin();
+  const allLogs = data?.data || [];
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+  if (!data) return <div>No activity logs found.</div>;
+
   return (
     <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
       <Table>
@@ -41,14 +48,16 @@ export function ActivityLogTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          <TableRow>
-            <TableCell>2023-01-01 10:00:00</TableCell>
-            <TableCell><span className="text-sm font-medium">Regina</span> <br/> <span className="text-xs text-muted-foreground">reginapacis@example.com</span></TableCell>
-            <TableCell>Admin Slipi</TableCell>
-            <TableCell>Booking Management</TableCell>
-            <TableCell>Update</TableCell>
-            <TableCell>Changed booking time ID #B-132 (Court 3, 18:00 → 19:00 PM).</TableCell>
-          </TableRow>
+          {allLogs.map((log: ActivityLog & { user: User & { profile: Profile } }) => (
+            <TableRow key={log.id}>
+              <TableCell>{new Date(log.createdAt).toLocaleString()}</TableCell>
+              <TableCell><span className="text-sm font-medium">{log.user?.profile?.fullName}</span> <br/> <span className="text-xs text-muted-foreground">{log.user?.email}</span></TableCell>
+              <TableCell>{log.user?.role}</TableCell>
+              <TableCell>{log.entityType}</TableCell>
+              <TableCell>{log.action}</TableCell>
+              <TableCell>{log.description}</TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>

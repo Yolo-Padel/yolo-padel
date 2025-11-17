@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { ServiceContext } from "@/types/service-context";
+import { requirePermission, ServiceContext } from "@/types/service-context";
 import { ActionType } from "@/types/action";
 import { EntityType } from "@/types/entity";
+import { Role } from "@prisma/client";
 
 type RecordActivityParams = {
   context: ServiceContext;
@@ -194,5 +195,27 @@ export const activityLogService = {
       console.error("recordActivity error:", error);
     }
   },
-};
-
+  getActivity: async (context: ServiceContext) => {
+    try {
+          const accessError = requirePermission(context, Role.ADMIN);
+    
+          if (accessError) return accessError;
+          // Get all users
+          const activityLogs = await prisma.activityLog.findMany({
+            include: { user: { include: { profile: true } } }, 
+            orderBy: { createdAt: "desc" },
+          });
+          return {
+            success: true,
+            data: activityLogs,
+            message: "Activity logs retrieved successfully",
+          };
+        } catch (error) {
+          console.error("getActivity error:", error);
+          return {
+            success: false,
+            message: "Internal server error",
+          };
+        }
+      }
+}
