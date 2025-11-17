@@ -6,6 +6,7 @@ import { TimetableHeaderSkeleton } from "./timetable-header-skeleton";
 import { TimetableTableSkeleton } from "./timetable-table-skeleton";
 import { TimetableError } from "./timetable-error";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { TimetableEmptyState } from "@/components/timetable-empty-state";
 import { useVenue } from "@/hooks/use-venue";
 import { useCourtByVenue } from "@/hooks/use-court";
 import { useBlockingByVenueAndDate } from "@/hooks/use-blocking";
@@ -15,6 +16,8 @@ import {
   transformPrismaBlockingToDetail,
 } from "@/lib/booking-transform";
 import type { Venue } from "@/components/timetable-types";
+import { PaymentStatus } from "@/types/prisma";
+import { TimetableHeader } from "./timetable-header";
 
 export function TimetableContent() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -112,7 +115,7 @@ export function TimetableContent() {
         duration: booking.timeSlots.length,
         totalAmount: 0,
         paymentMethod: "N/A",
-        paymentStatus: "PENDING" as const,
+        paymentStatus: PaymentStatus.UNPAID,
         createdAt: booking.bookingDate,
       };
     };
@@ -206,6 +209,44 @@ export function TimetableContent() {
         <TimetableHeaderSkeleton showVenueSelector={false} />
         <TimetableTableSkeleton />
       </div>
+    );
+  }
+
+  // Show empty state if no venues
+  if (venues.length === 0 && !venuesLoading) {
+    return (
+      <ErrorBoundary>
+        <div className="space-y-6 w-full">
+          <div className="flex items-center gap-2 justify-between">
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-semibold">Booking Time Table</h2>
+            </div>
+          </div>
+          <TimetableEmptyState type="no-venues" />
+        </div>
+      </ErrorBoundary>
+    );
+  }
+
+  // Show empty state if no courts for selected venue
+  if (courts.length === 0 && !courtsLoading && selectedVenueId) {
+    return (
+      <ErrorBoundary>
+        <div className="space-y-6 w-full">
+          <div className="flex items-center gap-2 justify-between">
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-semibold">Booking Time Table</h2>
+            </div>
+          </div>
+          <TimetableHeader
+            venues={venues}
+            selectedVenueId={selectedVenueId}
+            onVenueChange={handleVenueChange}
+            isLoading={courtsLoading}
+          />
+          <TimetableEmptyState type="no-courts" />
+        </div>
+      </ErrorBoundary>
     );
   }
 

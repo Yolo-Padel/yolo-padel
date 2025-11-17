@@ -5,6 +5,7 @@ import { Timetable } from "@/app/admin/dashboard/timetable/_components/timetable
 import { TimetableHeader } from "@/app/admin/dashboard/timetable/_components/timetable-header";
 import { TimetableSkeleton } from "@/app/admin/dashboard/timetable/_components/timetable-skeleton";
 import { TimetableError } from "@/app/admin/dashboard/timetable/_components/timetable-error";
+import { TimetableEmptyState } from "@/components/timetable-empty-state";
 import { DynamicPriceCell } from "./dynamic-price-cell";
 import { DynamicPriceModal } from "./dynamic-price-modal";
 import { useVenue } from "@/hooks/use-venue";
@@ -255,18 +256,36 @@ export function PriceContent() {
     return <TimetableSkeleton />;
   }
 
-  if (courts.length === 0) {
+  // Show empty state if no venues
+  if (venues.length === 0 && !venuesLoading) {
     return (
       <div className="space-y-4 w-full max-w-full">
+        <div className="flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-semibold">Custom Price Configuration</h2>
+          </div>
+        </div>
+        <TimetableEmptyState type="no-venues" />
+      </div>
+    );
+  }
+
+  // Show empty state if no courts for selected venue
+  if (courts.length === 0 && !courtsLoading && selectedVenueId) {
+    return (
+      <div className="space-y-4 w-full max-w-full">
+        <div className="flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-semibold">Custom Price Configuration</h2>
+          </div>
+        </div>
         <TimetableHeader
           venues={venues}
           selectedVenueId={selectedVenueId}
           onVenueChange={handleVenueChange}
           isLoading={courtsLoading}
         />
-        <div className="border rounded-lg p-6 text-sm text-muted-foreground">
-          Tidak ada court untuk venue yang dipilih.
-        </div>
+        <TimetableEmptyState type="no-courts" />
       </div>
     );
   }
