@@ -27,6 +27,9 @@ import { useCourtSlotsPersistence } from "@/hooks/use-court-slots-persistence";
 import { useBookingCartSync } from "@/hooks/use-booking-cart-sync";
 import { BookingFormValues, CourtSelections } from "@/types/booking";
 import { CourtSkeleton } from "./court-skeleton";
+import { useAuth } from "@/hooks/use-auth";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type CourtSelectionContainerProps = {
   onClose: () => void;
@@ -37,6 +40,7 @@ type CourtSelectionContainerProps = {
     index: number | ((prev: CartItem[]) => CartItem[])
   ) => void;
   onProceedToSummary: () => void;
+  onGuestInfoChange?: (email: string, fullName: string) => void;
 };
 
 export function CourtSelectionContainer({
@@ -46,8 +50,14 @@ export function CourtSelectionContainer({
   onAddToCart,
   onRemoveFromCart,
   onProceedToSummary,
+  onGuestInfoChange,
 }: CourtSelectionContainerProps) {
   const [selectedVenueId, setSelectedVenueId] = useState<string>("");
+  const { isAuthenticated } = useAuth();
+
+  // Guest info state (only for non-authenticated users)
+  const [guestEmail, setGuestEmail] = useState<string>("");
+  const [guestFullName, setGuestFullName] = useState<string>("");
 
   // Track selections per court (courtId + date as key)
   const [courtSelections, setCourtSelections] = useState<CourtSelections>(
@@ -327,6 +337,49 @@ export function CourtSelectionContainer({
         </div>
       </div>
 
+      {/* Guest Info Input (only if not authenticated) */}
+      {!isAuthenticated && (
+        <div className="flex flex-col gap-3 pt-2">
+          <div className="space-y-2">
+            <Label htmlFor="guest-email" className="text-sm">
+              Email <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="guest-email"
+              type="email"
+              placeholder="your.email@example.com"
+              value={guestEmail}
+              onChange={(e) => {
+                const email = e.target.value;
+                setGuestEmail(email);
+                onGuestInfoChange?.(email, guestFullName);
+              }}
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              We'll send your order details to this email
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="guest-name" className="text-sm">
+              Full Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="guest-name"
+              type="text"
+              placeholder="John Doe"
+              value={guestFullName}
+              onChange={(e) => {
+                const name = e.target.value;
+                setGuestFullName(name);
+                onGuestInfoChange?.(guestEmail, name);
+              }}
+              required
+            />
+          </div>
+        </div>
+      )}
+
       {/* Total Price */}
       <div className="flex items-center justify-between pt-2">
         <div>
@@ -343,7 +396,10 @@ export function CourtSelectionContainer({
       <Button
         className="w-full h-11"
         onClick={onProceedToSummary}
-        disabled={cart.length === 0}
+        disabled={
+          cart.length === 0 ||
+          (!isAuthenticated && (!guestEmail || !guestFullName))
+        }
       >
         <ShoppingCart className="mr-2 h-4 w-4" />
         Book

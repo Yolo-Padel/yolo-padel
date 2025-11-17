@@ -11,6 +11,10 @@ import { useState } from "react";
 import Image from "next/image";
 import { formatTimeSlots } from "@/lib/time-slots-formatter";
 import { stringUtils } from "@/lib/format/string";
+import { useAuth, useCreateGuestUser } from "@/hooks/use-auth";
+import { useCreateOrder } from "@/hooks/use-order";
+import { transformUISlotsToOrderFormat } from "@/lib/booking-slots-utils";
+import { toast } from "sonner";
 
 export type CartItem = {
   courtId: string;
@@ -27,6 +31,14 @@ type OrderSummaryContainerProps = {
   cartItems: CartItem[];
   onBack: () => void;
   onNext: (paymentMethod: string) => void;
+  guestEmail?: string;
+  guestFullName?: string;
+  onClearCart?: () => void;
+  onOrderCreated?: (order: {
+    orderCode: string;
+    orderId: string;
+    totalAmount: number;
+  }) => void;
 };
 
 const PAYMENT_METHODS = [
@@ -51,9 +63,18 @@ export function OrderSummaryContainer({
   cartItems,
   onBack,
   onNext,
+  guestEmail = "",
+  guestFullName = "",
+  onClearCart,
+  onOrderCreated,
 }: OrderSummaryContainerProps) {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("QRIS");
   const [showAllMethods, setShowAllMethods] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { mutate: createGuestUser } = useCreateGuestUser();
+  const { mutate: createOrder } = useCreateOrder();
 
   // Calculate totals
   const courtFeesTotal = cartItems.reduce(
@@ -66,7 +87,86 @@ export function OrderSummaryContainer({
 
   const handleNext = () => {
     if (!selectedPaymentMethod) return;
-    onNext(selectedPaymentMethod);
+
+    // If guest, create user first, then create order
+    if (!isAuthenticated) {
+      // Validate guest info
+      if (!guestEmail || !guestFullName) {
+        toast.error("Email dan nama lengkap wajib diisi");
+        return;
+      }
+
+      setIsProcessing(true);
+
+      // Step 1: Create guest user
+      createGuestUser(
+        {
+          email: guestEmail,
+          fullName: guestFullName,
+        },
+        {
+          onSuccess: async () => {
+            // Step 2: Wait for auth state to update, then create order
+            // The useCreateGuestUser hook already refetches currentUser
+            // Wait a bit for the refetch to complete, then proceed
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            createOrderInternal();
+          },
+          onError: (error: Error) => {
+            setIsProcessing(false);
+            toast.error(error.message || "Gagal membuat akun guest");
+            // Rollback: clear cart on error
+            if (onClearCart) {
+              onClearCart();
+            }
+          },
+        }
+      );
+    } else {
+      // Authenticated user: directly create order
+      createOrderInternal();
+    }
+  };
+
+  const createOrderInternal = () => {
+    // Transform cart items to order format
+    const bookings = cartItems.map((item) => ({
+      courtId: item.courtId,
+      date: item.date,
+      slots: transformUISlotsToOrderFormat(item.slots),
+      price: item.pricePerSlot,
+    }));
+
+    // Create order
+    createOrder(
+      {
+        bookings,
+        channelName: selectedPaymentMethod,
+      },
+      {
+        onSuccess: (order) => {
+          setIsProcessing(false);
+          // Notify parent about order creation
+          if (onOrderCreated) {
+            onOrderCreated({
+              orderCode: order.orderCode,
+              orderId: order.id,
+              totalAmount: order.totalAmount,
+            });
+          }
+          // Call original onNext for backward compatibility
+          onNext(selectedPaymentMethod);
+        },
+        onError: (error) => {
+          setIsProcessing(false);
+          toast.error(error.message || "Gagal membuat order");
+          // Rollback: clear cart on error
+          if (onClearCart) {
+            onClearCart();
+          }
+        },
+      }
+    );
   };
 
   // Display only first 3 methods initially
@@ -232,9 +332,9 @@ export function OrderSummaryContainer({
       <Button
         className="w-full h-11"
         onClick={handleNext}
-        disabled={!selectedPaymentMethod}
+        disabled={!selectedPaymentMethod || isProcessing}
       >
-        Book Now
+        {isProcessing ? "Processing..." : "Book Now"}
       </Button>
     </div>
   );

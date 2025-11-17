@@ -10,7 +10,7 @@ export function HeroSection() {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col">
+    <div className="h-full flex flex-col">
       {/* Background Image Layer */}
       <div className="absolute inset-0 z-0">
         <img
@@ -20,13 +20,16 @@ export function HeroSection() {
         />
       </div>
 
+      {/* Black Overlay at Bottom */}
+      <div className="absolute z-10 bg-black/20 w-full h-full"></div>
+
       {/* Content Layer */}
-      <div className="relative z-20 flex-1 flex flex-col">
+      <div className="relative z-20 flex-1 flex flex-col gap-10">
         {/* Header */}
         <GlobalHeader />
 
         {/* Main Content */}
-        <div className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
+        <div className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
             {/* Left Section - Hero Title & Description */}
             <div className="flex flex-col justify-center space-y-6 text-primary pt-35">
@@ -40,7 +43,7 @@ export function HeroSection() {
 
             {/* Right Section - Booking Form */}
             <div className="flex justify-center">
-              <div className="w-full bg-white rounded-4xl p-6">
+              <div className="w-full bg-white rounded-4xl p-6 max-h-[calc(100vh-12rem)] overflow-y-auto overflow-x-hidden">
                 <BookingForm onClose={handleClose} isModal={false} />
               </div>
             </div>

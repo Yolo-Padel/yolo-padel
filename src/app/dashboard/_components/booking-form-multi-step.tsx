@@ -29,6 +29,9 @@ export function BookingFormMultiStep({
     orderId: string;
     totalAmount: number;
   } | null>(null);
+  // Guest info state (from step 1)
+  const [guestEmail, setGuestEmail] = useState<string>("");
+  const [guestFullName, setGuestFullName] = useState<string>("");
 
   const { user } = useAuth();
   const { mutate: createOrder, isPending: isCreatingOrder } = useCreateOrder();
@@ -74,45 +77,27 @@ export function BookingFormMultiStep({
   };
 
   // Handle submit order (step 2 → step 3)
+  // This is now handled by OrderSummaryContainer for guest flow
+  // For authenticated users, this is still called but order creation happens in OrderSummaryContainer
   const handleSubmitOrder = (paymentMethod: string) => {
-    if (!user?.id) {
-      toast.error("Please login first");
-      return;
-    }
-
     setSelectedPaymentMethod(paymentMethod);
+    // Order creation is now handled in OrderSummaryContainer
+    // This function is kept for backward compatibility
+  };
 
-    // Transform cart items to order format
-    const bookings = cart.map((item) => ({
-      courtId: item.courtId,
-      date: item.date,
-      slots: transformUISlotsToOrderFormat(item.slots),
-      price: item.pricePerSlot,
-    }));
+  // Handle order created (called from OrderSummaryContainer)
+  const handleOrderCreated = (order: {
+    orderCode: string;
+    orderId: string;
+    totalAmount: number;
+  }) => {
+    setOrderData(order);
+    setCurrentStep(3);
+  };
 
-    // Create order
-    createOrder(
-      {
-        bookings,
-        channelName: paymentMethod,
-      },
-      {
-        onSuccess: (order) => {
-          // order is already the Order object (not wrapped in response.data)
-          setOrderData({
-            orderCode: order.orderCode,
-            orderId: order.id,
-            totalAmount: order.totalAmount,
-          });
-          setCurrentStep(3);
-          // Note: Toast is already shown by useCreateOrder hook
-        },
-        onError: (error) => {
-          // Note: Toast is already shown by useCreateOrder hook
-          console.error("Create order error:", error);
-        },
-      }
-    );
+  // Handle clear cart (for error rollback)
+  const handleClearCart = () => {
+    setCart([]);
   };
 
   // Handle payment completion (step 3 → step 4)
@@ -138,6 +123,10 @@ export function BookingFormMultiStep({
           onAddToCart={handleAddToCart}
           onRemoveFromCart={handleRemoveFromCart}
           onProceedToSummary={handleProceedToSummary}
+          onGuestInfoChange={(email, fullName) => {
+            setGuestEmail(email);
+            setGuestFullName(fullName);
+          }}
         />
       )}
 
@@ -146,6 +135,10 @@ export function BookingFormMultiStep({
           cartItems={cart}
           onBack={handleBackToSelection}
           onNext={handleSubmitOrder}
+          guestEmail={guestEmail}
+          guestFullName={guestFullName}
+          onClearCart={handleClearCart}
+          onOrderCreated={handleOrderCreated}
         />
       )}
 
