@@ -1,14 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useLogout } from "@/hooks/use-auth";
-import {
-  BadgeCheck,
-  Bell,
-  ChevronsUpDown,
-  CreditCard,
-  LogOut,
-  Sparkles,
-} from "lucide-react";
+import { User, ChevronsUpDown, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -25,6 +19,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { ProfileModal } from "@/app/_components/profile-modal";
 
 export function NavUser({
   user,
@@ -37,6 +32,7 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar();
   const logout = useLogout();
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   const handleLogout = () => {
     logout.mutate();
@@ -71,39 +67,25 @@ export function NavUser({
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg p-0"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}
           >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
-                </div>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-
-            <DropdownMenuGroup>
-              <DropdownMenuItem asChild>
-                <a href="/admin/dashboard/profile">
-                  <BadgeCheck />
-                  Profile
-                </a>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={(event) => {
+                event.preventDefault();
+                setProfileModalOpen(true);
+              }}
+              className="cursor-pointer bg-white hover:bg-white border-b-1 p-2.5"
+            >
+              <User />
+              View Profile
+            </DropdownMenuItem>
             <DropdownMenuItem
               onClick={handleLogout}
               disabled={logout.isPending}
+              className="cursor-pointer p-2.5 bg-[#f9fafb] rounded-none"
             >
               <LogOut />
               {logout.isPending ? "Logging out..." : "Log out"}
@@ -111,6 +93,10 @@ export function NavUser({
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
+      <ProfileModal
+        open={profileModalOpen}
+        onOpenChange={setProfileModalOpen}
+      />
     </SidebarMenu>
   );
 }

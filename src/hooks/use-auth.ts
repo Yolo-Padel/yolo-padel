@@ -7,6 +7,7 @@ import {
 } from "@/lib/validations/auth.validation";
 
 import { User, Profile } from "@/types/prisma";
+import { NextBookingInfo } from "@/types/profile";
 
 // Types for API responses
 interface AuthResponse {
@@ -14,6 +15,7 @@ interface AuthResponse {
   data: {
     user: User;
     profile: Profile | null;
+    nextBooking?: NextBookingInfo | null;
   } | null;
   message: string;
   errors?: any[];
@@ -183,6 +185,7 @@ export const useAuth = () => {
   return {
     user: data?.data?.user || null,
     profile: data?.data?.profile || null,
+    nextBooking: data?.data?.nextBooking || null,
     isLoading,
     isAuthenticated: !!data?.success && !!data?.data?.user,
     error,

@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
         data: {
           user: result.data?.user,
           profile: result.data?.profile,
+          nextBooking: result.data?.nextBooking || null,
         },
         message: result.message,
       },

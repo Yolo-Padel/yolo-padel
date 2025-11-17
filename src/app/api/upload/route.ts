@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const filename = formData.get("filename") as string | null;
-    const folderPath = formData.get("folderPath") as string | null;
+    const rawFolderPath = formData.get("folderPath") as string | null;
 
     if (!file) {
       return NextResponse.json(
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!folderPath) {
+    if (!rawFolderPath) {
       return NextResponse.json(
         {
           success: false,
@@ -27,6 +27,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const folderPath = rawFolderPath.replace(/(\r\n|\n|\r)/g, "").trim();
 
     // Validate file size (10MB limit)
     const maxSize = 10 * 1024 * 1024; // 10MB

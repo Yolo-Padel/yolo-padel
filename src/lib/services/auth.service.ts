@@ -1,16 +1,64 @@
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, BookingStatus } from "@prisma/client";
 import { Role } from "@/types/prisma";
 import {
   RegisterFormData,
   LoginFormData,
 } from "../validations/auth.validation";
 import bcrypt from "bcryptjs";
+import { NextBookingInfo } from "@/types/profile";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";
 const JWT_EXPIRES_IN = "7d";
 const secretKey = new TextEncoder().encode(JWT_SECRET);
+
+async function getNextBookingForUser(userId: string): Promise<NextBookingInfo | null> {
+  const nextBooking = await prisma.booking.findFirst({
+    where: {
+      userId,
+      status: {
+        in: [BookingStatus.PENDING, BookingStatus.UPCOMING],
+      },
+      bookingDate: {
+        gte: new Date(new Date().setHours(0, 0, 0, 0)),
+      },
+    },
+    orderBy: [
+      { bookingDate: "asc" },
+      { createdAt: "asc" },
+    ],
+    include: {
+      timeSlots: true,
+      court: {
+        select: {
+          id: true,
+          name: true,
+          venue: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!nextBooking) return null;
+
+  return {
+    bookingId: nextBooking.id,
+    bookingCode: nextBooking.bookingCode,
+    bookingDate: nextBooking.bookingDate.toISOString(),
+    status: nextBooking.status,
+    courtId: nextBooking.court.id,
+    courtName: nextBooking.court.name,
+    venueId: nextBooking.court.venue.id,
+    venueName: nextBooking.court.venue.name,
+    timeSlots: nextBooking.timeSlots ?? [],
+  };
+}
 
 export const authService = {
   register: async (data: RegisterFormData) => {
@@ -67,11 +115,14 @@ export const authService = {
 
       const { password, ...userWithoutPassword } = result.user;
 
+      const nextBooking = await getNextBookingForUser(result.user.id);
+
       return {
         success: true,
         data: {
           user: userWithoutPassword,
           profile: result.profile,
+          nextBooking,
           token,
         },
         message: "Registration successful",
@@ -127,12 +178,14 @@ export const authService = {
         .sign(secretKey);
 
       const { password, ...userWithoutPassword } = user;
+      const nextBooking = await getNextBookingForUser(user.id);
 
       return {
         success: true,
         data: {
           user: userWithoutPassword,
           profile: user.profile,
+          nextBooking,
           token,
         },
         message: "Login successful",
@@ -164,12 +217,14 @@ export const authService = {
       }
 
       const { password, ...userWithoutPassword } = user;
+      const nextBooking = await getNextBookingForUser(user.id);
 
       return {
         success: true,
         data: {
           user: userWithoutPassword,
           profile: user.profile,
+          nextBooking,
         },
       };
     } catch (error) {
