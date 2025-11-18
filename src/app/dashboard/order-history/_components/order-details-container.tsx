@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { X } from "lucide-react";
 import { stringUtils } from "@/lib/format/string";
+import { useReceiptGeneration } from "@/hooks/use-receipt-generation";
 
 const getPaymentStatus = (paymentStatus: PaymentStatus) => {
   switch (paymentStatus) {
@@ -65,6 +66,15 @@ export function OrderDetailsContainer({
   ) => void;
   showButtons?: boolean;
 }) {
+  const { generateReceipt, isGenerating } = useReceiptGeneration();
+
+  const handleDownloadReceipt = () => {
+    if (!orderDetails?.id) {
+      return;
+    }
+    generateReceipt(orderDetails.id);
+  };
+
   return (
     <div>
       <div className="grid grid-cols-1">
@@ -97,7 +107,6 @@ export function OrderDetailsContainer({
           </div>
         )}
       </div>
-
       <div className="text-xl gap-1 mt-4 space-y-4">
         <span className="font-medium text-foreground text-base">
           Order Summary
@@ -219,7 +228,6 @@ export function OrderDetailsContainer({
           )}
         </div>
       </div>
-
       {showButtons === true && (
         <div className="mt-4">
           {/*Payment Paid Button*/}
@@ -236,11 +244,10 @@ export function OrderDetailsContainer({
               <Button
                 className="w-full rounded-sm"
                 variant="default"
-                onClick={() =>
-                  window.open(`/api/order/${orderDetails?.id}/receipt`)
-                }
+                onClick={handleDownloadReceipt}
+                disabled={isGenerating}
               >
-                Download Receipt
+                {isGenerating ? "Generating receipt..." : "Download Receipt"}
               </Button>
             </div>
           )}
