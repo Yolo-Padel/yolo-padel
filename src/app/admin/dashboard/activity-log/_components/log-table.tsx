@@ -23,12 +23,20 @@ import {
 } from "lucide-react";
 import { User, Profile, Role, UserStatus, ActivityLog } from "@/types/prisma";
 import { useActivityLogsAdmin } from "@/hooks/use-activity-log";
+import { LogDetails } from "./log-modal";
+import { ActionType } from "@/types/action";
+import { EntityType } from "@/types/entity";
+import { date } from "zod/v3";
+import { JsonValue } from "@prisma/client/runtime/library";
+
 
 const PAGE_SIZE = 10;
 
 export function ActivityLogTable() {
+  const [modalOpen, setModalOpen] = useState(false);
   const { data, isLoading, error } = useActivityLogsAdmin();
   const allLogs = data?.data || [];
+  const [selectedLog, setSelectedLog] = useState<ActivityLog & {user: User & { profile: Profile }} | null>(null);
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
@@ -45,6 +53,7 @@ export function ActivityLogTable() {
             <TableHead>Modul</TableHead>
             <TableHead>Action</TableHead>
             <TableHead>Detail</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -56,9 +65,31 @@ export function ActivityLogTable() {
               <TableCell>{log.entityType}</TableCell>
               <TableCell>{log.action}</TableCell>
               <TableCell>{log.description}</TableCell>
+              <TableCell>
+                <Button variant="outline" size="sm" onClick={() => {setSelectedLog(log); setModalOpen(true);}}>
+                  View Details
+                </Button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
+        {/*Log Details Modal*/}
+        <LogDetails
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          logDetailsProps={
+            ({
+              date: new Date(selectedLog?.createdAt || ''),
+              performedBy: selectedLog?.user?.profile?.fullName || '',
+              role: selectedLog?.user?.role || '',
+              module: selectedLog?.entityType as EntityType,
+              action: selectedLog?.action as ActionType,
+              reference: selectedLog?.entityId || '',
+              description: selectedLog?.description || '',
+              changes: selectedLog?.changes || null,
+            })
+          }
+        />
       </Table>
     </div>
   )
