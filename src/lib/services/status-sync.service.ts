@@ -2,6 +2,47 @@ import { prisma } from "@/lib/prisma";
 import { OrderStatus, BookingStatus, PaymentStatus } from "@/types/prisma";
 import { releaseBlockingsByBookingIds } from "./blocking.service";
 import { checkOrderCompletion, updateOrderStatus } from "./order.service";
+import { resendService } from "./resend.service";
+import type {
+  BookingCancelationEmailData,
+  OrderConfirmationEmailData,
+} from "@/lib/validations/send-email.validation";
+
+type EmailJob =
+  | { type: "order_confirmation"; payload: OrderConfirmationEmailData }
+  | { type: "booking_cancelation"; payload: BookingCancelationEmailData };
+
+const formatTimeRange = (
+  timeSlots?: Array<{ openHour: string; closeHour: string }>
+) => {
+  if (!timeSlots || timeSlots.length === 0) {
+    return "N/A";
+  }
+  const first = timeSlots[0];
+  const last = timeSlots[timeSlots.length - 1];
+  return `${first.openHour} - ${last.closeHour}`;
+};
+
+const getCustomerName = (user?: {
+  email: string | null;
+  profile: { fullName: string | null } | null;
+}) => {
+  return user?.profile?.fullName || user?.email || "Padeler";
+};
+
+const getLocationLabel = (court?: {
+  name: string | null;
+  venue: { name: string | null } | null;
+}) => {
+  if (!court) {
+    return "Yolo Padel";
+  }
+  const venueName = court.venue?.name;
+  if (venueName) {
+    return court.name ? `${venueName} • ${court.name}` : venueName;
+  }
+  return court.name || "Yolo Padel";
+};
 
 /**
  * Handle payment status change and cascade to order, bookings, and blockings
@@ -11,6 +52,8 @@ export async function syncPaymentStatusToOrder(
   paymentId: string,
   newPaymentStatus: PaymentStatus
 ): Promise<void> {
+  const emailJobs: EmailJob[] = [];
+
   await prisma.$transaction(async (tx) => {
     // Get payment with order and bookings
     const payment = await tx.payment.findUnique({
@@ -18,9 +61,30 @@ export async function syncPaymentStatusToOrder(
       include: {
         order: {
           include: {
+            user: {
+              select: {
+                email: true,
+                profile: {
+                  select: {
+                    fullName: true,
+                  },
+                },
+              },
+            },
             bookings: {
               include: {
                 blocking: true,
+                timeSlots: true,
+                court: {
+                  select: {
+                    name: true,
+                    venue: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
               },
             },
           },
@@ -44,6 +108,8 @@ export async function syncPaymentStatusToOrder(
     });
 
     const bookingIds = payment.order.bookings.map((b) => b.id);
+    const customerEmail = payment.order.user?.email || null;
+    const customerName = getCustomerName(payment.order.user);
 
     // Handle different payment statuses
     switch (newPaymentStatus) {
@@ -62,6 +128,28 @@ export async function syncPaymentStatusToOrder(
         });
 
         // Blockings remain active (keep slots locked)
+        if (customerEmail) {
+          emailJobs.push({
+            type: "order_confirmation",
+            payload: {
+              orderId: payment.orderId,
+              email: customerEmail,
+              customerName,
+              bookings: payment.order.bookings.map((booking) => ({
+                court: booking.court?.name || "Padel Court",
+                date: booking.bookingDate.toISOString(),
+                time: formatTimeRange(
+                  booking.timeSlots?.map((slot) => ({
+                    openHour: slot.openHour,
+                    closeHour: slot.closeHour,
+                  }))
+                ),
+                bookingId: booking.id,
+                location: getLocationLabel(booking.court),
+              })),
+            },
+          });
+        }
         break;
 
       case PaymentStatus.EXPIRED:
@@ -83,6 +171,30 @@ export async function syncPaymentStatusToOrder(
           where: { bookingId: { in: bookingIds } },
           data: { isBlocking: false },
         });
+
+        if (customerEmail) {
+          for (const booking of payment.order.bookings) {
+            emailJobs.push({
+              type: "booking_cancelation",
+              payload: {
+                orderId: payment.orderId,
+                email: customerEmail,
+                customerName,
+                court: booking.court?.name || "Padel Court",
+                date: booking.bookingDate.toISOString(),
+                time: formatTimeRange(
+                  booking.timeSlots?.map((slot) => ({
+                    openHour: slot.openHour,
+                    closeHour: slot.closeHour,
+                  }))
+                ),
+                bookingId: booking.id,
+                location: getLocationLabel(booking.court),
+                status: newPaymentStatus,
+              },
+            });
+          }
+        }
         break;
 
       case PaymentStatus.FAILED:
@@ -104,6 +216,30 @@ export async function syncPaymentStatusToOrder(
           where: { bookingId: { in: bookingIds } },
           data: { isBlocking: false },
         });
+
+        if (customerEmail) {
+          for (const booking of payment.order.bookings) {
+            emailJobs.push({
+              type: "booking_cancelation",
+              payload: {
+                orderId: payment.orderId,
+                email: customerEmail,
+                customerName,
+                court: booking.court?.name || "Padel Court",
+                date: booking.bookingDate.toISOString(),
+                time: formatTimeRange(
+                  booking.timeSlots?.map((slot) => ({
+                    openHour: slot.openHour,
+                    closeHour: slot.closeHour,
+                  }))
+                ),
+                bookingId: booking.id,
+                location: getLocationLabel(booking.court),
+                status: newPaymentStatus,
+              },
+            });
+          }
+        }
         break;
 
       default:
@@ -111,6 +247,22 @@ export async function syncPaymentStatusToOrder(
         break;
     }
   });
+
+  // Send transactional emails outside transaction
+  for (const job of emailJobs) {
+    try {
+      if (job.type === "order_confirmation") {
+        await resendService.sendOrderConfirmationEmail(job.payload);
+      } else {
+        await resendService.sendBookingCancelationEmail(job.payload);
+      }
+    } catch (error) {
+      console.error("[EMAIL] Failed to send transactional email:", {
+        type: job.type,
+        error,
+      });
+    }
+  }
 }
 
 /**
@@ -249,4 +401,3 @@ export async function releaseBlockingsForOrder(orderId: string): Promise<void> {
   const bookingIds = bookings.map((b) => b.id);
   await releaseBlockingsByBookingIds(bookingIds);
 }
-

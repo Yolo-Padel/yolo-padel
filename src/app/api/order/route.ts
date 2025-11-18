@@ -21,6 +21,18 @@ export async function POST(request: NextRequest) {
     }
     const { user } = tokenResult;
 
+    // Validate userId from token
+    if (!user.userId || typeof user.userId !== "string") {
+      console.error("[API] Invalid userId from token:", user);
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid user authentication",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
     // Validate request body
@@ -30,11 +42,22 @@ export async function POST(request: NextRequest) {
     });
 
     if (!validation.success) {
+      console.error("[API] Order validation error:", {
+        userId: user.userId,
+        userIdType: typeof user.userId,
+        userIdLength: user.userId?.length,
+        validationErrors: validation.error.format(),
+      });
       return NextResponse.json(
         {
           success: false,
           message: "Validation error",
-          errors: validation.error,
+          errors: validation.error.format(),
+          debug: {
+            userId: user.userId,
+            userIdType: typeof user.userId,
+            userIdLength: user.userId?.length,
+          },
         },
         { status: 400 }
       );

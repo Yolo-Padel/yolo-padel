@@ -1,22 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PaymentStatus } from "@/types/prisma";
-import { updatePaymentStatus } from "@/lib/services/payment.service";
+import {
+  updatePaymentStatus,
+  getPaymentByXenditInvoiceId,
+  getPaymentById,
+} from "@/lib/services/payment.service";
+import { parseWebhookPayload } from "@/lib/webhook/xendit-webhook-parser";
+import { mapWebhookStatus } from "@/lib/webhook/xendit-webhook-status-mapper";
 
 /**
  * POST /api/webhook/payment
- * Webhook endpoint for payment gateway callbacks
- * This is called by payment gateway (e.g. Xendit, Midtrans) when payment status changes
+ * Webhook endpoint for Xendit payment callbacks (Invoice only)
+ *
+ * Xendit webhook format:
+ * - Header: X-CALLBACK-TOKEN (for verification)
+ * - Body: Invoice payload (id, external_id, status, etc.)
  */
 export async function POST(request: NextRequest) {
   try {
     // ════════════════════════════════════════════════════════
-    // 1. VERIFY WEBHOOK SIGNATURE (Security!)
+    // 1. VERIFY WEBHOOK SIGNATURE
     // ════════════════════════════════════════════════════════
-    const signature = request.headers.get("x-callback-token");
-    const expectedSignature = process.env.PAYMENT_WEBHOOK_TOKEN;
+    const signature =
+      request.headers.get("x-callback-token") ||
+      request.headers.get("X-CALLBACK-TOKEN");
+    const expectedSignature =
+      process.env.XENDIT_WEBHOOK_TOKEN || process.env.PAYMENT_WEBHOOK_TOKEN;
 
     if (!expectedSignature) {
-      console.error("[WEBHOOK] Payment webhook token not configured");
+      console.error("[WEBHOOK] Webhook token not configured");
       return NextResponse.json(
         { success: false, message: "Webhook not configured" },
         { status: 500 }
@@ -24,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (signature !== expectedSignature) {
-      console.error("[WEBHOOK] Invalid signature");
+      console.error("[WEBHOOK] Invalid webhook signature");
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
         { status: 401 }
@@ -32,64 +44,88 @@ export async function POST(request: NextRequest) {
     }
 
     // ════════════════════════════════════════════════════════
-    // 2. PARSE WEBHOOK DATA
+    // 2. PARSE WEBHOOK PAYLOAD
     // ════════════════════════════════════════════════════════
     const body = await request.json();
 
-    const {
-      event, // e.g. "payment.paid", "payment.expired"
-      external_id, // Payment ID from our system
-      status, // e.g. "PAID", "EXPIRED", "FAILED"
-      paid_amount,
-      paid_at,
-    } = body;
+    console.log("XENDIT WEBHOOK PAYLOAD ", body);
 
-    console.log("[WEBHOOK] Received payment callback:", {
-      event,
-      external_id,
-      status,
-      paid_amount,
+    console.log("[WEBHOOK] Received Xendit callback:", {
+      hasEvent: !!body.event,
+      hasData: !!body.data,
+      hasId: !!body.id,
+      hasExternalId: !!body.external_id,
     });
 
-    // ════════════════════════════════════════════════════════
-    // 3. VALIDATE PAYMENT ID
-    // ════════════════════════════════════════════════════════
-    if (!external_id) {
-      console.error("[WEBHOOK] Missing external_id (payment ID)");
+    const parsedData = parseWebhookPayload(body);
+
+    if (!parsedData) {
+      console.error("[WEBHOOK] Unable to parse webhook payload:", body);
       return NextResponse.json(
-        { success: false, message: "Missing payment ID" },
+        { success: false, message: "Invalid webhook payload format" },
         { status: 400 }
       );
     }
 
     // ════════════════════════════════════════════════════════
-    // 4. MAP PAYMENT GATEWAY STATUS TO OUR STATUS
+    // 3. FIND PAYMENT BY XENDIT ID (Invoice only)
     // ════════════════════════════════════════════════════════
-    let newPaymentStatus: PaymentStatus;
+    let payment = null;
 
-    // Map based on event or status
-    if (event === "payment.paid" || status === "PAID") {
-      newPaymentStatus = PaymentStatus.PAID;
-    } else if (event === "payment.expired" || status === "EXPIRED") {
-      newPaymentStatus = PaymentStatus.EXPIRED;
-    } else if (event === "payment.failed" || status === "FAILED") {
-      newPaymentStatus = PaymentStatus.FAILED;
-    } else {
-      console.log("[WEBHOOK] Unknown payment status, ignoring:", { event, status });
-      // Return 200 OK to prevent retries from payment gateway
-      return NextResponse.json({ success: true, message: "Status ignored" });
+    if (parsedData.xenditId) {
+      payment = await getPaymentByXenditInvoiceId(parsedData.xenditId);
+    }
+    if (!payment && parsedData.paymentId) {
+      payment = await getPaymentById(parsedData.paymentId);
+    }
+
+    if (!payment) {
+      console.warn(
+        "[WEBHOOK] Payment not found:",
+        parsedData.type,
+        parsedData.xenditId
+      );
+      // Return 200 to prevent retries (payment might not exist)
+      return NextResponse.json({
+        success: true,
+        message: "Payment not found, ignoring",
+      });
     }
 
     // ════════════════════════════════════════════════════════
-    // 5. UPDATE PAYMENT STATUS (with cascading updates)
+    // 4. MAP STATUS TO INTERNAL PAYMENT STATUS
+    // ════════════════════════════════════════════════════════
+    const newPaymentStatus = mapWebhookStatus(parsedData);
+
+    if (!newPaymentStatus) {
+      console.log(
+        "[WEBHOOK] Status ignored (not actionable):",
+        parsedData.status,
+        parsedData.event
+      );
+      return NextResponse.json({
+        success: true,
+        message: "Status ignored",
+      });
+    }
+
+    // ════════════════════════════════════════════════════════
+    // 5. UPDATE PAYMENT STATUS
     // ════════════════════════════════════════════════════════
     try {
-      await updatePaymentStatus(external_id, newPaymentStatus);
+      await updatePaymentStatus(payment.id, newPaymentStatus);
 
-      console.log("[WEBHOOK] Payment status updated successfully:", {
-        paymentId: external_id,
+      console.log("[WEBHOOK] Payment status updated:", {
+        paymentId: payment.id,
+        orderId: payment.orderId,
+        oldStatus: payment.status,
         newStatus: newPaymentStatus,
+        webhookType: parsedData.type,
+        xenditId: parsedData.xenditId,
       });
+
+      // TODO: Broadcast to SSE clients (will be added in SSE implementation)
+      // paymentSSEManager.broadcast(payment.id, { ... });
     } catch (error) {
       console.error("[WEBHOOK] Failed to update payment status:", error);
 
@@ -102,8 +138,6 @@ export async function POST(request: NextRequest) {
       }
 
       // For other errors, still return 200 to prevent retry storm
-      // But log the error for investigation
-      console.error("[WEBHOOK] Error but returning 200 to prevent retries");
       return NextResponse.json(
         {
           success: false,
@@ -115,10 +149,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ════════════════════════════════════════════════════════
-    // 6. RETURN 200 OK (Important!)
+    // 6. RETURN 200 OK
     // ════════════════════════════════════════════════════════
-    // Payment gateway expects 200 OK response
-    // If not 200, they will retry webhook multiple times
+    // Xendit expects 200 OK response
+    // If not 200, they will retry webhook up to 6 times
     return NextResponse.json({
       success: true,
       message: "Webhook processed successfully",
@@ -148,4 +182,3 @@ export async function GET() {
     message: "Payment webhook endpoint is active",
   });
 }
-

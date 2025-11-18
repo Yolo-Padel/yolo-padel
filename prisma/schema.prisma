@@ -286,11 +286,18 @@ model Payment {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
+  // Xendit Integration Fields
+  xenditInvoiceId   String? // ID dari Invoice (other methods)
+  xenditReferenceId String? // referenceId yang dikirim ke Xendit
+  paymentUrl        String? // URL untuk redirect (invoice.invoice_url)
+  xenditMetadata    Json?   // Store additional Xendit response data
+
   // Relations
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   booking Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([xenditInvoiceId])
   @@map("payments")
 }
 

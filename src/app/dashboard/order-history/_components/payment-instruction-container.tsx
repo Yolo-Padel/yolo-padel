@@ -7,6 +7,11 @@ import { PaymentStatus } from "@/types/prisma";
 import { X } from "lucide-react";
 import { stringUtils } from "@/lib/format/string";
 
+/**
+ * TO BE DEPRECATED
+ * This component is no longer used and will be removed in the future
+ */
+
 export function PaymentInstructionContainer({
   onOpenChange,
   paymentInstructionProps,
@@ -52,7 +57,10 @@ export function PaymentInstructionContainer({
 
         <div className="flex flex-col items-center gap-2 text-sm text-foreground">
           <div>
-            Total Payment {paymentInstructionProps?.totalAmount ? stringUtils.formatRupiah(paymentInstructionProps.totalAmount) : "N/A"}
+            Total Payment{" "}
+            {paymentInstructionProps?.totalAmount
+              ? stringUtils.formatRupiah(paymentInstructionProps.totalAmount)
+              : "N/A"}
           </div>
           <div>Expires in X minutes</div>
         </div>

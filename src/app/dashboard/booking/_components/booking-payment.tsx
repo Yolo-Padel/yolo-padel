@@ -6,6 +6,11 @@ import { ArrowLeftIcon } from "lucide-react";
 import { BookingStatus, PaymentStatus } from "@/types/prisma";
 import { stringUtils } from "@/lib/format/string";
 
+/**
+ * TO BE DEPRECATED
+ * This component is no longer used and will be removed in the future
+ */
+
 type PaymentProps = {
   id: string;
   venue: string;

@@ -33,6 +33,12 @@ export async function createPayment(
     userId: string;
     channelName: string;
     amount: number;
+    // Xendit fields (optional)
+    xenditInvoiceId?: string | null;
+    xenditReferenceId?: string | null;
+    paymentUrl?: string | null;
+    xenditMetadata?: Record<string, unknown> | null;
+    expiredAt?: Date | null;
   },
   tx?: PrismaTransaction
 ): Promise<Payment> {
@@ -45,7 +51,19 @@ export async function createPayment(
       channelName: data.channelName,
       amount: data.amount,
       status: PaymentStatus.UNPAID,
-      expiredAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes from now
+      expiredAt: data.expiredAt || new Date(Date.now() + 15 * 60 * 1000), // 15 minutes from now or custom
+      // Xendit fields (only include if they have values to avoid undefined)
+      ...(data.xenditInvoiceId && { xenditInvoiceId: data.xenditInvoiceId }),
+      ...(data.xenditReferenceId && {
+        xenditReferenceId: data.xenditReferenceId,
+      }),
+      ...(data.paymentUrl && { paymentUrl: data.paymentUrl }),
+      ...(data.xenditMetadata !== undefined && {
+        xenditMetadata:
+          data.xenditMetadata && typeof data.xenditMetadata === "string"
+            ? JSON.parse(data.xenditMetadata)
+            : data.xenditMetadata,
+      }),
     },
   });
 
@@ -127,6 +145,72 @@ export async function updatePaymentStatus(
 
   // Trigger cascade updates to order, bookings, and blockings
   await syncPaymentStatusToOrder(paymentId, newStatus);
+
+  return payment;
+}
+
+/**
+ * Update Xendit payment data
+ * Used after creating payment request/invoice to store Xendit response
+ */
+export async function updatePaymentXenditData(
+  paymentId: string,
+  data: {
+    xenditInvoiceId?: string | null;
+    xenditReferenceId?: string | null;
+    paymentUrl?: string | null;
+    xenditMetadata?: Record<string, unknown> | null;
+  }
+): Promise<Payment> {
+  const payment = await prisma.payment.update({
+    where: { id: paymentId },
+    data: {
+      ...(data.xenditInvoiceId !== undefined && {
+        xenditInvoiceId: data.xenditInvoiceId,
+      }),
+      ...(data.xenditReferenceId !== undefined && {
+        xenditReferenceId: data.xenditReferenceId,
+      }),
+      ...(data.paymentUrl !== undefined && {
+        paymentUrl: data.paymentUrl,
+      }),
+      ...(data.xenditMetadata !== undefined && {
+        xenditMetadata:
+          typeof data.xenditMetadata === "string"
+            ? JSON.parse(data.xenditMetadata)
+            : data.xenditMetadata,
+      }),
+    },
+  });
+
+  return payment;
+}
+
+/**
+ * Get payment by Xendit Invoice ID
+ */
+export async function getPaymentByXenditInvoiceId(xenditInvoiceId: string) {
+  const payment = await prisma.payment.findFirst({
+    where: { xenditInvoiceId },
+    include: {
+      order: {
+        include: {
+          bookings: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          email: true,
+          profile: {
+            select: {
+              fullName: true,
+            },
+          },
+        },
+      },
+    },
+  });
 
   return payment;
 }

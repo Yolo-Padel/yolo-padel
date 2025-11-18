@@ -185,15 +185,10 @@ export function OrderDetailsContainer({
             {stringUtils.formatRupiah(orderDetails?.totalAmount || 0)}
           </div>
 
-          <div>Payment Method</div>
-          <div className="font-medium">
-            {orderDetails?.payment?.channelName || "N/A"}
-          </div>
-
           <div>Payment Status</div>
           <div className={`font-medium`}>
             <Badge
-              className=              {getPaymentStatus(
+              className={getPaymentStatus(
                 orderDetails?.payment?.status || PaymentStatus.UNPAID
               )}
             >
@@ -252,20 +247,12 @@ export function OrderDetailsContainer({
 
           {/*Pending Payment Button*/}
           {orderDetails?.payment?.status === PaymentStatus.UNPAID && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
-              <Button
-                className="w-full border-primary rounded-sm"
-                variant="outline"
-                onClick={() => onChangeMode("change-payment-method")}
-              >
-                Change Payment Method
-              </Button>
-
+            <div className="w-full gap-2">
               <Button
                 className="w-full rounded-sm"
                 variant="default"
                 onClick={() => {
-                  onChangeMode("payment-instruction");
+                  window.open(orderDetails?.payment?.invoiceUrl, "_blank");
                 }}
               >
                 Pay Now
@@ -294,7 +281,6 @@ export function OrderDetailsContainer({
               </Button>
             </div>
           )}
-
         </div>
       )}
     </div>

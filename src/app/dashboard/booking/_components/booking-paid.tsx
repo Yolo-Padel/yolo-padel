@@ -6,6 +6,11 @@ import { Dot } from "lucide-react";
 import { BookingStatus } from "@/types/prisma";
 import { stringUtils } from "@/lib/format/string";
 
+/**
+ * TO BE DEPRECATED
+ * This component is no longer used and will be removed in the future
+ */
+
 type SuccessPaymentProps = {
   id: string;
   venue: string;

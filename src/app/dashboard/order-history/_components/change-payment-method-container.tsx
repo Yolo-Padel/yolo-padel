@@ -6,6 +6,11 @@ import { ArrowLeftIcon } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Order } from "@/hooks/use-order";
 
+/**
+ * TO BE DEPRECATED
+ * This component is no longer used and will be removed in the future
+ */
+
 export function ChangePaymentMethodContainer({
   onOpenChange,
   changePaymentMethodProps,

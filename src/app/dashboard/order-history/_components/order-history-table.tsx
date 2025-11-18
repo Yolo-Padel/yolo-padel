@@ -162,7 +162,6 @@ export default function OrderHistoryTable() {
                       {getVenueName(order)}
                     </div>
                     <div>{stringUtils.formatRupiah(order.totalAmount)}</div>
-                    <div>{order.payment?.channelName || "N/A"}</div>
                   </div>
                 </div>
                 <CardFooter className="min-w-0 px-1 mb-1">
@@ -198,9 +197,7 @@ export default function OrderHistoryTable() {
                         className="w-full"
                         variant="default"
                         onClick={() => {
-                          setSelectedOrder(order);
-                          setOrderModal(true);
-                          setModeModal("payment-instruction");
+                          window.open(order.payment?.invoiceUrl, "_blank");
                         }}
                       >
                         Pay Now
@@ -223,17 +220,16 @@ export default function OrderHistoryTable() {
                       >
                         See Details
                       </Button>
-                      <Button
+                      {/* <Button
                         className="w-full"
                         variant="default"
                         onClick={() => {
-                          setSelectedOrder(order);
-                          setOrderModal(true);
-                          setModeModal("payment-instruction");
+                          // TODO: Implement re-book logic
+                          // setBookCourtModalOpen(true);
                         }}
                       >
                         Re-Book
-                      </Button>
+                      </Button> */}
                     </div>
                   )}
                 </CardFooter>

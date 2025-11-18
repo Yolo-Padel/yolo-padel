@@ -74,46 +74,6 @@ export function BookingModal({
             onChangeMode={onChangeMode}
           />
         )}
-
-        {/*Order Summary Modal*/}
-        {mode === "book-again" && (
-          <BookingSummary
-            open={open}
-            onOpenChange={onOpenChange}
-            bookingSummaryProps={bookingModalProps}
-            onChangeMode={onChangeMode}
-          />
-        )}
-
-        {/*Booking Payment Modal*/}
-        {mode === "booking-payment" && (
-          <Payment
-            open={open}
-            onOpenChange={onOpenChange}
-            paymentProps={bookingModalProps}
-            onChangeMode={onChangeMode}
-          />
-        )}
-
-        {/*Payment Paid Modal*/}
-        {mode === "payment-paid" && (
-          <SuccessPayment
-            open={open}
-            onOpenChange={onOpenChange}
-            successPaymentProps={bookingModalProps}
-            onChangeMode={onChangeMode}
-          />
-        )}
-
-        {/*Payment Pending Modal*/}
-        {mode === "payment-pending" && (
-          <PendingPayment
-            open={open}
-            onOpenChange={onOpenChange}
-            pendingPaymentProps={bookingModalProps}
-            onChangeMode={onChangeMode}
-          />
-        )}
       </DialogContent>
     </Dialog>
   );

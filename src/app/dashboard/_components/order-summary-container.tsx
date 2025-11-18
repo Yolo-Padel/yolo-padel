@@ -1,12 +1,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { ChevronLeft, ChevronDown } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import { formatTimeSlots } from "@/lib/time-slots-formatter";
@@ -15,6 +13,8 @@ import { useAuth, useCreateGuestUser } from "@/hooks/use-auth";
 import { useCreateOrder } from "@/hooks/use-order";
 import { transformUISlotsToOrderFormat } from "@/lib/booking-slots-utils";
 import { toast } from "sonner";
+
+const DEFAULT_PAYMENT_CHANNEL = "XENDIT_INVOICE";
 
 export type CartItem = {
   courtId: string;
@@ -30,46 +30,18 @@ export type CartItem = {
 type OrderSummaryContainerProps = {
   cartItems: CartItem[];
   onBack: () => void;
-  onNext: (paymentMethod: string) => void;
   guestEmail?: string;
   guestFullName?: string;
   onClearCart?: () => void;
-  onOrderCreated?: (order: {
-    orderCode: string;
-    orderId: string;
-    totalAmount: number;
-  }) => void;
 };
-
-const PAYMENT_METHODS = [
-  {
-    id: "QRIS",
-    name: "QRIS",
-    icon: "/payment-icons/qris.svg", // Placeholder
-  },
-  {
-    id: "BNI_VA",
-    name: "BNI Virtual Account",
-    icon: "/payment-icons/bni.svg", // Placeholder
-  },
-  {
-    id: "BCA_VA",
-    name: "BCA Virtual Account",
-    icon: "/payment-icons/bca.svg", // Placeholder
-  },
-];
 
 export function OrderSummaryContainer({
   cartItems,
   onBack,
-  onNext,
   guestEmail = "",
   guestFullName = "",
   onClearCart,
-  onOrderCreated,
 }: OrderSummaryContainerProps) {
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("QRIS");
-  const [showAllMethods, setShowAllMethods] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -85,9 +57,7 @@ export function OrderSummaryContainer({
   const bookingFee = "TBC"; // Per requirement
   const grandTotal = courtFeesTotal; // For now, only court fees
 
-  const handleNext = () => {
-    if (!selectedPaymentMethod) return;
-
+  const handleSubmit = () => {
     // If guest, create user first, then create order
     if (!isAuthenticated) {
       // Validate guest info
@@ -128,7 +98,7 @@ export function OrderSummaryContainer({
     }
   };
 
-  const createOrderInternal = () => {
+  const createOrderInternal = async () => {
     // Transform cart items to order format
     const bookings = cartItems.map((item) => ({
       courtId: item.courtId,
@@ -141,21 +111,64 @@ export function OrderSummaryContainer({
     createOrder(
       {
         bookings,
-        channelName: selectedPaymentMethod,
+        channelName: DEFAULT_PAYMENT_CHANNEL,
       },
       {
-        onSuccess: (order) => {
-          setIsProcessing(false);
-          // Notify parent about order creation
-          if (onOrderCreated) {
-            onOrderCreated({
-              orderCode: order.orderCode,
-              orderId: order.id,
-              totalAmount: order.totalAmount,
+        onSuccess: async (order) => {
+          try {
+            // After order created, create Xendit payment
+            const paymentEndpoint = `/api/order/${order.id}/xendit/invoice`;
+
+            const requestBody = {
+              externalId: order.payment?.id || order.id,
+              amount: order.totalAmount,
+              description: `Order ${order.orderCode}`,
+              payerEmail: guestEmail || undefined,
+            };
+
+            const xenditResponse = await fetch(paymentEndpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+              body: JSON.stringify(requestBody),
             });
+
+            if (!xenditResponse.ok) {
+              const errorData = await xenditResponse.json();
+              throw new Error(
+                errorData.message || "Gagal membuat payment Xendit"
+              );
+            }
+
+            const xenditData = await xenditResponse.json();
+            const invoiceUrl =
+              xenditData?.data?.xenditInvoice?.invoiceUrl || null;
+
+            setIsProcessing(false);
+            if (onClearCart) {
+              onClearCart();
+            }
+
+            if (invoiceUrl) {
+              window.location.href = invoiceUrl;
+            } else {
+              toast.info("Invoice URL tidak tersedia.");
+            }
+          } catch (error) {
+            console.error("Xendit payment creation error:", error);
+            setIsProcessing(false);
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : "Gagal membuat payment Xendit"
+            );
+            // Rollback: clear cart on error
+            if (onClearCart) {
+              onClearCart();
+            }
           }
-          // Call original onNext for backward compatibility
-          onNext(selectedPaymentMethod);
         },
         onError: (error) => {
           setIsProcessing(false);
@@ -168,11 +181,6 @@ export function OrderSummaryContainer({
       }
     );
   };
-
-  // Display only first 3 methods initially
-  const displayedMethods = showAllMethods
-    ? PAYMENT_METHODS
-    : PAYMENT_METHODS.slice(0, 3);
 
   return (
     <div className="flex flex-col gap-4">
@@ -251,53 +259,6 @@ export function OrderSummaryContainer({
         })}
       </div>
 
-      <Separator />
-
-      {/* Payment Method Selection */}
-      <div className="space-y-3">
-        <h3 className="font-semibold">Payment Method</h3>
-        <RadioGroup
-          value={selectedPaymentMethod}
-          onValueChange={setSelectedPaymentMethod}
-        >
-          <div className="space-y-3">
-            {displayedMethods.map((method) => (
-              <div
-                key={method.id}
-                className="flex items-center space-x-3 border rounded-lg p-3 cursor-pointer hover:bg-accent"
-                onClick={() => setSelectedPaymentMethod(method.id)}
-              >
-                <RadioGroupItem value={method.id} id={method.id} />
-                <Label
-                  htmlFor={method.id}
-                  className="flex items-center gap-3 cursor-pointer flex-1"
-                >
-                  {/* Payment Icon Placeholder */}
-                  <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
-                    <span className="text-xs font-mono">TBC</span>
-                  </div>
-                  <span className="font-medium">TBC</span>
-                </Label>
-              </div>
-            ))}
-          </div>
-        </RadioGroup>
-
-        {/* View All Methods - Currently disabled as per requirement */}
-        {/* {!showAllMethods && PAYMENT_METHODS.length > 3 && (
-          <Button
-            variant="ghost"
-            className="w-full text-primary"
-            onClick={() => setShowAllMethods(true)}
-          >
-            View All Payment Methods
-            <ChevronDown className="ml-2 h-4 w-4" />
-          </Button>
-        )} */}
-      </div>
-
-      <Separator />
-
       {/* Transaction Summary */}
       <div className="space-y-3">
         <h3 className="font-semibold">Transaction Summary</h3>
@@ -317,7 +278,6 @@ export function OrderSummaryContainer({
             <span className="font-medium">{bookingFee}</span>
           </div>
         </div>
-
         <Separator />
 
         <div className="flex justify-between text-lg">
@@ -331,8 +291,8 @@ export function OrderSummaryContainer({
       {/* Action Button */}
       <Button
         className="w-full h-11"
-        onClick={handleNext}
-        disabled={!selectedPaymentMethod || isProcessing}
+        onClick={handleSubmit}
+        disabled={isProcessing}
       >
         {isProcessing ? "Processing..." : "Book Now"}
       </Button>

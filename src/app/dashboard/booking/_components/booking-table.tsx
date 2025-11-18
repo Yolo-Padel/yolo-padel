@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LandPlot } from "lucide-react";
@@ -13,7 +13,6 @@ import {
   CardFooter,
   CardTitle,
 } from "@/components/ui/card";
-import { useRouter } from "next/navigation";
 import { useBookingByUser } from "@/hooks/use-booking";
 import { BookingEmptyState } from "./booking-empty-state";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -33,6 +32,10 @@ import { useCurrentUser } from "@/hooks/use-auth";
 import { BookingModal } from "./booking-modal";
 import { transformDbFormatToUISlots } from "@/lib/booking-slots-utils";
 import { BookingCourtModal } from "./booking-court-modal";
+import {
+  PaymentFeedbackDialog,
+  PaymentFeedbackState,
+} from "./payment-feedback-dialog";
 
 type BookingCourtRow = {
   id: string;
@@ -46,6 +49,7 @@ type BookingCourtRow = {
   status: BookingStatus;
   paymentMethod: string;
   paymentStatus: PaymentStatus;
+  invoiceUrl: string;
 };
 
 const PAGE_SIZE = 12;
@@ -64,6 +68,8 @@ export function BookingCourt() {
   const [bookCourtModalOpen, setBookCourtModalOpen] = useState(false);
   const [selectedBookingCourt, setSelectedBookingCourt] =
     useState<BookingCourtRow | null>(null);
+  const [paymentFeedback, setPaymentFeedback] =
+    useState<PaymentFeedbackState | null>(null);
   const { data: userData, isLoading: isLoadingUser } = useCurrentUser();
   const userId = userData?.data?.user.id || "";
   const {
@@ -75,7 +81,103 @@ export function BookingCourt() {
   // Show loading if user is still loading OR bookings are loading
   const isLoading = isLoadingUser || isLoadingBookings;
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const statusParam = searchParams.get("paymentStatus");
+    const paymentIdParam = searchParams.get("paymentId");
+    const reason = searchParams.get("reason") || undefined;
+
+    if (
+      !statusParam ||
+      !paymentIdParam ||
+      (statusParam !== "success" && statusParam !== "failed")
+    ) {
+      setPaymentFeedback(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    setPaymentFeedback({
+      status: statusParam as "success" | "failed",
+      reason,
+      paymentId: paymentIdParam,
+      loading: true,
+    });
+
+    const fetchPayment = async () => {
+      try {
+        const response = await fetch(`/api/payment/${paymentIdParam}/status`, {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.message || "Failed to fetch payment");
+        }
+
+        const data = await response.json();
+        if (!data.success || !data.data) {
+          throw new Error("Payment not found");
+        }
+
+        if (!cancelled) {
+          setPaymentFeedback((prev) =>
+            prev && prev.paymentId === paymentIdParam
+              ? { ...prev, payment: data.data, loading: false }
+              : {
+                  status: statusParam as "success" | "failed",
+                  reason,
+                  paymentId: paymentIdParam,
+                  payment: data.data,
+                  loading: false,
+                }
+          );
+        }
+      } catch (error) {
+        if (!cancelled) {
+          const message =
+            error instanceof Error ? error.message : "Failed to fetch payment";
+          setPaymentFeedback((prev) =>
+            prev && prev.paymentId === paymentIdParam
+              ? { ...prev, error: message, loading: false }
+              : {
+                  status: statusParam as "success" | "failed",
+                  reason,
+                  paymentId: paymentIdParam,
+                  loading: false,
+                  error: message,
+                }
+          );
+        }
+      }
+    };
+
+    fetchPayment();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams]);
+
+  const clearPaymentFeedback = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("paymentStatus");
+    params.delete("paymentId");
+    params.delete("reason");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+    setPaymentFeedback(null);
+  };
+
+  const handleViewOrderHistory = () => {
+    router.push("/dashboard/order-history");
+    clearPaymentFeedback();
+  };
 
   const getStatusBadge = (status: BookingStatus) => {
     switch (status) {
@@ -128,6 +230,7 @@ export function BookingCourt() {
         status: b.status,
         paymentMethod: b.order?.payment?.channelName || "N/A",
         paymentStatus: b.order?.payment?.status || PaymentStatus.UNPAID,
+        invoiceUrl: b.order?.payment?.paymentUrl || "",
       };
     });
   }, [allBookingCourts]);
@@ -185,185 +288,185 @@ export function BookingCourt() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-1">
-        <h3 className="text-xl font-semibold ">Booking Court List</h3>
-        <div className="flex items-center gap-2">
-          <DatePicker />
-          <ComboboxFilter />
+    <>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-1">
+          <h3 className="text-xl font-semibold ">Booking Court List</h3>
+          <div className="flex items-center gap-2">
+            <DatePicker />
+            <ComboboxFilter />
 
-          <Button
-            variant="outline"
-            onClick={() => setBookCourtModalOpen(true)}
-            className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
-          >
-            Book Court
-            <LandPlot className="size-4" />
-          </Button>
-        </div>
-      </div>
-      {filtered.length === 0 ? (
-        <BookingEmptyState onBookCourt={() => setBookCourtModalOpen(true)} />
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {paginated.map((bookingCourt) => (
-            <Card
-              className="gap-3 p-3 hover:shadow-xl transition-shadow duration-300"
-              key={bookingCourt.id}
+            <Button
+              variant="outline"
+              onClick={() => setBookCourtModalOpen(true)}
+              className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
             >
-              <div className="flex flex-col px-0">
-                <Image
-                  src={bookingCourt.image || "/paddle-court1.svg"}
-                  alt=""
-                  className="flex-1 w-full rounded-sm aspect-square"
-                  width={500}
-                  height={500}
-                />
-              </div>
-              <div className="flex flex-col text-md gap-1 px-2">
-                <CardTitle className="text-xs truncate font-normal">
-                  <span className="justify-between flex items-center gap-1">
-                    ID: #{bookingCourt.id}{" "}
-                    <Badge
-                      className={`rounded-md px-3 py-1 text-xs font-medium ${getStatusBadge(bookingCourt.status)}`}
-                    >
-                      {bookingCourt.status}
-                    </Badge>
-                  </span>
-                </CardTitle>
-                <div className="mt-0 justify-between flex items-center gap-1 text-sm">
-                  <span
-                    className="text-sm font-medium text-black truncate flex-1 min-w-0"
-                    title={`${bookingCourt.courtName} • ${bookingCourt.venue}`}
-                  >
-                    {bookingCourt.courtName} • {bookingCourt.venue}
-                  </span>{" "}
-                  <span className="flex-shrink-0">
-                    {" "}
-                    {new Date(bookingCourt.bookingDate).toLocaleDateString(
-                      "id-ID",
-                      {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      }
-                    )}
-                  </span>
-                </div>
-                <div className="mt-0 flex items-center gap-1 justify-between text-sm">
-                  <span>{bookingCourt.bookingTime}</span>{" "}
-                  <span>{bookingCourt.duration}</span>
-                </div>
-                <div className="mt-0 flex items-center gap-1 justify-between text-sm">
-                  <span>Total Payment</span>{" "}
-                  <span>
-                    {stringUtils.formatRupiah(bookingCourt.totalPayment)}
-                  </span>
-                </div>
-              </div>
-
-              {bookingCourt.status === BookingStatus.COMPLETED && (
-                <CardFooter className="px-1 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Button
-                    onClick={() => {
-                      setSelectedBookingCourt(bookingCourt);
-                      setMode("booking-details");
-                    }}
-                    className="w-full border-primary"
-                    variant="outline"
-                  >
-                    See Details
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => setBookCourtModalOpen(true)}
-                  >
-                    Book Again
-                  </Button>
-                </CardFooter>
-              )}
-              {bookingCourt.status === BookingStatus.PENDING && (
-                <CardFooter className="px-1 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Button
-                    onClick={() => {
-                      setSelectedBookingCourt(bookingCourt);
-                      setModalOpen(true);
-                      setMode("booking-details");
-                    }}
-                    className="w-full border-primary"
-                    variant="outline"
-                  >
-                    See Details
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => {
-                      setSelectedBookingCourt(bookingCourt);
-                      setModalOpen(true);
-                      setMode("booking-payment");
-                    }}
-                  >
-                    Pay Now
-                  </Button>
-                </CardFooter>
-              )}
-              {bookingCourt.status === BookingStatus.UPCOMING && (
-                <CardFooter className="px-1 pt-4 pb-1 w-full min-w-0">
-                  <Button
-                    onClick={() => {
-                      setSelectedBookingCourt(bookingCourt);
-                      setModalOpen(true);
-                      setMode("booking-details");
-                    }}
-                    className="w-full border-primary"
-                    variant="outline"
-                  >
-                    See Details
-                  </Button>
-                </CardFooter>
-              )}
-              {bookingCourt.status === BookingStatus.CANCELLED && (
-                <CardFooter className="px-1 pt-4 pb-1 w-full min-w-0">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => setBookCourtModalOpen(true)}
-                  >
-                    Book Again
-                  </Button>
-                </CardFooter>
-              )}
-            </Card>
-          ))}
-        </div>
-      )}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Showing {paginated.length} of {filtered.length} booking courts
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            disabled={pageSafe <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-          >
-            Previous
-          </Button>
-          <div className="text-sm">
-            Page {pageSafe} / {totalPages}
+              Book Court
+              <LandPlot className="size-4" />
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            disabled={pageSafe >= totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          >
-            Next
-          </Button>
+        </div>
+        {filtered.length === 0 ? (
+          <BookingEmptyState onBookCourt={() => setBookCourtModalOpen(true)} />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {paginated.map((bookingCourt) => (
+              <Card
+                className="gap-3 p-3 hover:shadow-xl transition-shadow duration-300"
+                key={bookingCourt.id}
+              >
+                <div className="flex flex-col px-0">
+                  <Image
+                    src={bookingCourt.image || "/paddle-court1.svg"}
+                    alt=""
+                    className="flex-1 w-full rounded-sm aspect-square"
+                    width={500}
+                    height={500}
+                  />
+                </div>
+                <div className="flex flex-col text-md gap-1 px-2">
+                  <CardTitle className="text-xs truncate font-normal">
+                    <span className="justify-between flex items-center gap-1">
+                      ID: #{bookingCourt.id}{" "}
+                      <Badge
+                        className={`rounded-md px-3 py-1 text-xs font-medium ${getStatusBadge(bookingCourt.status)}`}
+                      >
+                        {bookingCourt.status}
+                      </Badge>
+                    </span>
+                  </CardTitle>
+                  <div className="mt-0 justify-between flex items-center gap-1 text-sm">
+                    <span
+                      className="text-sm font-medium text-black truncate flex-1 min-w-0"
+                      title={`${bookingCourt.courtName} • ${bookingCourt.venue}`}
+                    >
+                      {bookingCourt.courtName} • {bookingCourt.venue}
+                    </span>{" "}
+                    <span className="flex-shrink-0">
+                      {" "}
+                      {new Date(bookingCourt.bookingDate).toLocaleDateString(
+                        "id-ID",
+                        {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        }
+                      )}
+                    </span>
+                  </div>
+                  <div className="mt-0 flex items-center gap-1 justify-between text-sm">
+                    <span>{bookingCourt.bookingTime}</span>{" "}
+                    <span>{bookingCourt.duration}</span>
+                  </div>
+                  <div className="mt-0 flex items-center gap-1 justify-between text-sm">
+                    <span>Total Payment</span>{" "}
+                    <span>
+                      {stringUtils.formatRupiah(bookingCourt.totalPayment)}
+                    </span>
+                  </div>
+                </div>
+
+                {bookingCourt.status === BookingStatus.COMPLETED && (
+                  <CardFooter className="px-1 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Button
+                      onClick={() => {
+                        setSelectedBookingCourt(bookingCourt);
+                        setMode("booking-details");
+                      }}
+                      className="w-full border-primary"
+                      variant="outline"
+                    >
+                      See Details
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => setBookCourtModalOpen(true)}
+                    >
+                      Book Again
+                    </Button>
+                  </CardFooter>
+                )}
+                {bookingCourt.status === BookingStatus.PENDING && (
+                  <CardFooter className="px-1 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Button
+                      onClick={() => {
+                        setSelectedBookingCourt(bookingCourt);
+                        setModalOpen(true);
+                        setMode("booking-details");
+                      }}
+                      className="w-full border-primary"
+                      variant="outline"
+                    >
+                      See Details
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        window.open(bookingCourt.invoiceUrl, "_blank");
+                      }}
+                    >
+                      Pay Now
+                    </Button>
+                  </CardFooter>
+                )}
+                {bookingCourt.status === BookingStatus.UPCOMING && (
+                  <CardFooter className="px-1 pb-1 w-full min-w-0">
+                    <Button
+                      onClick={() => {
+                        setSelectedBookingCourt(bookingCourt);
+                        setModalOpen(true);
+                        setMode("booking-details");
+                      }}
+                      className="w-full border-primary"
+                      variant="outline"
+                    >
+                      See Details
+                    </Button>
+                  </CardFooter>
+                )}
+                {bookingCourt.status === BookingStatus.CANCELLED && (
+                  <CardFooter className="px-1 pb-1 w-full min-w-0">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => setBookCourtModalOpen(true)}
+                    >
+                      Book Again
+                    </Button>
+                  </CardFooter>
+                )}
+              </Card>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {paginated.length} of {filtered.length} booking courts
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              disabled={pageSafe <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </Button>
+            <div className="text-sm">
+              Page {pageSafe} / {totalPages}
+            </div>
+            <Button
+              variant="outline"
+              disabled={pageSafe >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
       {/*Modal*/}
@@ -379,6 +482,11 @@ export function BookingCourt() {
         onOpenChange={setBookCourtModalOpen}
         onClose={() => setBookCourtModalOpen(false)}
       />
-    </div>
+      <PaymentFeedbackDialog
+        feedback={paymentFeedback}
+        onClose={clearPaymentFeedback}
+        onViewOrders={handleViewOrderHistory}
+      />
+    </>
   );
 }
