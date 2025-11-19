@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import type { BookingStatus, DayOfWeek } from "@/types/prisma";
 import type { BookingDetail } from "../app/admin/dashboard/timetable/_components/booking-detail-modal";
 
 // Types berdasarkan schema Prisma
@@ -21,7 +23,7 @@ export type Booking = {
     openHour: string; // Format: "06:00"
     closeHour: string; // Format: "07:00"
   }>;
-  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "NO_SHOW";
+  status: BookingStatus;
 };
 
 export type Venue = {
@@ -45,6 +47,8 @@ export type TimetableProps = {
     courtName: string
   ) => BookingDetail;
   onMarkAsComplete?: (bookingId: string) => void;
+  // Loading states
+  isLoadingTable?: boolean; // When only table is loading (date change)
 };
 
 export type BookingSlotInfo = {
@@ -52,3 +56,34 @@ export type BookingSlotInfo = {
   isFirstSlot: boolean;
   span: number;
 };
+
+export type DynamicPrice = {
+  id: string;
+  courtId: string;
+  dayOfWeek: DayOfWeek | null;
+  date: Date | null;
+  startHour: string;
+  endHour: string;
+  price: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type DynamicPriceSlotInfo = {
+  dynamicPrice: DynamicPrice;
+  isFirstSlot: boolean;
+  span: number;
+};
+
+export type TimetableRenderCellParams = {
+  court: Court;
+  timeSlot: string;
+  timeIndex: number;
+  timeSlots: string[];
+  selectedDate: Date;
+};
+
+export type TimetableRenderCell = (
+  params: TimetableRenderCellParams
+) => ReactNode;

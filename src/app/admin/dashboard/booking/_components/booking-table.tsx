@@ -71,15 +71,15 @@ function formatDate(date: Date | string): string {
 
 function getStatusBadgeClass(status: BookingStatus): string {
   switch (status) {
-    case "CONFIRMED":
+    case BookingStatus.UPCOMING:
       return "bg-[#D0FBE9] text-[#1A7544]";
-    case "COMPLETED":
+    case BookingStatus.COMPLETED:
       return "bg-[#E7F0FE] text-[#194185]";
-    case "CANCELLED":
+    case BookingStatus.CANCELLED:
       return "bg-[#FFD5D5] text-[#AD1F1F]";
-    case "NO_SHOW":
+    case BookingStatus.NO_SHOW:
       return "bg-[#FFF4D5] text-[#8B6F00]";
-    case "PENDING":
+    case BookingStatus.PENDING:
     default:
       return "bg-gray-200 text-gray-700";
   }

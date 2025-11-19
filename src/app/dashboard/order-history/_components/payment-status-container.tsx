@@ -4,6 +4,12 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Dot } from "lucide-react";
 import { Order } from "@/hooks/use-order";
+import { stringUtils } from "@/lib/format/string";
+
+/**
+ * TO BE DEPRECATED
+ * This component is no longer used and will be removed in the future
+ */
 
 export function PaymentStatusContainer({
   onOpenChange,
@@ -63,7 +69,11 @@ export function PaymentStatusContainer({
               <span> {paymentProps?.bookings[0]?.bookingDate}</span>
               <span> {paymentProps?.bookings[0]?.duration} hours</span>
               <span> {paymentProps?.payment?.channelName}</span>
-              <span>Rp {paymentProps?.payment?.amount}</span>
+              <span>
+                {paymentProps?.payment?.amount
+                  ? stringUtils.formatRupiah(paymentProps.payment.amount)
+                  : "N/A"}
+              </span>
             </div>
           </div>
           <span className="text-muted-foreground font-normal mx-12">

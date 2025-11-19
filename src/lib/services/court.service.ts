@@ -68,6 +68,65 @@ export const courtService = {
       };
     }
   },
+  // Get courts for public booking flow (no auth required)
+  getPublicByVenue: async (venueId: string) => {
+    try {
+      const courts = await prisma.court.findMany({
+        where: {
+          venueId,
+          isArchived: false,
+          isActive: true,
+          venue: {
+            isArchived: false,
+            isActive: true,
+          },
+        },
+        include: {
+          venue: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          operatingHours: {
+            include: {
+              slots: true,
+            },
+          },
+          dynamicPrices: {
+            where: {
+              isActive: true,
+            },
+            orderBy: [
+              { dayOfWeek: "asc" },
+              { date: "asc" },
+              { startHour: "asc" },
+            ],
+          },
+        },
+        orderBy: {
+          name: "asc",
+        },
+      });
+
+      return {
+        success: true,
+        data: courts,
+        message: "Get public courts by venue successful",
+      };
+    } catch (error) {
+      console.error("Get public courts by venue error:", error);
+      return {
+        success: false,
+        data: null,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Get public courts by venue failed",
+      };
+    }
+  },
 
   // Get courts by venue
   getByVenue: async (venueId: string, context: ServiceContext) => {

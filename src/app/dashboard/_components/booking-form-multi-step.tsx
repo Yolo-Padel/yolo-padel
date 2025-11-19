@@ -1,21 +1,16 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { CartItem, OrderSummary } from "./step-2-order-summary";
-import { PaymentInstructions } from "./step-3-payment-instructions";
-import { BookingSuccess } from "./step-4-booking-success";
-import { CourtSelectionStep } from "./step-1-court-selection";
-import { useCreateOrder } from "@/hooks/use-order";
-import { transformUISlotsToOrderFormat } from "@/lib/booking-slots-utils";
+import { CartItem, OrderSummaryContainer } from "./order-summary-container";
+import { CourtSelectionContainer } from "./court-selection-container";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/use-auth";
 
 type BookingFormMultiStepProps = {
   onClose: () => void;
   isModal?: boolean;
 };
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2;
 
 export function BookingFormMultiStep({
   onClose,
@@ -23,25 +18,35 @@ export function BookingFormMultiStep({
 }: BookingFormMultiStepProps) {
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
-  const [orderData, setOrderData] = useState<{
-    orderCode: string;
-    orderId: string;
-    totalAmount: number;
-  } | null>(null);
-
-  const { user } = useAuth();
-  const { mutate: createOrder, isPending: isCreatingOrder } = useCreateOrder();
+  // Guest info state (from step 1)
+  const [guestEmail, setGuestEmail] = useState<string>("");
+  const [guestFullName, setGuestFullName] = useState<string>("");
 
   // Handle adding items to cart (memoized to prevent infinite loops)
-  const handleAddToCart = useCallback((item: CartItem) => {
-    setCart((prev) => [...prev, item]);
-  }, []);
+  // Support both direct item and functional update
+  const handleAddToCart = useCallback(
+    (item: CartItem | ((prev: CartItem[]) => CartItem[])) => {
+      if (typeof item === "function") {
+        setCart(item);
+      } else {
+        setCart((prev) => [...prev, item]);
+      }
+    },
+    []
+  );
 
   // Handle removing item from cart (memoized to prevent infinite loops)
-  const handleRemoveFromCart = useCallback((index: number) => {
-    setCart((prev) => prev.filter((_, i) => i !== index));
-  }, []);
+  // Support both index-based and functional update
+  const handleRemoveFromCart = useCallback(
+    (indexOrUpdater: number | ((prev: CartItem[]) => CartItem[])) => {
+      if (typeof indexOrUpdater === "function") {
+        setCart(indexOrUpdater);
+      } else {
+        setCart((prev) => prev.filter((_, i) => i !== indexOrUpdater));
+      }
+    },
+    []
+  );
 
   // Navigate to Order Summary
   const handleProceedToSummary = () => {
@@ -57,98 +62,36 @@ export function BookingFormMultiStep({
     setCurrentStep(1);
   };
 
-  // Handle submit order (step 2 → step 3)
-  const handleSubmitOrder = (paymentMethod: string) => {
-    if (!user?.id) {
-      toast.error("Please login first");
-      return;
-    }
-
-    setSelectedPaymentMethod(paymentMethod);
-
-    // Transform cart items to order format
-    const bookings = cart.map((item) => ({
-      courtId: item.courtId,
-      date: item.date,
-      slots: transformUISlotsToOrderFormat(item.slots),
-      price: item.pricePerSlot,
-    }));
-
-    // Create order
-    createOrder(
-      {
-        bookings,
-        channelName: paymentMethod,
-      },
-      {
-        onSuccess: (order) => {
-          // order is already the Order object (not wrapped in response.data)
-          setOrderData({
-            orderCode: order.orderCode,
-            orderId: order.id,
-            totalAmount: order.totalAmount,
-          });
-          setCurrentStep(3);
-          // Note: Toast is already shown by useCreateOrder hook
-        },
-        onError: (error) => {
-          // Note: Toast is already shown by useCreateOrder hook
-          console.error("Create order error:", error);
-        },
-      }
-    );
-  };
-
-  // Handle payment completion (step 3 → step 4)
-  const handlePaymentComplete = () => {
-    setCurrentStep(4);
-  };
-
-  // Handle book again (reset form)
-  const handleBookAgain = () => {
+  // Handle clear cart (for error rollback)
+  const handleClearCart = () => {
     setCart([]);
-    setSelectedPaymentMethod("");
-    setOrderData(null);
     setCurrentStep(1);
   };
 
   return (
     <div>
       {currentStep === 1 && (
-        <CourtSelectionStep
+        <CourtSelectionContainer
           onClose={onClose}
           isModal={isModal}
           cart={cart}
           onAddToCart={handleAddToCart}
           onRemoveFromCart={handleRemoveFromCart}
           onProceedToSummary={handleProceedToSummary}
+          onGuestInfoChange={(email, fullName) => {
+            setGuestEmail(email);
+            setGuestFullName(fullName);
+          }}
         />
       )}
 
       {currentStep === 2 && (
-        <OrderSummary
+        <OrderSummaryContainer
           cartItems={cart}
           onBack={handleBackToSelection}
-          onNext={handleSubmitOrder}
-        />
-      )}
-
-      {currentStep === 3 && orderData && (
-        <PaymentInstructions
-          paymentMethod={selectedPaymentMethod}
-          orderCode={orderData.orderCode}
-          totalAmount={orderData.totalAmount}
-          onComplete={handlePaymentComplete}
-        />
-      )}
-
-      {currentStep === 4 && orderData && (
-        <BookingSuccess
-          orderCode={orderData.orderCode}
-          cartItems={cart}
-          paymentMethod={selectedPaymentMethod}
-          totalAmount={orderData.totalAmount}
-          onBookAgain={handleBookAgain}
+          guestEmail={guestEmail}
+          guestFullName={guestFullName}
+          onClearCart={handleClearCart}
         />
       )}
     </div>

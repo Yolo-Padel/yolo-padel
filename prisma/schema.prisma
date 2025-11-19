@@ -25,17 +25,16 @@ enum UserStatus {
 
 enum BookingStatus {
   PENDING
-  CONFIRMED
+  UPCOMING
   CANCELLED
   COMPLETED
   NO_SHOW
 }
 
 enum PaymentStatus {
-  PENDING
+  UNPAID
   PAID
   FAILED
-  REFUNDED
   EXPIRED
 }
 
@@ -43,7 +42,7 @@ enum OrderStatus {
   PENDING
   PAID
   COMPLETED
-  CANCELLED
+  FAILED
   EXPIRED
 }
 
@@ -82,6 +81,7 @@ model Profile {
   id          String   @id @default(cuid())
   userId      String   @unique
   fullName   String?
+  phoneNumber String?
   avatar      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -152,6 +152,7 @@ model Court {
 
   // Relasi ke Booking
   bookings Booking[]
+  dynamicPrices CourtDynamicPrice[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -183,6 +184,25 @@ model CourtTimeSlot {
   closeHour String // "23:00"
 
   @@map("court_time_slots")
+}
+
+model CourtDynamicPrice {
+  id        String    @id @default(cuid())
+  courtId   String
+  dayOfWeek DayOfWeek?
+  date      DateTime?
+  startHour String
+  endHour   String
+  price     Int
+  isActive  Boolean   @default(true)
+
+  court Court @relation(fields: [courtId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("court_dynamic_price")
+  @@index([courtId, dayOfWeek, date])
 }
 
 model MagicLink {
@@ -266,11 +286,18 @@ model Payment {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
+  // Xendit Integration Fields
+  xenditInvoiceId   String? // ID dari Invoice (other methods)
+  xenditReferenceId String? // referenceId yang dikirim ke Xendit
+  paymentUrl        String? // URL untuk redirect (invoice.invoice_url)
+  xenditMetadata    Json?   // Store additional Xendit response data
+
   // Relations
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   booking Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([xenditInvoiceId])
   @@map("payments")
 }
 

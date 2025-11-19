@@ -33,6 +33,7 @@ import {
 } from "@/lib/pagination-utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ResendInviteButton } from "@/app/admin/dashboard/users/_components/resend-invite-button";
+import { stringUtils } from "@/lib/format/string";
 
 const PAGE_SIZE = 10;
 
@@ -163,18 +164,7 @@ export function UsersTable() {
     );
   };
 
-  const getRole = (role: Role) => {
-    switch (role) {
-      case Role.SUPER_ADMIN:
-        return "Super Admin";
-      case Role.ADMIN:
-        return "Admin";
-      case Role.USER:
-        return "User";
-      case Role.FINANCE:
-        return "Finance";
-    }
-  };
+  const getRole = (role: Role) => stringUtils.getRoleDisplay(role);
 
   return (
     <div className="flex flex-col space-y-6">

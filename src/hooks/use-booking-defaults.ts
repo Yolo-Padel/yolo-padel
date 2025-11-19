@@ -1,14 +1,7 @@
 import { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Court, Venue } from "@prisma/client";
-
-type BookingFormValues = {
-  venueId: string;
-  courtId: string;
-  date: Date | undefined;
-  slots: string[];
-  totalPrice: number;
-};
+import { BookingFormValues } from "@/types/booking";
 
 /**
  * Hook untuk set default venue dan court saat pertama kali load

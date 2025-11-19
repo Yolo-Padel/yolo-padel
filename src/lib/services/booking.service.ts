@@ -7,6 +7,7 @@ import { activityLogService } from "@/lib/services/activity-log.service";
 import { requirePermission, ServiceContext } from "@/types/service-context";
 import { BookingCreateData } from "../validations/booking.validation";
 import { customAlphabet } from "nanoid";
+import type { PrismaTransaction } from "@/types/prisma-transaction";
 
 /**
  * Parse date string (YYYY-MM-DD) and return Date object representing start of day in UTC
@@ -411,7 +412,7 @@ export const bookingService = {
     }
   },
 
-  // Create booking
+  // Create booking (deprecated)
   create: async (booking: BookingCreateData, context: ServiceContext) => {
     try {
       const accessError = requirePermission(context, Role.USER);
@@ -420,7 +421,7 @@ export const bookingService = {
       const nanoId = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 5);
 
       const currentDate = new Date();
-      const bookingCode = `#BK-${nanoId()}`;
+      const bookingCode = `BK-${nanoId()}`;
 
       // Parse booking date - handle both ISO format and YYYY-MM-DD format
       // This ensures timezone issues are resolved
@@ -602,3 +603,72 @@ export const bookingService = {
     }
   },
 };
+
+/**
+ * Create a booking with time slots
+ * Supports both standalone mode (uses prisma) and transaction mode (uses tx parameter)
+ *
+ * @param data - Booking creation data
+ * @param tx - Optional transaction client. If provided, uses transaction; otherwise uses prisma directly
+ * @returns Created booking with time slots
+ *
+ * @example
+ * // Standalone mode
+ * const booking = await createBooking({
+ *   courtId: "court-1",
+ *   userId: "user-1",
+ *   orderId: "order-1",
+ *   bookingDate: new Date(),
+ *   bookingCode: "BK-ABC12",
+ *   duration: 2,
+ *   totalPrice: 200000,
+ *   timeSlots: [{ openHour: "10:00", closeHour: "12:00" }]
+ * });
+ *
+ * @example
+ * // Transaction mode
+ * await prisma.$transaction(async (tx) => {
+ *   const booking = await createBooking({...}, tx);
+ * });
+ */
+export async function createBooking(
+  data: {
+    courtId: string;
+    userId: string;
+    orderId: string | null;
+    bookingDate: Date;
+    bookingCode: string;
+    duration: number;
+    totalPrice: number;
+    timeSlots: Array<{ openHour: string; closeHour: string }>;
+    source?: string;
+    status?: BookingStatus;
+  },
+  tx?: PrismaTransaction
+): Promise<
+  Booking & { timeSlots: Array<{ openHour: string; closeHour: string }> }
+> {
+  const client = tx || prisma;
+
+  const booking = await client.booking.create({
+    data: {
+      courtId: data.courtId,
+      userId: data.userId,
+      orderId: data.orderId,
+      source: data.source || "YOLO",
+      bookingDate: data.bookingDate,
+      bookingCode: data.bookingCode,
+      duration: data.duration,
+      totalPrice: data.totalPrice,
+      status: data.status || BookingStatus.PENDING,
+      timeSlots: {
+        create: data.timeSlots,
+      },
+    },
+    include: {
+      timeSlots: true,
+    },
+  });
+
+  return booking;
+}

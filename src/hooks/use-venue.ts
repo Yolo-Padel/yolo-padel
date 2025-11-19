@@ -62,11 +62,30 @@ const venueApi = {
   },
 };
 
+const venuePublicApi = {
+  getAll: async () => {
+    const response = await fetch("/api/public/venue");
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch public venues");
+    }
+    return response.json();
+  },
+};
+
 export const useVenue = () => {
   return useQuery({
     queryKey: ["venue"],
     queryFn: venueApi.getAll,
     staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
+
+export const usePublicVenues = () => {
+  return useQuery({
+    queryKey: ["public-venue"],
+    queryFn: venuePublicApi.getAll,
+    staleTime: 1000 * 60 * 2,
   });
 };
 

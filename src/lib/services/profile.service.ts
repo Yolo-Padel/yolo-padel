@@ -13,6 +13,8 @@ export const profileService = {
         data: {
           userId,
           fullName: data.fullName,
+          phoneNumber: data.phoneNumber,
+          avatar: data.avatar,
         },
       });
       // audit log (entityType USER untuk perubahan profile)
@@ -47,6 +49,8 @@ export const profileService = {
         where: { userId },
         data: {
           fullName: data.fullName,
+          phoneNumber: data.phoneNumber,
+          avatar: data.avatar,
         },
       });
 

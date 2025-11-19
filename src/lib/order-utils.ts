@@ -19,13 +19,11 @@ export function getPaymentStatusClass(status: PaymentStatus): string {
   switch (status) {
     case PaymentStatus.PAID:
       return "bg-[#D5FFD5] text-[#1FAD53]";
-    case PaymentStatus.PENDING:
+    case PaymentStatus.UNPAID:
       return "bg-[#FFF5D5] text-[#AD751F]";
     case PaymentStatus.FAILED:
     case PaymentStatus.EXPIRED:
       return "bg-[#FFD5D5] text-[#AD1F1F]";
-    case PaymentStatus.REFUNDED:
-      return "bg-gray-200 text-gray-700";
     default:
       return "bg-gray-500 text-white";
   }
@@ -43,10 +41,9 @@ export function getOrderStatusClass(status: OrderStatus): string {
       return "bg-[#D0FBE9] text-[#1A7544]";
     case OrderStatus.PENDING:
       return "bg-[#FFF5D5] text-[#AD751F]";
-    case OrderStatus.CANCELLED:
-      return "bg-[#FFD5D5] text-[#AD1F1F]";
+    case OrderStatus.FAILED:
     case OrderStatus.EXPIRED:
-      return "bg-gray-200 text-gray-700";
+      return "bg-[#FFD5D5] text-[#AD1F1F]";
     default:
       return "bg-gray-200 text-gray-700";
   }

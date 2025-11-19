@@ -1,5 +1,6 @@
 import type { Booking } from "./timetable-types";
 import type { BookingDetail } from "../app/admin/dashboard/timetable/_components/booking-detail-modal";
+import { PaymentStatus } from "@/types/prisma";
 
 // Helper untuk transform Booking ke BookingDetail dengan data lengkap
 // Untuk preview/dummy data, kita bisa menambahkan payment info secara manual
@@ -9,7 +10,7 @@ export function createBookingDetailTransform(
     {
       totalAmount: number;
       paymentMethod: string;
-      paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED" | "EXPIRED";
+      paymentStatus: PaymentStatus;
       createdAt: Date;
     }
   >

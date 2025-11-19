@@ -1,19 +1,33 @@
-import { Building2 } from "lucide-react"
+import { Button } from "@/components/ui/button";
+import { LandPlot } from "lucide-react";
+import Image from "next/image";
 
-export function BookingEmptyState() {
+export function BookingEmptyState({
+  onBookCourt,
+}: {
+  onBookCourt: () => void;
+}) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
-      <div className="w-24 h-24 flex items-center justify-center mb-6">
-        <img src="./search.svg" className="w-36 h-36" />
+      <div className="w-50 h-50 flex items-center justify-center mb-6">
+        <Image
+          src="/booking-court-illustration.svg"
+          alt="search"
+          width={350}
+          height={350}
+        />
       </div>
-      
-      <h3 className="text-xl text-muted-foreground font-semibold mb-2">
-        No booking courts found
-      </h3>
-      
-      <p className="text-muted-foreground text-center mb-6 max-w-md">
-        Get started by creating your first booking court. You can add courts and manage bookings for each court.
+
+      <h3 className="text-xl font-medium mb-2">No Bookings Yet</h3>
+
+      <p className="text-muted-foreground text-center mb-6 max-w-xs font-light">
+        You haven&apos;t booked a court yet. Start your first game today!
       </p>
+
+      <Button className="bg-primary mx-auto px-6 py-2" onClick={onBookCourt}>
+        Book Court
+        <LandPlot className="size-4" />
+      </Button>
     </div>
-  )
+  );
 }

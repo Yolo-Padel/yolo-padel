@@ -5,15 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LandPlot, Dot } from "lucide-react";
 import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-} from "@/components/ui/card";
-import { DatePicker } from "@/components/ui/date-picker";
-import ComboboxFilter from "@/components/ui/combobox";
+import { Card, CardFooter } from "@/components/ui/card";
 import { OrderHistoryModal } from "./order-history-modal";
 import { OrderHistorySkeleton } from "./order-history-skeleton";
 import { useOrders, type Order } from "@/hooks/use-order";
@@ -21,6 +13,8 @@ import { PaymentStatus } from "@/types/prisma";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import Image from "next/image";
+import { stringUtils } from "@/lib/format/string";
+import { OrderEmptyState } from "./order-empty-state";
 
 const PAGE_SIZE = 10;
 
@@ -49,15 +43,13 @@ export default function OrderHistoryTable() {
   // Map PaymentStatus enum to display styles
   const getPaymentStatus = (paymentStatus: PaymentStatus) => {
     switch (paymentStatus) {
-      case "PAID":
+      case PaymentStatus.PAID:
         return "bg-[#D0FBE9] text-[#1A7544]";
-      case "PENDING":
+      case PaymentStatus.UNPAID:
         return "bg-[#FFF5D5] text-[#AD751F]";
-      case "FAILED":
-      case "EXPIRED":
+      case PaymentStatus.FAILED:
+      case PaymentStatus.EXPIRED:
         return "bg-[#FFD5D5] text-[#AD1F1F]";
-      case "REFUNDED":
-        return "bg-[#E5E7EB] text-[#374151]";
       default:
         return "bg-gray-500 text-white";
     }
@@ -66,16 +58,14 @@ export default function OrderHistoryTable() {
   // Get display label for payment status
   const getPaymentStatusLabel = (status: PaymentStatus) => {
     switch (status) {
-      case "PAID":
+      case PaymentStatus.PAID:
         return "Paid";
-      case "PENDING":
-        return "Pending";
-      case "FAILED":
+      case PaymentStatus.UNPAID:
+        return "Unpaid";
+      case PaymentStatus.FAILED:
         return "Failed";
-      case "EXPIRED":
+      case PaymentStatus.EXPIRED:
         return "Expired";
-      case "REFUNDED":
-        return "Refunded";
       default:
         return status;
     }
@@ -118,14 +108,6 @@ export default function OrderHistoryTable() {
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center">
         <h3 className="text-foreground text-2xl">My Order</h3>
-        <div className="flex gap-2">
-          <DatePicker />
-          <ComboboxFilter />
-          <Button className="bg-primary">
-            <LandPlot className="w-4 h-4" />
-            Book Court
-          </Button>
-        </div>
       </div>
 
       {/* Loading State */}
@@ -142,21 +124,13 @@ export default function OrderHistoryTable() {
       )}
 
       {/* Empty State */}
-      {!isLoading && !error && orders.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No orders found</p>
-          <Button className="mt-4 bg-primary">
-            <LandPlot className="w-4 h-4 mr-2" />
-            Book Your First Court
-          </Button>
-        </div>
-      )}
+      {!isLoading && !error && orders.length === 0 && <OrderEmptyState />}
 
       {/* Orders Grid */}
       {!isLoading && !error && orders.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {orders.map((order) => {
-            const paymentStatus = order.payment?.status || "PENDING";
+            const paymentStatus = order.payment?.status || "UNPAID";
             return (
               <Card
                 key={order.id}
@@ -187,10 +161,7 @@ export default function OrderHistoryTable() {
                       <Dot width={16} height={24} strokeWidth={4} />
                       {getVenueName(order)}
                     </div>
-                    <div>Rp {order.totalAmount.toLocaleString("id-ID")}</div>
-                    <div className="font-regular">
-                      {order.payment?.channelName || "N/A"}
-                    </div>
+                    <div>{stringUtils.formatRupiah(order.totalAmount)}</div>
                   </div>
                 </div>
                 <CardFooter className="min-w-0 px-1 mb-1">
@@ -209,7 +180,7 @@ export default function OrderHistoryTable() {
                   )}
 
                   {/* Payment Pending Button */}
-                  {paymentStatus === "PENDING" && (
+                  {paymentStatus === "UNPAID" && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
                       <Button
                         className="w-full border-primary"
@@ -226,9 +197,7 @@ export default function OrderHistoryTable() {
                         className="w-full"
                         variant="default"
                         onClick={() => {
-                          setSelectedOrder(order);
-                          setOrderModal(true);
-                          setModeModal("payment-instruction");
+                          window.open(order.payment?.invoiceUrl, "_blank");
                         }}
                       >
                         Pay Now
@@ -251,33 +220,17 @@ export default function OrderHistoryTable() {
                       >
                         See Details
                       </Button>
-                      <Button
+                      {/* <Button
                         className="w-full"
                         variant="default"
                         onClick={() => {
-                          setSelectedOrder(order);
-                          setOrderModal(true);
-                          setModeModal("payment-instruction");
+                          // TODO: Implement re-book logic
+                          // setBookCourtModalOpen(true);
                         }}
                       >
                         Re-Book
-                      </Button>
+                      </Button> */}
                     </div>
-                  )}
-
-                  {/* Payment Refunded - Show Details Only */}
-                  {paymentStatus === "REFUNDED" && (
-                    <Button
-                      className="w-full border-primary"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        setOrderModal(true);
-                        setModeModal("order-details");
-                      }}
-                    >
-                      See Details
-                    </Button>
                   )}
                 </CardFooter>
               </Card>

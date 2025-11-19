@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resendService } from "@/lib/services/resend.service";
 import { validateRequest } from "@/lib/validate-request";
-import { bookingConfirmationEmailSchema } from "@/lib/validations/send-email.validation";
+import { orderConfirmationEmailSchema } from "@/lib/validations/send-email.validation";
 
 export async function POST(request: NextRequest) {
     try {
-        const validationResult = await validateRequest(request, bookingConfirmationEmailSchema);
+        const validationResult = await validateRequest(request, orderConfirmationEmailSchema);
         
         if (!validationResult.success) {
             return validationResult.error!;
         }
         
-        const result = await resendService.sendBookingConfirmationEmail(validationResult.data!);
+        const result = await resendService.sendOrderConfirmationEmail(validationResult.data!);
         
         if (result.success) {
             return NextResponse.json(result, { status: 200 });
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(result, { status: 500 });
         }
     } catch (error) {
-        console.error("Booking confirmation email API error:", error);
+        console.error("Order confirmation email API error:", error);
         return NextResponse.json(
             { 
                 success: false, 

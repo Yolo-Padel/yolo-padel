@@ -7,6 +7,7 @@ import {
 } from "@/lib/validations/auth.validation";
 
 import { User, Profile } from "@/types/prisma";
+import { NextBookingInfo } from "@/types/profile";
 
 // Types for API responses
 interface AuthResponse {
@@ -14,6 +15,7 @@ interface AuthResponse {
   data: {
     user: User;
     profile: Profile | null;
+    nextBooking?: NextBookingInfo | null;
   } | null;
   message: string;
   errors?: any[];
@@ -73,6 +75,27 @@ const authApi = {
 
     if (!response.ok) {
       throw new Error("Not authenticated");
+    }
+
+    return response.json();
+  },
+
+  createGuestUser: async (data: {
+    email: string;
+    fullName: string;
+  }): Promise<AuthResponse> => {
+    const response = await fetch("/api/auth/guest/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+      credentials: "include", // Important for cookies
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create guest user");
     }
 
     return response.json();
@@ -162,8 +185,29 @@ export const useAuth = () => {
   return {
     user: data?.data?.user || null,
     profile: data?.data?.profile || null,
+    nextBooking: data?.data?.nextBooking || null,
     isLoading,
     isAuthenticated: !!data?.success && !!data?.data?.user,
     error,
   };
+};
+
+/**
+ * Hook untuk create guest user (auto-login setelah create)
+ */
+export const useCreateGuestUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: authApi.createGuestUser,
+    onSuccess: async (data) => {
+      // Invalidate and refetch user query to update auth state (auto-login)
+      await queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+      await queryClient.refetchQueries({ queryKey: ["currentUser"] });
+    },
+    onError: (error: Error) => {
+      console.error("Create guest user error:", error);
+      // Error toast will be handled by caller
+    },
+  });
 };

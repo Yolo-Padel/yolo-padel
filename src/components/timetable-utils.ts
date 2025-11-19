@@ -1,16 +1,37 @@
-// Utility functions untuk timetable
+import { TIMETABLE_HOURS } from "@/constants/timetable";
 
-// Generate time slots dari 06:00 sampai 23:00
+/**
+ * Timetable utility functions
+ * Pure functions for time/date formatting and time slot generation
+ */
+
+/**
+ * Generate array of hourly time slots from configured start to end hour
+ * 
+ * @returns Array of time strings in "HH:00" format
+ * 
+ * @example
+ * generateTimeSlots()
+ * // Returns: ["06:00", "07:00", "08:00", ..., "23:00"]
+ */
 export function generateTimeSlots(): string[] {
   const slots: string[] = [];
-  for (let hour = 6; hour < 24; hour++) {
+  for (let hour = TIMETABLE_HOURS.START; hour < TIMETABLE_HOURS.END; hour++) {
     const time = `${String(hour).padStart(2, "0")}:00`;
     slots.push(time);
   }
   return slots;
 }
 
-// Format waktu untuk display: "06:00" -> "06.00"
+/**
+ * Format time for display by replacing colon with dot
+ * 
+ * @param time - Time string in "HH:mm" format
+ * @returns Formatted time in "HH.mm" format
+ * 
+ * @example
+ * formatTimeDisplay("06:00") // Returns: "06.00"
+ */
 export function formatTimeDisplay(time: string): string {
   return time.replace(":", ".");
 }

@@ -61,6 +61,7 @@ export type Order = {
     amount: number;
     status: PaymentStatus;
     paymentDate: string | null;
+    invoiceUrl: string;
   } | null;
 };
 

@@ -29,7 +29,7 @@ const getStatusBadge = (status: BookingStatus) => {
       return "bg-[#FFD5D5] text-[#AD1F1F]";
     case BookingStatus.COMPLETED:
       return "bg-[#D5FFD5] text-[#1FAD53]";
-    case BookingStatus.CONFIRMED:
+    case BookingStatus.UPCOMING:
       return "bg-[#D5F1FF] text-[#1F7EAD]";
     case BookingStatus.NO_SHOW:
       return "bg-[#E0E0E0] text-[#666666]";
@@ -92,10 +92,11 @@ export function SeeBookingDetails({
           <div>Booking Date</div>
           <div className="font-medium text-foreground min-w-0">
             {new Date(bookingDetails?.bookingDate || "").toLocaleDateString(
-              "id-ID",
+              "en-US",
               {
+                weekday: "long",
                 day: "numeric",
-                month: "short",
+                month: "long",
                 year: "numeric",
               }
             ) || "-"}
@@ -113,7 +114,7 @@ export function SeeBookingDetails({
         </div>
 
         <div>
-          {bookingDetails?.status === BookingStatus.CONFIRMED && (
+          {bookingDetails?.status === BookingStatus.UPCOMING && (
             <Badge className="rounded-md bg-[#ECF1BB] text-[#6B7413] p-4 text-sm font-normal">
               <Info className="w-6 h-6 mr-2 mb-5" /> Please arrive at least
               10-15 minutes before your booking time to ensure a smooth check-in
@@ -129,7 +130,7 @@ export function SeeBookingDetails({
             </Badge>
           )}
         </div>
-        {bookingDetails?.status === BookingStatus.CONFIRMED && (
+        {bookingDetails?.status === BookingStatus.UPCOMING && (
           <div>
             <Button
               onClick={() => onOpenChange(false)}

@@ -1,25 +1,69 @@
 import { prisma } from "@/lib/prisma";
 import { Payment, PaymentStatus } from "@/types/prisma";
 import { syncPaymentStatusToOrder } from "./status-sync.service";
+import type { PrismaTransaction } from "@/types/prisma-transaction";
 
 /**
  * Create payment for an order
- * Payment is created with PENDING status and 15 minutes expiry
+ * Payment is created with UNPAID status and 15 minutes expiry
+ * Supports both standalone mode (uses prisma) and transaction mode (uses tx parameter)
+ *
+ * @param data - Payment creation data
+ * @param tx - Optional transaction client. If provided, uses transaction; otherwise uses prisma directly
+ * @returns Created payment
+ *
+ * @example
+ * // Standalone mode
+ * const payment = await createPayment({
+ *   orderId: "order-1",
+ *   userId: "user-1",
+ *   channelName: "QRIS",
+ *   amount: 200000
+ * });
+ *
+ * @example
+ * // Transaction mode
+ * await prisma.$transaction(async (tx) => {
+ *   const payment = await createPayment({...}, tx);
+ * });
  */
-export async function createPayment(data: {
-  orderId: string;
-  userId: string;
-  channelName: string;
-  amount: number;
-}): Promise<Payment> {
-  const payment = await prisma.payment.create({
+export async function createPayment(
+  data: {
+    orderId: string;
+    userId: string;
+    channelName: string;
+    amount: number;
+    // Xendit fields (optional)
+    xenditInvoiceId?: string | null;
+    xenditReferenceId?: string | null;
+    paymentUrl?: string | null;
+    xenditMetadata?: Record<string, unknown> | null;
+    expiredAt?: Date | null;
+  },
+  tx?: PrismaTransaction
+): Promise<Payment> {
+  const client = tx || prisma;
+
+  const payment = await client.payment.create({
     data: {
       orderId: data.orderId,
       userId: data.userId,
       channelName: data.channelName,
       amount: data.amount,
-      status: PaymentStatus.PENDING,
-      expiredAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+      status: PaymentStatus.UNPAID,
+      expiredAt: data.expiredAt || new Date(Date.now() + 15 * 60 * 1000), // 15 minutes from now or custom
+      // Xendit fields (only include if they have values to avoid undefined)
+      ...(data.xenditInvoiceId && { xenditInvoiceId: data.xenditInvoiceId }),
+      ...(data.xenditReferenceId && {
+        xenditReferenceId: data.xenditReferenceId,
+      }),
+      ...(data.paymentUrl && { paymentUrl: data.paymentUrl }),
+      ...(data.xenditMetadata !== undefined && {
+        xenditMetadata:
+          data.xenditMetadata && typeof data.xenditMetadata === "string"
+            ? JSON.parse(data.xenditMetadata)
+            : data.xenditMetadata,
+      }),
     },
   });
 
@@ -106,10 +150,78 @@ export async function updatePaymentStatus(
 }
 
 /**
+ * Update Xendit payment data
+ * Used after creating payment request/invoice to store Xendit response
+ */
+export async function updatePaymentXenditData(
+  paymentId: string,
+  data: {
+    xenditInvoiceId?: string | null;
+    xenditReferenceId?: string | null;
+    paymentUrl?: string | null;
+    xenditMetadata?: Record<string, unknown> | null;
+  }
+): Promise<Payment> {
+  const payment = await prisma.payment.update({
+    where: { id: paymentId },
+    data: {
+      ...(data.xenditInvoiceId !== undefined && {
+        xenditInvoiceId: data.xenditInvoiceId,
+      }),
+      ...(data.xenditReferenceId !== undefined && {
+        xenditReferenceId: data.xenditReferenceId,
+      }),
+      ...(data.paymentUrl !== undefined && {
+        paymentUrl: data.paymentUrl,
+      }),
+      ...(data.xenditMetadata !== undefined && {
+        xenditMetadata:
+          typeof data.xenditMetadata === "string"
+            ? JSON.parse(data.xenditMetadata)
+            : data.xenditMetadata,
+      }),
+    },
+  });
+
+  return payment;
+}
+
+/**
+ * Get payment by Xendit Invoice ID
+ */
+export async function getPaymentByXenditInvoiceId(xenditInvoiceId: string) {
+  const payment = await prisma.payment.findFirst({
+    where: { xenditInvoiceId },
+    include: {
+      order: {
+        include: {
+          bookings: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          email: true,
+          profile: {
+            select: {
+              fullName: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return payment;
+}
+
+/**
  * Handle payment success
  * Called from webhook when payment is confirmed
  */
-export async function handlePaymentSuccess(paymentId: string): Promise<Payment> {
+export async function handlePaymentSuccess(
+  paymentId: string
+): Promise<Payment> {
   return await updatePaymentStatus(paymentId, PaymentStatus.PAID);
 }
 
@@ -117,7 +229,9 @@ export async function handlePaymentSuccess(paymentId: string): Promise<Payment> 
  * Handle payment expiry
  * Called from cron job when payment timeout (15 minutes)
  */
-export async function handlePaymentExpired(paymentId: string): Promise<Payment> {
+export async function handlePaymentExpired(
+  paymentId: string
+): Promise<Payment> {
   return await updatePaymentStatus(paymentId, PaymentStatus.EXPIRED);
 }
 
@@ -130,14 +244,6 @@ export async function handlePaymentFailed(paymentId: string): Promise<Payment> {
 }
 
 /**
- * Handle payment refund
- * Called when user cancels order after payment
- */
-export async function handlePaymentRefund(paymentId: string): Promise<Payment> {
-  return await updatePaymentStatus(paymentId, PaymentStatus.REFUNDED);
-}
-
-/**
  * Get expired payments
  * Used by cron job to find payments that need to be expired
  */
@@ -146,7 +252,7 @@ export async function getExpiredPendingPayments(): Promise<Payment[]> {
 
   const expiredPayments = await prisma.payment.findMany({
     where: {
-      status: PaymentStatus.PENDING,
+      status: PaymentStatus.UNPAID,
       expiredAt: {
         lte: now,
       },
@@ -188,4 +294,3 @@ export async function processExpiredPayments(): Promise<{
     expiredPaymentIds,
   };
 }
-

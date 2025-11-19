@@ -14,6 +14,8 @@ import { X } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { stringUtils } from "@/lib/format/string";
+import { PaymentStatus } from "@/types/prisma";
 
 // Extended booking type dengan payment info
 export type BookingDetail = {
@@ -29,7 +31,7 @@ export type BookingDetail = {
   duration: number; // dalam jam
   totalAmount: number;
   paymentMethod: string;
-  paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED" | "EXPIRED";
+  paymentStatus: PaymentStatus;
   createdAt: Date;
 };
 
@@ -55,7 +57,9 @@ function formatTimeWithAMPM(time: string): string {
 }
 
 // Format time range: ["06:00", "07:00"] -> "06.00-07.00"
-function formatTimeRange(timeSlots: Array<{ openHour: string; closeHour: string }>): string {
+function formatTimeRange(
+  timeSlots: Array<{ openHour: string; closeHour: string }>
+): string {
   if (timeSlots.length === 0) return "";
   const first = timeSlots[0];
   const last = timeSlots[timeSlots.length - 1];
@@ -76,17 +80,15 @@ function formatDateTime(date: Date): string {
 }
 
 // Get payment status badge styling
-function getPaymentStatusBadgeClass(status: string): string {
+function getPaymentStatusBadgeClass(status: PaymentStatus): string {
   switch (status) {
-    case "PAID":
+    case PaymentStatus.PAID:
       return "bg-[#D0FBE9] text-[#1A7544]";
-    case "PENDING":
+    case PaymentStatus.UNPAID:
       return "bg-[#FFF4D5] text-[#8B6F00]";
-    case "FAILED":
+    case PaymentStatus.FAILED:
       return "bg-[#FFD5D5] text-[#AD1F1F]";
-    case "REFUNDED":
-      return "bg-[#E0E0E0] text-[#666666]";
-    case "EXPIRED":
+    case PaymentStatus.EXPIRED:
       return "bg-[#FFD5D5] text-[#AD1F1F]";
     default:
       return "bg-gray-200 text-gray-700";
@@ -103,10 +105,7 @@ export function BookingDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="sm:max-w-[500px]"
-        showCloseButton={false}
-      >
+      <DialogContent className="sm:max-w-[500px]" showCloseButton={false}>
         {/* Custom Close Button */}
         <Button
           variant="ghost"
@@ -146,11 +145,15 @@ export function BookingDetailModal({
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Date</span>
-                <span className="font-medium">{formatDate(booking.bookingDate)}</span>
+                <span className="font-medium">
+                  {formatDate(booking.bookingDate)}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Time</span>
-                <span className="font-medium">{formatTimeRange(booking.timeSlots)}</span>
+                <span className="font-medium">
+                  {formatTimeRange(booking.timeSlots)}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Duration</span>
@@ -166,7 +169,7 @@ export function BookingDetailModal({
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Total Amount</span>
                 <span className="font-medium">
-                  Rp{booking.totalAmount.toLocaleString("id-ID")}
+                  {stringUtils.formatRupiah(booking.totalAmount)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -181,12 +184,16 @@ export function BookingDetailModal({
                     getPaymentStatusBadgeClass(booking.paymentStatus)
                   )}
                 >
-                  {booking.paymentStatus === "PAID" ? "Paid" : booking.paymentStatus}
+                  {booking.paymentStatus === PaymentStatus.PAID
+                    ? "Paid"
+                    : booking.paymentStatus}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Created On</span>
-                <span className="font-medium">{formatDateTime(booking.createdAt)}</span>
+                <span className="font-medium">
+                  {formatDateTime(booking.createdAt)}
+                </span>
               </div>
             </div>
           </div>
@@ -200,18 +207,18 @@ export function BookingDetailModal({
             >
               Close
             </Button>
-            {onMarkAsComplete && booking.paymentStatus === "PAID" && (
-              <Button
-                className="flex-1 bg-[#C3D223] hover:bg-[#A9B920] text-white"
-                onClick={onMarkAsComplete}
-              >
-                Mark as Complete
-              </Button>
-            )}
+            {onMarkAsComplete &&
+              booking.paymentStatus === PaymentStatus.PAID && (
+                <Button
+                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920] text-white"
+                  onClick={onMarkAsComplete}
+                >
+                  Mark as Complete
+                </Button>
+              )}
           </div>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
-

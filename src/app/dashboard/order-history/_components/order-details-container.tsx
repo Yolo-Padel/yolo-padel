@@ -8,18 +8,18 @@ import { BookingStatus, PaymentStatus } from "@/types/prisma";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { X } from "lucide-react";
+import { stringUtils } from "@/lib/format/string";
+import { useReceiptGeneration } from "@/hooks/use-receipt-generation";
 
 const getPaymentStatus = (paymentStatus: PaymentStatus) => {
   switch (paymentStatus) {
     case PaymentStatus.PAID:
       return "bg-[#D5FFD5] text-[#1FAD53]";
-    case PaymentStatus.PENDING:
+    case PaymentStatus.UNPAID:
       return "bg-[#FFF5D5] text-[#AD751F]";
     case PaymentStatus.FAILED:
     case PaymentStatus.EXPIRED:
       return "bg-[#FFD5D5] text-[#AD1F1F]";
-    case PaymentStatus.REFUNDED:
-      return "bg-gray-200 text-gray-700";
     default:
       return "bg-gray-500 text-white";
   }
@@ -27,7 +27,7 @@ const getPaymentStatus = (paymentStatus: PaymentStatus) => {
 
 const getBookingStatus = (bookingStatus: BookingStatus) => {
   switch (bookingStatus) {
-    case BookingStatus.CONFIRMED:
+    case BookingStatus.UPCOMING:
       return "bg-[#D5FFD5] text-[#1FAD53]";
     case BookingStatus.PENDING:
       return "bg-[#FFF5D5] text-[#AD751F]";
@@ -66,6 +66,15 @@ export function OrderDetailsContainer({
   ) => void;
   showButtons?: boolean;
 }) {
+  const { generateReceipt, isGenerating } = useReceiptGeneration();
+
+  const handleDownloadReceipt = () => {
+    if (!orderDetails?.id) {
+      return;
+    }
+    generateReceipt(orderDetails.id);
+  };
+
   return (
     <div>
       <div className="grid grid-cols-1">
@@ -98,7 +107,6 @@ export function OrderDetailsContainer({
           </div>
         )}
       </div>
-
       <div className="text-xl gap-1 mt-4 space-y-4">
         <span className="font-medium text-foreground text-base">
           Order Summary
@@ -168,7 +176,7 @@ export function OrderDetailsContainer({
                       </span>
                     </div>
                     <span className="font-semibold text-sm text-foreground">
-                      Rp {booking.totalPrice.toLocaleString("id-ID")}
+                      {stringUtils.formatRupiah(booking.totalPrice)}
                     </span>
                   </div>
                 </div>
@@ -183,19 +191,14 @@ export function OrderDetailsContainer({
         <div className="grid grid-cols-2 gap-2 mt-2 text-sm text-foreground">
           <div>Total Amount</div>
           <div className="font-medium">
-            Rp {orderDetails?.totalAmount?.toLocaleString("id-ID")}
-          </div>
-
-          <div>Payment Method</div>
-          <div className="font-medium">
-            {orderDetails?.payment?.channelName || "N/A"}
+            {stringUtils.formatRupiah(orderDetails?.totalAmount || 0)}
           </div>
 
           <div>Payment Status</div>
           <div className={`font-medium`}>
             <Badge
               className={getPaymentStatus(
-                orderDetails?.payment?.status || PaymentStatus.PENDING
+                orderDetails?.payment?.status || PaymentStatus.UNPAID
               )}
             >
               {orderDetails?.payment?.status}
@@ -225,7 +228,6 @@ export function OrderDetailsContainer({
           )}
         </div>
       </div>
-
       {showButtons === true && (
         <div className="mt-4">
           {/*Payment Paid Button*/}
@@ -242,31 +244,22 @@ export function OrderDetailsContainer({
               <Button
                 className="w-full rounded-sm"
                 variant="default"
-                onClick={() =>
-                  window.open(`/api/order/${orderDetails?.id}/receipt`)
-                }
+                onClick={handleDownloadReceipt}
+                disabled={isGenerating}
               >
-                Download Receipt
+                {isGenerating ? "Generating receipt..." : "Download Receipt"}
               </Button>
             </div>
           )}
 
           {/*Pending Payment Button*/}
-          {orderDetails?.payment?.status === PaymentStatus.PENDING && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
-              <Button
-                className="w-full border-primary rounded-sm"
-                variant="outline"
-                onClick={() => onChangeMode("change-payment-method")}
-              >
-                Change Payment Method
-              </Button>
-
+          {orderDetails?.payment?.status === PaymentStatus.UNPAID && (
+            <div className="w-full gap-2">
               <Button
                 className="w-full rounded-sm"
                 variant="default"
                 onClick={() => {
-                  onChangeMode("payment-instruction");
+                  window.open(orderDetails?.payment?.invoiceUrl, "_blank");
                 }}
               >
                 Pay Now
@@ -294,17 +287,6 @@ export function OrderDetailsContainer({
                 Book Again
               </Button>
             </div>
-          )}
-
-          {/*Payment Refunded Button*/}
-          {orderDetails?.payment?.status === PaymentStatus.REFUNDED && (
-            <Button
-              className="w-full border-primary rounded-sm"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Close
-            </Button>
           )}
         </div>
       )}

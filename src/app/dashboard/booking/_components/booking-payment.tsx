@@ -4,6 +4,12 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from "lucide-react";
 import { BookingStatus, PaymentStatus } from "@/types/prisma";
+import { stringUtils } from "@/lib/format/string";
+
+/**
+ * TO BE DEPRECATED
+ * This component is no longer used and will be removed in the future
+ */
 
 type PaymentProps = {
   id: string;
@@ -16,7 +22,7 @@ type PaymentProps = {
   totalPayment: number;
   status: BookingStatus;
   paymentMethod: string | "Credit Card" | "QRIS" | "Bank Transfer";
-  paymentStatus: string | "Paid" | "Unpaid";
+  paymentStatus: PaymentStatus;
 };
 
 export function Payment({
@@ -41,7 +47,10 @@ export function Payment({
   return (
     <div>
       <div className="flex gap-4">
-        <Button className="bg-primary w-12 h-8 mt-1" onClick={() => onOpenChange(false)}>
+        <Button
+          className="bg-primary w-12 h-8 mt-1"
+          onClick={() => onOpenChange(false)}
+        >
           <ArrowLeftIcon className="h-4 w-4" />
         </Button>
         <div>
@@ -59,7 +68,12 @@ export function Payment({
         />
 
         <div className="flex flex-col items-center gap-2 text-sm text-foreground">
-          <div>Total Payment Rp {paymentProps?.totalPayment}</div>
+          <div>
+            Total Payment{" "}
+            {paymentProps?.totalPayment
+              ? stringUtils.formatRupiah(paymentProps.totalPayment)
+              : "N/A"}
+          </div>
           <div>Expires in 15 minutes</div>
         </div>
       </div>
@@ -74,7 +88,7 @@ export function Payment({
           </Button>
 
           {/*Payment Confirmed*/}
-          {paymentProps?.status === BookingStatus.CONFIRMED && (
+          {paymentProps?.status === BookingStatus.UPCOMING && (
             <Button
               className="w-full rounded-sm border-primary"
               variant="outline"

@@ -109,14 +109,52 @@ export function transformUISlotsToDbFormat(
 
 /**
  * Transform database format to UI slot format
+ * Merges consecutive time slots and returns only the start and end times
  * @param timeSlots Array of {openHour, closeHour} objects
- * @returns Array of UI slot strings like "06.00–07.00"
+ * @returns Array of merged UI slot strings like "09.00–11.00" (merged from "09.00–10.00" and "10.00–11.00")
+ * @example
+ * // Input: [{openHour: "09:00", closeHour: "10:00"}, {openHour: "10:00", closeHour: "11:00"}]
+ * // Output: ["09.00–11.00"]
  */
 export function transformDbFormatToUISlots(
   timeSlots: Array<{ openHour: string; closeHour: string }>
 ): string[] {
-  return timeSlots.map((ts) => {
-    return `${ts.openHour.replace(":", ".")}–${ts.closeHour.replace(":", ".")}`;
+  if (timeSlots.length === 0) return [];
+
+  // Sort slots by openHour to ensure proper merging
+  const sorted = [...timeSlots].sort((a, b) => {
+    const [aHour, aMin] = a.openHour.split(":").map(Number);
+    const [bHour, bMin] = b.openHour.split(":").map(Number);
+    const aTotal = aHour * 60 + aMin;
+    const bTotal = bHour * 60 + bMin;
+    return aTotal - bTotal;
+  });
+
+  const merged: Array<{ openHour: string; closeHour: string }> = [];
+  let currentRange: { openHour: string; closeHour: string } | null = null;
+
+  for (const slot of sorted) {
+    if (!currentRange) {
+      // Start a new range
+      currentRange = { ...slot };
+    } else if (currentRange.closeHour === slot.openHour) {
+      // Consecutive slot - extend the current range
+      currentRange.closeHour = slot.closeHour;
+    } else {
+      // Gap found - save current range and start a new one
+      merged.push(currentRange);
+      currentRange = { ...slot };
+    }
+  }
+
+  // Don't forget to add the last range
+  if (currentRange) {
+    merged.push(currentRange);
+  }
+
+  // Convert to UI format
+  return merged.map((range) => {
+    return `${range.openHour.replace(":", ".")}–${range.closeHour.replace(":", ".")}`;
   });
 }
 

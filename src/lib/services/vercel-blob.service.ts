@@ -29,7 +29,10 @@ export const vercelBlobService = {
 
       // Combine folderPath with filename
       // Ensure folderPath doesn't start with / and ends without /
-      const cleanFolderPath = folderPath.replace(/^\/+|\/+$/g, "");
+      const cleanFolderPath = folderPath
+        .replace(/(\r\n|\n|\r)/g, "")
+        .replace(/^\/+|\/+$/g, "")
+        .trim();
       const fullPath = `${cleanFolderPath}/${finalFilename}`;
 
       // Upload file to Vercel Blob
@@ -67,7 +70,10 @@ export const vercelBlobService = {
   ): Promise<UploadResult> => {
     try {
       // Combine folderPath with filename
-      const cleanFolderPath = folderPath.replace(/^\/+|\/+$/g, "");
+      const cleanFolderPath = folderPath
+        .replace(/(\r\n|\n|\r)/g, "")
+        .replace(/^\/+|\/+$/g, "")
+        .trim();
       const fullPath = `${cleanFolderPath}/${filename}`;
 
       const blob = await put(fullPath, buffer, {

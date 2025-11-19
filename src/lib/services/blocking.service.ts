@@ -1,15 +1,36 @@
 import { prisma } from "@/lib/prisma";
 import { Blocking } from "@/types/prisma";
+import { normalizeDateToUTC } from "@/lib/date-utils";
+import type { PrismaTransaction } from "@/types/prisma-transaction";
 
 /**
  * Create a blocking for a booking
  * Locks the time slots so they're not available for other bookings
+ * Supports both standalone mode (uses prisma) and transaction mode (uses tx parameter)
+ *
+ * @param bookingId - ID of the booking to create blocking for
+ * @param description - Optional description for the blocking
+ * @param tx - Optional transaction client. If provided, uses transaction; otherwise uses prisma directly
+ * @returns Created blocking
+ *
+ * @example
+ * // Standalone mode
+ * const blocking = await createBlocking("booking-1", "Blocked for order ORD-123");
+ *
+ * @example
+ * // Transaction mode
+ * await prisma.$transaction(async (tx) => {
+ *   const blocking = await createBlocking("booking-1", "Blocked for order", tx);
+ * });
  */
 export async function createBlocking(
   bookingId: string,
-  description: string = "Booking slot locked"
+  description: string = "Booking slot locked",
+  tx?: PrismaTransaction
 ): Promise<Blocking> {
-  const blocking = await prisma.blocking.create({
+  const client = tx || prisma;
+
+  const blocking = await client.blocking.create({
     data: {
       bookingId,
       description,
@@ -54,9 +75,7 @@ export async function releaseBlockingByBookingId(
  * Release multiple blockings at once (bulk operation)
  * Used when cancelling multiple bookings in an order
  */
-export async function releaseBlockings(
-  blockingIds: string[]
-): Promise<number> {
+export async function releaseBlockings(blockingIds: string[]): Promise<number> {
   const result = await prisma.blocking.updateMany({
     where: {
       id: { in: blockingIds },
@@ -161,10 +180,7 @@ export async function isSlotBlocked(
   // Check if any blocking overlaps with the requested slot
   for (const blocking of activeBlockings) {
     for (const slot of blocking.booking.timeSlots) {
-      if (
-        slot.openHour === slotOpenHour &&
-        slot.closeHour === slotCloseHour
-      ) {
+      if (slot.openHour === slotOpenHour && slot.closeHour === slotCloseHour) {
         return true; // Slot is blocked
       }
     }
@@ -186,3 +202,106 @@ export async function getBlockingByBookingId(
   return blocking;
 }
 
+/**
+ * Get active blockings for ALL courts in a venue for specific date
+ * With full booking details including user profile and court info
+ * Used for timetable display in admin dashboard
+ */
+export async function getActiveBlockingsByVenueAndDate(
+  venueId: string,
+  date: Date
+): Promise<
+  Array<{
+    id: string;
+    bookingId: string;
+    isBlocking: boolean;
+    booking: {
+      id: string;
+      courtId: string;
+      userId: string;
+      bookingDate: Date;
+      status: string;
+      timeSlots: Array<{
+        openHour: string;
+        closeHour: string;
+      }>;
+      user: {
+        profile: {
+          fullName: string | null;
+          avatar: string | null;
+        } | null;
+      };
+      court: {
+        id: string;
+        name: string;
+      };
+    };
+  }>
+> {
+  // Normalize date to UTC start/end of day (consistent with booking service)
+  const { startOfDay, endOfDay } = normalizeDateToUTC(date);
+
+  const blockings = await prisma.blocking.findMany({
+    where: {
+      isBlocking: true, // Filter at database level
+      booking: {
+        court: {
+          venueId, // Filter by venue
+        },
+        bookingDate: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+        status: {
+          not: "CANCELLED",
+        },
+      },
+    },
+    select: {
+      id: true,
+      bookingId: true,
+      isBlocking: true,
+      booking: {
+        select: {
+          id: true,
+          courtId: true,
+          userId: true,
+          bookingDate: true,
+          status: true,
+          timeSlots: {
+            select: {
+              openHour: true,
+              closeHour: true,
+            },
+            orderBy: {
+              openHour: "asc",
+            },
+          },
+          user: {
+            select: {
+              profile: {
+                select: {
+                  fullName: true,
+                  avatar: true,
+                },
+              },
+            },
+          },
+          court: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      booking: {
+        bookingDate: "asc",
+      },
+    },
+  });
+
+  return blockings;
+}

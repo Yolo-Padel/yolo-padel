@@ -86,7 +86,7 @@ export const useMagicLinkVerify = () => {
 
       // Redirect based on user role from the response data
       if (data.user.role === Role.USER) {
-        router.push("/dashboard");
+        router.push("/dashboard/booking");
       } else {
         router.push("/admin/dashboard");
       }
@@ -97,7 +97,6 @@ export const useMagicLinkVerify = () => {
     },
   });
 };
-
 
 export const useMagicLinkRequest = () => {
   return useMutation({
@@ -111,5 +110,5 @@ export const useMagicLinkRequest = () => {
       console.error("Magic link request error:", error);
       toast.error(error.message || "Magic link request failed");
     },
-  })
+  });
 };
