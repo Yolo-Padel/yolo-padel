@@ -31,4 +31,3 @@ export function useBookingPricing(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchSlots, selectedCourt, watchDate, dynamicPrices]); // Don't include form - it's stable
 }
-
