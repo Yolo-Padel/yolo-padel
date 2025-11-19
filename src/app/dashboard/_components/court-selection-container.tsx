@@ -8,7 +8,7 @@ import { usePublicVenues } from "@/hooks/use-venue";
 import { Court, Venue } from "@prisma/client";
 import { Separator } from "@/components/ui/separator";
 import { usePublicCourtByVenue } from "@/hooks/use-court";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import { Calendar } from "@/components/ui/calendar";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -30,6 +30,8 @@ import { CourtSkeleton } from "./court-skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { DynamicPrice } from "@/components/timetable-types";
+import { transformPrismaDynamicPrice } from "@/lib/dynamic-price-transform";
 
 type CourtSelectionContainerProps = {
   onClose: () => void;
@@ -90,6 +92,29 @@ export function CourtSelectionContainer({
   const selectedCourt = courtsData.find((c) => c.id === watchCourtId);
   const operatingHoursSlots = getAvailableSlots(selectedCourt, watchDate);
 
+  // Get dynamic prices from selected court data (already included in query)
+  const dynamicPrices: DynamicPrice[] = useMemo(() => {
+    if (!selectedCourt || !("dynamicPrices" in selectedCourt)) {
+      return [];
+    }
+    const prismaPrices = (selectedCourt as any).dynamicPrices || [];
+    return prismaPrices.map((price: any) => {
+      // Transform Prisma Date objects to DynamicPrice format
+      return {
+        id: price.id,
+        courtId: price.courtId,
+        dayOfWeek: price.dayOfWeek,
+        date: price.date ? new Date(price.date) : null,
+        startHour: price.startHour,
+        endHour: price.endHour,
+        price: price.price,
+        isActive: price.isActive,
+        createdAt: new Date(price.createdAt),
+        updatedAt: new Date(price.updatedAt),
+      };
+    });
+  }, [selectedCourt]);
+
   // Get active blockings for the selected court and date
   const { data: blockingsData } = useActiveBlockings({
     courtId: watchCourtId || "",
@@ -117,7 +142,7 @@ export function CourtSelectionContainer({
     watchCourtId
   );
 
-  useBookingPricing(form, selectedCourt, watchSlots);
+  useBookingPricing(form, selectedCourt, watchSlots, watchDate, dynamicPrices);
 
   useCourtSlotsPersistence(form, watchCourtId, watchDate, courtSelections);
 
@@ -132,7 +157,8 @@ export function CourtSelectionContainer({
     setCourtSelections,
     cart,
     onAddToCart,
-    onRemoveFromCart
+    onRemoveFromCart,
+    dynamicPrices
   );
 
   return isLoadingVenues ? (

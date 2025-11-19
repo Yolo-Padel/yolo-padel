@@ -94,6 +94,16 @@ export const courtService = {
               slots: true,
             },
           },
+          dynamicPrices: {
+            where: {
+              isActive: true,
+            },
+            orderBy: [
+              { dayOfWeek: "asc" },
+              { date: "asc" },
+              { startHour: "asc" },
+            ],
+          },
         },
         orderBy: {
           name: "asc",

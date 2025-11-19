@@ -201,7 +201,7 @@ model CourtDynamicPrice {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("court_pricing_overrides")
+  @@map("court_dynamic_price")
   @@index([courtId, dayOfWeek, date])
 }
 

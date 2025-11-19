@@ -3,6 +3,8 @@ import { Court, Venue } from "@prisma/client";
 import { getAvailableSlots } from "@/lib/booking-slots-utils";
 import { CartItem } from "@/app/dashboard/_components/order-summary-container";
 import { CourtSelections } from "@/types/booking";
+import type { DynamicPrice } from "@/components/timetable-types";
+import { calculateSlotsPrice } from "@/lib/booking-pricing-utils";
 
 /**
  * Hook untuk sync selections ke cart dan update courtSelections
@@ -22,7 +24,8 @@ export function useBookingCartSync(
   setCourtSelections: React.Dispatch<React.SetStateAction<CourtSelections>>,
   cart: CartItem[],
   onAddToCart: (item: CartItem | ((prev: CartItem[]) => CartItem[])) => void,
-  onRemoveFromCart: (index: number | ((prev: CartItem[]) => CartItem[])) => void
+  onRemoveFromCart: (index: number | ((prev: CartItem[]) => CartItem[])) => void,
+  dynamicPrices: DynamicPrice[] = []
 ) {
   // Use ref to track previous sync state to prevent infinite loops
   const previousSyncRef = useRef<string>("");
@@ -109,6 +112,20 @@ export function useBookingCartSync(
 
     // Step 2: Sync to cart (use functional update untuk avoid race condition)
     if (watchSlots.length > 0) {
+      // Calculate prices using dynamic pricing if available
+      const { pricesPerSlot, totalPrice } = calculateSlotsPrice(
+        watchSlots,
+        watchDate,
+        selectedCourt.price,
+        dynamicPrices
+      );
+
+      // Use average price per slot for display (backward compatibility)
+      const averagePricePerSlot =
+        pricesPerSlot.length > 0
+          ? Math.round(totalPrice / pricesPerSlot.length)
+          : selectedCourt.price;
+
       // Create cart item
       const cartItem: CartItem = {
         courtId: selectedCourt.id,
@@ -117,8 +134,8 @@ export function useBookingCartSync(
         venueName,
         date: watchDate,
         slots: watchSlots,
-        pricePerSlot: selectedCourt.price,
-        totalPrice: watchSlots.length * selectedCourt.price,
+        pricePerSlot: averagePricePerSlot,
+        totalPrice,
       };
 
       // Use functional update untuk ensure consistency
@@ -156,5 +173,6 @@ export function useBookingCartSync(
     setCourtSelections,
     onAddToCart,
     onRemoveFromCart,
+    dynamicPrices,
   ]);
 }
