@@ -5,6 +5,7 @@ import type {
 } from "@/components/timetable-types";
 import type { BookingDetail } from "@/app/admin/dashboard/timetable/_components/booking-detail-modal";
 import type { VenueBlockingData } from "@/hooks/use-blocking";
+import { PaymentStatus } from "@/types/prisma";
 
 // Type untuk Prisma booking result dari API
 type PrismaBooking = {
@@ -177,7 +178,8 @@ export function transformPrismaBookingToDetail(
     totalAmount: booking.order?.totalAmount || booking.totalPrice || 0,
     paymentMethod: payment?.channelName || "N/A",
     paymentStatus:
-      (payment?.status as BookingDetail["paymentStatus"]) || "PENDING",
+      (payment?.status as BookingDetail["paymentStatus"]) ||
+      PaymentStatus.UNPAID,
     createdAt: payment?.paymentDate
       ? new Date(payment.paymentDate)
       : new Date(booking.bookingDate),
@@ -186,17 +188,17 @@ export function transformPrismaBookingToDetail(
 
 /**
  * Transform Prisma blocking data (from venue query) to Timetable format
- * 
+ *
  * This function converts blocking records from the database into the format
  * required by the Timetable component. The data is already filtered at the
  * database level (WHERE isBlocking = true), so no client-side filtering needed.
- * 
+ *
  * This replaces the deprecated transformPrismaBookingToTimetable function,
  * which was inefficient (fetched all bookings and filtered client-side).
- * 
+ *
  * @param blockings - Array of blocking records with full booking details
  * @returns Array of TimetableBooking objects ready for display
- * 
+ *
  * @example
  * const blockingsFromAPI = await fetchBlockings(venueId, date);
  * const timetableData = transformPrismaBlockingToTimetable(blockingsFromAPI);
@@ -235,7 +237,7 @@ export function transformPrismaBlockingToDetail(
     duration: blocking.booking.timeSlots.length,
     totalAmount: 0, // Will be fetched separately if needed
     paymentMethod: "N/A",
-    paymentStatus: "PENDING",
+    paymentStatus: PaymentStatus.UNPAID,
     createdAt: new Date(blocking.booking.bookingDate),
   };
 }
