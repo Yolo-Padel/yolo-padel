@@ -291,11 +291,13 @@ export function BookingCourt() {
     <>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-1">
-          <h3 className="text-xl font-semibold">Booking Court List</h3>
+          <h3 className="text-xl font-semibold ">Booking Court List</h3>
+          
           <div className="flex items-center gap-2">
+            {/* Hide DatePicker and ComboboxFilter 
             <DatePicker />
             <ComboboxFilter />
-
+            */}
             <Button
               onClick={() => setBookCourtModalOpen(true)}
               className="text-black"
@@ -304,6 +306,7 @@ export function BookingCourt() {
               <LandPlot className="size-4" />
             </Button>
           </div>
+          
         </div>
         {filtered.length === 0 ? (
           <BookingEmptyState onBookCourt={() => setBookCourtModalOpen(true)} />

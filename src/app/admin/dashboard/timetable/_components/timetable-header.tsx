@@ -51,6 +51,7 @@ export function TimetableHeader({
           </SelectContent>
         </Select>
 
+<<<<<<< HEAD
         <div className="flex items-center gap-2 shrink-0">
           {/* Filter Button */}
           <Button
@@ -74,6 +75,21 @@ export function TimetableHeader({
             </Button>
           )}
         </div>
+=======
+        {/* Filter Button */}
+        
+        {/* Hide Filter Button
+        <Button
+          variant="outline"
+          size="sm"
+          className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}] gap-2 shrink-0`}
+          disabled={isLoading}
+        >
+          <Filter className="h-4 w-4" />
+          Filter
+        </Button>
+        */}
+>>>>>>> a3e88a7 (fix feedback)
       </div>
     </div>
   );

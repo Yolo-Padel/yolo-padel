@@ -89,11 +89,12 @@ export function OrderDetailsContainer({
               </p>
             </div>
             <Button
-              className="bg-primary rounded-full"
+              variant="ghost"
               size="icon"
+              className="absolute top-0 right-0 h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
               onClick={() => onOpenChange(false)}
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" />
             </Button>
           </div>
         )}
