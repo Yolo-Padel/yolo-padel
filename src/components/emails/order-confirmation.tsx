@@ -4,18 +4,18 @@ interface Booking {
   court: string;
   date: Date;
   time: string;
-  bookingId: string;
+  bookingCode: string;
   location: string;
 }
 
 interface OrderConfirmationEmailProps {
-  orderId: string;
+  orderCode: string;
   customerName?: string;
   bookings: Booking[];
 }
 
 export default function OrderConfirmationEmail({
-  orderId,
+  orderCode,
   customerName,
   bookings,
 }: OrderConfirmationEmailProps) {
@@ -58,7 +58,7 @@ export default function OrderConfirmationEmail({
                 marginBottom: "10px",
               }}
             >
-              Order ID : {orderId}
+              Order Code : #{orderCode}
             </Text>
 
             {bookings.map((booking, index) => (
@@ -82,7 +82,7 @@ export default function OrderConfirmationEmail({
                   <li> Court : {booking.court}</li>
                   <li> Date : {booking.date.toLocaleDateString()}</li>
                   <li> Time : {booking.time}</li>
-                  <li> Booking ID: {booking.bookingId}</li>
+                  <li> Booking Code: #{booking.bookingCode}</li>
                   <li> Location : {booking.location}</li>
                 </ul>
               </div>

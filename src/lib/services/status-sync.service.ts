@@ -132,7 +132,7 @@ export async function syncPaymentStatusToOrder(
           emailJobs.push({
             type: "order_confirmation",
             payload: {
-              orderId: payment.orderId,
+              orderCode: payment.order.orderCode,
               email: customerEmail,
               customerName,
               bookings: payment.order.bookings.map((booking) => ({
@@ -144,7 +144,7 @@ export async function syncPaymentStatusToOrder(
                     closeHour: slot.closeHour,
                   }))
                 ),
-                bookingId: booking.id,
+                bookingCode: booking.bookingCode,
                 location: getLocationLabel(booking.court),
               })),
             },
@@ -177,7 +177,7 @@ export async function syncPaymentStatusToOrder(
             emailJobs.push({
               type: "booking_cancelation",
               payload: {
-                orderId: payment.orderId,
+                orderCode: payment.order.orderCode,
                 email: customerEmail,
                 customerName,
                 court: booking.court?.name || "Padel Court",
@@ -188,7 +188,7 @@ export async function syncPaymentStatusToOrder(
                     closeHour: slot.closeHour,
                   }))
                 ),
-                bookingId: booking.id,
+                bookingCode: booking.bookingCode,
                 location: getLocationLabel(booking.court),
                 status: newPaymentStatus,
               },
@@ -222,7 +222,7 @@ export async function syncPaymentStatusToOrder(
             emailJobs.push({
               type: "booking_cancelation",
               payload: {
-                orderId: payment.orderId,
+                orderCode: payment.order.orderCode,
                 email: customerEmail,
                 customerName,
                 court: booking.court?.name || "Padel Court",
@@ -233,7 +233,7 @@ export async function syncPaymentStatusToOrder(
                     closeHour: slot.closeHour,
                   }))
                 ),
-                bookingId: booking.id,
+                bookingCode: booking.bookingCode,
                 location: getLocationLabel(booking.court),
                 status: newPaymentStatus,
               },

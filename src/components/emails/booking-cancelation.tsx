@@ -5,7 +5,7 @@ interface BookingCancelationEmailProps {
   court: string;
   date: Date;
   time: string;
-  bookingId: string;
+  bookingCode: string;
   location: string;
   status: string;
 }
@@ -15,7 +15,7 @@ export default function BookingCancelationEmail({
   court,
   date,
   time,
-  bookingId,
+  bookingCode,
   location,
   status,
 }: BookingCancelationEmailProps) {
@@ -66,7 +66,7 @@ export default function BookingCancelationEmail({
                 {date.toLocaleDateString()}
               </li>
               <li>Time&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {time}</li>
-              <li>Booking ID: {bookingId}</li>
+              <li>Booking Code:&nbsp; #{bookingCode}</li>
               <li>Location&nbsp;: {location}</li>
               <li>Status&nbsp;&nbsp;&nbsp;&nbsp;: {status || "Expired"}</li>
             </ul>
