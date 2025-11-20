@@ -214,7 +214,6 @@ export function UsersTable() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {renderStatusBadge(u as any)}
-                      <ResendInviteButton userId={u.id} status={u.userStatus} />
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
@@ -232,7 +231,6 @@ export function UsersTable() {
                     {/* Resend dipindah ke kolom Status */}
                     <Button
                       variant="outline"
-                      size="sm"
                       onClick={() => {
                         setUserToDelete(u);
                         setDeleteModalOpen(true);
@@ -241,18 +239,21 @@ export function UsersTable() {
                     >
                       <Trash className="size-4 text-[#A4A7AE]" />
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelected(u);
-                        setModalMode("edit");
-                        setModalOpen(true);
-                      }}
-                      className="border-none shadow-none"
-                    >
-                      <Pencil className="size-4 text-[#A4A7AE]" />
-                    </Button>
+                    {u.userStatus === UserStatus.INVITED ? (
+                      <ResendInviteButton userId={u.id} />
+                    ) : (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setSelected(u);
+                          setModalMode("edit");
+                          setModalOpen(true);
+                        }}
+                        className="border-none shadow-none"
+                      >
+                        <Pencil className="size-4 text-[#A4A7AE]" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               );
