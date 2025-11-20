@@ -8,7 +8,7 @@ import { usePublicVenues } from "@/hooks/use-venue";
 import { Court, Venue } from "@prisma/client";
 import { Separator } from "@/components/ui/separator";
 import { usePublicCourtByVenue } from "@/hooks/use-court";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { Calendar } from "@/components/ui/calendar";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -131,6 +131,34 @@ export function CourtSelectionContainer({
 
   // Filter out blocked slots from available slots (HIDE them, don't just disable)
   const allSlots = filterBlockedSlots(operatingHoursSlots, blockedTimeSlots);
+
+  // Hide time slots that are already in the past when the selected date is today
+  const now = new Date();
+  const isSameDaySelection =
+    watchDate &&
+    now.getFullYear() === watchDate.getFullYear() &&
+    now.getMonth() === watchDate.getMonth() &&
+    now.getDate() === watchDate.getDate();
+
+  const availableFutureSlots =
+    isSameDaySelection && allSlots.length
+      ? allSlots.filter((slot) => {
+          const [start] = slot.split("–");
+          const [hour, minute] = start.split(".").map(Number);
+          const slotStartMinutes = hour * 60 + minute;
+          const currentMinutes = now.getHours() * 60 + now.getMinutes();
+          return slotStartMinutes > currentMinutes;
+        })
+      : allSlots;
+
+  useEffect(() => {
+    const filteredSelections = watchSlots.filter((slot) =>
+      availableFutureSlots.includes(slot)
+    );
+    if (filteredSelections.length !== watchSlots.length) {
+      form.setValue("slots", filteredSelections);
+    }
+  }, [availableFutureSlots, watchSlots, form]);
 
   // Custom hooks untuk manage effects (separation of concerns)
   useBookingDefaults(
@@ -327,10 +355,12 @@ export function CourtSelectionContainer({
               className="border-primary"
               size="sm"
               onClick={() => {
-                // All slots in allSlots are already filtered (not blocked)
-                form.setValue("slots", allSlots);
+                // Slots are already filtered (not blocked & not in the past)
+                form.setValue("slots", availableFutureSlots);
               }}
-              disabled={!watchCourtId || !watchDate || allSlots.length === 0}
+              disabled={
+                !watchCourtId || !watchDate || availableFutureSlots.length === 0
+              }
             >
               Select All
             </Button>
@@ -343,21 +373,25 @@ export function CourtSelectionContainer({
             }}
             className="grid grid-cols-2 gap-3"
           >
-            {(allSlots.length ? allSlots : []).map((slot) => {
-              return (
-                <ToggleGroupItem
-                  key={slot}
-                  value={slot}
-                  className="justify-center border rounded-md"
-                >
-                  {slot}
-                </ToggleGroupItem>
-              );
-            })}
+            {(availableFutureSlots.length ? availableFutureSlots : []).map(
+              (slot) => {
+                return (
+                  <ToggleGroupItem
+                    key={slot}
+                    value={slot}
+                    className="justify-center border rounded-md"
+                  >
+                    {slot}
+                  </ToggleGroupItem>
+                );
+              }
+            )}
           </ToggleGroup>
-          {watchCourtId && watchDate && allSlots.length === 0 && (
+          {watchCourtId && watchDate && availableFutureSlots.length === 0 && (
             <p className="text-xs text-muted-foreground">
-              No time slots available for this day.
+              {isSameDaySelection
+                ? "No time slots available for the rest of today."
+                : "No time slots available for this day."}
             </p>
           )}
         </div>
