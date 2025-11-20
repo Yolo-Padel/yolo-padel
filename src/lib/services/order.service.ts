@@ -320,6 +320,69 @@ export async function getOrdersByUserId(
 }
 
 /**
+ * Get all orders for admin dashboard (no pagination/filter)
+ */
+export async function getAllOrdersForAdmin() {
+  const orders = await prisma.order.findMany({
+    include: {
+      user: {
+        select: {
+          id: true,
+          email: true,
+          profile: {
+            select: {
+              fullName: true,
+              avatar: true,
+            },
+          },
+        },
+      },
+      bookings: {
+        include: {
+          court: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              image: true,
+              venue: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  images: true,
+                },
+              },
+            },
+          },
+          timeSlots: {
+            select: {
+              openHour: true,
+              closeHour: true,
+            },
+          },
+        },
+      },
+      payment: {
+        select: {
+          id: true,
+          channelName: true,
+          amount: true,
+          status: true,
+          paymentDate: true,
+          paymentUrl: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return orders;
+}
+
+/**
  * Update order status
  * This will also trigger cascading status updates to related entities
  */

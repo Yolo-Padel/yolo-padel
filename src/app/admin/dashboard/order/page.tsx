@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { useOrders, type Order } from "@/hooks/use-order";
+import { useAdminOrders, type Order } from "@/hooks/use-order";
 import { OrderHeader } from "./_components/order-header";
 import { OrderFilters } from "./_components/order-filters";
 import { OrderTable } from "./_components/order-table";
@@ -32,14 +32,14 @@ export default function OrderPage() {
   });
 
   // Data fetching
-  const { data: response, isLoading, error } = useOrders();
+  const { data: orders, isLoading, error } = useAdminOrders();
 
   // Reset page to 1 when search parameters change
   useEffect(() => {
     setPage(1);
   }, [searchParams]);
 
-  const allOrders = response?.data ?? [];
+  const allOrders = orders ?? [];
 
   // Derived state - Filter orders based on search query
   const filtered = useMemo(
@@ -112,7 +112,7 @@ export default function OrderPage() {
   return (
     <div className="flex flex-col gap-4">
       <OrderHeader orderCount={filtered.length} />
-      <OrderFilters
+      {/* <OrderFilters
         searchValue={filters.search}
         onSearchChange={(value: string) =>
           setFilters({ ...filters, search: value })
@@ -128,7 +128,7 @@ export default function OrderPage() {
             paymentStatus: value === "all" ? "" : value,
           })
         }
-      />
+      /> */}
 
       <OrderTable
         orders={paginated}

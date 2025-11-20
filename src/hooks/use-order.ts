@@ -134,6 +134,18 @@ async function getOrderByIdApi(orderId: string): Promise<Order> {
   return result.data;
 }
 
+async function getAdminOrdersApi(): Promise<Order[]> {
+  const response = await fetch("/api/admin/orders");
+
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "Failed to get admin orders");
+  }
+
+  return result.data;
+}
+
 async function updateOrderStatusApi(
   orderId: string,
   status: OrderStatus
@@ -193,6 +205,17 @@ export function useOrders(params: GetOrdersParams = {}) {
     queryKey: ["orders", params],
     queryFn: () => getOrdersApi(params),
     staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
+ * Hook to get all orders for admin dashboard
+ */
+export function useAdminOrders() {
+  return useQuery({
+    queryKey: ["admin-orders"],
+    queryFn: () => getAdminOrdersApi(),
+    staleTime: 1000 * 60 * 5,
   });
 }
 
