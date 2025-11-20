@@ -98,35 +98,6 @@ const minutesToTimeString = (minutes: number) => {
     .padStart(2, "0")}`;
 };
 
-const splitIntoHourlyIntervals = (startHour: string, endHour: string) => {
-  const startMinutes = timeStringToMinutes(startHour);
-  const endMinutes = timeStringToMinutes(endHour);
-
-  if (endMinutes <= startMinutes) {
-    return [{ startHour, endHour }];
-  }
-
-  const intervals: Array<{ startHour: string; endHour: string }> = [];
-  let currentStart = startMinutes;
-
-  while (currentStart < endMinutes) {
-    const nextEnd = Math.min(currentStart + 60, endMinutes);
-
-    intervals.push({
-      startHour: minutesToTimeString(currentStart),
-      endHour: minutesToTimeString(nextEnd),
-    });
-
-    if (nextEnd === currentStart) {
-      break;
-    }
-
-    currentStart = nextEnd;
-  }
-
-  return intervals;
-};
-
 export const courtDynamicPriceService = {
   listByCourt: async (courtId: string, context: ServiceContext) => {
     try {
@@ -180,7 +151,6 @@ export const courtDynamicPriceService = {
       const { error } = await ensureCourtAccess(data.courtId, context);
       if (error) return error;
 
-      const intervals = splitIntoHourlyIntervals(data.startHour, data.endHour);
       const baseData = {
         courtId: data.courtId,
         dayOfWeek: data.dayOfWeek ?? null,
@@ -190,34 +160,15 @@ export const courtDynamicPriceService = {
         isArchived: false,
       };
 
-      if (intervals.length === 1) {
-        const [singleInterval] = intervals;
-        const dynamicPrice = await prisma.courtDynamicPrice.create({
-          data: {
-            ...baseData,
-            startHour: singleInterval.startHour,
-            endHour: singleInterval.endHour,
-          },
-        });
+      const dynamicPrice = await prisma.courtDynamicPrice.create({
+        data: {
+          ...baseData,
+          startHour: data.startHour,
+          endHour: data.endHour,
+        },
+      });
 
-        return buildSuccess(dynamicPrice, "Dynamic price created successfully");
-      }
-
-      const dynamicPrices = await prisma.$transaction((tx) =>
-        Promise.all(
-          intervals.map(({ startHour, endHour }) =>
-            tx.courtDynamicPrice.create({
-              data: {
-                ...baseData,
-                startHour,
-                endHour,
-              },
-            })
-          )
-        )
-      );
-
-      return buildSuccess(dynamicPrices, "Dynamic prices created successfully");
+      return buildSuccess(dynamicPrice, "Dynamic price created successfully");
     } catch (err) {
       console.error("create dynamic price error:", err);
       return buildError("Failed to create dynamic price");
