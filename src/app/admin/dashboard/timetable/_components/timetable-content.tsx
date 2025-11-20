@@ -270,7 +270,7 @@ export function TimetableContent() {
         <div className="space-y-6 w-full">
           <div className="flex items-center gap-2 justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold">Booking Time Table</h2>
+              <h2 className="text-2xl font-bold">Booking Time Table</h2>
             </div>
           </div>
           <TimetableEmptyState type="no-venues" />
@@ -286,7 +286,7 @@ export function TimetableContent() {
         <div className="space-y-6 w-full">
           <div className="flex items-center gap-2 justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold">Booking Time Table</h2>
+              <h2 className="text-2xl font-bold">Booking Time Table</h2>
             </div>
           </div>
           <TimetableHeader
@@ -308,7 +308,7 @@ export function TimetableContent() {
         <div className="space-y-6 w-full">
           <div className="flex items-center gap-2 justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold">Booking Time Table</h2>
+              <h2 className="text-2xl font-bold">Booking Time Table</h2>
             </div>
           </div>
           <TimetableContainer

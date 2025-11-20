@@ -291,7 +291,7 @@ export function BookingCourt() {
     <>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-1">
-          <h3 className="text-xl font-semibold ">Booking Court List</h3>
+          <h3 className="text-xl font-semibold">Booking Court List</h3>
           <div className="flex items-center gap-2">
             <DatePicker />
             <ComboboxFilter />

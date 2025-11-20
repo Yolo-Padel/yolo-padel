@@ -91,7 +91,7 @@ export default function OrderHistoryTable() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-foreground text-2xl">My Order</h3>
+        <h3 className="text-xl font-semibold">My Order</h3>
       </div>
 
       {/* Loading State */}

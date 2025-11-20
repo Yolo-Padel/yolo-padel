@@ -137,7 +137,7 @@ export function VenueTable() {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-1">
-          <h3 className="text-2xl font-semibold">Venue List</h3>
+          <h3 className="text-2xl font-bold">Venue List</h3>
           <Button
             variant="outline"
             onClick={() => setAddVenueOpen(true)}
@@ -161,7 +161,7 @@ export function VenueTable() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-semibold ">Venue List</h2>
+          <h2 className="text-2xl font-bold ">Venue List</h2>
           <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
             2 venues
           </Badge>

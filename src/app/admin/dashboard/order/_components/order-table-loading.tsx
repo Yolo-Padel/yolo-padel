@@ -17,7 +17,7 @@ export function OrderTableLoading() {
       {/* Header Section */}
       <div className="flex items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">Order List</h2>
+          <h2 className="text-xl font-bold">Order List</h2>
           <Skeleton className="h-6 w-20 rounded-full" />
         </div>
       </div>
