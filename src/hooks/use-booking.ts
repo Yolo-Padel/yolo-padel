@@ -5,6 +5,16 @@ import {
   normalizeDateToLocalStartOfDay,
 } from "@/lib/booking-slots-utils";
 import type { ManualBookingInput } from "@/lib/validations/manual-booking.validation";
+import type {
+  AdminDashboardSnapshot,
+  SuperAdminDashboardSnapshot,
+} from "@/types/booking-dashboard";
+
+interface DashboardSnapshotResponse<T> {
+  success: boolean;
+  data: T | null;
+  message: string;
+}
 
 const bookingApi = {
   getAll: async () => {
@@ -127,6 +137,35 @@ const bookingApi = {
 
     return data;
   },
+  getSuperAdminDashboardSnapshot: async (): Promise<
+    DashboardSnapshotResponse<SuperAdminDashboardSnapshot>
+  > => {
+    const response = await fetch("/api/dashboard/bookings/super-admin", {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.message ||
+          "Failed to fetch super admin dashboard snapshot"
+      );
+    }
+    return response.json();
+  },
+  getAdminDashboardSnapshot: async (): Promise<
+    DashboardSnapshotResponse<AdminDashboardSnapshot>
+  > => {
+    const response = await fetch("/api/dashboard/bookings/admin", {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.message || "Failed to fetch admin dashboard snapshot"
+      );
+    }
+    return response.json();
+  },
 };
 
 export const useBooking = () => {
@@ -195,6 +234,32 @@ export const useCreateBooking = () => {
       console.error("Create booking error:", error);
       toast.error(error.message || "Failed to create booking");
     },
+  });
+};
+
+type DashboardHookOptions = {
+  enabled?: boolean;
+};
+
+export const useSuperAdminBookingDashboard = (
+  options: DashboardHookOptions = {}
+) => {
+  return useQuery({
+    queryKey: ["booking-dashboard", "super-admin"],
+    queryFn: bookingApi.getSuperAdminDashboardSnapshot,
+    staleTime: 1000 * 60, // 1 minute
+    enabled: options.enabled ?? true,
+  });
+};
+
+export const useAdminBookingDashboard = (
+  options: DashboardHookOptions = {}
+) => {
+  return useQuery({
+    queryKey: ["booking-dashboard", "admin"],
+    queryFn: bookingApi.getAdminDashboardSnapshot,
+    staleTime: 1000 * 60, // 1 minute
+    enabled: options.enabled ?? true,
   });
 };
 
