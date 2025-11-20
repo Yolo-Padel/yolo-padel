@@ -1,0 +1,375 @@
+"use client";
+
+import { useEffect, useMemo } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/use-auth";
+import { useUpdateProfile } from "@/hooks/use-profile";
+import { profileUpdateSchema } from "@/lib/validations/profile.validation";
+import { cn } from "@/lib/utils";
+import { z } from "zod";
+import { Role, Profile } from "@/types/prisma";
+import { NextBookingInfo } from "@/types/profile";
+import { transformDbFormatToUISlots } from "@/lib/booking-slots-utils";
+import { stringUtils } from "@/lib/format/string";
+import { AvatarUploader } from "@/app/_components/avatar-uploader";
+
+type ProfileStatus = "active" | "membership" | "non-membership";
+type ExtendedProfile = Profile & { phoneNumber?: string | null };
+
+interface ProfileModalProps {
+  /**
+   * Kontrol apakah modal terbuka atau tidak
+   */
+  open: boolean;
+  /**
+   * Callback ketika state open berubah
+   */
+  onOpenChange: (open: boolean) => void;
+}
+
+/**
+ * ProfileModal Component
+ *
+ * Menampilkan informasi profil pengguna serta form untuk memperbarui data.
+ */
+export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
+  const { user, profile, nextBooking, isLoading } = useAuth();
+  const updateProfileMutation = useUpdateProfile();
+
+  const formSchema = profileUpdateSchema;
+  type FormData = z.infer<typeof formSchema>;
+
+  const defaultValues = useMemo(() => {
+    const extendedProfile = profile as ExtendedProfile | null;
+    return {
+      fullName: extendedProfile?.fullName ?? "",
+      phoneNumber: extendedProfile?.phoneNumber ?? "",
+      avatar: extendedProfile?.avatar ?? "",
+    };
+  }, [profile]);
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues,
+    mode: "onChange",
+  });
+
+  useEffect(() => {
+    form.reset(defaultValues);
+  }, [defaultValues, form]);
+
+  const derivedRole = user?.role && user.role !== Role.USER ? "staff" : "user";
+  const profileStatus: ProfileStatus =
+    derivedRole === "staff" ? "active" : "non-membership";
+  const description =
+    derivedRole === "staff"
+      ? "Manage your personal information."
+      : "View all information related to your booking.";
+
+  const badgeConfig = getBadgeConfig(profileStatus);
+  const fullName = form.watch("fullName") || user?.email || "User";
+  const initials = getInitials(fullName);
+  const avatarValue = form.watch("avatar");
+  const email = user?.email ?? "user@example.com";
+  const assignedVenuesLabel =
+    user && Array.isArray(user.assignedVenueIds) && user.assignedVenueIds.length
+      ? user.assignedVenueIds.join(", ")
+      : "-";
+  const joinedDateLabel = formatDateLabel(user?.joinDate || null);
+  const nextBookingLabel = formatNextBookingLabel(nextBooking);
+
+  const infoItems =
+    derivedRole === "staff"
+      ? [
+          {
+            label: "Role",
+            value: stringUtils.getRoleDisplay(user?.role ?? "-"),
+          },
+          { label: "Assign Venue", value: assignedVenuesLabel },
+          { label: "Joined", value: joinedDateLabel },
+        ]
+      : [
+          { label: "Next Booking", value: nextBookingLabel },
+          { label: "Joined", value: joinedDateLabel },
+        ];
+
+  const handleAvatarChange = (url: string) => {
+    form.setValue("avatar", url, { shouldDirty: true });
+  };
+
+  const onSubmit = (data: FormData) => {
+    updateProfileMutation.mutate(data, {
+      onSuccess: () => {
+        form.reset(data);
+      },
+    });
+  };
+
+  const handleCancel = () => {
+    form.reset(defaultValues);
+    onOpenChange(false);
+  };
+
+  const isSaving = updateProfileMutation.isPending;
+  const canSubmit =
+    form.formState.isValid && form.formState.isDirty && !isSaving;
+
+  if (!user && !isLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogTitle className="sr-only">My Profile</DialogTitle>
+        <DialogContent className="max-w-[600px] rounded-xl bg-white">
+          <p className="text-sm text-muted-foreground">
+            Unable to load profile information.
+          </p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTitle className="sr-only">My Profile</DialogTitle>
+      <DialogContent
+        showCloseButton={false}
+        className="max-w-[600px] max-h-[80vh] gap-0 rounded-xl overflow-hidden bg-white flex flex-col"
+      >
+        {/* Header - Sticky */}
+        <div className="sticky top-0 z-10 bg-white flex items-start justify-between w-full border-b border-border/40">
+          <div className="flex flex-col gap-[10px] flex-1">
+            <h1 className="text-[24px] font-bold leading-normal text-[#262626]">
+              My Profile
+            </h1>
+            <p className="text-[14px] font-medium leading-normal text-[#7b7b7b]">
+              {description}
+            </p>
+          </div>
+          <Button
+            onClick={() => onOpenChange(false)}
+            className="relative shrink-0 size-8 cursor-pointer h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
+            aria-label="Close profile modal"
+          >
+            <X className="size-4" />
+          </Button>
+        </div>
+
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto py-2">
+          {isLoading ? (
+            <div className="space-y-6">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-6 w-full">
+              {/* Avatar and User Info */}
+              <div className="flex flex-col gap-3 w-full">
+                <AvatarUploader
+                  value={avatarValue || profile?.avatar || ""}
+                  initials={initials}
+                  name={fullName}
+                  folderPath={`profiles/${user?.id ?? "shared"}`}
+                  disabled={isSaving}
+                  onChange={handleAvatarChange}
+                />
+                <div className="flex flex-col gap-1">
+                  <div className="flex gap-2 items-center flex-wrap">
+                    <p className="text-[18px] font-semibold leading-normal text-[#262626]">
+                      {fullName}
+                    </p>
+                    {badgeConfig && (
+                      <Badge
+                        className={cn(
+                          "text-xs font-medium px-2 py-0.5 rounded-[6px]",
+                          badgeConfig.className
+                        )}
+                      >
+                        {badgeConfig.label}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-[12px] font-normal leading-normal text-[#a3a3a3]">
+                    {email}
+                  </p>
+                </div>
+              </div>
+
+              {/* Info Section */}
+              <div className="flex flex-wrap items-start gap-4 w-full">
+                {infoItems.map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex flex-col gap-2 min-w-[140px] border-r border-dashed border-[#d1d1d1] pr-4 last:border-0"
+                  >
+                    <p className="text-[14px] font-normal text-[#7b7b7b]">
+                      {item.label}
+                    </p>
+                    <p className="text-[14px] font-medium text-[#262626]">
+                      {item.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Form */}
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="flex flex-col gap-3 w-full"
+              >
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="fullName">Full Name</FieldLabel>
+                    <Input
+                      id="fullName"
+                      placeholder="Full name"
+                      {...form.register("fullName")}
+                      className="h-9"
+                    />
+                    {form.formState.errors.fullName && (
+                      <p className="text-destructive text-sm">
+                        {form.formState.errors.fullName.message}
+                      </p>
+                    )}
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="email">Email</FieldLabel>
+                    <Input
+                      id="email"
+                      value={email}
+                      type="email"
+                      disabled
+                      className="bg-[#f4f4f5] border-[#e5e7eb] text-[#a1a1aa] h-9 cursor-not-allowed"
+                    />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="phoneNumber">Phone number</FieldLabel>
+                    <Input
+                      id="phoneNumber"
+                      placeholder="+62 ..."
+                      {...form.register("phoneNumber")}
+                      className="h-9"
+                    />
+                    {form.formState.errors.phoneNumber && (
+                      <p className="text-destructive text-sm">
+                        {form.formState.errors.phoneNumber.message}
+                      </p>
+                    )}
+                  </Field>
+                </FieldGroup>
+              </form>
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons - Sticky */}
+        <div className="sticky bottom-0 z-10 bg-white flex gap-4 w-full border-t border-border/40">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCancel}
+            className="flex-1 h-10 border-[#c3d223] text-[#262626] font-medium text-sm hover:bg-accent"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            onClick={form.handleSubmit(onSubmit)}
+            disabled={!canSubmit}
+            className="flex-1 h-10 bg-[#c3d223] text-[#262626] font-medium text-sm hover:bg-[#c3d223]/90 disabled:opacity-60"
+          >
+            {isSaving ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function getBadgeConfig(status: ProfileStatus) {
+  switch (status) {
+    case "active":
+      return {
+        label: "Active",
+        className: "bg-[#d0fbe9] text-[#1a7544] border-transparent",
+      };
+    case "membership":
+      return {
+        label: "Membership",
+        className: "bg-[#d5f1ff] text-[#1f7ead] border-transparent",
+      };
+    case "non-membership":
+    default:
+      return {
+        label: "Non-membership",
+        className: "bg-[#f2f5f8] text-[#222530] border-transparent",
+      };
+  }
+}
+
+function formatDateLabel(value: Date | string | null) {
+  if (!value) return "-";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatNextBookingLabel(info?: NextBookingInfo | null) {
+  if (!info) return "No upcoming booking.";
+
+  const date = new Date(info.bookingDate);
+  const today = new Date();
+  const isToday =
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate();
+
+  const dateLabel = isToday
+    ? "Today"
+    : new Intl.DateTimeFormat("id-ID", {
+        day: "2-digit",
+        month: "short",
+      }).format(date);
+
+  const slots =
+    info.timeSlots && info.timeSlots.length
+      ? transformDbFormatToUISlots(info.timeSlots).join(", ")
+      : "";
+
+  const locationLabel = [info.courtName, info.venueName]
+    .filter(Boolean)
+    .join(" - ");
+
+  return [
+    dateLabel,
+    slots ? `at ${slots}` : null,
+    locationLabel ? locationLabel : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}

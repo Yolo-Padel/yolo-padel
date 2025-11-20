@@ -1,0 +1,129 @@
+"use client";
+
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeftIcon } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Order } from "@/hooks/use-order";
+
+/**
+ * TO BE DEPRECATED
+ * This component is no longer used and will be removed in the future
+ */
+
+export function ChangePaymentMethodContainer({
+  onOpenChange,
+  changePaymentMethodProps,
+  onChangeMode,
+}: {
+  onOpenChange: (open: boolean) => void;
+  changePaymentMethodProps: Order | null;
+  onChangeMode: (
+    mode:
+      | "order-details"
+      | "payment-instruction"
+      | "payment-status"
+      | "view-booking"
+      | "change-payment-method"
+  ) => void;
+}) {
+  return (
+    <div className="p-1 space-y-6.5">
+      <div className="flex items-center gap-2">
+        <Button
+          className="inline-flex items-center justify-center w-8 h-8 rounded-md"
+          variant="default"
+          onClick={() => {
+            onChangeMode("order-details");
+          }}
+        >
+          {" "}
+          <ArrowLeftIcon className="w-4 h-4" />
+        </Button>
+
+        <span className="font-semibold text-xl"> Select Payment Method </span>
+      </div>
+
+      <p className="text-sm text-muted-foreground">
+        You're about to change your payment method for this order. Your previous
+        payment link or QR code will be invalidated once you confirm.
+      </p>
+
+      {/*content list payment method option*/}
+      <div className="text-foreground">
+        <h3 className="mb-3 text-md font-semibold"> Payment Method </h3>
+
+        <RadioGroup
+          defaultValue={changePaymentMethodProps?.payment?.channelName}
+        >
+          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+            <label htmlFor="QRIS" className="flex items-center">
+              <img src="/qris.png" className="w-4 h-4 mr-2" />
+              QRIS
+            </label>
+            <RadioGroupItem
+              className="h-4 w-4 border-2 [&_svg]:w-3 [&_svg]:h-3"
+              value="QRIS"
+              id="QRIS"
+            />
+          </div>
+          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+            <label htmlFor="BNI" className="flex items-center">
+              <img src="/bni.png" className="w-4 h-4 mr-2" />
+              BNI Virtual Account
+            </label>
+            <RadioGroupItem
+              className="h-4 w-4 border-2 [&_svg]:w-3 [&_svg]:h-3"
+              value="BNI"
+              id="BNI"
+            />
+          </div>
+          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+            <label htmlFor="BCA" className="flex items-center">
+              <img src="/bca.png" className="w-4 h-4 mr-2" />
+              BCA Virtual Account
+            </label>
+            <RadioGroupItem
+              className="h-4 w-4 border-2 [&_svg]:w-3 [&_svg]:h-3"
+              value="BCA"
+              id="BCA"
+            />
+          </div>
+          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+            <label htmlFor="BRI" className="flex items-center">
+              <img src="/bri.png" className="w-4 h-4 mr-2" />
+              BRI Virtual Account
+            </label>
+            <RadioGroupItem
+              className="h-4 w-4 border-2 [&_svg]:w-3 [&_svg]:h-3"
+              value="BRI"
+              id="BRI"
+            />
+          </div>
+        </RadioGroup>
+
+        <div className="grid grid-cols-2 w-full gap-4 mt-8">
+          <Button
+            className="w-full border-primary"
+            variant="outline"
+            onClick={() => {
+              onOpenChange(false);
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            className="w-full"
+            variant="default"
+            onClick={() => {
+              onChangeMode("payment-instruction");
+            }}
+          >
+            Confirm Change
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

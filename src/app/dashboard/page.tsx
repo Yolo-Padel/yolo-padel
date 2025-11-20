@@ -1,5 +1,5 @@
-import React from "react";
-
-export default function page() {
-  return <div>ini dashboard</div>;
+export default function DashboardPage() {
+  return (
+    <div>Dashboard Page</div>
+  )
 }

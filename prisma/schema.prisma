@@ -1,0 +1,335 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  USER
+  FINANCE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  INVITED
+}
+
+enum BookingStatus {
+  PENDING
+  UPCOMING
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  FAILED
+  EXPIRED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  COMPLETED
+  FAILED
+  EXPIRED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   @default("")
+  role      Role     @default(USER)
+  userStatus UserStatus @default(ACTIVE)
+  isEmailVerified Boolean @default(false)
+  joinDate  DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  venues    Venue[]
+  assignedVenueIds String[]  @default([])  // Array of venue IDs
+  isArchived  Boolean  @default(false)
+
+  // Relasi ke Profile
+  profile Profile?
+
+  // Relasi ke Booking
+  bookings Booking[]
+
+  // Relasi ke Order
+  orders Order[]
+
+  // Relasi ke Payment
+  payments Payment[]
+  // Relasi ke log
+  activityLogs ActivityLog[] @relation("ActivityLogs")
+
+  @@map("users")
+}
+
+model Profile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  fullName   String?
+  phoneNumber String?
+  avatar      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relasi ke User
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+enum OpeningHoursType {
+  REGULAR        // Pakai jam operasional venue (default)
+  WITHOUT_FIXED  // Punya jadwal custom sendiri
+  TEMP_CLOSED    // Ditutup sementara
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model Venue {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  address     String?
+  description String?
+  images      String[]
+  city        String?
+  phone       String?
+  isActive    Boolean  @default(true)
+  isArchived  Boolean  @default(false)
+
+  // Waktu buka default untuk generate REGULAR court
+  openHour    String   // ex: "07:00"
+  closeHour   String   // ex: "23:00"
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdById String
+
+  // Relations
+  courts         Court[]
+
+  @@map("venues")
+}
+
+model Court {
+  id          String   @id @default(cuid())
+  name        String
+  isActive    Boolean  @default(true)
+  isArchived  Boolean  @default(false)
+  price       Int
+  openingType OpeningHoursType @default(REGULAR)
+  image       String?  // URL gambar court (optional)
+
+  venue     Venue   @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venueId   String
+
+  // Custom schedule (optional)
+  operatingHours CourtOperatingHour[]
+
+  // Relasi ke Booking
+  bookings Booking[]
+  dynamicPrices CourtDynamicPrice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("courts")
+}
+
+model CourtOperatingHour {
+  id        String   @id @default(cuid())
+
+  court     Court    @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  courtId   String
+
+  dayOfWeek DayOfWeek
+  closed    Boolean  @default(false)
+
+  slots     CourtTimeSlot[]
+
+  @@unique([courtId, dayOfWeek])
+  @@map("court_operating_hours")
+}
+
+model CourtTimeSlot {
+  id                   String   @id @default(cuid())
+  courtOperatingHour   CourtOperatingHour @relation(fields: [courtOperatingHourId], references: [id], onDelete: Cascade)
+  courtOperatingHourId String
+
+  openHour  String // "07:00"
+  closeHour String // "23:00"
+
+  @@map("court_time_slots")
+}
+
+model CourtDynamicPrice {
+  id        String    @id @default(cuid())
+  courtId   String
+  dayOfWeek DayOfWeek?
+  date      DateTime?
+  startHour String
+  endHour   String
+  price     Int
+  isActive  Boolean   @default(true)
+
+  court Court @relation(fields: [courtId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("court_dynamic_price")
+  @@index([courtId, dayOfWeek, date])
+}
+
+model MagicLink {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("magic_links")
+}
+
+model Booking {
+  id               String        @id @default(cuid())
+  courtId          String
+  userId           String
+  orderId          String?       // Nullable for backward compatibility
+  source           String        // flag for booking created by YOLO / Courtside system
+  bookingDate      DateTime
+  bookingHour      String?       // Deprecated, keep for backward compatibility
+  bookingCode      String        @unique
+  duration         Int           // Total duration: jumlah slots
+  totalPrice       Int
+  status           BookingStatus
+  courtsideCourtId String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  court     Court             @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order     Order?            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  payments  Payment[]
+  blocking  Blocking?
+  timeSlots BookingTimeSlot[]  // NEW: Relasi ke time slots
+
+  @@map("bookings")
+}
+
+model BookingTimeSlot {
+  id        String   @id @default(cuid())
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId String
+  
+  openHour  String   // "07:00" - format sama dengan CourtTimeSlot
+  closeHour String   // "23:00"
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("booking_time_slots")
+  @@index([bookingId])
+}
+
+model Blocking {
+  id          String   @id @default(cuid())
+  bookingId   String   @unique
+  description String
+  // timerange   DateTime  // DEPRECATED - use booking.timeSlots instead
+  isBlocking  Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("blockings")
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  orderId      String        @unique
+  bookingId    String?       // DEPRECATED - keep for backward compatibility
+  channelName  String
+  userId       String
+  amount       Int
+  paymentDate  DateTime?
+  status       PaymentStatus
+  expiredAt    DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Xendit Integration Fields
+  xenditInvoiceId   String? // ID dari Invoice (other methods)
+  xenditReferenceId String? // referenceId yang dikirim ke Xendit
+  paymentUrl        String? // URL untuk redirect (invoice.invoice_url)
+  xenditMetadata    Json?   // Store additional Xendit response data
+
+  // Relations
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([xenditInvoiceId])
+  @@map("payments")
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  userId      String
+  orderCode   String      @unique
+  totalAmount Int
+  status      OrderStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+  payment  Payment?
+
+  @@map("orders")
+}
+
+model ActivityLog {
+  id          String     @id @default(cuid())
+  userId      String?
+  action      String
+  entityType  String
+  entityId    String?
+  changes     Json?
+  description String?
+  createdAt   DateTime   @default(now())
+
+  // Optional relation ke User yang melakukan aksi
+  user User? @relation("ActivityLogs", fields: [userId], references: [id])
+
+  @@map("activity_logs")
+}

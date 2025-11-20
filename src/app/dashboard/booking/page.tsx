@@ -1,0 +1,11 @@
+"use client";
+
+import { BookingCourt } from "@/app/dashboard/booking/_components/booking-table";
+
+export default function BookingPage() {
+  return (
+    <div>
+      <BookingCourt />
+    </div>
+  );
+}
