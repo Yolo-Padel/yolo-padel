@@ -24,7 +24,10 @@ import {
   courtDynamicPriceCreateSchema,
   CourtDynamicPriceCreateData,
 } from "@/lib/validations/court-dynamic-price.validation";
-import { useCreateCourtDynamicPrice } from "@/hooks/use-court-dynamic-price";
+import {
+  useCreateCourtDynamicPrice,
+  useDeleteCourtDynamicPrice,
+} from "@/hooks/use-court-dynamic-price";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -52,6 +55,7 @@ type DynamicPriceModalProps = {
   initialStartHour: string;
   initialEndHour: string;
   initialPrice?: number;
+  initialDynamicPriceId?: string;
   venueName?: string;
   disableCourtSelection?: boolean;
 };
@@ -74,6 +78,7 @@ export function DynamicPriceModal({
   initialStartHour,
   initialEndHour,
   initialPrice,
+  initialDynamicPriceId,
   venueName,
   disableCourtSelection = false,
 }: DynamicPriceModalProps) {
@@ -83,6 +88,7 @@ export function DynamicPriceModal({
   const [priceInputFocused, setPriceInputFocused] = React.useState(false);
 
   const createMutation = useCreateCourtDynamicPrice();
+  const deleteMutation = useDeleteCourtDynamicPrice();
 
   const {
     register,
@@ -107,6 +113,7 @@ export function DynamicPriceModal({
 
   const selectedStartHour = watch("startHour");
   const selectedCourtId = watch("courtId");
+  const canDelete = Boolean(initialDynamicPriceId);
 
   const selectedCourtName =
     courts.find((court) => court.id === selectedCourtId)?.name ??
@@ -168,6 +175,20 @@ export function DynamicPriceModal({
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to create dynamic price:", error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!initialDynamicPriceId) {
+      onOpenChange(false);
+      return;
+    }
+
+    try {
+      await deleteMutation.mutateAsync(initialDynamicPriceId);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Failed to delete dynamic price:", error);
     }
   };
 
@@ -416,19 +437,32 @@ export function DynamicPriceModal({
           </div>
 
           <div className="mt-8 flex gap-3 border-t bg-muted/30 p-4 sm:px-6 rounded-b-full">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1 border-primary text-gray-700 hover:bg-gray-50"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting || createMutation.isPending}
-            >
-              Cancel
-            </Button>
+            {canDelete && (
+              <Button
+                type="button"
+                variant="destructive"
+                className="flex-1"
+                onClick={handleDelete}
+                disabled={
+                  isSubmitting ||
+                  createMutation.isPending ||
+                  deleteMutation.isPending
+                }
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              </Button>
+            )}
             <Button
               type="submit"
-              className="flex-1 bg-primary hover:bg-primary/90"
-              disabled={isSubmitting || createMutation.isPending}
+              className={cn(
+                "flex-1 bg-primary hover:bg-primary/90",
+                !canDelete && "w-full"
+              )}
+              disabled={
+                isSubmitting ||
+                createMutation.isPending ||
+                deleteMutation.isPending
+              }
             >
               {createMutation.isPending ? "Saving..." : "Save Custom Price"}
             </Button>

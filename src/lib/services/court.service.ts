@@ -103,6 +103,7 @@ export const courtService = {
           dynamicPrices: {
             where: {
               isActive: true,
+              isArchived: false,
             },
             orderBy: [
               { dayOfWeek: "asc" },

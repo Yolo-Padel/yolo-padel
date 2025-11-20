@@ -195,6 +195,7 @@ model CourtDynamicPrice {
   endHour   String
   price     Int
   isActive  Boolean   @default(true)
+  isArchived Boolean  @default(false)
 
   court Court @relation(fields: [courtId], references: [id], onDelete: Cascade)
 

@@ -137,7 +137,10 @@ export const courtDynamicPriceService = {
       if (error) return error;
 
       const dynamicPrices = await prisma.courtDynamicPrice.findMany({
-        where: { courtId },
+        where: {
+          courtId,
+          isArchived: false,
+        } as any,
         orderBy: [{ dayOfWeek: "asc" }, { date: "asc" }, { startHour: "asc" }],
       });
 
@@ -184,6 +187,7 @@ export const courtDynamicPriceService = {
         date: data.date ?? null,
         price: data.price,
         isActive: data.isActive ?? true,
+        isArchived: false,
       };
 
       if (intervals.length === 1) {
@@ -280,8 +284,19 @@ export const courtDynamicPriceService = {
       );
       if (error) return error;
 
-      await prisma.courtDynamicPrice.delete({
+      const isArchived =
+        (dynamicPrice as typeof dynamicPrice & { isArchived?: boolean })
+          .isArchived ?? false;
+
+      if (isArchived) {
+        return buildSuccess(null, "Dynamic price already archived");
+      }
+
+      await prisma.courtDynamicPrice.update({
         where: { id: dynamicPrice.id },
+        data: {
+          isArchived: true,
+        } as any,
       });
 
       return buildSuccess(null, "Dynamic price deleted successfully");

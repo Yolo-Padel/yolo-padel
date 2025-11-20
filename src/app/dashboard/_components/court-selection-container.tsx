@@ -98,7 +98,9 @@ export function CourtSelectionContainer({
       return [];
     }
     const prismaPrices = (selectedCourt as any).dynamicPrices || [];
-    return prismaPrices.map((price: any) => {
+    return prismaPrices
+      .filter((price: any) => !price.isArchived)
+      .map((price: any) => {
       // Transform Prisma Date objects to DynamicPrice format
       return {
         id: price.id,
@@ -109,6 +111,7 @@ export function CourtSelectionContainer({
         endHour: price.endHour,
         price: price.price,
         isActive: price.isActive,
+        isArchived: price.isArchived ?? false,
         createdAt: new Date(price.createdAt),
         updatedAt: new Date(price.updatedAt),
       };

@@ -102,7 +102,11 @@ export const manualBookingService = {
         where: { id: data.courtId },
         include: {
           venue: true,
-          dynamicPrices: true,
+          dynamicPrices: {
+            where: {
+              isArchived: false,
+            },
+          },
         },
       });
 
