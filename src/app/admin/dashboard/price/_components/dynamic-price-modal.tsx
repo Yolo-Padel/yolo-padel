@@ -190,7 +190,7 @@ export function DynamicPriceModal({
               type="button"
               variant="ghost"
               size="icon"
-              className="absolute top-4 right-4 h-8 w-8 rounded-full bg-primary hover:bg-primary/90 text-white"
+              className="absolute top-4 right-4 h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
               onClick={() => onOpenChange(false)}
             >
               <X className="h-4 w-4 text-black" />
@@ -427,7 +427,7 @@ export function DynamicPriceModal({
             </Button>
             <Button
               type="submit"
-              className="flex-1 bg-primary hover:bg-primary/90 text-white"
+              className="flex-1 bg-primary hover:bg-primary/90"
               disabled={isSubmitting || createMutation.isPending}
             >
               {createMutation.isPending ? "Saving..." : "Save Custom Price"}

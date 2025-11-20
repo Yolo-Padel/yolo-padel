@@ -370,6 +370,7 @@ export function BookingCourt() {
                     <Button
                       onClick={() => {
                         setSelectedBookingCourt(bookingCourt);
+                        setModalOpen(true);
                         setMode("booking-details");
                       }}
                       className="w-full border-primary"

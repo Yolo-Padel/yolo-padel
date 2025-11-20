@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { SeeBookingDetails } from "@/app/dashboard/booking/_components/booking-details";
 import { BookingStatus } from "@/types/prisma";
 import { formatTimeRange } from "@/lib/time-slots-formatter";
@@ -96,7 +96,13 @@ export function BookingDetailsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogTitle className="sr-only" aria-hidden="true">
+        Booking Details
+      </DialogTitle>
+      <DialogContent
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        showCloseButton={false}
+      >
         <SeeBookingDetails
           open={open}
           onOpenChange={onOpenChange}

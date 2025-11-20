@@ -52,24 +52,30 @@ export function SeeBookingDetails({
   return (
     <div className="space-y-8">
       {/*Header*/}
-      <div className="space-y-2 font-bold text-2xl">
-        Booking Details{" "}
-        <Badge
-          className={
-            getStatusBadge(bookingDetails?.status || BookingStatus.PENDING) +
-            " ml-1 rounded-md"
-          }
-        >
-          <span className="text-xs">
-            {stringUtils.toTitleCase(
-              bookingDetails?.status || BookingStatus.PENDING
-            )}
-          </span>
-        </Badge>
-        <br />
-        <p className="text-xs text-gray-500 font-normal">
-          View all information related to your booking.
-        </p>
+      <div className="flex justify-between">
+        <div className="space-y-2 font-bold text-2xl">
+          Booking Details{" "}
+          <Badge
+            className={
+              getStatusBadge(bookingDetails?.status || BookingStatus.PENDING) +
+              " ml-1 rounded-md"
+            }
+          >
+            <span className="text-xs">
+              {stringUtils.toTitleCase(
+                bookingDetails?.status || BookingStatus.PENDING
+              )}
+            </span>
+          </Badge>
+          <br />
+          <p className="text-xs text-gray-500 font-normal">
+            View all information related to your booking.
+          </p>
+        </div>
+        <XIcon
+          className="top-4 right-4 cursor-pointer bg-primary rounded-full p-2 size-8"
+          onClick={() => onOpenChange(false)}
+        />
       </div>
       {/*Body Content*/}
       <div className="space-y-7">

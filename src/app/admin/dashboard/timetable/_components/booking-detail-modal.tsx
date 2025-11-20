@@ -110,7 +110,7 @@ export function BookingDetailModal({
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-4 right-4 h-10 w-10 rounded-full bg-[#C3D223] hover:bg-[#A9B920] text-white"
+          className="absolute top-4 right-4 size-8 rounded-full bg-[#C3D223] hover:bg-[#A9B920]"
           onClick={() => onOpenChange(false)}
         >
           <X className="h-5 w-5" />
