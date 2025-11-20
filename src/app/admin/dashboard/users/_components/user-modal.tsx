@@ -192,7 +192,7 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
           </div>
 
           {/* Venue Assignment - Only show if role is not USER */}
-          {watch("role") !== Role.USER && (
+          {watch("role") === Role.ADMIN && (
             <div className="space-y-2">
               <Label htmlFor="assignedVenueIds" className="text-sm font-medium">
                 Assigned Venues
