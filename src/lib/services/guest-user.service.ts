@@ -41,6 +41,7 @@ export const guestUserService = {
               password: "", // Password deprecated, using magic link only
               role: Role.USER,
               userStatus: "ACTIVE",
+              joinDate: new Date(),
             },
           });
 
@@ -93,4 +94,3 @@ export const guestUserService = {
     }
   },
 };
-
