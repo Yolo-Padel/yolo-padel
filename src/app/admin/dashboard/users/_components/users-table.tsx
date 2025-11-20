@@ -34,6 +34,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ResendInviteButton } from "@/app/admin/dashboard/users/_components/resend-invite-button";
 import { stringUtils } from "@/lib/format/string";
+import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 10;
 
@@ -80,6 +81,11 @@ export function UsersTable() {
     () => getPaginatedData(filtered, page, PAGE_SIZE),
     [filtered, page]
   );
+
+  const paginationButtonBaseClass =
+    "w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]";
+  const paginationButtonActiveClass =
+    "bg-primary border-primary hover:bg-primary text-black";
 
   async function handleSubmit() {
     // Dummy submit: console log value
@@ -281,19 +287,19 @@ export function UsersTable() {
                     ).map((pageNum, index) => (
                       <div key={index}>
                         {pageNum === "..." ? (
-                          <div className="flex items-center justify-center w-8 h-8 bg-background border border-[#E9EAEB] text-[#A4A7AE]">
+                          <div className="flex items-center justify-center w-8 h-8 bg-background border border-[#E9EAEB]">
                             <MoreHorizontal className="w-4 h-4" />
                           </div>
                         ) : (
                           <Button
-                            variant={
-                              pageNum === paginationInfo.pageSafe
-                                ? "default"
-                                : "outline"
-                            }
+                            variant="outline"
                             size="sm"
                             onClick={() => setPage(pageNum as number)}
-                            className="w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]"
+                            className={cn(
+                              paginationButtonBaseClass,
+                              pageNum === paginationInfo.pageSafe &&
+                                paginationButtonActiveClass
+                            )}
                           >
                             {pageNum}
                           </Button>

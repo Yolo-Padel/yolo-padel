@@ -15,6 +15,7 @@ import {
   TableFooter,
 } from "@/components/ui/table";
 import { stringUtils } from "@/lib/format/string";
+import { cn } from "@/lib/utils";
 import {
   Pencil,
   Plus,
@@ -158,6 +159,11 @@ export function CourtTable() {
     () => getPaginatedData(filtered, page, PAGE_SIZE),
     [filtered, page]
   );
+
+  const paginationButtonBaseClass =
+    "w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]";
+  const paginationButtonActiveClass =
+    "bg-primary border-primary hover:bg-primary text-black";
 
   // Reset page to 1 when search changes
   useEffect(() => {
@@ -353,19 +359,19 @@ export function CourtTable() {
                       ).map((pageNum, index) => (
                         <div key={index}>
                           {pageNum === "..." ? (
-                            <div className="flex items-center justify-center w-8 h-8 text-muted-foreground">
+                            <div className="flex items-center justify-center w-8 h-8 bg-background border border-[#E9EAEB] text-[#A4A7AE]">
                               <MoreHorizontal className="w-4 h-4" />
                             </div>
                           ) : (
                             <Button
-                              variant={
-                                pageNum === paginationInfo.pageSafe
-                                  ? "default"
-                                  : "outline"
-                              }
+                              variant="outline"
                               size="sm"
                               onClick={() => setPage(pageNum as number)}
-                              className="w-8 h-8 p-0"
+                              className={cn(
+                                paginationButtonBaseClass,
+                                pageNum === paginationInfo.pageSafe &&
+                                  paginationButtonActiveClass
+                              )}
                             >
                               {pageNum}
                             </Button>

@@ -18,7 +18,7 @@ export function BookingTableLoading() {
       {/* Header Section */}
       <div className="flex items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">Booking List</h2>
+          <h2 className="text-xl font-bold">Booking List</h2>
           <Skeleton className="h-6 w-20 rounded-full" />
         </div>
         <Button disabled className="text-black">

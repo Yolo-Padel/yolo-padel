@@ -20,6 +20,7 @@ import {
   getPaymentStatusClass,
   formatPaymentStatus,
 } from "@/lib/order-utils";
+import { cn } from "@/lib/utils";
 
 export interface PaginationInfo {
   pageSafe: number;
@@ -41,6 +42,11 @@ export function OrderTable({
   onPageChange,
   onViewOrder,
 }: OrderTableProps) {
+  const paginationButtonBaseClass =
+    "w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]";
+  const paginationButtonActiveClass =
+    "bg-primary text-white border-primary hover:bg-primary hover:text-white";
+
   return (
     <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
       <Table>
@@ -123,14 +129,14 @@ export function OrderTable({
                         </div>
                       ) : (
                         <Button
-                          variant={
-                            pageNum === paginationInfo.pageSafe
-                              ? "default"
-                              : "outline"
-                          }
+                          variant="outline"
                           size="sm"
                           onClick={() => onPageChange(pageNum as number)}
-                          className="w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]"
+                          className={cn(
+                            paginationButtonBaseClass,
+                            pageNum === paginationInfo.pageSafe &&
+                              paginationButtonActiveClass
+                          )}
                         >
                           {pageNum}
                         </Button>
