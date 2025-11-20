@@ -20,7 +20,7 @@ export default function AdminDashboardLayout({
             </div>
           }
         >
-          <div className="flex flex-1 flex-col gap-4 p-8 w-full max-w-full overflow-x-hidden">
+          <div className="flex flex-1 flex-col gap-4 p-6 w-full max-w-full overflow-x-hidden">
             {children}
           </div>
         </Suspense>

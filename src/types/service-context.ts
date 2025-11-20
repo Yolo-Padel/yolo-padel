@@ -2,14 +2,14 @@ import { Role } from "@/types/prisma";
 
 export interface ServiceContext {
   userRole: Role;
-  assignedVenueId?: string;
+  assignedVenueId?: string | string[];
   actorUserId?: string; // for audit logging
 }
 
 export const createServiceContext = (
   userRole: Role,
   actorUserId: string,
-  assignedVenueId?: string,
+  assignedVenueId?: string | string[],
 ): ServiceContext => ({
   userRole,
   assignedVenueId,

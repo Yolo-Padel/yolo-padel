@@ -2,12 +2,19 @@
 import { prisma } from "@/lib/prisma";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
-import { BookingStatus, Booking, Role } from "@/types/prisma";
+import { BookingStatus, Booking, Role, PaymentStatus } from "@/types/prisma";
 import { activityLogService } from "@/lib/services/activity-log.service";
 import { requirePermission, ServiceContext } from "@/types/service-context";
 import { BookingCreateData } from "../validations/booking.validation";
 import { customAlphabet } from "nanoid";
 import type { PrismaTransaction } from "@/types/prisma-transaction";
+import type {
+  AdminDashboardSnapshot,
+  BookingDashboardMetrics,
+  BookingSummaryStats,
+  SuperAdminDashboardSnapshot,
+  TodaysBookingCollection,
+} from "@/types/booking-dashboard";
 
 /**
  * Parse date string (YYYY-MM-DD) and return Date object representing start of day in UTC
@@ -26,6 +33,143 @@ function parseDateString(dateString: string): Date {
   // Example: "2024-11-09" -> 2024-11-09T00:00:00.000Z
   const [year, month, day] = dateString.split("-").map(Number);
   return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+}
+
+const BOOKING_STATUSES: BookingStatus[] = [
+  BookingStatus.PENDING,
+  BookingStatus.UPCOMING,
+  BookingStatus.COMPLETED,
+  BookingStatus.CANCELLED,
+  BookingStatus.NO_SHOW,
+];
+
+type BookingStatusGroup = {
+  status: BookingStatus;
+  _count: { _all: number };
+};
+
+function getStatusCountMap(
+  groups: BookingStatusGroup[]
+): Record<BookingStatus, number> {
+  return BOOKING_STATUSES.reduce(
+    (acc, status) => {
+      acc[status] =
+        groups.find((item) => item.status === status)?._count._all ?? 0;
+      return acc;
+    },
+    {} as Record<BookingStatus, number>
+  );
+}
+
+function buildSummaryFromCounts(
+  counts: Record<BookingStatus, number>,
+  expiredPayment: number
+): BookingSummaryStats {
+  const total =
+    counts[BookingStatus.PENDING] +
+    counts[BookingStatus.UPCOMING] +
+    counts[BookingStatus.COMPLETED] +
+    counts[BookingStatus.CANCELLED] +
+    counts[BookingStatus.NO_SHOW];
+
+  return {
+    total,
+    completed: counts[BookingStatus.COMPLETED],
+    ongoing: counts[BookingStatus.PENDING],
+    upcoming: counts[BookingStatus.UPCOMING],
+    cancelled: counts[BookingStatus.CANCELLED] + counts[BookingStatus.NO_SHOW],
+    expiredPayment,
+  };
+}
+
+function buildMetrics(
+  counts: Record<BookingStatus, number>,
+  expiredPayment: number,
+  revenueAmount: number,
+  revenueTransactions: number,
+  courtUtilization?: { utilizedCourts: number; totalActiveCourts: number }
+): { metrics: BookingDashboardMetrics; summary: BookingSummaryStats } {
+  const summary = buildSummaryFromCounts(counts, expiredPayment);
+  const paidRate =
+    summary.total === 0
+      ? 0
+      : parseFloat(((revenueTransactions / summary.total) * 100).toFixed(2));
+  const cancellationTotal = summary.cancelled + summary.expiredPayment;
+
+  const metrics: BookingDashboardMetrics = {
+    totalRevenue: {
+      amount: revenueAmount,
+      transactionCount: revenueTransactions,
+    },
+    totalBookings: {
+      total: summary.total,
+      completed: summary.completed,
+      upcoming: summary.upcoming,
+      ongoing: summary.ongoing,
+      cancelled: summary.cancelled,
+    },
+    paidRate: {
+      percentage: paidRate,
+      paidCount: revenueTransactions,
+      totalCount: summary.total,
+    },
+    cancellation: {
+      total: cancellationTotal,
+      cancelled: summary.cancelled,
+      expiredPayment: summary.expiredPayment,
+    },
+  };
+
+  if (courtUtilization) {
+    const { utilizedCourts, totalActiveCourts } = courtUtilization;
+    const utilizationPercentage =
+      totalActiveCourts === 0
+        ? 0
+        : Math.min(
+            100,
+            parseFloat(((utilizedCourts / totalActiveCourts) * 100).toFixed(2))
+          );
+    metrics.courtUtilization = {
+      percentage: utilizationPercentage,
+      utilizedCourts,
+      totalActiveCourts,
+    };
+  }
+
+  return { metrics, summary };
+}
+
+function getUtcDayRange(date: Date) {
+  const start = new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+      0,
+      0,
+      0,
+      0
+    )
+  );
+  const end = new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+      23,
+      59,
+      59,
+      999
+    )
+  );
+  return { start, end };
+}
+
+function getUtcRangeForPastDays(days: number) {
+  const today = getUtcDayRange(new Date());
+  const start = new Date(today.start);
+  start.setUTCDate(start.getUTCDate() - (days - 1));
+  return { start, end: today.end };
 }
 
 export const bookingService = {
@@ -273,6 +417,257 @@ export const bookingService = {
         data: null,
         message:
           error instanceof Error ? error.message : "Get venue bookings failed",
+      };
+    }
+  },
+
+  getSuperAdminDashboardSnapshot: async () => {
+    try {
+      const [statusGroups, paidAggregate, expiredPaymentCount] =
+        await Promise.all([
+          prisma.booking.groupBy({
+            by: ["status"],
+            _count: { _all: true },
+          }),
+          prisma.payment.aggregate({
+            where: { status: PaymentStatus.PAID },
+            _sum: { amount: true },
+            _count: { _all: true },
+          }),
+          prisma.payment.count({
+            where: { status: PaymentStatus.EXPIRED },
+          }),
+        ]);
+
+      const statusCounts = getStatusCountMap(statusGroups);
+      const revenueAmount = paidAggregate._sum?.amount ?? 0;
+      const revenueTransactions = paidAggregate._count?._all ?? 0;
+
+      const { metrics, summary } = buildMetrics(
+        statusCounts,
+        expiredPaymentCount,
+        revenueAmount,
+        revenueTransactions
+      );
+
+      const payload: SuperAdminDashboardSnapshot = {
+        metrics,
+        bookingSummary: summary,
+      };
+
+      return {
+        success: true,
+        data: payload,
+        message: "Super admin dashboard snapshot fetched",
+      };
+    } catch (error) {
+      console.error("Get super admin dashboard snapshot error:", error);
+      return {
+        success: false,
+        data: null,
+        message: "Failed to fetch super admin dashboard snapshot",
+      };
+    }
+  },
+
+  getAdminDashboardSnapshot: async (
+    context: ServiceContext
+  ): Promise<{
+    success: boolean;
+    data: AdminDashboardSnapshot | null;
+    message: string;
+  }> => {
+    try {
+      const accessError = requirePermission(context, Role.ADMIN);
+      if (accessError) return accessError;
+
+      const assignedVenueIds = Array.isArray(context.assignedVenueId)
+        ? context.assignedVenueId.filter(Boolean)
+        : context.assignedVenueId
+          ? [context.assignedVenueId]
+          : [];
+
+      if (assignedVenueIds.length === 0) {
+        return {
+          success: false,
+          data: null,
+          message: "Assigned venue is required for admin dashboard",
+        };
+      }
+
+      const venueWhere = { venueId: { in: assignedVenueIds } };
+      const courtVenueWhere = { court: { venueId: { in: assignedVenueIds } } };
+
+      const todayRange = getUtcDayRange(new Date());
+      const utilizationRange = getUtcRangeForPastDays(7);
+
+      const [
+        statusGroups,
+        paidAggregate,
+        expiredPaymentCount,
+        todaysBookingsRaw,
+        totalActiveCourts,
+        utilizedCourtGroups,
+      ] = await Promise.all([
+        prisma.booking.groupBy({
+          by: ["status"],
+          _count: { _all: true },
+          where: {
+            ...courtVenueWhere,
+          },
+        }),
+        prisma.payment.aggregate({
+          where: {
+            status: PaymentStatus.PAID,
+            order: {
+              bookings: {
+                some: {
+                  ...courtVenueWhere,
+                },
+              },
+            },
+          },
+          _sum: { amount: true },
+          _count: { _all: true },
+        }),
+        prisma.payment.count({
+          where: {
+            status: PaymentStatus.EXPIRED,
+            order: {
+              bookings: {
+                some: {
+                  ...courtVenueWhere,
+                },
+              },
+            },
+          },
+        }),
+        prisma.booking.findMany({
+          where: {
+            ...courtVenueWhere,
+            bookingDate: {
+              gte: todayRange.start,
+              lte: todayRange.end,
+            },
+            status: {
+              in: [
+                BookingStatus.PENDING,
+                BookingStatus.UPCOMING,
+                BookingStatus.COMPLETED,
+              ],
+            },
+          },
+          select: {
+            id: true,
+            bookingCode: true,
+            bookingDate: true,
+            totalPrice: true,
+            duration: true,
+            status: true,
+            timeSlots: {
+              select: {
+                openHour: true,
+                closeHour: true,
+              },
+              orderBy: {
+                openHour: "asc",
+              },
+            },
+            user: {
+              select: {
+                email: true,
+                profile: {
+                  select: {
+                    fullName: true,
+                  },
+                },
+              },
+            },
+            court: {
+              select: {
+                name: true,
+              },
+            },
+          },
+          orderBy: [{ bookingDate: "asc" }, { createdAt: "asc" }],
+          take: 20,
+        }),
+        prisma.court.count({
+          where: {
+            ...venueWhere,
+            isActive: true,
+            isArchived: false,
+          },
+        }),
+        prisma.booking.groupBy({
+          by: ["courtId"],
+          where: {
+            ...courtVenueWhere,
+            bookingDate: {
+              gte: utilizationRange.start,
+              lte: utilizationRange.end,
+            },
+            status: {
+              in: [
+                BookingStatus.PENDING,
+                BookingStatus.UPCOMING,
+                BookingStatus.COMPLETED,
+              ],
+            },
+          },
+        }),
+      ]);
+
+      const statusCounts = getStatusCountMap(statusGroups);
+      const revenueAmount = paidAggregate._sum?.amount ?? 0;
+      const revenueTransactions = paidAggregate._count?._all ?? 0;
+      const utilizedCourts = utilizedCourtGroups.length;
+
+      const todaysBookings: TodaysBookingCollection = {
+        total: todaysBookingsRaw.length,
+        items: todaysBookingsRaw.map((booking) => ({
+          id: booking.id,
+          bookingCode: booking.bookingCode,
+          bookingDate: booking.bookingDate,
+          totalPrice: booking.totalPrice,
+          duration: booking.duration,
+          status: booking.status,
+          timeSlots: booking.timeSlots.map((slot) => ({
+            openHour: slot.openHour,
+            closeHour: slot.closeHour,
+          })),
+          customerName: booking.user.profile?.fullName || booking.user.email,
+          courtName: booking.court.name,
+        })),
+      };
+
+      const { metrics } = buildMetrics(
+        statusCounts,
+        expiredPaymentCount,
+        revenueAmount,
+        revenueTransactions,
+        {
+          utilizedCourts,
+          totalActiveCourts,
+        }
+      );
+
+      const payload: AdminDashboardSnapshot = {
+        metrics,
+        todaysBookings,
+      };
+
+      return {
+        success: true,
+        data: payload,
+        message: "Admin dashboard snapshot fetched",
+      };
+    } catch (error) {
+      console.error("Get admin dashboard snapshot error:", error);
+      return {
+        success: false,
+        data: null,
+        message: "Failed to fetch admin dashboard snapshot",
       };
     }
   },

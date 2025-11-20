@@ -96,7 +96,11 @@ function getStatusBadgeClass(status: BookingStatus): string {
   }
 }
 
-export function BookingTable() {
+export function BookingTable({
+  showAddButton = true,
+}: {
+  showAddButton?: boolean;
+}) {
   const [page, setPage] = useState(1);
   const [viewOpen, setViewOpen] = useState(false);
   const [selected, setSelected] = useState<BookingWithRelations | null>(null);
@@ -173,10 +177,12 @@ export function BookingTable() {
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-semibold">Booking List</h2>
           </div>
-          <Button className="text-black" disabled>
-            Add Booking
-            <Plus className="h-4 w-4" />
-          </Button>
+          {showAddButton && (
+            <Button className="text-black" disabled>
+              Add Booking
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         <div className="rounded-2xl border border-[#E9EAEB] p-8 text-center">
           <p className="text-red-600 font-medium mb-2">
@@ -205,10 +211,12 @@ export function BookingTable() {
               {allBookings.length === 1 ? "booking" : "bookings"}
             </Badge>
           </div>
-          <Button className="text-black" disabled>
-            Add Booking
-            <Plus className="h-4 w-4" />
-          </Button>
+          {showAddButton && (
+            <Button className="text-black" disabled>
+              Add Booking
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
           <BookingEmptyState isFiltered={isFiltered} />
@@ -226,7 +234,7 @@ export function BookingTable() {
   };
 
   return (
-    <div className="flex flex-col space-y-6">
+    <div className="flex flex-col space-y-6 w-full flex-1">
       <div className="flex items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-2xl font-semibold">Booking List</h2>
@@ -234,10 +242,12 @@ export function BookingTable() {
             {filtered.length} {filtered.length === 1 ? "booking" : "bookings"}
           </Badge>
         </div>
-        <Button className="text-black" onClick={handleAddBooking}>
-          Add Booking
-          <Plus className="h-4 w-4" />
-        </Button>
+        {showAddButton && (
+          <Button className="text-black" onClick={handleAddBooking}>
+            Add Booking
+            <Plus className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
