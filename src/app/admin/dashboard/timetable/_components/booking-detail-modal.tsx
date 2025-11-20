@@ -69,7 +69,7 @@ function formatTimeRange(
 
 // Format tanggal: "14 Oktober 2025"
 function formatDate(date: Date): string {
-  return format(date, "d MMMM yyyy", { locale: id });
+  return format(date, "d MMM yyyy", { locale: id });
 }
 
 // Format tanggal dan waktu: "14 Oktober 2025, 14.07"

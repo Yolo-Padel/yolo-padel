@@ -1,11 +1,7 @@
 "use client";
 //
 import * as React from "react";
-import {
-  History,
-  LandPlot,
-  IdCard,
-} from "lucide-react";
+import { History, LandPlot, IdCard } from "lucide-react";
 
 import { MenuItems } from "@/app/admin/dashboard/_components/menu-items";
 import { NavUser } from "@/app/admin/dashboard/_components/nav-user";
@@ -54,7 +50,9 @@ function UserSkeleton() {
   );
 }
 
-export function UserSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function UserSidebar({
+  ...props
+}: React.ComponentProps<typeof Sidebar>) {
   const { user, profile, isLoading, isAuthenticated } = useAuth();
 
   const userData = {
@@ -63,14 +61,14 @@ export function UserSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) 
     avatar: profile?.avatar || "/avatars/shadcn.jpg",
   };
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
+    <Sidebar collapsible="icon" {...props} className="bg-[#f9fafb]">
+      <SidebarHeader className="bg-background">
         <CompanyProfile />
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="bg-background">
         <MenuItems menuItems={data.menuItems} />
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="bg-background">
         {isAuthenticated && !isLoading ? (
           <NavUser user={userData} />
         ) : (
