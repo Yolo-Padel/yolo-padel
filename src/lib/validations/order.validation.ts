@@ -10,10 +10,12 @@ export const createOrderSchema = z.object({
     .array(
       z.object({
         courtId: z.string().cuid("Invalid court ID format"),
-        date: z.coerce.date({
-          message:
-            "Invalid date format. Expected ISO date string (e.g., 2024-11-10T00:00:00.000Z)",
-        }),
+        date: z.union([
+          z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
+          z.coerce.date(),
+        ]),
         slots: z
           .array(z.string())
           .min(1, "At least one time slot is required")

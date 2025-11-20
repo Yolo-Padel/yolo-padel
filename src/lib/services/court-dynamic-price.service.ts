@@ -160,15 +160,15 @@ export const courtDynamicPriceService = {
         isArchived: false,
       };
 
-      const dynamicPrice = await prisma.courtDynamicPrice.create({
-        data: {
-          ...baseData,
+        const dynamicPrice = await prisma.courtDynamicPrice.create({
+          data: {
+            ...baseData,
           startHour: data.startHour,
           endHour: data.endHour,
-        },
-      });
+          },
+        });
 
-      return buildSuccess(dynamicPrice, "Dynamic price created successfully");
+        return buildSuccess(dynamicPrice, "Dynamic price created successfully");
     } catch (err) {
       console.error("create dynamic price error:", err);
       return buildError("Failed to create dynamic price");

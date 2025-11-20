@@ -108,8 +108,9 @@ export function transformPrismaBookingToTimetable(
  */
 export function transformPrismaCourtToTimetable(
   courts: PrismaCourt[],
-  selectedDate: Date = new Date()
+  selectedDate: string
 ): TimetableCourt[] {
+  const day = new Date(selectedDate).getDay();
   const dayOfWeek = [
     "SUNDAY",
     "MONDAY",
@@ -118,7 +119,7 @@ export function transformPrismaCourtToTimetable(
     "THURSDAY",
     "FRIDAY",
     "SATURDAY",
-  ][selectedDate.getDay()];
+  ][day];
 
   return courts.map((court) => {
     // Cari operating hours untuk hari ini

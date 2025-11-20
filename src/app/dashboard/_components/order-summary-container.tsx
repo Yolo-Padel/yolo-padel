@@ -102,11 +102,18 @@ export function OrderSummaryContainer({
     }
   };
 
+  const formatDateToString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const createOrderInternal = async () => {
     // Transform cart items to order format
     const bookings = cartItems.map((item) => ({
       courtId: item.courtId,
-      date: item.date,
+      date: formatDateToString(item.date), // Format as YYYY-MM-DD string
       slots: transformUISlotsToOrderFormat(item.slots),
       price: item.pricePerSlot,
     }));

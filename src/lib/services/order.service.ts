@@ -48,11 +48,34 @@ export function generateOrderCode(): string {
  *   channelName: "QRIS"
  * });
  */
+/**
+ * Parse date string (YYYY-MM-DD) to Date object in local timezone
+ * Preserves exact date without timezone conversion
+ */
+function parseDateToLocal(date: string | Date): Date {
+  if (date instanceof Date) {
+    return date;
+  }
+  // If string YYYY-MM-DD, parse as local date
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    console.log("THIS WAS RUNNINGG");
+    const [year, month, day] = date.split("-").map(Number);
+
+    console.log("YEAR", year);
+    console.log("MONTH", month);
+    console.log("DAY", day);
+    console.log("NEW DATE", new Date(year, month - 1, day));
+    return new Date(year, month - 1, day, 7, 0, 0, 0);
+  }
+  // Otherwise parse as-is
+  return new Date(date);
+}
+
 export async function createOrder(data: {
   userId: string;
   bookings: Array<{
     courtId: string;
-    date: Date;
+    date: string | Date; // Accept string (YYYY-MM-DD) or Date
     slots: string[]; // Format: ["07:00-08:00", "08:00-09:00"]
     price: number;
   }>;
@@ -107,13 +130,20 @@ export async function createOrder(data: {
           return { openHour, closeHour };
         });
 
+        console.log("BOOKING ITEM DATE", bookingItem.date);
+
+        // Parse date to local timezone (preserves exact date selected by user)
+        const bookingDate = parseDateToLocal(bookingItem.date);
+
+        console.log("BOOKING DATE ON SERVICE", bookingDate);
+
         // Create booking using extracted service
         const booking = await createBooking(
           {
             courtId: bookingItem.courtId,
             userId,
             orderId: newOrder.id,
-            bookingDate: bookingItem.date,
+            bookingDate,
             bookingCode,
             duration: bookingItem.slots.length,
             totalPrice: bookingItem.price * bookingItem.slots.length,

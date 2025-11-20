@@ -190,7 +190,7 @@ model CourtDynamicPrice {
   id        String    @id @default(cuid())
   courtId   String
   dayOfWeek DayOfWeek?
-  date      DateTime?
+  date      DateTime?     @db.Date
   startHour String
   endHour   String
   price     Int
@@ -223,7 +223,7 @@ model Booking {
   userId           String
   orderId          String?       // Nullable for backward compatibility
   source           String        // flag for booking created by YOLO / Courtside system
-  bookingDate      DateTime
+  bookingDate      DateTime          @db.Date
   bookingHour      String?       // Deprecated, keep for backward compatibility
   bookingCode      String        @unique
   duration         Int           // Total duration: jumlah slots

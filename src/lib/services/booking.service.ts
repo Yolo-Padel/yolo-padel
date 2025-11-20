@@ -17,22 +17,27 @@ import type {
 } from "@/types/booking-dashboard";
 
 /**
- * Parse date string (YYYY-MM-DD) and return Date object representing start of day in UTC
- * This ensures consistent date storage regardless of timezone
- * @param dateString Date string in YYYY-MM-DD format
- * @returns Date object representing start of day in UTC
+ * Parse date string (YYYY-MM-DD) and return Date object representing start of day in local timezone
+ * Preserves the exact date selected by user without timezone conversion
+ * @param dateString Date string in YYYY-MM-DD format or Date object
+ * @returns Date object representing start of day in local timezone
  */
-function parseDateString(dateString: string): Date {
+function parseDateString(dateString: string | Date): Date {
+  // If already Date object, use it directly
+  if (dateString instanceof Date) {
+    return dateString;
+  }
+
   // If it's already in ISO format with time, parse directly
   if (dateString.includes("T")) {
     return new Date(dateString);
   }
 
-  // If it's YYYY-MM-DD format, parse as UTC start of day
-  // This ensures the date is stored correctly
-  // Example: "2024-11-09" -> 2024-11-09T00:00:00.000Z
+  // If it's YYYY-MM-DD format, parse as local date (not UTC)
+  // This preserves the exact date selected by user
+  // Example: "2024-11-09" -> 2024-11-09T00:00:00 in local timezone
   const [year, month, day] = dateString.split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+  return new Date(year, month - 1, day);
 }
 
 const BOOKING_STATUSES: BookingStatus[] = [

@@ -65,8 +65,6 @@ export async function createXenditInvoiceForOrder(
           : undefined,
     });
 
-    console.log("XENDIT RESULT ", xenditResult);
-
     if (!xenditResult.success || !xenditResult.data) {
       return {
         success: false,

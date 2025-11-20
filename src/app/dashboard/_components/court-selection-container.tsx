@@ -378,15 +378,15 @@ export function CourtSelectionContainer({
           >
             {(availableFutureSlots.length ? availableFutureSlots : []).map(
               (slot) => {
-                return (
-                  <ToggleGroupItem
-                    key={slot}
-                    value={slot}
-                    className="justify-center border rounded-md"
-                  >
-                    {slot}
-                  </ToggleGroupItem>
-                );
+              return (
+                <ToggleGroupItem
+                  key={slot}
+                  value={slot}
+                  className="justify-center border rounded-md"
+                >
+                  {slot}
+                </ToggleGroupItem>
+              );
               }
             )}
           </ToggleGroup>

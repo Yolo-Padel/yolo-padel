@@ -9,7 +9,7 @@ import { OrderStatus, PaymentStatus } from "@/types/prisma";
 export type CreateOrderInput = {
   bookings: Array<{
     courtId: string;
-    date: Date;
+    date: string | Date; // Accept string (YYYY-MM-DD) or Date for flexibility
     slots: string[]; // Format: ["07:00-08:00", "08:00-09:00"]
     price: number;
   }>;

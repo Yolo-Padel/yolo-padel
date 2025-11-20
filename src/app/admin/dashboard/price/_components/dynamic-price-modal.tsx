@@ -160,15 +160,25 @@ export function DynamicPriceModal({
       return;
     }
 
-    const payload: CourtDynamicPriceCreateData = {
+    // Convert date to YYYY-MM-DD string to prevent timezone issues
+    // This ensures the date selected by user is preserved exactly when sent to API
+    const formatDateToString = (date: Date | null): string | null => {
+      if (!date) return null;
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    const payload = {
       courtId: values.courtId,
       dayOfWeek: null,
-      date: values.date,
+      date: formatDateToString(values.date),
       startHour: values.startHour,
       endHour: values.endHour,
       price: values.price,
       isActive: values.isActive ?? true,
-    };
+    } as CourtDynamicPriceCreateData;
 
     try {
       await createMutation.mutateAsync(payload);
