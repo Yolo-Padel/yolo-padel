@@ -204,12 +204,16 @@ export function Timetable({
                     key={court.id}
                     className="border p-3 text-center font-semibold min-w-[150px] sticky top-[57px] bg-muted/50 z-20"
                   >
-                    <div className="font-semibold">{court.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatOperatingHours(
-                        courtOperatingHours.openHour,
-                        courtOperatingHours.closeHour
-                      )}
+                    <div className="flex flex-col gap-1">
+                      <div className="text-left">
+                        <div className="font-semibold">{court.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatOperatingHours(
+                            courtOperatingHours.openHour,
+                            courtOperatingHours.closeHour
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </th>
                 );

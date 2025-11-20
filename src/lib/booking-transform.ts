@@ -148,6 +148,13 @@ export function transformPrismaCourtToTimetable(
       operatingHours: {
         openHour,
         closeHour,
+        // Include full operating hours untuk check availability per time slot
+        fullOperatingHours: todayOperatingHours
+          ? {
+              closed: todayOperatingHours.closed,
+              slots: todayOperatingHours.slots,
+            }
+          : undefined,
       },
     };
   });

@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Filter } from "lucide-react";
+import { Filter, Plus } from "lucide-react";
 import { BOOKING_COLORS } from "@/constants/timetable";
 import type { Venue } from "@/components/timetable-types";
 
@@ -15,6 +15,7 @@ type TimetableHeaderProps = {
   venues: Venue[];
   selectedVenueId?: string;
   onVenueChange?: (venueId: string) => void;
+  onAddBooking?: () => void;
   isLoading?: boolean;
 };
 
@@ -26,6 +27,7 @@ export function TimetableHeader({
   venues,
   selectedVenueId,
   onVenueChange,
+  onAddBooking,
   isLoading = false,
 }: TimetableHeaderProps) {
   return (
@@ -49,16 +51,29 @@ export function TimetableHeader({
           </SelectContent>
         </Select>
 
-        {/* Filter Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}] gap-2 shrink-0`}
-          disabled={isLoading}
-        >
-          <Filter className="h-4 w-4" />
-          Filter
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Filter Button */}
+          <Button
+            variant="outline"
+            className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}] gap-2`}
+            disabled={isLoading}
+          >
+            <Filter className="h-4 w-4" />
+            Filter
+          </Button>
+
+          {/* Add Booking Button */}
+          {onAddBooking && (
+            <Button
+              className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}] gap-2`}
+              onClick={onAddBooking}
+              disabled={isLoading || !selectedVenueId}
+            >
+              Add Booking
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

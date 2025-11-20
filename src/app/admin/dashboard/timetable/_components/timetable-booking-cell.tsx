@@ -1,6 +1,9 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { formatTimeRange } from "@/components/timetable-utils";
+import {
+  formatTimeRange,
+  isTimeSlotInOperatingHours,
+} from "@/components/timetable-utils";
 import { BOOKING_COLORS } from "@/constants/timetable";
 import type { Booking, Court } from "@/components/timetable-types";
 
@@ -10,7 +13,14 @@ type TimetableBookingCellProps = {
   booking: Booking | null;
   isFirstSlot: boolean;
   span: number;
-  onClick?: (booking: Booking | null, court: Court) => void;
+  onClick?: (params: {
+    booking: Booking | null;
+    court: Court;
+    timeSlot: string;
+  }) => void;
+  onMouseDown?: (court: Court, timeSlot: string) => void;
+  onMouseEnter?: (court: Court, timeSlot: string) => void;
+  isDragPreview?: boolean;
 };
 
 /**
@@ -24,23 +34,62 @@ export function TimetableBookingCell({
   isFirstSlot,
   span,
   onClick,
+  onMouseDown,
+  onMouseEnter,
+  isDragPreview = false,
 }: TimetableBookingCellProps) {
   const isBooked = booking !== null;
+
+  // Check if court is open for this time slot
+  const isCourtOpen = isTimeSlotInOperatingHours(
+    timeSlot,
+    court.operatingHours?.fullOperatingHours
+  );
 
   if (isBooked && !isFirstSlot && span === 0) {
     return null;
   }
+
+  // Disable cell if court is not open
+  const isDisabled = !isCourtOpen;
 
   return (
     <td
       rowSpan={isBooked && isFirstSlot ? span : 1}
       className={cn(
         "border h-[80px]",
-        isBooked && `bg-[${BOOKING_COLORS.BOOKED_BG}]`,
         isBooked &&
-          `cursor-pointer hover:bg-[${BOOKING_COLORS.BOOKED_HOVER}] transition-colors`
+          `bg-[${BOOKING_COLORS.BOOKED_BG}] border-l-2 border-l-[#B1BF20]`,
+        isBooked &&
+          `cursor-pointer hover:bg-[${BOOKING_COLORS.BOOKED_HOVER}] transition-colors`,
+        isDisabled && !isBooked && "bg-muted/30 opacity-50 cursor-not-allowed",
+        isDragPreview &&
+          !isBooked &&
+          !isDisabled &&
+          "bg-primary/10 border-primary/60 ring-1 ring-primary/40"
       )}
-      onClick={() => onClick?.(booking, court)}
+      onClick={() => {
+        if (!isDisabled) {
+          onClick?.({ booking, court, timeSlot });
+        }
+      }}
+      onMouseDown={(event) => {
+        // Only allow dragging on empty, enabled cells
+        if (!isBooked && !isDisabled && onMouseDown) {
+          event.preventDefault();
+          onMouseDown(court, timeSlot);
+        }
+      }}
+      onMouseEnter={() => {
+        // Only trigger onMouseEnter for valid cells (not booked continuation slots)
+        if (isBooked && !isFirstSlot && span === 0) return;
+        if (!isBooked && !isDisabled && onMouseEnter) {
+          onMouseEnter(court, timeSlot);
+        }
+      }}
+      title={
+        isDisabled && !isBooked ? "Court belum buka pada waktu ini" : undefined
+      }
     >
       {isBooked && isFirstSlot && booking ? (
         <div className="flex flex-col gap-1 p-2">
@@ -63,7 +112,14 @@ export function TimetableBookingCell({
           <div className="text-xs">{court.name}</div>
         </div>
       ) : (
-        <span className="text-muted-foreground p-2">-</span>
+        <span
+          className={cn(
+            "p-2",
+            isDisabled ? "text-muted-foreground/50" : "text-muted-foreground"
+          )}
+        >
+          {isDisabled ? "Closed" : "-"}
+        </span>
       )}
     </td>
   );

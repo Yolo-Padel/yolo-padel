@@ -67,3 +67,43 @@ export function formatOperatingHours(openHour: string, closeHour: string): strin
   return `${formatTimeWithAMPM(openHour)}-${formatTimeWithAMPM(closeHour)}`;
 }
 
+/**
+ * Check if a time slot is within court operating hours
+ * @param timeSlot - Time slot string in "HH:00" format (e.g., "06:00", "07:00")
+ * @param operatingHours - Court operating hours with slots
+ * @returns true if time slot is within operating hours, false otherwise
+ * 
+ * @example
+ * isTimeSlotInOperatingHours("06:00", { closed: false, slots: [{ openHour: "07:00", closeHour: "23:00" }] })
+ * // Returns: false (06:00 is before 07:00)
+ * 
+ * isTimeSlotInOperatingHours("08:00", { closed: false, slots: [{ openHour: "07:00", closeHour: "23:00" }] })
+ * // Returns: true (08:00 is between 07:00 and 23:00)
+ */
+export function isTimeSlotInOperatingHours(
+  timeSlot: string,
+  operatingHours?: {
+    closed: boolean;
+    slots: Array<{
+      openHour: string;
+      closeHour: string;
+    }>;
+  }
+): boolean {
+  // If no operating hours data, assume it's open (backward compatibility)
+  if (!operatingHours) return true;
+
+  // If court is closed, time slot is not available
+  if (operatingHours.closed) return false;
+
+  // If no slots, assume it's closed
+  if (!operatingHours.slots || operatingHours.slots.length === 0) return false;
+
+  // Check if time slot is within any of the operating hour slots
+  // Time slot format: "HH:00" (e.g., "06:00", "07:00")
+  // We check if the time slot hour is >= openHour and < closeHour
+  return operatingHours.slots.some((slot) => {
+    return timeSlot >= slot.openHour && timeSlot < slot.closeHour;
+  });
+}
+

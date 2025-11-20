@@ -81,6 +81,26 @@ const courtApi = {
     }
     return response.json();
   },
+  getAvailableTimeSlots: async (courtId: string, date: Date) => {
+    const dateStr = date.toISOString();
+    const response = await fetch(
+      `/api/court/${courtId}/available-slots?date=${dateStr}`,
+      {
+        credentials: "include",
+      }
+    );
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.message || "Failed to fetch available time slots"
+      );
+    }
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.message || "Failed to fetch available time slots");
+    }
+    return result.data;
+  },
 };
 
 const courtPublicApi = {
@@ -191,5 +211,14 @@ export const useToggleCourtAvailability = () => {
       console.error("Toggle court availability error:", error);
       toast.error(error.message || "Failed to update court availability. Please try again.");
     },
+  });
+};
+
+export const useAvailableTimeSlots = (courtId: string, date: Date | undefined) => {
+  return useQuery({
+    queryKey: ["court", "available-slots", courtId, date?.toISOString()],
+    queryFn: () => courtApi.getAvailableTimeSlots(courtId, date!),
+    enabled: Boolean(courtId && date),
+    staleTime: 1000 * 30, // 30 seconds - short cache since availability changes frequently
   });
 };

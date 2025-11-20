@@ -74,6 +74,38 @@ export const bookingCancelationEmailSchema = bookingEmailBaseSchema.extend({
   status: z.string().min(1, "Status is required"),
 });
 
+const timeSchema = z
+  .string()
+  .regex(
+    /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+    "Invalid time format (expected HH:MM)"
+  );
+
+export const manualBookingConfirmationEmailSchema = z.object({
+  email: emailSchema,
+  customerName: z.string().optional(),
+  court: z.string().min(1, "Court name is required"),
+  venue: z.string().min(1, "Venue name is required"),
+  date: z.string().refine(
+    (date) => {
+      const parsedDate = new Date(date);
+      return !isNaN(parsedDate.getTime());
+    },
+    {
+      message: "Invalid date format",
+    }
+  ),
+  startTime: timeSchema,
+  endTime: z
+    .string()
+    .regex(
+      /^(?:([0-1]?[0-9]|2[0-3]):[0-5][0-9]|24:00)$/,
+      "Invalid end time format"
+    ),
+  bookingCode: z.string().min(1, "Booking code is required"),
+  loginUrl: z.string().url("Invalid login URL"),
+});
+
 export type InvitationEmailData = z.infer<typeof invitationEmailSchema>;
 export type ResetPasswordEmailData = z.infer<typeof resetPasswordEmailSchema>;
 export type ConfirmationEmailData = z.infer<typeof confirmationEmailSchema>;
@@ -85,4 +117,7 @@ export type BookingCancelationEmailData = z.infer<
 >;
 export type OrderConfirmationEmailData = z.infer<
   typeof orderConfirmationEmailSchema
+>;
+export type ManualBookingConfirmationEmailData = z.infer<
+  typeof manualBookingConfirmationEmailSchema
 >;
