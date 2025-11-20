@@ -13,21 +13,20 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";
 const JWT_EXPIRES_IN = "7d";
 const secretKey = new TextEncoder().encode(JWT_SECRET);
 
-async function getNextBookingForUser(userId: string): Promise<NextBookingInfo | null> {
+async function getNextBookingForUser(
+  userId: string
+): Promise<NextBookingInfo | null> {
   const nextBooking = await prisma.booking.findFirst({
     where: {
       userId,
       status: {
-        in: [BookingStatus.PENDING, BookingStatus.UPCOMING],
+        in: [BookingStatus.UPCOMING],
       },
       bookingDate: {
         gte: new Date(new Date().setHours(0, 0, 0, 0)),
       },
     },
-    orderBy: [
-      { bookingDate: "asc" },
-      { createdAt: "asc" },
-    ],
+    orderBy: [{ bookingDate: "asc" }, { createdAt: "asc" }],
     include: {
       timeSlots: true,
       court: {
@@ -77,7 +76,10 @@ export const authService = {
       }
 
       // 2. Hash password
-      const hashedPassword = await bcrypt.hash(process.env.DUMMY_PASSWORD || "", 12);
+      const hashedPassword = await bcrypt.hash(
+        process.env.DUMMY_PASSWORD || "",
+        12
+      );
 
       // 3. Create user and profile in transaction
       const result = await prisma.$transaction(
@@ -157,7 +159,10 @@ export const authService = {
       }
 
       // 2. Verify password
-      const isPasswordValid = await bcrypt.compare(data.password, user.password);
+      const isPasswordValid = await bcrypt.compare(
+        data.password,
+        user.password
+      );
 
       if (!isPasswordValid) {
         return {
@@ -231,5 +236,4 @@ export const authService = {
       return { success: false, data: null };
     }
   },
-
 };

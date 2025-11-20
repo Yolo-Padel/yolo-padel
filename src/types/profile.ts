@@ -16,4 +16,3 @@ export type NextBookingInfo = {
   venueName: string;
   timeSlots: BookingTimeRange[];
 };
-
