@@ -96,7 +96,7 @@ export function SeeBookingDetails({
               {
                 weekday: "long",
                 day: "numeric",
-                month: "long",
+                month: "short",
                 year: "numeric",
               }
             ) || "-"}

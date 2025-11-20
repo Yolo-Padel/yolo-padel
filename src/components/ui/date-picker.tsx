@@ -1,43 +1,43 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { CalendarIcon } from "lucide-react"
+import * as React from "react";
+import { CalendarIcon } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 
 function formatDate(date: Date | undefined) {
   if (!date) {
-    return ""
+    return "";
   }
 
   return date.toLocaleDateString("en-US", {
     day: "2-digit",
-    month: "long",
+    month: "short",
     year: "numeric",
-  })
+  });
 }
 
 function isValidDate(date: Date | undefined) {
   if (!date) {
-    return false
+    return false;
   }
-  return !isNaN(date.getTime())
+  return !isNaN(date.getTime());
 }
 
 export function Calendar28({ disabled = false }: { disabled?: boolean }) {
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = React.useState(false);
   const [date, setDate] = React.useState<Date | undefined>(
     new Date("2025-06-01")
-  )
-  const [month, setMonth] = React.useState<Date | undefined>(date)
-  const [value, setValue] = React.useState(formatDate(date))
+  );
+  const [month, setMonth] = React.useState<Date | undefined>(date);
+  const [value, setValue] = React.useState(formatDate(date));
 
   return (
     <div className="flex flex-col gap-3">
@@ -49,19 +49,19 @@ export function Calendar28({ disabled = false }: { disabled?: boolean }) {
           placeholder="Select date"
           className="bg-background pr-10 border-[#C3D223] border-1 rounded-sm"
           onChange={(e) => {
-            if (disabled) return
-            const date = new Date(e.target.value)
-            setValue(e.target.value)
+            if (disabled) return;
+            const date = new Date(e.target.value);
+            setValue(e.target.value);
             if (isValidDate(date)) {
-              setDate(date)
-              setMonth(date)
+              setDate(date);
+              setMonth(date);
             }
           }}
           onKeyDown={(e) => {
-            if (disabled) return
+            if (disabled) return;
             if (e.key === "ArrowDown") {
-              e.preventDefault()
-              setOpen(true)
+              e.preventDefault();
+              setOpen(true);
             }
           }}
         />
@@ -90,21 +90,18 @@ export function Calendar28({ disabled = false }: { disabled?: boolean }) {
               month={month}
               onMonthChange={setMonth}
               onSelect={(date) => {
-                setDate(date)
-                setValue(formatDate(date))
-                setOpen(false)
+                setDate(date);
+                setValue(formatDate(date));
+                setOpen(false);
               }}
             />
           </PopoverContent>
         </Popover>
       </div>
     </div>
-  )
+  );
 }
 
 export function DatePicker({ disabled = false }: { disabled?: boolean }) {
-  return (
-    <Calendar28 disabled={disabled} />
-  )
+  return <Calendar28 disabled={disabled} />;
 }
-

@@ -10,6 +10,7 @@ import { id as idLocale } from "date-fns/locale";
 import { X } from "lucide-react";
 import { stringUtils } from "@/lib/format/string";
 import { useReceiptGeneration } from "@/hooks/use-receipt-generation";
+import { transformDbFormatToUISlots } from "@/lib/booking-slots-utils";
 
 const getPaymentStatus = (paymentStatus: PaymentStatus) => {
   switch (paymentStatus) {
@@ -137,9 +138,7 @@ export function OrderDetailsContainer({
               );
 
               // Format time slots
-              const timeSlots = booking.timeSlots
-                .map((slot) => `${slot.openHour}-${slot.closeHour}`)
-                .join(", ");
+              const timeSlots = transformDbFormatToUISlots(booking.timeSlots);
 
               return (
                 <div
@@ -153,15 +152,13 @@ export function OrderDetailsContainer({
                         {booking.court.venue.name} • {booking.court.name}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {bookingDate} • {timeSlots}
+                        {bookingDate} • {timeSlots.join(", ")}
                       </div>
                     </div>
                     <Badge
-                      className={getBookingStatus(
-                        booking.status as BookingStatus
-                      )}
+                      className={`rounded-md px-3 py-1 text-xs font-medium ${getBookingStatus(booking.status as BookingStatus)}`}
                     >
-                      {booking.status}
+                      {stringUtils.toTitleCase(booking.status)}
                     </Badge>
                   </div>
 
@@ -201,7 +198,7 @@ export function OrderDetailsContainer({
                 orderDetails?.payment?.status || PaymentStatus.UNPAID
               )}
             >
-              {orderDetails?.payment?.status}
+              {stringUtils.toTitleCase(orderDetails?.payment?.status || "")}
             </Badge>
           </div>
 
