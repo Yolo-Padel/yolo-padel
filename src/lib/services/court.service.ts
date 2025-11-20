@@ -610,6 +610,34 @@ export const courtService = {
         };
       }
 
+      // Check if there are active bookings for today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endOfToday = new Date(today);
+      endOfToday.setHours(23, 59, 59, 999);
+
+      const activeBookingsToday = await prisma.booking.findFirst({
+        where: {
+          courtId: id,
+          bookingDate: {
+            gte: today,
+            lte: endOfToday,
+          },
+          status: {
+            not: BookingStatus.CANCELLED,
+          },
+        },
+      });
+
+      if (activeBookingsToday) {
+        return {
+          success: false,
+          data: null,
+          message:
+            "Cannot delete court with active bookings for today. Please cancel the bookings first.",
+        };
+      }
+
       const result = await prisma.court.update({
         where: { id },
         data: {
