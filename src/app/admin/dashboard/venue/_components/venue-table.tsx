@@ -163,7 +163,7 @@ export function VenueTable() {
         <div className="flex items-center gap-2">
           <h2 className="text-2xl font-bold ">Venue List</h2>
           <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
-            2 venues
+            {filtered.length} venues
           </Badge>
         </div>
         <div className="flex items-center gap-2">
