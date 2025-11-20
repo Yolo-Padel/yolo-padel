@@ -55,22 +55,6 @@ export default function OrderHistoryTable() {
     }
   };
 
-  // Get display label for payment status
-  const getPaymentStatusLabel = (status: PaymentStatus) => {
-    switch (status) {
-      case PaymentStatus.PAID:
-        return "Paid";
-      case PaymentStatus.UNPAID:
-        return "Unpaid";
-      case PaymentStatus.FAILED:
-        return "Failed";
-      case PaymentStatus.EXPIRED:
-        return "Expired";
-      default:
-        return status;
-    }
-  };
-
   // Orders data from API
   const orders = ordersResponse?.data || [];
   const totalPages = ordersResponse?.pagination.totalPages || 1;
@@ -146,10 +130,12 @@ export default function OrderHistoryTable() {
                   />
                 </div>
                 <div className="flex flex-col text-md gap-1 px-2">
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-xs items-center">
                     #{order.orderCode}
-                    <Badge className={getPaymentStatus(paymentStatus)}>
-                      {getPaymentStatusLabel(paymentStatus)}
+                    <Badge
+                      className={`rounded-md px-3 py-1 text-xs font-medium ${getPaymentStatus(paymentStatus)}`}
+                    >
+                      {stringUtils.toTitleCase(paymentStatus)}
                     </Badge>
                   </div>
                   <div className="text-foreground text-xs">
@@ -208,10 +194,9 @@ export default function OrderHistoryTable() {
                   {/* Payment Failed/Expired Button */}
                   {(paymentStatus === "FAILED" ||
                     paymentStatus === "EXPIRED") && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
+                    <div className="grid w-full gap-2">
                       <Button
                         className="w-full border-primary"
-                        variant="outline"
                         onClick={() => {
                           setSelectedOrder(order);
                           setOrderModal(true);
@@ -220,16 +205,6 @@ export default function OrderHistoryTable() {
                       >
                         See Details
                       </Button>
-                      {/* <Button
-                        className="w-full"
-                        variant="default"
-                        onClick={() => {
-                          // TODO: Implement re-book logic
-                          // setBookCourtModalOpen(true);
-                        }}
-                      >
-                        Re-Book
-                      </Button> */}
                     </div>
                   )}
                 </CardFooter>
