@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import { formatTimeSlots } from "@/lib/time-slots-formatter";
@@ -28,6 +28,8 @@ export type CartItem = {
 };
 
 type OrderSummaryContainerProps = {
+  taxPercentage: number;
+  bookingFeePercentage: number;
   cartItems: CartItem[];
   onBack: () => void;
   guestEmail?: string;
@@ -36,6 +38,8 @@ type OrderSummaryContainerProps = {
 };
 
 export function OrderSummaryContainer({
+  taxPercentage,
+  bookingFeePercentage,
   cartItems,
   onBack,
   guestEmail = "",
@@ -53,11 +57,13 @@ export function OrderSummaryContainer({
     (sum, item) => sum + item.totalPrice,
     0
   );
-  const tax = "TBC"; // Per requirement
-  const bookingFee = "TBC"; // Per requirement
-  const grandTotal = courtFeesTotal; // For now, only court fees
+  const taxAmount = taxPercentage * courtFeesTotal; // Per requirement
+  const bookingFeeAmount = bookingFeePercentage * courtFeesTotal; // Per requirement
+  const grandTotal = courtFeesTotal + taxAmount + bookingFeeAmount; // For now, only court fees
 
   const handleSubmit = () => {
+    setIsProcessing(true);
+    console.log("isProcessing", isProcessing);
     // If guest, create user first, then create order
     if (!isAuthenticated) {
       // Validate guest info
@@ -65,8 +71,6 @@ export function OrderSummaryContainer({
         toast.error("Email dan nama lengkap wajib diisi");
         return;
       }
-
-      setIsProcessing(true);
 
       // Step 1: Create guest user
       createGuestUser(
@@ -146,15 +150,14 @@ export function OrderSummaryContainer({
             const invoiceUrl =
               xenditData?.data?.xenditInvoice?.invoiceUrl || null;
 
-            setIsProcessing(false);
-            if (onClearCart) {
-              onClearCart();
-            }
-
             if (invoiceUrl) {
               window.location.href = invoiceUrl;
             } else {
               toast.info("Invoice URL tidak tersedia.");
+            }
+
+            if (onClearCart) {
+              onClearCart();
             }
           } catch (error) {
             console.error("Xendit payment creation error:", error);
@@ -270,12 +273,18 @@ export function OrderSummaryContainer({
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Tax (10%)</span>
-            <span className="font-medium">{tax}</span>
+            <span className="text-muted-foreground">
+              Tax ({taxPercentage * 100}%)
+            </span>
+            <span className="font-medium">
+              {stringUtils.formatRupiah(taxAmount)}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Booking Fee</span>
-            <span className="font-medium">{bookingFee}</span>
+            <span className="font-medium">
+              {stringUtils.formatRupiah(bookingFeeAmount)}
+            </span>
           </div>
         </div>
         <Separator />
@@ -294,7 +303,13 @@ export function OrderSummaryContainer({
         onClick={handleSubmit}
         disabled={isProcessing}
       >
-        {isProcessing ? "Processing..." : "Book Now"}
+        {isProcessing ? (
+          <>
+            Processing... <Loader2 className="h-4 w-4 animate-spin" />
+          </>
+        ) : (
+          "Book Now"
+        )}
       </Button>
     </div>
   );
