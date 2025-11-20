@@ -1,7 +1,12 @@
 // src/lib/services/court.service.ts
 import { prisma } from "@/lib/prisma";
 import { CourtCreateData } from "@/lib/validations/court.validation";
-import { OpeningHoursType, DayOfWeek, Role } from "@/types/prisma";
+import {
+  OpeningHoursType,
+  DayOfWeek,
+  Role,
+  BookingStatus,
+} from "@/types/prisma";
 import {
   ServiceContext,
   hasPermission,
@@ -14,6 +19,7 @@ import {
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 import { vercelBlobService } from "@/lib/services/vercel-blob.service";
+import { getDayOfWeekKey } from "@/lib/booking-slots-utils";
 
 export const courtService = {
   // Get all courts with venue and schedule info
@@ -691,6 +697,233 @@ export const courtService = {
           error instanceof Error
             ? error.message
             : "Toggle court availability failed",
+      };
+    }
+  },
+
+  // Get available time slots for a court on a specific date
+  // Returns breakdown of hourly slots with availability check
+  getAvailableTimeSlots: async (courtId: string, date: Date) => {
+    try {
+      // 1. Get court with operating hours
+      const court = await prisma.court.findUnique({
+        where: { id: courtId },
+        include: {
+          operatingHours: {
+            include: {
+              slots: true,
+            },
+          },
+        },
+      });
+
+      if (!court) {
+        return {
+          success: false,
+          data: null,
+          message: "Court not found",
+        };
+      }
+
+      // 2. Get day of week from date
+      const dayOfWeek = getDayOfWeekKey(date);
+      if (!dayOfWeek) {
+        return {
+          success: false,
+          data: null,
+          message: "Invalid date",
+        };
+      }
+
+      // 3. Get operating hour for the day
+      const operatingHour = court.operatingHours.find(
+        (oh) => oh.dayOfWeek === dayOfWeek
+      );
+
+      if (!operatingHour || operatingHour.closed) {
+        return {
+          success: true,
+          data: {
+            startTimeOptions: [],
+            endTimeOptions: [],
+            availableSlots: [],
+          },
+          message: "Court is closed on this day",
+        };
+      }
+
+      // 4. Generate all possible hourly slots from court time slots
+      const allHourlySlots: string[] = [];
+      const allEndTimeSlots: string[] = []; // Includes closeHour for end time options
+      const timeSlotRanges = operatingHour.slots.map((slot) => ({
+        openHour: slot.openHour,
+        closeHour: slot.closeHour,
+      }));
+
+      // Generate hourly slots for each time slot range
+      for (const range of timeSlotRanges) {
+        const [openHour, openMin] = range.openHour.split(":").map(Number);
+        const [closeHour, closeMin] = range.closeHour.split(":").map(Number);
+        const start = new Date(0, 0, 0, openHour, openMin, 0);
+        const end = new Date(0, 0, 0, closeHour, closeMin, 0);
+        const current = new Date(start);
+
+        while (current < end) {
+          const next = new Date(current);
+          next.setHours(next.getHours() + 1);
+          if (next > end) break;
+
+          const formatTime = (d: Date) =>
+            `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+          allHourlySlots.push(formatTime(current));
+          allEndTimeSlots.push(formatTime(current));
+          current.setHours(current.getHours() + 1);
+        }
+        // Add closeHour only to endTimeSlots (not to startTimeSlots)
+        allEndTimeSlots.push(range.closeHour);
+      }
+
+      // Remove duplicates and sort
+      const uniqueHours = Array.from(new Set(allHourlySlots)).sort();
+      const uniqueEndHours = Array.from(new Set(allEndTimeSlots)).sort();
+
+      // 5. Get bookings for this court and date (excluding cancelled)
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const bookings = await prisma.booking.findMany({
+        where: {
+          courtId,
+          bookingDate: {
+            gte: startOfDay,
+            lte: endOfDay,
+          },
+          status: {
+            not: BookingStatus.CANCELLED,
+          },
+        },
+        include: {
+          timeSlots: true,
+        },
+      });
+
+      // 6. Get active blockings for this court and date
+      const blockings = await prisma.blocking.findMany({
+        where: {
+          isBlocking: true,
+          booking: {
+            courtId,
+            bookingDate: {
+              gte: startOfDay,
+              lte: endOfDay,
+            },
+          },
+        },
+        include: {
+          booking: {
+            include: {
+              timeSlots: true,
+            },
+          },
+        },
+      });
+
+      // 7. Collect all booked/blocked time ranges
+      const bookedRanges: Array<{ openHour: string; closeHour: string }> = [];
+
+      // From bookings
+      for (const booking of bookings) {
+        for (const slot of booking.timeSlots) {
+          bookedRanges.push({
+            openHour: slot.openHour,
+            closeHour: slot.closeHour,
+          });
+        }
+      }
+
+      // From blockings
+      for (const blocking of blockings) {
+        for (const slot of blocking.booking.timeSlots) {
+          bookedRanges.push({
+            openHour: slot.openHour,
+            closeHour: slot.closeHour,
+          });
+        }
+      }
+
+      // 8. Helper function to check if a time is within a booked range
+      const isTimeBooked = (time: string): boolean => {
+        return bookedRanges.some((range) => {
+          return time >= range.openHour && time < range.closeHour;
+        });
+      };
+
+      // 9. Helper function to check if a time range overlaps with booked ranges
+      const isRangeOverlapping = (
+        startTime: string,
+        endTime: string
+      ): boolean => {
+        return bookedRanges.some((range) => {
+          // Check if ranges overlap
+          return (
+            (startTime < range.closeHour && endTime > range.openHour) ||
+            (startTime === range.openHour && endTime === range.closeHour)
+          );
+        });
+      };
+
+      // 10. Filter available start times (times that are not booked)
+      const startTimeOptions = uniqueHours.filter(
+        (time) => !isTimeBooked(time)
+      );
+
+      // 11. Generate end time options for each start time
+      // This will be used on client side to filter end times based on selected start time
+      const endTimeOptionsMap: Record<string, string[]> = {};
+
+      for (const startTime of startTimeOptions) {
+        const endTimes: string[] = [];
+
+        // Find startTime in uniqueEndHours to get valid end times (includes closeHour)
+        const startIndex = uniqueEndHours.indexOf(startTime);
+        if (startIndex === -1) continue;
+
+        for (let i = startIndex + 1; i < uniqueEndHours.length; i++) {
+          const endTime = uniqueEndHours[i];
+
+          // Check if the range from startTime to endTime is available
+          // (doesn't overlap with any booked range)
+          if (!isRangeOverlapping(startTime, endTime)) {
+            endTimes.push(endTime);
+          } else {
+            // If we hit a booked slot, stop
+            break;
+          }
+        }
+
+        endTimeOptionsMap[startTime] = endTimes;
+      }
+
+      return {
+        success: true,
+        data: {
+          startTimeOptions,
+          endTimeOptionsMap,
+          bookedRanges,
+        },
+        message: "Available time slots retrieved successfully",
+      };
+    } catch (error) {
+      console.error("Get available time slots error:", error);
+      return {
+        success: false,
+        data: null,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Get available time slots failed",
       };
     }
   },

@@ -82,7 +82,7 @@ export const DATE_FORMAT = {
  */
 export const BOOKING_COLORS = {
   /** Background color for booked cells */
-  BOOKED_BG: "#E8F5E9",
+  BOOKED_BG: "#ECF1BB",
   /** Hover background color for booked cells */
   BOOKED_HOVER: "#D4E6D5",
   /** Border color for primary actions */

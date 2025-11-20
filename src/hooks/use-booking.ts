@@ -4,6 +4,7 @@ import {
   transformUISlotsToDbFormat,
   normalizeDateToLocalStartOfDay,
 } from "@/lib/booking-slots-utils";
+import type { ManualBookingInput } from "@/lib/validations/manual-booking.validation";
 
 const bookingApi = {
   getAll: async () => {
@@ -111,6 +112,21 @@ const bookingApi = {
 
     return response.json();
   },
+  createManual: async (payload: ManualBookingInput) => {
+    const response = await fetch("/api/booking/manual", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Failed to create manual booking");
+    }
+
+    return data;
+  },
 };
 
 export const useBooking = () => {
@@ -178,6 +194,23 @@ export const useCreateBooking = () => {
     onError: (error: Error) => {
       console.error("Create booking error:", error);
       toast.error(error.message || "Failed to create booking");
+    },
+  });
+};
+
+export const useManualBooking = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: bookingApi.createManual,
+    onSuccess: (data: { message?: string }) => {
+      toast.success(data.message || "Manual booking created successfully!");
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["blockings"] });
+    },
+    onError: (error: Error) => {
+      console.error("Manual booking error:", error);
+      toast.error(error.message || "Failed to create manual booking");
     },
   });
 };

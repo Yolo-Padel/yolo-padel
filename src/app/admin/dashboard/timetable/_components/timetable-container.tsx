@@ -9,8 +9,10 @@ import type {
   TimetableProps,
   Booking,
   TimetableRenderCell,
+  Court,
 } from "@/components/timetable-types";
 import { getTimeSlotBooking } from "@/components/timetable-booking-helpers";
+import { getNextHour } from "@/components/timetable-utils";
 
 // Re-export types untuk backward compatibility
 export type {
@@ -67,13 +69,27 @@ export function TimetableContainer({
   transformBookingToDetail = defaultTransformBookingToDetail,
   onMarkAsComplete,
   isLoadingTable = false,
-}: TimetableProps) {
+  onAddBooking,
+  onSelectEmptySlot,
+}: TimetableProps & {
+  onAddBooking?: () => void;
+  onSelectEmptySlot?: (payload: {
+    courtId: string;
+    startTime: string;
+    endTime?: string;
+  }) => void;
+}) {
   const [selectedDate, setSelectedDate] = React.useState<Date>(
     initialDate || new Date()
   );
   const [selectedBooking, setSelectedBooking] =
     React.useState<BookingDetail | null>(null);
   const [modalOpen, setModalOpen] = React.useState(false);
+  const [dragState, setDragState] = React.useState<{
+    court: Court;
+    startSlot: string;
+    lastSlot: string;
+  } | null>(null);
 
   // Get selected venue name for modal display
   const selectedVenue = venues.find((v) => v.id === selectedVenueId);
@@ -110,6 +126,30 @@ export function TimetableContainer({
     onDateChange?.(date);
   };
 
+  const handleCellInteraction = React.useCallback(
+    ({
+      booking,
+      court,
+      timeSlot,
+    }: {
+      booking: Booking | null;
+      court: Court;
+      timeSlot: string;
+    }) => {
+      if (booking) {
+        handleCellClick(booking, court.name);
+        return;
+      }
+
+      onSelectEmptySlot?.({
+        courtId: court.id,
+        startTime: timeSlot,
+        endTime: getNextHour(timeSlot),
+      });
+    },
+    [handleCellClick, onSelectEmptySlot]
+  );
+
   const renderBookingCell = React.useCallback<TimetableRenderCell>(
     ({ court, timeSlot, timeIndex, timeSlots, selectedDate }) => {
       const bookingInfo = getTimeSlotBooking(
@@ -125,6 +165,18 @@ export function TimetableContainer({
       const span = bookingInfo?.span ?? 1;
       const booking = bookingInfo?.booking ?? null;
 
+      // Check if this cell is part of the drag preview
+      const isDragPreview =
+        dragState !== null &&
+        dragState.court.id === court.id &&
+        !booking;
+      
+      let isInDragRange = false;
+      if (isDragPreview) {
+        const sortedSlots = [dragState.startSlot, dragState.lastSlot].sort();
+        isInDragRange = timeSlot >= sortedSlots[0] && timeSlot <= sortedSlots[1];
+      }
+
       return (
         <TimetableBookingCell
           court={court}
@@ -132,14 +184,75 @@ export function TimetableContainer({
           booking={booking}
           isFirstSlot={isFirstSlot}
           span={span}
-          onClick={(selectedBooking, selectedCourt) =>
-            handleCellClick(selectedBooking, selectedCourt.name)
-          }
+          isDragPreview={isDragPreview && isInDragRange}
+          onClick={({ booking: selectedBooking, court: selectedCourt, timeSlot: slot }) => {
+            // Don't trigger onClick if we're in drag mode
+            if (!dragState) {
+              handleCellInteraction({
+                booking: selectedBooking,
+                court: selectedCourt,
+                timeSlot: slot,
+              });
+            }
+          }}
+          onMouseDown={(cellCourt, slot) => {
+            // Only allow dragging on empty cells
+            if (!booking) {
+              setDragState({
+                court: cellCourt,
+                startSlot: slot,
+                lastSlot: slot,
+              });
+            }
+          }}
+          onMouseEnter={(cellCourt, slot) => {
+            // Update drag state if we're dragging on the same court
+            if (dragState && dragState.court.id === cellCourt.id && !booking) {
+              setDragState((prev) => {
+                if (!prev || prev.court.id !== cellCourt.id) return prev;
+                return { ...prev, lastSlot: slot };
+              });
+            }
+          }}
         />
       );
     },
-    [bookings, handleCellClick]
+    [bookings, handleCellInteraction, dragState]
   );
+
+  // Handle mouse up to complete drag and open booking sheet
+  React.useEffect(() => {
+    if (!dragState) return;
+
+    const handleMouseUp = () => {
+      setDragState((current) => {
+        if (!current) return null;
+
+        // Sort slots to get start and end
+        const sortedSlots = [current.startSlot, current.lastSlot].sort();
+        const startTime = sortedSlots[0];
+        const endTime = getNextHour(sortedSlots[sortedSlots.length - 1]);
+
+        // Use setTimeout to ensure this runs after render cycle completes
+        // This prevents "Cannot update a component while rendering a different component" error
+        setTimeout(() => {
+          onSelectEmptySlot?.({
+            courtId: current.court.id,
+            startTime,
+            endTime,
+          });
+        }, 0);
+
+        return null;
+      });
+    };
+
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [dragState, onSelectEmptySlot]);
 
   return (
     <div className="space-y-4 w-full max-w-full">
@@ -148,6 +261,7 @@ export function TimetableContainer({
         venues={venues}
         selectedVenueId={selectedVenueId}
         onVenueChange={onVenueChange}
+        onAddBooking={onAddBooking}
         isLoading={isLoadingTable}
       />
 

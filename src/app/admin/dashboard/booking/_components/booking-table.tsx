@@ -13,7 +13,13 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, MoreHorizontal, Eye } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Eye,
+  Plus,
+} from "lucide-react";
 import {
   calculatePaginationInfo,
   generatePageNumbers,
@@ -25,6 +31,11 @@ import { BookingTableLoading } from "./booking-table-loading";
 import { BookingEmptyState } from "./booking-empty-state";
 import { BookingDetailsModal } from "./booking-details-modal";
 import { formatTimeRange } from "@/lib/time-slots-formatter";
+import {
+  ManualBookingSheet,
+  ManualBookingDefaults,
+  ManualBookingLocks,
+} from "@/app/admin/dashboard/_components/booking-sheet";
 
 type BookingWithRelations = {
   id: string;
@@ -89,10 +100,17 @@ export function BookingTable() {
   const [page, setPage] = useState(1);
   const [viewOpen, setViewOpen] = useState(false);
   const [selected, setSelected] = useState<BookingWithRelations | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetDefaults, setSheetDefaults] = useState<
+    ManualBookingDefaults | undefined
+  >(undefined);
+  const [sheetLocks, setSheetLocks] = useState<ManualBookingLocks | undefined>(
+    undefined
+  );
   const searchParams = useSearchParams();
 
   // Fetch booking data using the hook
-  const { data: response, isLoading, error } = useBooking();
+  const { data: response, isLoading, error, refetch } = useBooking();
 
   // Reset page to 1 when search changes
   useEffect(() => {
@@ -157,6 +175,7 @@ export function BookingTable() {
           </div>
           <Button className="text-black" disabled>
             Add Booking
+            <Plus className="h-4 w-4" />
           </Button>
         </div>
         <div className="rounded-2xl border border-[#E9EAEB] p-8 text-center">
@@ -188,6 +207,7 @@ export function BookingTable() {
           </div>
           <Button className="text-black" disabled>
             Add Booking
+            <Plus className="h-4 w-4" />
           </Button>
         </div>
         <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
@@ -196,6 +216,14 @@ export function BookingTable() {
       </div>
     );
   }
+
+  const handleAddBooking = () => {
+    setSheetDefaults({
+      date: new Date(),
+    });
+    setSheetLocks(undefined);
+    setSheetOpen(true);
+  };
 
   return (
     <div className="flex flex-col space-y-6">
@@ -206,8 +234,9 @@ export function BookingTable() {
             {filtered.length} {filtered.length === 1 ? "booking" : "bookings"}
           </Badge>
         </div>
-        <Button className="text-black" disabled>
+        <Button className="text-black" onClick={handleAddBooking}>
           Add Booking
+          <Plus className="h-4 w-4" />
         </Button>
       </div>
 
@@ -339,6 +368,15 @@ export function BookingTable() {
         open={viewOpen}
         onOpenChange={setViewOpen}
         booking={selected as any}
+      />
+      <ManualBookingSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        defaults={sheetDefaults}
+        locks={sheetLocks}
+        onSuccess={() => {
+          refetch();
+        }}
       />
     </div>
   );

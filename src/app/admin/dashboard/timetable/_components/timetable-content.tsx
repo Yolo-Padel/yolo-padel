@@ -18,10 +18,23 @@ import {
 import type { Venue } from "@/components/timetable-types";
 import { PaymentStatus } from "@/types/prisma";
 import { TimetableHeader } from "./timetable-header";
+import { getNextHour } from "@/components/timetable-utils";
+import {
+  ManualBookingDefaults,
+  ManualBookingLocks,
+  ManualBookingSheet,
+} from "@/app/admin/dashboard/_components/booking-sheet";
 
 export function TimetableContent() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedVenueId, setSelectedVenueId] = useState<string>("");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetDefaults, setSheetDefaults] = useState<
+    ManualBookingDefaults | undefined
+  >(undefined);
+  const [sheetLocks, setSheetLocks] = useState<ManualBookingLocks | undefined>(
+    undefined
+  );
 
   // Track previous values to detect changes
   const prevVenueIdRef = useRef<string>("");
@@ -129,6 +142,44 @@ export function TimetableContent() {
   // Handle date change
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
+  };
+
+  const openManualBookingSheet = (
+    defaults: ManualBookingDefaults,
+    locks?: ManualBookingLocks
+  ) => {
+    setSheetDefaults(defaults);
+    setSheetLocks(locks);
+    setSheetOpen(true);
+  };
+
+  const handleAddBooking = () => {
+    if (!selectedVenueId) return;
+    openManualBookingSheet(
+      {
+        venueId: selectedVenueId,
+        date: selectedDate,
+      },
+      { lockVenue: true }
+    );
+  };
+
+  const handleAddBookingFromCell = (options: {
+    courtId: string;
+    startTime: string;
+    endTime?: string;
+  }) => {
+    if (!selectedVenueId) return;
+    openManualBookingSheet(
+      {
+        venueId: selectedVenueId,
+        courtId: options.courtId,
+        date: selectedDate,
+        startTime: options.startTime,
+        endTime: options.endTime || getNextHour(options.startTime),
+      },
+      { lockCourt: true, lockVenue: true }
+    );
   };
 
   // Handle mark as complete
@@ -242,6 +293,7 @@ export function TimetableContent() {
             venues={venues}
             selectedVenueId={selectedVenueId}
             onVenueChange={handleVenueChange}
+            onAddBooking={handleAddBooking}
             isLoading={courtsLoading}
           />
           <TimetableEmptyState type="no-courts" />
@@ -251,26 +303,39 @@ export function TimetableContent() {
   }
 
   return (
-    <ErrorBoundary>
-      <div className="space-y-6 w-full">
-        <div className="flex items-center gap-2 justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-semibold">Booking Time Table</h2>
+    <>
+      <ErrorBoundary>
+        <div className="space-y-6 w-full">
+          <div className="flex items-center gap-2 justify-between">
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-semibold">Booking Time Table</h2>
+            </div>
           </div>
+          <TimetableContainer
+            venues={venues}
+            selectedVenueId={selectedVenueId}
+            onVenueChange={handleVenueChange}
+            courts={courts}
+            bookings={bookings}
+            selectedDate={selectedDate}
+            onDateChange={handleDateChange}
+            transformBookingToDetail={transformBooking}
+            onMarkAsComplete={handleMarkAsComplete}
+            isLoadingTable={isDateChangeLoading}
+            onAddBooking={handleAddBooking}
+            onSelectEmptySlot={handleAddBookingFromCell}
+          />
         </div>
-        <TimetableContainer
-          venues={venues}
-          selectedVenueId={selectedVenueId}
-          onVenueChange={handleVenueChange}
-          courts={courts}
-          bookings={bookings}
-          selectedDate={selectedDate}
-          onDateChange={handleDateChange}
-          transformBookingToDetail={transformBooking}
-          onMarkAsComplete={handleMarkAsComplete}
-          isLoadingTable={isDateChangeLoading}
-        />
-      </div>
-    </ErrorBoundary>
+      </ErrorBoundary>
+      <ManualBookingSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        defaults={sheetDefaults}
+        locks={sheetLocks}
+        onSuccess={() => {
+          refetchBlockings();
+        }}
+      />
+    </>
   );
 }

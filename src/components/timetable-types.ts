@@ -9,6 +9,14 @@ export type Court = {
   operatingHours?: {
     openHour: string; // Format: "10:00"
     closeHour: string; // Format: "20:00"
+    // Full operating hours data untuk check availability per time slot
+    fullOperatingHours?: {
+      closed: boolean;
+      slots: Array<{
+        openHour: string; // Format: "10:00"
+        closeHour: string; // Format: "20:00"
+      }>;
+    };
   };
 };
 
