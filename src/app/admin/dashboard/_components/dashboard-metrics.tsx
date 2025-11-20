@@ -117,9 +117,9 @@ function buildAdminMetrics(snapshot?: AdminDashboardSnapshot): MetricItem[] {
         ? `${formatCount(
             metrics.totalBookings.completed
           )} Completed • ${formatCount(
-            metrics.totalBookings.ongoing
-          )} Ongoing • ${formatCount(metrics.totalBookings.upcoming)} Upcoming`
-        : "Completed • Ongoing • Upcoming",
+            metrics.totalBookings.pending
+          )} Pending • ${formatCount(metrics.totalBookings.upcoming)} Upcoming`
+        : "Completed • Pending • Upcoming",
       value: `${formatCount(metrics?.totalBookings.total ?? 0)} Bookings`,
       icon: CalendarDays,
       iconBg: CARD_ICON_BG,

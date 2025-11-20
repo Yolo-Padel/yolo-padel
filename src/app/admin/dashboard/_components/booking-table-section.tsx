@@ -41,7 +41,7 @@ export function BookingTableSection() {
   const summaryData = [
     { label: "Total Bookings", value: summary?.total },
     { label: "Completed", value: summary?.completed },
-    { label: "Ongoing", value: summary?.ongoing },
+    { label: "Pending", value: summary?.pending },
     { label: "Upcoming", value: summary?.upcoming },
     { label: "Cancelled", value: summary?.cancelled },
     { label: "Expired Payment", value: summary?.expiredPayment },

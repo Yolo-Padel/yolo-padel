@@ -80,7 +80,7 @@ function buildSummaryFromCounts(
   return {
     total,
     completed: counts[BookingStatus.COMPLETED],
-    ongoing: counts[BookingStatus.PENDING],
+    pending: counts[BookingStatus.PENDING],
     upcoming: counts[BookingStatus.UPCOMING],
     cancelled: counts[BookingStatus.CANCELLED] + counts[BookingStatus.NO_SHOW],
     expiredPayment,
@@ -110,7 +110,7 @@ function buildMetrics(
       total: summary.total,
       completed: summary.completed,
       upcoming: summary.upcoming,
-      ongoing: summary.ongoing,
+      pending: summary.pending,
       cancelled: summary.cancelled,
     },
     paidRate: {
