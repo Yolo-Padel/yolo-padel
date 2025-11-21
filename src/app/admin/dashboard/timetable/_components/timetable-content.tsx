@@ -21,7 +21,6 @@ import { TimetableHeader } from "./timetable-header";
 import { getNextHour } from "@/components/timetable-utils";
 import {
   ManualBookingDefaults,
-  ManualBookingLocks,
   ManualBookingSheet,
 } from "@/app/admin/dashboard/_components/booking-sheet";
 
@@ -32,9 +31,6 @@ export function TimetableContent() {
   const [sheetDefaults, setSheetDefaults] = useState<
     ManualBookingDefaults | undefined
   >(undefined);
-  const [sheetLocks, setSheetLocks] = useState<ManualBookingLocks | undefined>(
-    undefined
-  );
 
   // Track previous values to detect changes
   const prevVenueIdRef = useRef<string>("");
@@ -151,24 +147,17 @@ export function TimetableContent() {
     setSelectedDate(date);
   };
 
-  const openManualBookingSheet = (
-    defaults: ManualBookingDefaults,
-    locks?: ManualBookingLocks
-  ) => {
+  const openManualBookingSheet = (defaults: ManualBookingDefaults) => {
     setSheetDefaults(defaults);
-    setSheetLocks(locks);
     setSheetOpen(true);
   };
 
   const handleAddBooking = () => {
     if (!selectedVenueId) return;
-    openManualBookingSheet(
-      {
-        venueId: selectedVenueId,
-        date: selectedDate,
-      },
-      { lockVenue: true }
-    );
+    openManualBookingSheet({
+      venueId: selectedVenueId,
+      date: selectedDate,
+    });
   };
 
   const handleAddBookingFromCell = (options: {
@@ -177,16 +166,13 @@ export function TimetableContent() {
     endTime?: string;
   }) => {
     if (!selectedVenueId) return;
-    openManualBookingSheet(
-      {
-        venueId: selectedVenueId,
-        courtId: options.courtId,
-        date: selectedDate,
-        startTime: options.startTime,
-        endTime: options.endTime || getNextHour(options.startTime),
-      },
-      { lockCourt: true, lockVenue: true }
-    );
+    openManualBookingSheet({
+      venueId: selectedVenueId,
+      courtId: options.courtId,
+      date: selectedDate,
+      startTime: options.startTime,
+      endTime: options.endTime || getNextHour(options.startTime),
+    });
   };
 
   // Handle mark as complete
@@ -338,7 +324,6 @@ export function TimetableContent() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         defaults={sheetDefaults}
-        locks={sheetLocks}
         onSuccess={() => {
           refetchBlockings();
         }}

@@ -46,16 +46,10 @@ export type ManualBookingDefaults = {
   endTime?: string;
 };
 
-export type ManualBookingLocks = {
-  lockCourt?: boolean;
-  lockVenue?: boolean;
-};
-
 export type ManualBookingSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaults?: ManualBookingDefaults;
-  locks?: ManualBookingLocks;
   onSuccess?: () => void;
 };
 
@@ -66,6 +60,8 @@ function formatDateInput(value?: Date | string): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
+
+  console.log("FORMAT DATE INPUT", year, month, day);
   return `${year}-${month}-${day}`;
 }
 
@@ -73,7 +69,6 @@ export function ManualBookingSheet({
   open,
   onOpenChange,
   defaults,
-  locks,
   onSuccess,
 }: ManualBookingSheetProps) {
   const {
@@ -244,9 +239,6 @@ export function ManualBookingSheet({
     setValue("endTime", value);
   };
 
-  const courtDisabled = Boolean(locks?.lockCourt);
-  const venueDisabled = Boolean(locks?.lockVenue);
-
   const onSubmit = (values: ManualBookingInput) => {
     manualBooking.mutate(values, {
       onSuccess: () => {
@@ -323,9 +315,7 @@ export function ManualBookingSheet({
                 <Select
                   value={watchVenueId}
                   onValueChange={handleVenueChange}
-                  disabled={
-                    venueDisabled || venuesLoading || manualBooking.isPending
-                  }
+                  disabled={venuesLoading || manualBooking.isPending}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Pilih venue" />
@@ -353,10 +343,7 @@ export function ManualBookingSheet({
                   value={watchCourtId}
                   onValueChange={handleCourtChange}
                   disabled={
-                    courtDisabled ||
-                    courtsLoading ||
-                    !watchVenueId ||
-                    manualBooking.isPending
+                    courtsLoading || !watchVenueId || manualBooking.isPending
                   }
                 >
                   <SelectTrigger className="w-full">

@@ -26,7 +26,7 @@ function parseBookingDate(dateString: string | Date): Date {
   }
   // Parse as local date (not UTC) to preserve exact date selected by user
   const [year, month, day] = dateString.split("-").map(Number);
-  return new Date(year, (month || 1) - 1, day || 1);
+  return new Date(year, (month || 1) - 1, day || 1, 7, 0, 0, 0);
 }
 
 function timeToMinutes(time: string): number {

@@ -1,12 +1,8 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, XIcon } from "lucide-react";
 import { stringUtils } from "@/lib/format/string";
 
 export type PaymentStatusResponse = {
@@ -70,10 +66,20 @@ export function PaymentFeedbackDialog({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-md">
-        <DialogTitle className="sr-only">
-          Payment {isSuccess ? "Successful" : "Failed"}
-        </DialogTitle>
+      <DialogContent className="sm:max-w-md" showCloseButton={false}>
+        <div className="relative">
+          <DialogTitle className="sr-only">
+            Payment {isSuccess ? "Successful" : "Failed"}
+          </DialogTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-0 right-0 bg-primary hover:bg-primary/90 rounded-full"
+            onClick={onClose}
+          >
+            <XIcon className="size-4" />
+          </Button>
+        </div>
         {feedback.loading ? (
           <div className="flex flex-col items-center gap-3 py-6">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -160,4 +166,3 @@ export function PaymentFeedbackDialog({
     </Dialog>
   );
 }
-

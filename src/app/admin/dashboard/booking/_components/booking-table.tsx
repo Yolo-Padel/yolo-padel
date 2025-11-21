@@ -34,7 +34,6 @@ import { formatTimeRange } from "@/lib/time-slots-formatter";
 import {
   ManualBookingSheet,
   ManualBookingDefaults,
-  ManualBookingLocks,
 } from "@/app/admin/dashboard/_components/booking-sheet";
 import { stringUtils } from "@/lib/format/string";
 import { cn } from "@/lib/utils";
@@ -110,9 +109,6 @@ export function BookingTable({
   const [sheetDefaults, setSheetDefaults] = useState<
     ManualBookingDefaults | undefined
   >(undefined);
-  const [sheetLocks, setSheetLocks] = useState<ManualBookingLocks | undefined>(
-    undefined
-  );
   const searchParams = useSearchParams();
 
   // Fetch booking data using the hook
@@ -179,7 +175,7 @@ export function BookingTable({
   // Show error state
   if (error) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 w-full flex-1">
         <div className="flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold">Booking List</h2>
@@ -209,7 +205,7 @@ export function BookingTable({
   const isFiltered = Boolean(searchParams.get("search"));
   if (filtered.length === 0) {
     return (
-      <div className="flex flex-col space-y-6">
+      <div className="flex flex-col space-y-6 w-full flex-1">
         <div className="flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold">Booking List</h2>
@@ -236,7 +232,6 @@ export function BookingTable({
     setSheetDefaults({
       date: new Date(),
     });
-    setSheetLocks(undefined);
     setSheetOpen(true);
   };
 
@@ -390,7 +385,6 @@ export function BookingTable({
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         defaults={sheetDefaults}
-        locks={sheetLocks}
         onSuccess={() => {
           refetch();
         }}
