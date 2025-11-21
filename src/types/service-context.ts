@@ -9,14 +9,17 @@ export interface ServiceContext {
 export const createServiceContext = (
   userRole: Role,
   actorUserId: string,
-  assignedVenueId?: string | string[],
+  assignedVenueId?: string | string[]
 ): ServiceContext => ({
   userRole,
   assignedVenueId,
   actorUserId,
 });
 
-export const hasPermission = (context: ServiceContext, requiredRole: Role): boolean => {
+export const hasPermission = (
+  context: ServiceContext,
+  requiredRole: Role
+): boolean => {
   const roleHierarchy: Record<Role, number> = {
     USER: 1,
     FINANCE: 2,
@@ -27,14 +30,17 @@ export const hasPermission = (context: ServiceContext, requiredRole: Role): bool
   return roleHierarchy[context.userRole] >= roleHierarchy[requiredRole];
 };
 
-export const requirePermission = (context: ServiceContext, requiredRole: Role) => {
-    if (!hasPermission(context, requiredRole)) {
-        return {
-        success: false,
-        data: null,
-        message: "You are not authorized to access this resource",
-        };
-    }
-    
-    return null;
+export const requirePermission = (
+  context: ServiceContext,
+  requiredRole: Role
+) => {
+  if (!hasPermission(context, requiredRole)) {
+    return {
+      success: false,
+      data: null,
+      message: "You are not authorized to access this resource",
+    };
+  }
+
+  return null;
 };

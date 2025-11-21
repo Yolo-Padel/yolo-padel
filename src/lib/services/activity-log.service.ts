@@ -28,7 +28,9 @@ export function buildChangesDiff<T extends Record<string, unknown>>(
 
   const candidates = keys
     ? (keys as string[])
-    : Array.from(new Set([...Object.keys(oldData || {}), ...Object.keys(newData || {})]));
+    : Array.from(
+        new Set([...Object.keys(oldData || {}), ...Object.keys(newData || {})])
+      );
 
   let changed = false;
   for (const key of candidates) {
@@ -63,15 +65,16 @@ export function generateDescriptionFromChanges(
   if (!changes) return null;
 
   // Check if changes follows { before, after } structure
-  const isDiffFormat = changes.before !== undefined && changes.after !== undefined;
-  
+  const isDiffFormat =
+    changes.before !== undefined && changes.after !== undefined;
+
   if (!isDiffFormat) {
     return null;
   }
 
   const before = changes.before as Record<string, unknown>;
   const after = changes.after as Record<string, unknown>;
-  
+
   const beforeKeys = Object.keys(before || {});
   const afterKeys = Object.keys(after || {});
   const allKeys = Array.from(new Set([...beforeKeys, ...afterKeys]));
@@ -79,17 +82,22 @@ export function generateDescriptionFromChanges(
   // Handle CREATE action (before is empty)
   if (action.includes("CREATE") || action.includes("INVITE")) {
     if (beforeKeys.length === 0 && afterKeys.length > 0) {
-      const fieldList = allKeys.map(key => {
-        const value = after[key];
-        return `${key}: ${formatValue(value)}`;
-      }).join(", ");
+      const fieldList = allKeys
+        .map((key) => {
+          const value = after[key];
+          return `${key}: ${formatValue(value)}`;
+        })
+        .join(", ");
       return `Created ${entityType.toLowerCase()} with ${fieldList}`;
     }
   }
 
   // Handle DELETE action
   if (action.includes("DELETE")) {
-    if (after.isArchived === true || (beforeKeys.length > 0 && afterKeys.length === 0)) {
+    if (
+      after.isArchived === true ||
+      (beforeKeys.length > 0 && afterKeys.length === 0)
+    ) {
       return `Deleted ${entityType.toLowerCase()}`;
     }
   }
@@ -97,11 +105,11 @@ export function generateDescriptionFromChanges(
   // Handle UPDATE action
   if (action.includes("UPDATE")) {
     const changeDescriptions: string[] = [];
-    
+
     for (const key of allKeys) {
       const beforeVal = before[key];
       const afterVal = after[key];
-      
+
       // Skip if values are the same
       if (JSON.stringify(beforeVal) === JSON.stringify(afterVal)) {
         continue;
@@ -130,13 +138,15 @@ export function generateDescriptionFromChanges(
       // Generic field change
       const beforeFormatted = formatValue(beforeVal);
       const afterFormatted = formatValue(afterVal);
-      
+
       if (beforeVal === null || beforeVal === undefined) {
         changeDescriptions.push(`added ${key}: ${afterFormatted}`);
       } else if (afterVal === null || afterVal === undefined) {
         changeDescriptions.push(`removed ${key}: ${beforeFormatted}`);
       } else {
-        changeDescriptions.push(`${key} changed from ${beforeFormatted} to ${afterFormatted}`);
+        changeDescriptions.push(
+          `${key} changed from ${beforeFormatted} to ${afterFormatted}`
+        );
       }
     }
 
@@ -175,9 +185,8 @@ export const activityLogService = {
   }: RecordActivityParams) => {
     try {
       // Auto-generate description if not provided
-      const finalDescription = 
-        generateDescriptionFromChanges(action, entityType, changes) || 
-        null;
+      const finalDescription =
+        generateDescriptionFromChanges(action, entityType, changes) || null;
 
       await prisma.activityLog.create({
         data: {
@@ -197,25 +206,25 @@ export const activityLogService = {
   },
   getActivity: async (context: ServiceContext) => {
     try {
-          const accessError = requirePermission(context, Role.ADMIN);
-    
-          if (accessError) return accessError;
-          // Get all users
-          const activityLogs = await prisma.activityLog.findMany({
-            include: { user: { include: { profile: true } } }, 
-            orderBy: { createdAt: "desc" },
-          });
-          return {
-            success: true,
-            data: activityLogs,
-            message: "Activity logs retrieved successfully",
-          };
-        } catch (error) {
-          console.error("getActivity error:", error);
-          return {
-            success: false,
-            message: "Internal server error",
-          };
-        }
-      }
-}
+      const accessError = requirePermission(context, Role.ADMIN);
+
+      if (accessError) return accessError;
+      // Get all users
+      const activityLogs = await prisma.activityLog.findMany({
+        include: { user: { include: { profile: true } } },
+        orderBy: { createdAt: "desc" },
+      });
+      return {
+        success: true,
+        data: activityLogs,
+        message: "Activity logs retrieved successfully",
+      };
+    } catch (error) {
+      console.error("getActivity error:", error);
+      return {
+        success: false,
+        message: "Internal server error",
+      };
+    }
+  },
+};

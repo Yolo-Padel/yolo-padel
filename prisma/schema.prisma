@@ -334,3 +334,55 @@ model ActivityLog {
 
   @@map("activity_logs")
 }
+
+model Module {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  label       String
+  description String?
+  orderIndex  Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+
+  @@map("modules")
+}
+
+model Permission {
+  id      String @id @default(cuid())
+  action  String @unique
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model Roles {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model RolePermission {
+  id           String  @id @default(cuid())
+  roleId       String
+  moduleId     String
+  permissionId String
+  allowed      Boolean @default(false)
+
+  role        Roles      @relation(fields: [roleId], references: [id])
+  module      Module     @relation(fields: [moduleId], references: [id])
+  permission  Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, moduleId, permissionId])
+  @@map("role_permissions")
+}

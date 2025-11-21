@@ -10,6 +10,7 @@ import {
   CalendarDays,
   DollarSign,
   Activity,
+  ShieldCheck,
 } from "lucide-react";
 
 import { MenuItems } from "@/app/admin/dashboard/_components/menu-items";
@@ -84,6 +85,12 @@ const menuConfig: MenuItem[] = [
     url: "/admin/dashboard/activity-log",
     icon: Activity,
     roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN], // Semua role bisa akses
+  },
+  {
+    name: "Access Control",
+    url: "/admin/dashboard/access-control",
+    icon: ShieldCheck,
+    roles: [Role.SUPER_ADMIN],
   },
 ];
 
