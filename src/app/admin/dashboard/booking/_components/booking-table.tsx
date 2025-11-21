@@ -179,7 +179,7 @@ export function BookingTable({
   // Show error state
   if (error) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 w-full flex-1">
         <div className="flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold">Booking List</h2>
@@ -209,7 +209,7 @@ export function BookingTable({
   const isFiltered = Boolean(searchParams.get("search"));
   if (filtered.length === 0) {
     return (
-      <div className="flex flex-col space-y-6">
+      <div className="flex flex-col space-y-6 w-full flex-1">
         <div className="flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold">Booking List</h2>
