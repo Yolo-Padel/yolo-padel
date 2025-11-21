@@ -66,6 +66,7 @@ export function BookingSummary({
 
   const displayMethods = viewAll ? paymentMethods : paymentMethods.slice(0, 3);
 
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">

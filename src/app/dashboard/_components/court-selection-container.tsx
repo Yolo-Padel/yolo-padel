@@ -358,8 +358,13 @@ export function CourtSelectionContainer({
               className="border-primary"
               size="sm"
               onClick={() => {
-                // Slots are already filtered (not blocked & not in the past)
-                form.setValue("slots", availableFutureSlots);
+                // All slots in allSlots are already filtered (not blocked)
+                
+                if (form.watch("slots").length === availableFutureSlots.length) {
+                  form.setValue("slots", []);
+                } else {
+                  form.setValue("slots", availableFutureSlots);
+                }
               }}
               disabled={
                 !watchCourtId || !watchDate || availableFutureSlots.length === 0

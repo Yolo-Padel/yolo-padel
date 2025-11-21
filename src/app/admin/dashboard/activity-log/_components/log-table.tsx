@@ -20,6 +20,7 @@ import {
   ChevronRight,
   MoreHorizontal,
   Trash,
+  Eye,
 } from "lucide-react";
 import { User, Profile, Role, UserStatus, ActivityLog } from "@/types/prisma";
 import { useActivityLogsAdmin } from "@/hooks/use-activity-log";
@@ -66,8 +67,8 @@ export function ActivityLogTable() {
               <TableCell>{log.action}</TableCell>
               <TableCell>{log.description}</TableCell>
               <TableCell>
-                <Button variant="outline" size="sm" onClick={() => {setSelectedLog(log); setModalOpen(true);}}>
-                  View Details
+                <Button variant="outline" size="sm" className="border-none shadow-none" onClick={() => {setSelectedLog(log); setModalOpen(true);}}>
+                  <Eye className="size-4 text-[#A4A7AE]" />
                 </Button>
               </TableCell>
             </TableRow>

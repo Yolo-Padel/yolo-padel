@@ -30,11 +30,6 @@ const data = {
       url: "/dashboard/order-history",
       icon: History,
     },
-    {
-      name: "Membership",
-      url: "/dashboard/membership",
-      icon: IdCard,
-    },
   ],
 };
 

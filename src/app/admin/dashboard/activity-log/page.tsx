@@ -13,15 +13,19 @@ export default function ActivityLogPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 justify-between">
         <ActivityLogHeader />
+        {/* Hide Search Button 
         <LogSearch 
             searchValue=""
             onSearchChange={() => {}}/>
+        */}
       </div>
       <div className="flex justify-end gap-2">
+        {/* Hide Filter Button 
         <Button variant="outline" className="flex items-center gap-2">
           <Filter />
           Filter
         </Button>
+        */}
       </div>
       <ActivityLogTable />
     </div>
