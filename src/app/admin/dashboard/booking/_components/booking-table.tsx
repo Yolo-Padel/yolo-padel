@@ -34,7 +34,6 @@ import { formatTimeRange } from "@/lib/time-slots-formatter";
 import {
   ManualBookingSheet,
   ManualBookingDefaults,
-  ManualBookingLocks,
 } from "@/app/admin/dashboard/_components/booking-sheet";
 import { stringUtils } from "@/lib/format/string";
 import { cn } from "@/lib/utils";
@@ -110,9 +109,6 @@ export function BookingTable({
   const [sheetDefaults, setSheetDefaults] = useState<
     ManualBookingDefaults | undefined
   >(undefined);
-  const [sheetLocks, setSheetLocks] = useState<ManualBookingLocks | undefined>(
-    undefined
-  );
   const searchParams = useSearchParams();
 
   // Fetch booking data using the hook
@@ -236,7 +232,6 @@ export function BookingTable({
     setSheetDefaults({
       date: new Date(),
     });
-    setSheetLocks(undefined);
     setSheetOpen(true);
   };
 
@@ -390,7 +385,6 @@ export function BookingTable({
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         defaults={sheetDefaults}
-        locks={sheetLocks}
         onSuccess={() => {
           refetch();
         }}
