@@ -101,21 +101,21 @@ export function CourtSelectionContainer({
     return prismaPrices
       .filter((price: any) => !price.isArchived)
       .map((price: any) => {
-      // Transform Prisma Date objects to DynamicPrice format
-      return {
-        id: price.id,
-        courtId: price.courtId,
-        dayOfWeek: price.dayOfWeek,
-        date: price.date ? new Date(price.date) : null,
-        startHour: price.startHour,
-        endHour: price.endHour,
-        price: price.price,
-        isActive: price.isActive,
-        isArchived: price.isArchived ?? false,
-        createdAt: new Date(price.createdAt),
-        updatedAt: new Date(price.updatedAt),
-      };
-    });
+        // Transform Prisma Date objects to DynamicPrice format
+        return {
+          id: price.id,
+          courtId: price.courtId,
+          dayOfWeek: price.dayOfWeek,
+          date: price.date ? new Date(price.date) : null,
+          startHour: price.startHour,
+          endHour: price.endHour,
+          price: price.price,
+          isActive: price.isActive,
+          isArchived: price.isArchived ?? false,
+          createdAt: new Date(price.createdAt),
+          updatedAt: new Date(price.updatedAt),
+        };
+      });
   }, [selectedCourt]);
 
   // Get active blockings for the selected court and date
@@ -326,7 +326,7 @@ export function CourtSelectionContainer({
 
       {/* Date & Time Selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col">
           <p className="text-sm">Available Date</p>
           <div className="rounded-lg border p-2">
             <Calendar
@@ -378,15 +378,15 @@ export function CourtSelectionContainer({
           >
             {(availableFutureSlots.length ? availableFutureSlots : []).map(
               (slot) => {
-              return (
-                <ToggleGroupItem
-                  key={slot}
-                  value={slot}
-                  className="justify-center border rounded-md"
-                >
-                  {slot}
-                </ToggleGroupItem>
-              );
+                return (
+                  <ToggleGroupItem
+                    key={slot}
+                    value={slot}
+                    className="justify-center border rounded-md"
+                  >
+                    {slot}
+                  </ToggleGroupItem>
+                );
               }
             )}
           </ToggleGroup>
