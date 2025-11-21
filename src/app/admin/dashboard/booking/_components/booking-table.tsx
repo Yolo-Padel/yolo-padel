@@ -36,6 +36,8 @@ import {
   ManualBookingDefaults,
   ManualBookingLocks,
 } from "@/app/admin/dashboard/_components/booking-sheet";
+import { stringUtils } from "@/lib/format/string";
+import { cn } from "@/lib/utils";
 
 type BookingWithRelations = {
   id: string;
@@ -156,6 +158,11 @@ export function BookingTable({
     [filtered, page]
   );
 
+  const paginationButtonBaseClass =
+    "w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]";
+  const paginationButtonActiveClass =
+    "bg-primary border-primary hover:bg-primary text-black";
+
   const columns = [
     "Booking Code",
     "Customer",
@@ -175,7 +182,7 @@ export function BookingTable({
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-semibold">Booking List</h2>
+            <h2 className="text-2xl font-bold">Booking List</h2>
           </div>
           {showAddButton && (
             <Button className="text-black" disabled>
@@ -205,7 +212,7 @@ export function BookingTable({
       <div className="flex flex-col space-y-6">
         <div className="flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-semibold">Booking List</h2>
+            <h2 className="text-2xl font-bold">Booking List</h2>
             <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
               {allBookings.length}{" "}
               {allBookings.length === 1 ? "booking" : "bookings"}
@@ -237,7 +244,7 @@ export function BookingTable({
     <div className="flex flex-col space-y-6 w-full flex-1">
       <div className="flex items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-semibold">Booking List</h2>
+          <h2 className="text-2xl font-bold">Booking List</h2>
           <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
             {filtered.length} {filtered.length === 1 ? "booking" : "bookings"}
           </Badge>
@@ -290,9 +297,9 @@ export function BookingTable({
                   </TableCell>
                   <TableCell>
                     <Badge
-                      className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusBadgeClass(b.status)}`}
+                      className={`text-xs font-medium ${getStatusBadgeClass(b.status)}`}
                     >
-                      {b.status}
+                      {stringUtils.toTitleCase(b.status)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -339,14 +346,14 @@ export function BookingTable({
                           </div>
                         ) : (
                           <Button
-                            variant={
-                              pageNum === paginationInfo.pageSafe
-                                ? "default"
-                                : "outline"
-                            }
+                            variant="outline"
                             size="sm"
                             onClick={() => setPage(pageNum as number)}
-                            className="w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]"
+                            className={cn(
+                              paginationButtonBaseClass,
+                              pageNum === paginationInfo.pageSafe &&
+                                paginationButtonActiveClass
+                            )}
                           >
                             {pageNum}
                           </Button>

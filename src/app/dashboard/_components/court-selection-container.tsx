@@ -8,7 +8,7 @@ import { usePublicVenues } from "@/hooks/use-venue";
 import { Court, Venue } from "@prisma/client";
 import { Separator } from "@/components/ui/separator";
 import { usePublicCourtByVenue } from "@/hooks/use-court";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { Calendar } from "@/components/ui/calendar";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -98,21 +98,24 @@ export function CourtSelectionContainer({
       return [];
     }
     const prismaPrices = (selectedCourt as any).dynamicPrices || [];
-    return prismaPrices.map((price: any) => {
-      // Transform Prisma Date objects to DynamicPrice format
-      return {
-        id: price.id,
-        courtId: price.courtId,
-        dayOfWeek: price.dayOfWeek,
-        date: price.date ? new Date(price.date) : null,
-        startHour: price.startHour,
-        endHour: price.endHour,
-        price: price.price,
-        isActive: price.isActive,
-        createdAt: new Date(price.createdAt),
-        updatedAt: new Date(price.updatedAt),
-      };
-    });
+    return prismaPrices
+      .filter((price: any) => !price.isArchived)
+      .map((price: any) => {
+        // Transform Prisma Date objects to DynamicPrice format
+        return {
+          id: price.id,
+          courtId: price.courtId,
+          dayOfWeek: price.dayOfWeek,
+          date: price.date ? new Date(price.date) : null,
+          startHour: price.startHour,
+          endHour: price.endHour,
+          price: price.price,
+          isActive: price.isActive,
+          isArchived: price.isArchived ?? false,
+          createdAt: new Date(price.createdAt),
+          updatedAt: new Date(price.updatedAt),
+        };
+      });
   }, [selectedCourt]);
 
   // Get active blockings for the selected court and date
@@ -131,6 +134,34 @@ export function CourtSelectionContainer({
 
   // Filter out blocked slots from available slots (HIDE them, don't just disable)
   const allSlots = filterBlockedSlots(operatingHoursSlots, blockedTimeSlots);
+
+  // Hide time slots that are already in the past when the selected date is today
+  const now = new Date();
+  const isSameDaySelection =
+    watchDate &&
+    now.getFullYear() === watchDate.getFullYear() &&
+    now.getMonth() === watchDate.getMonth() &&
+    now.getDate() === watchDate.getDate();
+
+  const availableFutureSlots =
+    isSameDaySelection && allSlots.length
+      ? allSlots.filter((slot) => {
+          const [start] = slot.split("–");
+          const [hour, minute] = start.split(".").map(Number);
+          const slotStartMinutes = hour * 60 + minute;
+          const currentMinutes = now.getHours() * 60 + now.getMinutes();
+          return slotStartMinutes > currentMinutes;
+        })
+      : allSlots;
+
+  useEffect(() => {
+    const filteredSelections = watchSlots.filter((slot) =>
+      availableFutureSlots.includes(slot)
+    );
+    if (filteredSelections.length !== watchSlots.length) {
+      form.setValue("slots", filteredSelections);
+    }
+  }, [availableFutureSlots, watchSlots, form]);
 
   // Custom hooks untuk manage effects (separation of concerns)
   useBookingDefaults(
@@ -295,7 +326,7 @@ export function CourtSelectionContainer({
 
       {/* Date & Time Selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col">
           <p className="text-sm">Available Date</p>
           <div className="rounded-lg border p-2">
             <Calendar
@@ -327,10 +358,12 @@ export function CourtSelectionContainer({
               className="border-primary"
               size="sm"
               onClick={() => {
-                // All slots in allSlots are already filtered (not blocked)
-                form.setValue("slots", allSlots);
+                // Slots are already filtered (not blocked & not in the past)
+                form.setValue("slots", availableFutureSlots);
               }}
-              disabled={!watchCourtId || !watchDate || allSlots.length === 0}
+              disabled={
+                !watchCourtId || !watchDate || availableFutureSlots.length === 0
+              }
             >
               Select All
             </Button>
@@ -343,21 +376,25 @@ export function CourtSelectionContainer({
             }}
             className="grid grid-cols-2 gap-3"
           >
-            {(allSlots.length ? allSlots : []).map((slot) => {
-              return (
-                <ToggleGroupItem
-                  key={slot}
-                  value={slot}
-                  className="justify-center border rounded-md"
-                >
-                  {slot}
-                </ToggleGroupItem>
-              );
-            })}
+            {(availableFutureSlots.length ? availableFutureSlots : []).map(
+              (slot) => {
+                return (
+                  <ToggleGroupItem
+                    key={slot}
+                    value={slot}
+                    className="justify-center border rounded-md"
+                  >
+                    {slot}
+                  </ToggleGroupItem>
+                );
+              }
+            )}
           </ToggleGroup>
-          {watchCourtId && watchDate && allSlots.length === 0 && (
+          {watchCourtId && watchDate && availableFutureSlots.length === 0 && (
             <p className="text-xs text-muted-foreground">
-              No time slots available for this day.
+              {isSameDaySelection
+                ? "No time slots available for the rest of today."
+                : "No time slots available for this day."}
             </p>
           )}
         </div>

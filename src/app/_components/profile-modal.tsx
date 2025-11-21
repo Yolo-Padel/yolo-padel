@@ -17,7 +17,6 @@ import { cn } from "@/lib/utils";
 import { z } from "zod";
 import { Role, Profile } from "@/types/prisma";
 import { NextBookingInfo } from "@/types/profile";
-import { transformDbFormatToUISlots } from "@/lib/booking-slots-utils";
 import { stringUtils } from "@/lib/format/string";
 import { AvatarUploader } from "@/app/_components/avatar-uploader";
 
@@ -52,7 +51,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
     return {
       fullName: extendedProfile?.fullName ?? "",
       phoneNumber: extendedProfile?.phoneNumber ?? "",
-      avatar: extendedProfile?.avatar ?? "",
+      avatar: extendedProfile?.avatar ?? undefined,
     };
   }, [profile]);
 
@@ -102,7 +101,10 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
         ];
 
   const handleAvatarChange = (url: string) => {
-    form.setValue("avatar", url, { shouldDirty: true });
+    form.setValue("avatar", url || undefined, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
 
   const onSubmit = (data: FormData) => {
@@ -223,10 +225,10 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
               {/* Form */}
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="flex flex-col gap-3 w-full"
+                className="flex flex-col w-full"
               >
-                <FieldGroup>
-                  <Field>
+                <FieldGroup className="gap-2">
+                  <Field className="gap-1">
                     <FieldLabel htmlFor="fullName">Full Name</FieldLabel>
                     <Input
                       id="fullName"
@@ -241,7 +243,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
                     )}
                   </Field>
 
-                  <Field>
+                  <Field className="gap-1">
                     <FieldLabel htmlFor="email">Email</FieldLabel>
                     <Input
                       id="email"
@@ -252,7 +254,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
                     />
                   </Field>
 
-                  <Field>
+                  <Field className="gap-1">
                     <FieldLabel htmlFor="phoneNumber">Phone number</FieldLabel>
                     <Input
                       id="phoneNumber"
@@ -356,10 +358,7 @@ function formatNextBookingLabel(info?: NextBookingInfo | null) {
         month: "short",
       }).format(date);
 
-  const slots =
-    info.timeSlots && info.timeSlots.length
-      ? transformDbFormatToUISlots(info.timeSlots).join(", ")
-      : "";
+  const slots = info.timeSlots[0].openHour;
 
   const locationLabel = [info.courtName, info.venueName]
     .filter(Boolean)

@@ -1,6 +1,5 @@
-"use client";
-
 import { BookingFormMultiStep } from "./booking-form-multi-step";
+import config from "@/config.json";
 
 /**
  * Main Booking Form Component with Multi-Step Flow
@@ -18,5 +17,12 @@ export const BookingForm = ({
   onClose: () => void;
   isModal?: boolean;
 }) => {
-  return <BookingFormMultiStep onClose={onClose} isModal={isModal} />;
+  return (
+    <BookingFormMultiStep
+      onClose={onClose}
+      isModal={isModal}
+      taxPercentage={config.taxPercentageDecimal}
+      bookingFeePercentage={config.bookingFeePercentageDecimal}
+    />
+  );
 };

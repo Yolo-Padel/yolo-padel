@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { DYNAMIC_PRICE_COLORS } from "@/constants/timetable";
 import type { Court, DynamicPrice } from "@/components/timetable-types";
+import { isTimeSlotInOperatingHours } from "@/components/timetable-utils";
 
 const currencyFormatter = new Intl.NumberFormat("id-ID", {
   style: "currency",
@@ -37,6 +38,12 @@ export function DynamicPriceCell({
 }: DynamicPriceCellProps) {
   const hasPrice = dynamicPrice !== null;
 
+  const isCourtOpen = isTimeSlotInOperatingHours(
+    timeSlot,
+    court.operatingHours?.fullOperatingHours
+  );
+  const isDisabled = !isCourtOpen && !hasPrice;
+
   if (hasPrice && !isFirstSlot && span === 0) {
     return null;
   }
@@ -49,7 +56,7 @@ export function DynamicPriceCell({
     <td
       rowSpan={hasPrice && isFirstSlot ? span : 1}
       className={cn(
-        "border h-[80px] px-2",
+        "border h-[80px] p-2 align-top",
         hasPrice &&
           (isInactive
             ? "bg-muted text-muted-foreground"
@@ -59,15 +66,21 @@ export function DynamicPriceCell({
           "bg-primary/10 border-primary/60 ring-1 ring-primary/40",
         isClickable &&
           `cursor-pointer hover:bg-[${DYNAMIC_PRICE_COLORS.ACTIVE_HOVER}] transition-colors`,
-        hasPrice && `bg-[#ECF1BB] border-l-2 border-l-[#B1BF20] `
+        hasPrice && `bg-[#ECF1BB] border-l-2 border-l-[#B1BF20] `,
+        isDisabled && "bg-muted/30 opacity-50 cursor-not-allowed"
       )}
-      onClick={() => onClick?.(dynamicPrice, court, timeSlot)}
+      onClick={() => {
+        if (isDisabled) return;
+        onClick?.(dynamicPrice, court, timeSlot);
+      }}
       onMouseDown={(event) => {
+        if (isDisabled) return;
         event.preventDefault();
         onMouseDown?.(court, timeSlot);
       }}
       onMouseEnter={() => {
         if (hasPrice && !isFirstSlot && span === 0) return;
+        if (isDisabled) return;
         onMouseEnter?.(court, timeSlot);
       }}
     >
@@ -84,7 +97,9 @@ export function DynamicPriceCell({
           )}
         </div>
       ) : (
-        <span className="text-muted-foreground text-sm">-</span>
+        <span className="text-muted-foreground text-sm">
+          {isDisabled ? "Closed" : "-"}
+        </span>
       )}
     </td>
   );

@@ -271,7 +271,7 @@ export function BookingCourt() {
           <Button
             variant="outline"
             onClick={() => setBookCourtModalOpen(true)}
-            className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
+            className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black"
           >
             Book Court
             <LandPlot className="mr-2 size-4" />
@@ -291,15 +291,14 @@ export function BookingCourt() {
     <>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-1">
-          <h3 className="text-xl font-semibold ">Booking Court List</h3>
+          <h3 className="text-xl font-semibold">Booking Court List</h3>
           <div className="flex items-center gap-2">
             <DatePicker />
             <ComboboxFilter />
 
             <Button
-              variant="outline"
               onClick={() => setBookCourtModalOpen(true)}
-              className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
+              className="text-black"
             >
               Book Court
               <LandPlot className="size-4" />
@@ -319,7 +318,7 @@ export function BookingCourt() {
                   <Image
                     src={bookingCourt.image || "/paddle-court1.svg"}
                     alt=""
-                    className="flex-1 w-full rounded-sm aspect-square"
+                    className="flex-1 w-full aspect-square"
                     width={500}
                     height={500}
                   />
@@ -331,7 +330,7 @@ export function BookingCourt() {
                       <Badge
                         className={`rounded-md px-3 py-1 text-xs font-medium ${getStatusBadge(bookingCourt.status)}`}
                       >
-                        {bookingCourt.status}
+                        {stringUtils.toTitleCase(bookingCourt.status)}
                       </Badge>
                     </span>
                   </CardTitle>
@@ -371,6 +370,7 @@ export function BookingCourt() {
                     <Button
                       onClick={() => {
                         setSelectedBookingCourt(bookingCourt);
+                        setModalOpen(true);
                         setMode("booking-details");
                       }}
                       className="w-full border-primary"
@@ -379,8 +379,6 @@ export function BookingCourt() {
                       See Details
                     </Button>
                     <Button
-                      variant="default"
-                      size="sm"
                       className="w-full"
                       onClick={() => setBookCourtModalOpen(true)}
                     >
@@ -402,8 +400,6 @@ export function BookingCourt() {
                       See Details
                     </Button>
                     <Button
-                      variant="default"
-                      size="sm"
                       className="w-full"
                       onClick={() => {
                         window.open(bookingCourt.invoiceUrl, "_blank");
@@ -421,8 +417,7 @@ export function BookingCourt() {
                         setModalOpen(true);
                         setMode("booking-details");
                       }}
-                      className="w-full border-primary"
-                      variant="outline"
+                      className="w-full"
                     >
                       See Details
                     </Button>
@@ -431,8 +426,6 @@ export function BookingCourt() {
                 {bookingCourt.status === BookingStatus.CANCELLED && (
                   <CardFooter className="px-1 pb-1 w-full min-w-0">
                     <Button
-                      variant="default"
-                      size="sm"
                       className="w-full"
                       onClick={() => setBookCourtModalOpen(true)}
                     >

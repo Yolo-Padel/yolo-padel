@@ -3,7 +3,7 @@ import type { BookingStatus } from "@/types/prisma";
 export interface BookingSummaryStats {
   total: number;
   completed: number;
-  ongoing: number;
+  pending: number;
   upcoming: number;
   cancelled: number;
   expiredPayment: number;
@@ -18,7 +18,7 @@ export interface BookingDashboardMetrics {
     total: number;
     completed: number;
     upcoming: number;
-    ongoing: number;
+    pending: number;
     cancelled: number;
   };
   paidRate: {
@@ -64,4 +64,3 @@ export interface AdminDashboardSnapshot {
   metrics: BookingDashboardMetrics;
   todaysBookings: TodaysBookingCollection;
 }
-

@@ -57,7 +57,7 @@ export function TimetableBookingCell({
     <td
       rowSpan={isBooked && isFirstSlot ? span : 1}
       className={cn(
-        "border h-[80px]",
+        "border h-[80px] p-2 align-top",
         isBooked &&
           `bg-[${BOOKING_COLORS.BOOKED_BG}] border-l-2 border-l-[#B1BF20]`,
         isBooked &&
@@ -93,7 +93,7 @@ export function TimetableBookingCell({
     >
       {isBooked && isFirstSlot && booking ? (
         <div className="flex flex-col gap-1 p-2">
-          <div className="flex flex-row items-center gap-2">
+          <div className="flex flex-row gap-2">
             <Avatar className="h-5 w-5">
               <AvatarImage src={booking.userAvatar} alt={booking.userName} />
               <AvatarFallback className="text-[10px]">

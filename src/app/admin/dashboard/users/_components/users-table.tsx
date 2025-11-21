@@ -34,6 +34,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ResendInviteButton } from "@/app/admin/dashboard/users/_components/resend-invite-button";
 import { stringUtils } from "@/lib/format/string";
+import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 10;
 
@@ -80,6 +81,11 @@ export function UsersTable() {
     () => getPaginatedData(filtered, page, PAGE_SIZE),
     [filtered, page]
   );
+
+  const paginationButtonBaseClass =
+    "w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]";
+  const paginationButtonActiveClass =
+    "bg-primary border-primary hover:bg-primary text-black";
 
   async function handleSubmit() {
     // Dummy submit: console log value
@@ -170,7 +176,7 @@ export function UsersTable() {
     <div className="flex flex-col space-y-6">
       <div className="flex items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-semibold">User List</h2>
+          <h2 className="text-2xl font-bold">User List</h2>
           <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
             {allUsers.length} users
           </Badge>
@@ -214,7 +220,6 @@ export function UsersTable() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {renderStatusBadge(u as any)}
-                      <ResendInviteButton userId={u.id} status={u.userStatus} />
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
@@ -232,7 +237,6 @@ export function UsersTable() {
                     {/* Resend dipindah ke kolom Status */}
                     <Button
                       variant="outline"
-                      size="sm"
                       onClick={() => {
                         setUserToDelete(u);
                         setDeleteModalOpen(true);
@@ -241,18 +245,21 @@ export function UsersTable() {
                     >
                       <Trash className="size-4 text-[#A4A7AE]" />
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelected(u);
-                        setModalMode("edit");
-                        setModalOpen(true);
-                      }}
-                      className="border-none shadow-none"
-                    >
-                      <Pencil className="size-4 text-[#A4A7AE]" />
-                    </Button>
+                    {u.userStatus === UserStatus.INVITED ? (
+                      <ResendInviteButton userId={u.id} />
+                    ) : (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setSelected(u);
+                          setModalMode("edit");
+                          setModalOpen(true);
+                        }}
+                        className="border-none shadow-none"
+                      >
+                        <Pencil className="size-4 text-[#A4A7AE]" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               );
@@ -280,19 +287,19 @@ export function UsersTable() {
                     ).map((pageNum, index) => (
                       <div key={index}>
                         {pageNum === "..." ? (
-                          <div className="flex items-center justify-center w-8 h-8 bg-background border border-[#E9EAEB] text-[#A4A7AE]">
+                          <div className="flex items-center justify-center w-8 h-8 bg-background border border-[#E9EAEB]">
                             <MoreHorizontal className="w-4 h-4" />
                           </div>
                         ) : (
                           <Button
-                            variant={
-                              pageNum === paginationInfo.pageSafe
-                                ? "default"
-                                : "outline"
-                            }
+                            variant="outline"
                             size="sm"
                             onClick={() => setPage(pageNum as number)}
-                            className="w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]"
+                            className={cn(
+                              paginationButtonBaseClass,
+                              pageNum === paginationInfo.pageSafe &&
+                                paginationButtonActiveClass
+                            )}
                           >
                             {pageNum}
                           </Button>

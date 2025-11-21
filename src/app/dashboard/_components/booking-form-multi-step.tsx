@@ -6,6 +6,8 @@ import { CourtSelectionContainer } from "./court-selection-container";
 import { toast } from "sonner";
 
 type BookingFormMultiStepProps = {
+  taxPercentage: number;
+  bookingFeePercentage: number;
   onClose: () => void;
   isModal?: boolean;
 };
@@ -13,6 +15,8 @@ type BookingFormMultiStepProps = {
 type Step = 1 | 2;
 
 export function BookingFormMultiStep({
+  taxPercentage,
+  bookingFeePercentage,
   onClose,
   isModal = false,
 }: BookingFormMultiStepProps) {
@@ -92,6 +96,8 @@ export function BookingFormMultiStep({
           guestEmail={guestEmail}
           guestFullName={guestFullName}
           onClearCart={handleClearCart}
+          taxPercentage={taxPercentage}
+          bookingFeePercentage={bookingFeePercentage}
         />
       )}
     </div>

@@ -74,6 +74,7 @@ export type DynamicPrice = {
   endHour: string;
   price: number;
   isActive: boolean;
+  isArchived: boolean;
   createdAt: Date;
   updatedAt: Date;
 };

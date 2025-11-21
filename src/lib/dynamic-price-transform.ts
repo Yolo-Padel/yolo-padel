@@ -10,6 +10,7 @@ export type PrismaDynamicPrice = {
   endHour: string;
   price: number;
   isActive: boolean;
+  isArchived: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -26,6 +27,7 @@ export function transformPrismaDynamicPrice(
     endHour: price.endHour,
     price: price.price,
     isActive: price.isActive,
+    isArchived: price.isArchived,
     createdAt: new Date(price.createdAt),
     updatedAt: new Date(price.updatedAt),
   };

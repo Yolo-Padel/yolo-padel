@@ -10,9 +10,9 @@ export function HeroSection() {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="relative min-h-screen flex flex-col">
       {/* Background Image Layer */}
-      <div className="absolute inset-0 z-0">
+      <div className="fixed inset-0 z-0">
         <img
           src="/hero.jpg"
           alt="Padel Court"
@@ -20,17 +20,17 @@ export function HeroSection() {
         />
       </div>
 
-      {/* Black Overlay at Bottom */}
-      <div className="absolute z-10 bg-black/20 w-full h-full"></div>
+      {/* Black Overlay */}
+      <div className="fixed inset-0 z-10 bg-black/20"></div>
 
       {/* Content Layer */}
-      <div className="relative z-20 flex-1 flex flex-col gap-10">
+      <div className="relative z-20 flex-1 flex flex-col gap-10 min-h-screen">
         {/* Header */}
         <GlobalHeader />
 
         {/* Main Content */}
-        <div className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+        <div className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+          <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
             {/* Left Section - Hero Title & Description */}
             <div className="flex flex-col justify-center space-y-6 text-primary pt-35">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight text-primary">

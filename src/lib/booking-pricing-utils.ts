@@ -89,6 +89,7 @@ export function calculateSlotPrice(
   // Find matching dynamic price
   for (const price of dynamicPrices) {
     if (!price.isActive) continue;
+    if (price.isArchived) continue;
     if (!matchesDate(price, date)) continue;
     if (matchesTimeSlot(slot, price.startHour, price.endHour)) {
       return price.price;

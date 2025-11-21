@@ -8,7 +8,7 @@ export function OrderHeader({ orderCount }: OrderHeaderProps) {
   return (
     <div className="flex items-center gap-2 justify-between">
       <div className="flex items-center gap-2">
-        <h2 className="text-2xl font-semibold">Order List</h2>
+        <h2 className="text-2xl font-bold">Order List</h2>
         <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
           {orderCount} {orderCount === 1 ? "order" : "orders"}
         </Badge>

@@ -192,7 +192,7 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
           </div>
 
           {/* Venue Assignment - Only show if role is not USER */}
-          {watch("role") !== Role.USER && (
+          {watch("role") === Role.ADMIN && (
             <div className="space-y-2">
               <Label htmlFor="assignedVenueIds" className="text-sm font-medium">
                 Assigned Venues
@@ -259,7 +259,7 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
             </Button>
             <Button
               type="submit"
-              className="flex-1 bg-primary hover:bg-primary/90 text-white"
+              className="flex-1 bg-primary hover:bg-primary/90"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Processing..." : primaryButtonText}

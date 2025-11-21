@@ -65,6 +65,8 @@ export async function POST(request: NextRequest) {
 
     const data = validation.data;
 
+    console.log("PAYLOADDD ORDER", data);
+
     // Create order with bookings
     const order = await createOrder({
       userId: data.userId,

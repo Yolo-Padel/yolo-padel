@@ -36,6 +36,7 @@ export function PriceContent() {
     startHour: string;
     endHour: string;
     initialPrice?: number;
+    dynamicPriceId?: string;
     fromCell?: boolean;
   } | null>(null);
   const [dragState, setDragState] = React.useState<DragState | null>(null);
@@ -109,6 +110,7 @@ export function PriceContent() {
       startHour: string;
       endHour: string;
       initialPrice?: number;
+      dynamicPriceId?: string;
       fromCell?: boolean;
     }) => {
       setModalContext(context);
@@ -161,6 +163,7 @@ export function PriceContent() {
                 startHour: dynamicPrice?.startHour ?? slot,
                 endHour: dynamicPrice?.endHour ?? getNextHour(slot),
                 initialPrice: dynamicPrice?.price,
+                dynamicPriceId: dynamicPrice?.id,
                 fromCell: true,
               });
             }
@@ -199,6 +202,7 @@ export function PriceContent() {
           courtId: current.court.id,
           startHour,
           endHour,
+          dynamicPriceId: undefined,
           fromCell: true,
         });
 
@@ -220,6 +224,7 @@ export function PriceContent() {
       courtId: courts[0].id,
       startHour: defaultStart,
       endHour: getNextHour(defaultStart),
+      dynamicPriceId: undefined,
     });
   };
 
@@ -262,7 +267,7 @@ export function PriceContent() {
       <div className="space-y-4 w-full max-w-full">
         <div className="flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-semibold">Custom Price Configuration</h2>
+            <h2 className="text-2xl font-bold">Custom Price Configuration</h2>
           </div>
         </div>
         <TimetableEmptyState type="no-venues" />
@@ -276,7 +281,7 @@ export function PriceContent() {
       <div className="space-y-4 w-full max-w-full">
         <div className="flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-semibold">Custom Price Configuration</h2>
+            <h2 className="text-2xl font-bold">Custom Price Configuration</h2>
           </div>
         </div>
         <TimetableHeader
@@ -296,7 +301,7 @@ export function PriceContent() {
     <div className="space-y-4 w-full max-w-full">
       <div className="flex items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-semibold">Custom Price Configuration</h2>
+          <h2 className="text-2xl font-bold">Custom Price Configuration</h2>
         </div>
       </div>
       <TimetableHeader
@@ -335,6 +340,7 @@ export function PriceContent() {
           initialStartHour={modalContext.startHour}
           initialEndHour={modalContext.endHour}
           initialPrice={modalContext.initialPrice}
+          initialDynamicPriceId={modalContext.dynamicPriceId}
           venueName={
             venues.find((v) => v.id === selectedVenueId)?.name ?? undefined
           }

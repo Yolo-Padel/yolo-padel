@@ -59,12 +59,19 @@ export function TimetableContent() {
     refetch: refetchCourts,
   } = useCourtByVenue(selectedVenueId);
 
+  const formatDateToString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   // Fetch blockings by venue and date
   // Normalize date to prevent multiple fetches from time differences
   const normalizedDate = useMemo(() => {
     const d = new Date(selectedDate);
-    d.setHours(0, 0, 0, 0);
-    return d;
+    console.log("NORMALIZED DATE", formatDateToString(d));
+    return formatDateToString(d);
   }, [selectedDate]);
 
   const {
@@ -270,7 +277,7 @@ export function TimetableContent() {
         <div className="space-y-6 w-full">
           <div className="flex items-center gap-2 justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold">Booking Time Table</h2>
+              <h2 className="text-2xl font-bold">Booking Time Table</h2>
             </div>
           </div>
           <TimetableEmptyState type="no-venues" />
@@ -286,7 +293,7 @@ export function TimetableContent() {
         <div className="space-y-6 w-full">
           <div className="flex items-center gap-2 justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold">Booking Time Table</h2>
+              <h2 className="text-2xl font-bold">Booking Time Table</h2>
             </div>
           </div>
           <TimetableHeader
@@ -308,7 +315,7 @@ export function TimetableContent() {
         <div className="space-y-6 w-full">
           <div className="flex items-center gap-2 justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold">Booking Time Table</h2>
+              <h2 className="text-2xl font-bold">Booking Time Table</h2>
             </div>
           </div>
           <TimetableContainer

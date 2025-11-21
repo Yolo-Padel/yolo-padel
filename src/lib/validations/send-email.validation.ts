@@ -34,13 +34,13 @@ const bookingSchema = z.object({
     }
   ),
   time: z.string().min(1, "Time is required"),
-  bookingId: z.string().min(1, "Booking ID is required"),
+  bookingCode: z.string().min(1, "Booking code is required"),
   location: z.string().min(1, "Location is required"),
 });
 
 // Base schema for single booking (used by reschedule and cancelation)
 const bookingEmailBaseSchema = z.object({
-  orderId: z.string().min(1, "Order ID is required"),
+  orderCode: z.string().min(1, "Order code is required"),
   email: emailSchema,
   customerName: z.string().min(1, "Customer name is required"),
   court: z.string().min(1, "Court name is required"),
@@ -54,13 +54,13 @@ const bookingEmailBaseSchema = z.object({
     }
   ),
   time: z.string().min(1, "Time is required"),
-  bookingId: z.string().min(1, "Booking ID is required"),
+  bookingCode: z.string().min(1, "Booking code is required"),
   location: z.string().min(1, "Location is required"),
 });
 
 // Schema for order confirmation email with multiple bookings
 export const orderConfirmationEmailSchema = z.object({
-  orderId: z.string().min(1, "Order ID is required"),
+  orderCode: z.string().min(1, "Order code is required"),
   email: emailSchema,
   customerName: z.string().min(1, "Customer name is required"),
   bookings: z.array(bookingSchema).min(1, "At least one booking is required"),

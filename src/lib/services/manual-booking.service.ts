@@ -15,12 +15,18 @@ const bookingCodeGenerator = customAlphabet(
   5
 );
 
-function parseBookingDate(dateString: string): Date {
+function parseBookingDate(dateString: string | Date): Date {
+  // If already Date object, use it directly
+  if (dateString instanceof Date) {
+    return dateString;
+  }
+
   if (dateString.includes("T")) {
     return new Date(dateString);
   }
+  // Parse as local date (not UTC) to preserve exact date selected by user
   const [year, month, day] = dateString.split("-").map(Number);
-  return new Date(Date.UTC(year, (month || 1) - 1, day || 1, 0, 0, 0, 0));
+  return new Date(year, (month || 1) - 1, day || 1);
 }
 
 function timeToMinutes(time: string): number {
@@ -102,7 +108,11 @@ export const manualBookingService = {
         where: { id: data.courtId },
         include: {
           venue: true,
-          dynamicPrices: true,
+          dynamicPrices: {
+            where: {
+              isArchived: false,
+            },
+          },
         },
       });
 

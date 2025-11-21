@@ -74,6 +74,7 @@ const dynamicPriceApi = {
   },
 
   async create(data: CourtDynamicPriceCreateData) {
+    console.log("PAYLOAD", data);
     const response = await fetch("/api/court-dynamic-prices", {
       method: "POST",
       credentials: "include",
@@ -203,4 +204,3 @@ export const useDeleteCourtDynamicPrice = () => {
     },
   });
 };
-
