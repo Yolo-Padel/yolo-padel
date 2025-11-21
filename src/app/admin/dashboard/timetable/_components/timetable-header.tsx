@@ -51,17 +51,7 @@ export function TimetableHeader({
           </SelectContent>
         </Select>
 
-<<<<<<< HEAD
         <div className="flex items-center gap-2 shrink-0">
-          {/* Filter Button */}
-          <Button
-            variant="outline"
-            className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}] gap-2`}
-            disabled={isLoading}
-          >
-            <Filter className="h-4 w-4" />
-            Filter
-          </Button>
 
           {/* Add Booking Button */}
           {onAddBooking && (
@@ -75,7 +65,6 @@ export function TimetableHeader({
             </Button>
           )}
         </div>
-=======
         {/* Filter Button */}
         
         {/* Hide Filter Button
@@ -89,7 +78,6 @@ export function TimetableHeader({
           Filter
         </Button>
         */}
->>>>>>> a3e88a7 (fix feedback)
       </div>
     </div>
   );
