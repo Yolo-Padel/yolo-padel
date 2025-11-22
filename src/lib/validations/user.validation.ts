@@ -9,6 +9,7 @@ export const userCreateSchema = z.object({
     .min(1, "Full name is required")
     .max(64, "Full name must be less than 64 characters"),
   assignedVenueIds: z.array(z.string()).default([]),
+  membershipId: z.string().optional(),
 });
 
 export const userDeleteSchema = z.object({
@@ -24,6 +25,7 @@ export const userUpdateSchema = z.object({
     .min(1, "Full name is required")
     .max(64, "Full name must be less than 64 characters"),
   assignedVenueIds: z.array(z.string()).default([]),
+  membershipId: z.string().optional(),
 });
 
 export const userResendInviteSchema = z.object({

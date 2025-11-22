@@ -21,7 +21,7 @@ export const usersService = {
       // Get all users
       const users = await prisma.user.findMany({
         where: { isArchived: false },
-        include: { profile: true },
+        include: { profile: true, membership: true },
         orderBy: { createdAt: "desc" },
       });
 
@@ -104,6 +104,7 @@ export const usersService = {
           role: data.role,
           userStatus: UserStatus.INVITED,
           assignedVenueIds: data.assignedVenueIds || [],
+          membershipId: data.membershipId || null,
         },
       });
       // audit log (non-blocking)
@@ -119,6 +120,7 @@ export const usersService = {
             role: user.role,
             assignedVenueIds: user.assignedVenueIds,
             userStatus: user.userStatus,
+            membershipId: user.membershipId ?? null,
           },
         } as any,
       });
@@ -161,8 +163,9 @@ export const usersService = {
           email: data.email,
           role: data.role,
           assignedVenueIds,
+          membershipId: data.membershipId || null,
         },
-        include: { profile: true },
+        include: { profile: true, membership: true },
       });
 
       // Update or create profile fullName
@@ -192,12 +195,14 @@ export const usersService = {
             role: existing.role,
             assignedVenueIds: existing.assignedVenueIds,
             fullName: existing.profile?.fullName ?? null,
+            membershipId: existing.membershipId ?? null,
           },
           after: {
             email: data.email,
             role: data.role,
             assignedVenueIds,
             fullName: data.fullName,
+            membershipId: data.membershipId ?? null,
           },
         } as any,
       });

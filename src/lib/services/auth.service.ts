@@ -214,7 +214,7 @@ export const authService = {
       // Get fresh user data
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
-        include: { profile: true },
+        include: { profile: true, membership: true },
       });
 
       if (!user) {
@@ -230,6 +230,7 @@ export const authService = {
           user: userWithoutPassword,
           profile: user.profile,
           nextBooking,
+          membership: user.membership,
         },
       };
     } catch (error) {

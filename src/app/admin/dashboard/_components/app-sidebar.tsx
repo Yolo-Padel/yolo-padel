@@ -75,12 +75,6 @@ const menuConfig: MenuItem[] = [
     roles: [Role.ADMIN, Role.SUPER_ADMIN],
   },
   {
-    name: "Membership",
-    url: "/admin/dashboard/membership",
-    icon: Crown,
-    roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN], // Semua role bisa akses
-  },
-  {
     name: "Activity Log",
     url: "/admin/dashboard/activity-log",
     icon: Activity,
