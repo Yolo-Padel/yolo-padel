@@ -28,14 +28,14 @@ import {
   MultiSelectItem,
 } from "@/components/ui/multi-select";
 import { X } from "lucide-react";
-import { User, Profile, Role, Venue } from "@/types/prisma";
+import { User, Profile, Role, Venue, Membership } from "@/types/prisma";
 import { useInviteUser, useUpdateUser } from "@/hooks/use-users";
 import {
   userCreateSchema,
-  UserCreateData,
   UserUpdateData,
 } from "@/lib/validations/user.validation";
 import { useVenue } from "@/hooks/use-venue";
+import { useMemberships } from "@/hooks/use-membership";
 
 interface UserModalProps {
   open: boolean;
@@ -49,12 +49,15 @@ type UserFormData = {
   role: Role;
   fullName: string;
   assignedVenueIds: string[];
+  membershipId?: string;
 };
 
 export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
   const inviteUserMutation = useInviteUser();
   const updateUserMutation = useUpdateUser();
   const { data: venues, isLoading: isLoadingVenues } = useVenue();
+  const { data: memberships, isLoading: isLoadingMemberships } =
+    useMemberships();
 
   const {
     register,
@@ -70,6 +73,7 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
       email: "",
       role: Role.USER,
       assignedVenueIds: [],
+      membershipId: "",
     },
   });
 
@@ -81,12 +85,14 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
         setValue("email", user.email);
         setValue("role", user.role);
         setValue("assignedVenueIds", user.assignedVenueIds || []);
+        setValue("membershipId", user.membershipId || "");
       } else {
         reset({
           fullName: "",
           email: "",
           role: Role.USER,
           assignedVenueIds: [],
+          membershipId: "",
         });
       }
     }
@@ -105,6 +111,7 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
           role: data.role,
           fullName: data.fullName,
           assignedVenueIds: data.assignedVenueIds,
+          membershipId: data.membershipId,
         };
         await updateUserMutation.mutateAsync(payload);
         onOpenChange(false);
@@ -190,6 +197,37 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
               <p className="text-sm text-red-500">{errors.role.message}</p>
             )}
           </div>
+
+          {watch("role") === Role.USER && (
+            <div className="space-y-2">
+              <Label htmlFor="membershipId" className="text-sm font-medium">
+                Membership
+              </Label>
+              <Select
+                value={watch("membershipId")}
+                onValueChange={(value) => setValue("membershipId", value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder={
+                      isLoadingMemberships
+                        ? "Loading memberships..."
+                        : memberships?.data?.length === 0
+                          ? "No memberships found"
+                          : "Select Membership"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {memberships?.data?.map((membership: Membership) => (
+                    <SelectItem key={membership.id} value={membership.id}>
+                      {membership.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Venue Assignment - Only show if role is not USER */}
           {watch("role") === Role.ADMIN && (

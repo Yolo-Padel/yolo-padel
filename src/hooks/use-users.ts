@@ -1,13 +1,25 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { User, Profile } from '@/types/prisma';
-import { UserCreateData, UserDeleteData, UserUpdateData, UserResendInviteData } from '@/lib/validations/user.validation';
-import { toast } from 'sonner';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { User, Profile, Membership } from "@/types/prisma";
+import {
+  UserCreateData,
+  UserDeleteData,
+  UserUpdateData,
+  UserResendInviteData,
+} from "@/lib/validations/user.validation";
+import { toast } from "sonner";
 
 // Types for API responses
 interface UsersResponse {
   success: boolean;
   data: {
-    users: (User & { profile?: Profile | null } & { invitation?: { state: 'valid' | 'expired' | 'used' | 'none'; expiresAt?: string } })[];
+    users: (User & { profile?: Profile | null } & {
+      membership?: Membership | null;
+    } & {
+      invitation?: {
+        state: "valid" | "expired" | "used" | "none";
+        expiresAt?: string;
+      };
+    })[];
   } | null;
   message: string;
   errors?: any[];
@@ -123,7 +135,7 @@ const inviteUserApi = {
         success: false,
         data: null,
         message: result.message || "Failed to invite user",
-      };  
+      };
     }
 
     return {
@@ -132,7 +144,9 @@ const inviteUserApi = {
       message: result.message || "User invited successfully!",
     };
   },
-  resendInvitation: async (data: UserResendInviteData): Promise<ResendInviteResponse> => {
+  resendInvitation: async (
+    data: UserResendInviteData
+  ): Promise<ResendInviteResponse> => {
     const response = await fetch("/api/users/invite-user/resend", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -141,9 +155,15 @@ const inviteUserApi = {
     });
     const result = await response.json();
     if (!response.ok) {
-      return { success: false, message: result.message || "Failed to resend invitation" };
+      return {
+        success: false,
+        message: result.message || "Failed to resend invitation",
+      };
     }
-    return { success: true, message: result.message || "Invitation resent successfully" };
+    return {
+      success: true,
+      message: result.message || "Invitation resent successfully",
+    };
   },
 };
 
@@ -206,7 +226,9 @@ export const useDeleteUser = () => {
       if (result.success) {
         toast.success(result.message || "User deleted successfully!");
       } else {
-        toast.error(result.message || "Failed to delete user. Please try again.");
+        toast.error(
+          result.message || "Failed to delete user. Please try again."
+        );
       }
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
@@ -226,7 +248,9 @@ export const useUpdateUser = () => {
       if (result.success) {
         toast.success(result.message || "User updated successfully!");
       } else {
-        toast.error(result.message || "Failed to update user. Please try again.");
+        toast.error(
+          result.message || "Failed to update user. Please try again."
+        );
       }
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
