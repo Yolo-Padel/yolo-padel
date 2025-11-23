@@ -1,57 +1,65 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RoleForm, type RoleFormValues } from "@/components/rbac/role-form";
-import { PermissionMatrix } from "@/components/rbac/permission-matrix";
-import { useRole } from "@/hooks/rbac/useRole";
-import { useModules } from "@/hooks/rbac/useModules";
-import { useRolePermissions } from "@/hooks/rbac/useRolePermissions";
-import { useUpdateRolePermissions } from "@/hooks/rbac/useUpdateRolePermissions";
-import { rbacRequest } from "@/hooks/rbac/useRbacRequest";
-import { Loader2 } from "lucide-react";
+import {
+  RoleFormCard,
+  RoleForm,
+  type RoleFormValues,
+  PermissionMatrix,
+  PermissionMatrixLoading,
+  PermissionMatrixEmpty,
+  ErrorAlert,
+} from "../_components";
+import {
+  useRoleById,
+  useModules,
+  useRolePermissions,
+  useUpdateRole,
+  useUpdateRolePermissions,
+} from "@/hooks/use-rbac";
 
 export default function AccessControlDetailPage() {
   const params = useParams<{ roleId: string }>();
   const roleId = params?.roleId ?? "";
   const router = useRouter();
-  const [formSubmitting, setFormSubmitting] = useState(false);
-  const [permissionError, setPermissionError] = useState<string | null>(null);
 
+  // Fetch data using hooks
   const {
-    role,
+    data: role,
     isLoading: roleLoading,
     error: roleError,
-    refetch: refetchRole,
-  } = useRole(roleId);
+  } = useRoleById(roleId);
   const {
-    modules,
-    permissions,
+    data: modulesData,
     isLoading: modulesLoading,
     error: modulesError,
   } = useModules();
   const {
-    permissions: rolePermissions,
-    isLoading: rolePermissionsLoading,
-    error: rolePermissionsError,
-    refetch: refetchRolePermissions,
+    data: rolePermissions = [],
+    isLoading: permissionsLoading,
+    error: permissionsError,
   } = useRolePermissions(roleId);
-  const { updatePermissions, isUpdating } = useUpdateRolePermissions(roleId);
+
+  // Mutations
+  const updateRole = useUpdateRole();
+  const updateRolePermissions = useUpdateRolePermissions();
+
+  // Derived state
+  const isLoading = roleLoading || modulesLoading || permissionsLoading;
+  const modules = modulesData?.modules || [];
+  const permissions = modulesData?.permissions || [];
 
   const handleRoleSubmit = async (values: RoleFormValues) => {
-    try {
-      setFormSubmitting(true);
-      await rbacRequest(`/api/rbac/roles/${roleId}`, {
-        method: "PATCH",
-        body: JSON.stringify(values),
-      });
-      await refetchRole();
-    } finally {
-      setFormSubmitting(false);
-    }
+    updateRole.mutate({
+      roleId,
+      data: {
+        name: values.name,
+        description: values.description ?? undefined,
+        isActive: values.isActive,
+      },
+    });
   };
 
   const handleTogglePermission = async (
@@ -59,20 +67,11 @@ export default function AccessControlDetailPage() {
     permissionId: string,
     allowed: boolean
   ) => {
-    try {
-      setPermissionError(null);
-      await updatePermissions([{ moduleId, permissionId, allowed }]);
-      await refetchRolePermissions();
-    } catch (error) {
-      setPermissionError(
-        error instanceof Error
-          ? error.message
-          : "Failed to update role permissions"
-      );
-    }
+    updateRolePermissions.mutate({
+      roleId,
+      updates: [{ moduleId, permissionId, allowed }],
+    });
   };
-
-  const isLoading = roleLoading || modulesLoading || rolePermissionsLoading;
 
   return (
     <div className="space-y-6">
@@ -88,59 +87,60 @@ export default function AccessControlDetailPage() {
         </Button>
       </div>
 
-      {roleError || modulesError || rolePermissionsError ? (
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-          {roleError || modulesError || rolePermissionsError}
-        </div>
-      ) : null}
+      <ErrorAlert
+        error={
+          roleError?.message ||
+          modulesError?.message ||
+          permissionsError?.message ||
+          null
+        }
+      />
 
       {isLoading ? (
-        <div className="space-y-4 flex items-center justify-center">
-          <Loader2 className="size-6 animate-spin text-primary" />
+        <div className="space-y-6">
+          <RoleFormCard title="Role Information">
+            <div className="space-y-4">
+              <div className="h-10 bg-muted animate-pulse rounded" />
+              <div className="h-10 bg-muted animate-pulse rounded" />
+              <div className="h-20 bg-muted animate-pulse rounded" />
+            </div>
+          </RoleFormCard>
+          <PermissionMatrixLoading />
         </div>
       ) : role ? (
         <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Role Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <RoleForm
-                defaultValues={{
-                  name: role.name,
-                  description: role.description ?? "",
-                  isActive: role.isActive,
-                }}
-                submitLabel="Save Changes"
-                onSubmit={handleRoleSubmit}
-                onCancel={() => router.back()}
-                isSubmitting={formSubmitting}
-              />
-            </CardContent>
-          </Card>
+          <RoleFormCard title="Role Information">
+            <RoleForm
+              defaultValues={{
+                name: role.name,
+                description: role.description ?? "",
+                isActive: role.isActive,
+              }}
+              submitLabel="Save Changes"
+              onSubmit={handleRoleSubmit}
+              onCancel={() => router.back()}
+              isSubmitting={updateRole.isPending}
+            />
+          </RoleFormCard>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Permission Matrix</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <RoleFormCard title="Permission Matrix">
+            <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 Toggle module permissions using the switches below.
               </p>
-              {permissionError ? (
-                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-                  {permissionError}
-                </div>
-              ) : null}
-              <PermissionMatrix
-                modules={modules}
-                permissions={permissions}
-                rolePermissions={rolePermissions}
-                onToggle={handleTogglePermission}
-                isUpdating={isUpdating}
-              />
-            </CardContent>
-          </Card>
+              {modules.length === 0 || permissions.length === 0 ? (
+                <PermissionMatrixEmpty />
+              ) : (
+                <PermissionMatrix
+                  modules={modules}
+                  permissions={permissions}
+                  rolePermissions={rolePermissions}
+                  onToggle={handleTogglePermission}
+                  isUpdating={updateRolePermissions.isPending}
+                />
+              )}
+            </div>
+          </RoleFormCard>
         </>
       ) : (
         <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">

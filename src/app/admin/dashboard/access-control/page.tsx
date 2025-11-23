@@ -1,19 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RoleTable } from "@/components/rbac/role-table";
-import { useRoles } from "@/hooks/rbac/useRoles";
-import { rbacRequest } from "@/hooks/rbac/useRbacRequest";
+import { AccessControlHeader } from "./_components/access-control-header";
+import { RoleTable } from "./_components/role-table";
+import { RoleTableLoading } from "./_components/role-table-loading";
+import { RoleEmptyState } from "./_components/role-empty-state";
+import { ErrorAlert } from "./_components/error-alert";
+import { useRoles, useDeleteRole } from "@/hooks/use-rbac";
 
 export default function AccessControlPage() {
-  const { roles, isLoading, error, refetch } = useRoles();
-  const [pageError, setPageError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const router = useRouter();
+  const { data: roles = [], isLoading, error } = useRoles();
+  const deleteRole = useDeleteRole();
 
   const handleEdit = (roleId: string) => {
     router.push(`/admin/dashboard/access-control/${roleId}`);
@@ -26,26 +27,13 @@ export default function AccessControlPage() {
 
     if (!confirmation) return;
 
-    try {
-      setPageError(null);
-      setDeletingId(roleId);
-      await rbacRequest(`/api/rbac/roles/${roleId}`, { method: "DELETE" });
-      await refetch();
-    } catch (err) {
-      setPageError(
-        err instanceof Error ? err.message : "Failed to delete role"
-      );
-    } finally {
-      setDeletingId(null);
-    }
+    deleteRole.mutate(roleId);
   };
 
   return (
     <div className="space-y-6">
+      <AccessControlHeader roleCount={roles.length} />
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Access Control
-        </h1>
         <p className="text-muted-foreground">
           Manage internal roles and their permission matrix per module.
         </p>
@@ -66,24 +54,17 @@ export default function AccessControlPage() {
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          {pageError ? (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-              {pageError}
-            </div>
-          ) : null}
-          {error ? (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
-            </div>
-          ) : null}
+          <ErrorAlert error={error?.message ?? null} />
           {isLoading ? (
-            <div className="h-32 animate-pulse rounded-lg border border-dashed" />
+            <RoleTableLoading />
+          ) : roles.length === 0 ? (
+            <RoleEmptyState />
           ) : (
             <RoleTable
               roles={roles}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              isDeletingId={deletingId}
+              isDeletingId={deleteRole.isPending ? deleteRole.variables : null}
             />
           )}
         </CardContent>

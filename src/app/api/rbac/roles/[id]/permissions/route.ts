@@ -1,84 +1,196 @@
 import { NextRequest, NextResponse } from "next/server";
-import { rbacService } from "@/lib/services/role-access-control.service";
-import { updateRolePermissionsSchema } from "@/lib/validations/rbac.validation";
-import type { ApiResponse } from "@/types/rbac";
+import { verifyAuth } from "@/lib/auth-utils";
+import { Role } from "@/types/prisma";
+import {
+  getRolePermissions,
+  updateRolePermissions,
+  type RolePermissionUpdate,
+} from "@/lib/services/rbac.service";
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
+// Admin roles that can access RBAC endpoints
+const ALLOWED_ADMIN_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN"];
 
-export async function GET(_: NextRequest, { params }: RouteParams) {
+/**
+ * GET /api/rbac/roles/[id]/permissions
+ * Get all permissions for a specific role
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const permissions = await rbacService.getPermissionsByRole(params.id);
+    // Verify authentication
+    const tokenResult = await verifyAuth(request);
+    if (!tokenResult.isValid) {
+      return NextResponse.json(
+        { success: false, message: tokenResult.error },
+        { status: 401 }
+      );
+    }
 
-    return NextResponse.json<ApiResponse<typeof permissions>>({
-      success: true,
-      data: permissions,
-    });
-  } catch (error) {
-    console.error(
-      `GET /api/rbac/roles/${params.id}/permissions error:`,
-      error
+    const { user } = tokenResult;
+
+    // Check if user has admin role
+    if (!user || !ALLOWED_ADMIN_ROLES.includes(user.role as Role)) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden - Admin access required" },
+        { status: 403 }
+      );
+    }
+
+    // Extract role ID from params
+    const { id: roleId } = await params;
+
+    // Get role permissions from service
+    const permissions = await getRolePermissions(roleId);
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Role permissions retrieved successfully",
+        data: permissions,
+      },
+      { status: 200 }
     );
-    return NextResponse.json<ApiResponse<null>>(
+  } catch (error) {
+    console.error("[API] Get role permissions error:", error);
+
+    // Handle not found error
+    if (error instanceof Error && error.message.includes("not found")) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 404 }
+      );
+    }
+
+    // Handle other errors
+    return NextResponse.json(
       {
         success: false,
-        message: "Gagal mengambil permission role",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to retrieve role permissions",
       },
       { status: 500 }
     );
   }
 }
 
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+/**
+ * PATCH /api/rbac/roles/[id]/permissions
+ * Update role permissions in bulk
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const payload = await request.json();
-    const data = updateRolePermissionsSchema.parse(payload);
+    // Verify authentication
+    const tokenResult = await verifyAuth(request);
+    if (!tokenResult.isValid) {
+      return NextResponse.json(
+        { success: false, message: tokenResult.error },
+        { status: 401 }
+      );
+    }
 
-    await Promise.all(
-      data.permissions.map((permission) =>
-        rbacService.updateRolePermission(
-          params.id,
-          permission.moduleId,
-          permission.permissionId,
-          permission.allowed
-        )
-      )
-    );
+    const { user } = tokenResult;
 
-    const updated = await rbacService.getPermissionsByRole(params.id);
+    // Check if user has admin role
+    if (!user || !ALLOWED_ADMIN_ROLES.includes(user.role as Role)) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden - Admin access required" },
+        { status: 403 }
+      );
+    }
 
-    return NextResponse.json<ApiResponse<typeof updated>>({
-      success: true,
-      data: updated,
-      message: "Permission role berhasil diperbarui",
-    });
-  } catch (error) {
-    console.error(
-      `PUT /api/rbac/roles/${params.id}/permissions error:`,
-      error
-    );
+    // Extract role ID from params
+    const { id: roleId } = await params;
 
-    if (error instanceof Error && error.name === "ZodError") {
-      return NextResponse.json<ApiResponse<null>>(
+    // Parse and validate request body
+    let body: { updates: RolePermissionUpdate[] };
+    try {
+      body = await request.json();
+    } catch (error) {
+      return NextResponse.json(
         {
           success: false,
-          message: error.message,
-          errors: error,
+          message: "Invalid request body format",
         },
         { status: 400 }
       );
     }
 
-    return NextResponse.json<ApiResponse<null>>(
+    // Validate updates array
+    if (!Array.isArray(body.updates)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Validation error: updates must be an array",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate each update entry
+    for (const update of body.updates) {
+      if (
+        !update.moduleId ||
+        typeof update.moduleId !== "string" ||
+        !update.permissionId ||
+        typeof update.permissionId !== "string" ||
+        typeof update.allowed !== "boolean"
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Validation error: each update must have moduleId (string), permissionId (string), and allowed (boolean)",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Update role permissions using service
+    await updateRolePermissions(roleId, body.updates);
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Role permissions updated successfully",
+        data: null,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("[API] Update role permissions error:", error);
+
+    // Handle not found error
+    if (error instanceof Error && error.message.includes("not found")) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 404 }
+      );
+    }
+
+    // Handle other errors
+    return NextResponse.json(
       {
         success: false,
-        message: "Gagal memperbarui permission role",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to update role permissions",
       },
       { status: 500 }
     );
   }
 }
-

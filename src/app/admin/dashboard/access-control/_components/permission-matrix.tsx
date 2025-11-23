@@ -1,13 +1,24 @@
 "use client";
 
 import type { Module, Permission } from "@prisma/client";
-import type { RolePermissionEntry } from "@/hooks/rbac/useRolePermissions";
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PermissionRow } from "./permission-row";
 
 const PERMISSION_ORDER = ["create", "read", "update", "delete"];
 
-interface PermissionMatrixProps {
+export interface RolePermissionEntry {
+  moduleId: string;
+  permissionId: string;
+  allowed: boolean;
+}
+
+export interface PermissionMatrixProps {
   modules: Module[];
   permissions: Permission[];
   rolePermissions: RolePermissionEntry[];
@@ -22,14 +33,7 @@ export function PermissionMatrix({
   onToggle,
   isUpdating,
 }: PermissionMatrixProps) {
-  if (!modules.length || !permissions.length) {
-    return (
-      <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-        Modul atau permission belum tersedia. Pastikan seed sudah dijalankan.
-      </div>
-    );
-  }
-
+  // Sort permissions in CRUD order
   const sortedPermissions = [...permissions].sort((a, b) => {
     const indexA =
       PERMISSION_ORDER.indexOf(a.action) !== -1
@@ -42,6 +46,7 @@ export function PermissionMatrix({
     return indexA - indexB;
   });
 
+  // Sort modules by orderIndex
   const sortedModules = [...modules].sort(
     (a, b) => a.orderIndex - b.orderIndex
   );
@@ -86,4 +91,3 @@ export function PermissionMatrix({
     </div>
   );
 }
-

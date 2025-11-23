@@ -2,13 +2,13 @@
 
 import type { Module, Permission } from "@prisma/client";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { Switch } from "@/components/ui/switch";
+import { PermissionCell } from "./permission-cell";
 
-interface PermissionRowProps {
+export interface PermissionRowProps {
   module: Module;
   permissions: Permission[];
   allowedMap: Record<string, boolean>;
-  onToggle: (permissionId: string, nextValue: boolean) => void;
+  onToggle: (permissionId: string, allowed: boolean) => void;
   disabled?: boolean;
 }
 
@@ -34,17 +34,16 @@ export function PermissionRow({
       {permissions.map((permission) => {
         const isAllowed = allowedMap[permission.id] ?? false;
         return (
-          <TableCell key={permission.id} className="text-center">
-            <Switch
-              checked={isAllowed}
-              onCheckedChange={(checked) => onToggle(permission.id, checked)}
-              disabled={disabled}
-              aria-label={`${permission.action} ${module.label}`}
-            />
-          </TableCell>
+          <PermissionCell
+            key={permission.id}
+            permission={permission}
+            module={module}
+            isAllowed={isAllowed}
+            onToggle={(allowed) => onToggle(permission.id, allowed)}
+            disabled={disabled}
+          />
         );
       })}
     </TableRow>
   );
 }
-

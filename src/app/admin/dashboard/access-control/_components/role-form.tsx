@@ -19,7 +19,7 @@ const roleFormSchema = createRoleSchema.pick({
 
 export type RoleFormValues = z.infer<typeof roleFormSchema>;
 
-interface RoleFormProps {
+export interface RoleFormProps {
   defaultValues?: Partial<RoleFormValues>;
   submitLabel?: string;
   onSubmit: (values: RoleFormValues) => Promise<void> | void;
@@ -35,15 +35,16 @@ export function RoleForm({
   isSubmitting,
 }: RoleFormProps) {
   const [formError, setFormError] = useState<string | null>(null);
-  const { register, handleSubmit, control, formState } = useForm<RoleFormValues>({
-    resolver: zodResolver(roleFormSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      isActive: true,
-      ...defaultValues,
-    },
-  });
+  const { register, handleSubmit, control, formState } =
+    useForm<RoleFormValues>({
+      resolver: zodResolver(roleFormSchema),
+      defaultValues: {
+        name: "",
+        description: "",
+        isActive: true,
+        ...defaultValues,
+      },
+    });
 
   const { errors } = formState;
 
@@ -129,4 +130,3 @@ export function RoleForm({
     </form>
   );
 }
-
