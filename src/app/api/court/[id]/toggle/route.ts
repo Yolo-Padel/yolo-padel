@@ -24,7 +24,7 @@ export async function PATCH(
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
 
     // Get current court status to toggle it

@@ -1,89 +1,69 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState } from "react";
 import { useAdminOrders, type Order } from "@/hooks/use-order";
+import { useOrderFilters } from "@/hooks/use-order-filters";
 import { OrderHeader } from "./_components/order-header";
 import { OrderFilters } from "./_components/order-filters";
 import { OrderTable } from "./_components/order-table";
 import { OrderDetailsModal } from "./_components/order-details-modal";
 import { OrderTableLoading } from "./_components/order-table-loading";
+import { OrderTableSkeleton } from "./_components/order-table-skeleton";
 import { OrderEmptyState } from "./_components/order-empty-state";
 import { PaymentStatus } from "@/types/prisma";
-import {
-  calculatePaginationInfo,
-  getPaginatedData,
-} from "@/lib/pagination-utils";
 
 const PAGE_SIZE = 10;
 
 export default function OrderPage() {
-  // State management
-  const [page, setPage] = useState(1);
+  // Use the new useOrderFilters hook for all filter logic
+  const {
+    filters,
+    setSearch,
+    setVenue,
+    setPaymentStatus,
+    setPage,
+    resetFilters,
+    hasActiveFilters,
+  } = useOrderFilters();
+
+  // Modal state
   const [viewOpen, setViewOpen] = useState(false);
   const [selected, setSelected] = useState<Order | null>(null);
-  const [filters, setFilters] = useState({
-    search: "",
-    paymentStatus: "",
-    venue: "",
-  });
 
-  // Data fetching
-  const { data: orders, isLoading, error } = useAdminOrders();
+  // Build options object from filter state and pass to hook
+  const filterOptions = {
+    search: filters.search || undefined,
+    venueId: filters.venue || undefined,
+    paymentStatus: (filters.paymentStatus as PaymentStatus) || undefined,
+    page: filters.page,
+    limit: PAGE_SIZE,
+  };
 
-  // Reset page to 1 when filters change
-  useEffect(() => {
-    setPage(1);
-  }, [filters]);
+  // Pass filter options to useAdminOrders hook to trigger API call
+  const { data, isLoading, isFetching, error } = useAdminOrders(filterOptions);
 
-  const allOrders = orders ?? [];
+  // Use pagination metadata from API response
+  const orders = data?.data ?? [];
+  const apiPagination = data?.pagination;
 
-  // Derived state - Filter orders based on local filters
-  const filtered = useMemo(() => {
-    let result = allOrders;
+  // Transform API pagination to match OrderTable's PaginationInfo interface
+  const paginationInfo = apiPagination
+    ? {
+        pageSafe: apiPagination.page,
+        totalPages: apiPagination.totalPages,
+        hasPreviousPage: apiPagination.page > 1,
+        hasNextPage: apiPagination.page < apiPagination.totalPages,
+      }
+    : {
+        pageSafe: 1,
+        totalPages: 1,
+        hasPreviousPage: false,
+        hasNextPage: false,
+      };
 
-    // Filter by search query (order code or customer name)
-    if (filters.search) {
-      const query = filters.search.toLowerCase().trim();
-      result = result.filter((order) => {
-        const customerName =
-          order.user?.profile?.fullName?.toLowerCase() ||
-          order.user?.email?.toLowerCase() ||
-          "";
-        return (
-          order.orderCode.toLowerCase().includes(query) ||
-          customerName.includes(query)
-        );
-      });
-    }
-
-    // Filter by payment status
-    if (filters.paymentStatus) {
-      result = result.filter(
-        (order) => order.payment?.status === filters.paymentStatus
-      );
-    }
-
-    // Filter by venue
-    if (filters.venue) {
-      result = result.filter((order) =>
-        order.bookings.some((booking) => booking.venueId === filters.venue)
-      );
-    }
-
-    return result;
-  }, [allOrders, filters]);
-
-  // Derived state - Calculate pagination info
-  const paginationInfo = useMemo(
-    () => calculatePaginationInfo(page, filtered.length, PAGE_SIZE),
-    [page, filtered.length]
-  );
-
-  // Derived state - Get paginated data
-  const paginated = useMemo(
-    () => getPaginatedData(filtered, page, PAGE_SIZE),
-    [filtered, page]
-  );
+  // Distinguish between initial load and refetch
+  const isInitialLoad = isLoading && !data;
+  const isRefetching = isFetching && !isInitialLoad;
 
   // Event handlers
   const handlePageChange = (newPage: number) => {
@@ -99,16 +79,24 @@ export default function OrderPage() {
     setViewOpen(false);
   };
 
-  // Conditional rendering - Loading state
-  if (isLoading) {
+  const handleVenueChange = (value: string) => {
+    setVenue(value === "all" ? "" : value);
+  };
+
+  const handlePaymentStatusChange = (value: string) => {
+    setPaymentStatus(value === "all" ? "" : value);
+  };
+
+  // Display full-page loading skeleton on initial load
+  if (isInitialLoad) {
     return <OrderTableLoading />;
   }
 
-  // Conditional rendering - Error state
+  // Display error message on failure
   if (error) {
     return (
       <div className="flex flex-col gap-4">
-        <OrderHeader orderCount={allOrders.length} />
+        <OrderHeader orderCount={0} />
         <div className="rounded-2xl border border-[#E9EAEB] p-8 text-center">
           <p className="text-red-600 font-medium mb-2">Failed to load orders</p>
           <p className="text-sm text-muted-foreground">
@@ -122,66 +110,53 @@ export default function OrderPage() {
   }
 
   // Conditional rendering - Empty state
-  const isFiltered =
-    Boolean(filters.search) ||
-    Boolean(filters.paymentStatus) ||
-    Boolean(filters.venue);
-  if (filtered.length === 0) {
+  if (orders.length === 0) {
     return (
       <div className="flex flex-col gap-4">
-        <OrderHeader orderCount={allOrders.length} />
+        <OrderHeader orderCount={apiPagination?.total ?? 0} />
         <OrderFilters
           searchValue={filters.search}
-          onSearchChange={(value: string) =>
-            setFilters({ ...filters, search: value })
-          }
+          onSearchSubmit={setSearch}
           venueFilter={filters.venue}
-          onVenueFilterChange={(value: string) =>
-            setFilters({ ...filters, venue: value === "all" ? "" : value })
-          }
+          onVenueFilterChange={handleVenueChange}
           paymentStatusFilter={filters.paymentStatus}
-          onPaymentStatusFilterChange={(value: string) =>
-            setFilters({
-              ...filters,
-              paymentStatus: value === "all" ? "" : value,
-            })
-          }
+          onPaymentStatusFilterChange={handlePaymentStatusChange}
+          hasActiveFilters={hasActiveFilters}
+          onReset={resetFilters}
         />
         <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
-          <OrderEmptyState isFiltered={isFiltered} />
+          <OrderEmptyState isFiltered={hasActiveFilters} />
         </div>
       </div>
     );
   }
 
-  // Main UI renderings
+  // Main UI rendering
   return (
     <div className="flex flex-col gap-4">
-      <OrderHeader orderCount={filtered.length} />
+      <OrderHeader orderCount={apiPagination?.total ?? orders.length} />
       <OrderFilters
         searchValue={filters.search}
-        onSearchChange={(value: string) =>
-          setFilters({ ...filters, search: value })
-        }
+        onSearchSubmit={setSearch}
         venueFilter={filters.venue}
-        onVenueFilterChange={(value: string) =>
-          setFilters({ ...filters, venue: value === "all" ? "" : value })
-        }
+        onVenueFilterChange={handleVenueChange}
         paymentStatusFilter={filters.paymentStatus}
-        onPaymentStatusFilterChange={(value: string) =>
-          setFilters({
-            ...filters,
-            paymentStatus: value === "all" ? "" : value,
-          })
-        }
+        onPaymentStatusFilterChange={handlePaymentStatusChange}
+        hasActiveFilters={hasActiveFilters}
+        onReset={resetFilters}
       />
 
-      <OrderTable
-        orders={paginated}
-        paginationInfo={paginationInfo}
-        onPageChange={handlePageChange}
-        onViewOrder={handleViewOrder}
-      />
+      {isRefetching ? (
+        <OrderTableSkeleton />
+      ) : (
+        <OrderTable
+          orders={orders}
+          paginationInfo={paginationInfo}
+          onPageChange={handlePageChange}
+          onViewOrder={handleViewOrder}
+        />
+      )}
+
       <OrderDetailsModal
         open={viewOpen}
         onOpenChange={handleModalClose}

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
     const result = await usersService.getUsers(serviceContext);
 
@@ -62,7 +62,7 @@ export async function DELETE(request: NextRequest) {
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
     const result = await usersService.deleteUser(validatedData, serviceContext);
 
@@ -110,7 +110,7 @@ export async function PATCH(request: NextRequest) {
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
     const result = await usersService.updateUser(
       validatedData as any,

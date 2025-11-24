@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const context = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
 
     const result = await bookingService.getAdminDashboardSnapshot(context);

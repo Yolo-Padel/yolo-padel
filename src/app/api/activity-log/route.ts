@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
 
     const accessError = requirePermission(serviceContext, UserType.STAFF);

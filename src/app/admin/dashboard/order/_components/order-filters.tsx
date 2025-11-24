@@ -1,6 +1,7 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
+import { useState } from "react";
 import {
   InputGroup,
   InputGroupAddon,
@@ -13,29 +14,39 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { PaymentStatus, Venue, UserType } from "@prisma/client";
 import { useVenue } from "@/hooks/use-venue";
 import { useAuth } from "@/hooks/use-auth";
 
 interface OrderFiltersProps {
   searchValue: string;
-  onSearchChange: (value: string) => void;
+  onSearchSubmit: (value: string) => void;
   venueFilter: string;
   onVenueFilterChange: (value: string) => void;
   paymentStatusFilter: string;
   onPaymentStatusFilterChange: (value: string) => void;
+  hasActiveFilters: boolean;
+  onReset: () => void;
 }
 
 export function OrderFilters({
   searchValue,
-  onSearchChange,
+  onSearchSubmit,
   venueFilter,
   onVenueFilterChange,
   paymentStatusFilter,
   onPaymentStatusFilterChange,
+  hasActiveFilters,
+  onReset,
 }: OrderFiltersProps) {
   const { data: venuesData } = useVenue();
   const { user } = useAuth();
+  const [localSearchValue, setLocalSearchValue] = useState(searchValue);
+
+  // Debug: Check user data
+  console.log("[ORDER FILTERS] User data:", user);
+  console.log("[ORDER FILTERS] assignedVenueIds:", user?.assignedVenueIds);
 
   // API returns { success, data: Venue[], message }
   // So we access venuesData.data directly, not venuesData.data.venues
@@ -50,15 +61,21 @@ export function OrderFilters({
       venues = allVenues;
     }
     // Staff can only see assigned venues
-    else if (
-      user.userType === UserType.STAFF &&
-      user.assignedVenueIds.length > 0
-    ) {
-      venues = allVenues.filter((venue) =>
-        user.assignedVenueIds.includes(venue.id)
-      );
+    else if (user.userType === UserType.STAFF) {
+      // Handle old tokens that don't have assignedVenueIds
+      if (user.assignedVenueIds && user.assignedVenueIds.length > 0) {
+        venues = allVenues.filter((venue) =>
+          user.assignedVenueIds.includes(venue.id)
+        );
+      }
     }
   }
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      onSearchSubmit(localSearchValue);
+    }
+  };
 
   return (
     <div className="flex items-center gap-4">
@@ -66,8 +83,9 @@ export function OrderFilters({
         <InputGroupInput
           placeholder="Search by order code or customer name..."
           className="w-full"
-          value={searchValue}
-          onChange={(event) => onSearchChange(event.target.value)}
+          value={localSearchValue}
+          onChange={(event) => setLocalSearchValue(event.target.value)}
+          onKeyDown={handleKeyDown}
         />
         <InputGroupAddon>
           <Search />
@@ -104,6 +122,18 @@ export function OrderFilters({
           ))}
         </SelectContent>
       </Select>
+
+      {hasActiveFilters && (
+        <Button
+          variant="outline"
+          size="default"
+          onClick={onReset}
+          aria-label="Reset filters"
+        >
+          <X />
+          Reset
+        </Button>
+      )}
     </div>
   );
 }

@@ -62,7 +62,7 @@ export const guestUserService = {
         userId: result.user.id,
         email: result.user.email,
         userType: result.user.userType,
-        assignedVenueId: result.user.assignedVenueIds,
+        assignedVenueIds: result.user.assignedVenueIds,
       })
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()

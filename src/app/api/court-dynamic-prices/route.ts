@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
 
     const result = await courtDynamicPriceService.listByCourt(
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
 
     const result = await courtDynamicPriceService.create(
