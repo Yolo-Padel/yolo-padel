@@ -61,10 +61,10 @@ const MODULES = [
 ] as const;
 
 const PERMISSIONS = [
-  { action: "create" },
-  { action: "read" },
-  { action: "update" },
-  { action: "delete" },
+  { action: "read", orderIndex: 1 },
+  { action: "create", orderIndex: 2 },
+  { action: "update", orderIndex: 3 },
+  { action: "delete", orderIndex: 4 },
 ] as const;
 
 const ROLES = [

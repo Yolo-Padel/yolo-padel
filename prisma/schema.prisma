@@ -376,6 +376,7 @@ model Module {
 model Permission {
   id      String @id @default(cuid())
   action  String @unique
+  orderIndex Int?
 
   rolePermissions RolePermission[]
 

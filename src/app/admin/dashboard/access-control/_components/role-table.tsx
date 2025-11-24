@@ -38,7 +38,7 @@ export function RoleTable({
         </TableHeader>
         <TableBody>
           {roles.map((role) => {
-            const permissionCount = role._count.rolePermissions;
+            const permissionCount = role.allowedPermissionCount;
 
             return (
               <TableRow key={role.id}>

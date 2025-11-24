@@ -34,17 +34,17 @@ export function PermissionMatrix({
   isUpdating,
 }: PermissionMatrixProps) {
   // Sort permissions in CRUD order
-  const sortedPermissions = [...permissions].sort((a, b) => {
-    const indexA =
-      PERMISSION_ORDER.indexOf(a.action) !== -1
-        ? PERMISSION_ORDER.indexOf(a.action)
-        : PERMISSION_ORDER.length;
-    const indexB =
-      PERMISSION_ORDER.indexOf(b.action) !== -1
-        ? PERMISSION_ORDER.indexOf(b.action)
-        : PERMISSION_ORDER.length;
-    return indexA - indexB;
-  });
+  // const sortedPermissions = [...permissions].sort((a, b) => {
+  //   const indexA =
+  //     PERMISSION_ORDER.indexOf(a.action) !== -1
+  //       ? PERMISSION_ORDER.indexOf(a.action)
+  //       : PERMISSION_ORDER.length;
+  //   const indexB =
+  //     PERMISSION_ORDER.indexOf(b.action) !== -1
+  //       ? PERMISSION_ORDER.indexOf(b.action)
+  //       : PERMISSION_ORDER.length;
+  //   return indexA - indexB;
+  // });
 
   // Sort modules by orderIndex
   const sortedModules = [...modules].sort(
@@ -57,7 +57,7 @@ export function PermissionMatrix({
         <TableHeader>
           <TableRow>
             <TableHead>Module</TableHead>
-            {sortedPermissions.map((permission) => (
+            {permissions.map((permission) => (
               <TableHead key={permission.id} className="text-center capitalize">
                 {permission.action}
               </TableHead>
@@ -77,7 +77,7 @@ export function PermissionMatrix({
               <PermissionRow
                 key={module.id}
                 module={module}
-                permissions={sortedPermissions}
+                permissions={permissions}
                 allowedMap={allowedMap}
                 onToggle={(permissionId, allowed) =>
                   onToggle(module.id, permissionId, allowed)
