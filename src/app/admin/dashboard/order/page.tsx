@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useMemo, useEffect } from "react";
 import { useAdminOrders, type Order } from "@/hooks/use-order";
 import { OrderHeader } from "./_components/order-header";
 import { OrderFilters } from "./_components/order-filters";
@@ -9,7 +8,7 @@ import { OrderTable } from "./_components/order-table";
 import { OrderDetailsModal } from "./_components/order-details-modal";
 import { OrderTableLoading } from "./_components/order-table-loading";
 import { OrderEmptyState } from "./_components/order-empty-state";
-import { filterOrders } from "@/lib/order-utils";
+import { PaymentStatus } from "@/types/prisma";
 import {
   calculatePaginationInfo,
   getPaginatedData,
@@ -22,10 +21,7 @@ export default function OrderPage() {
   const [page, setPage] = useState(1);
   const [viewOpen, setViewOpen] = useState(false);
   const [selected, setSelected] = useState<Order | null>(null);
-  const searchParams = useSearchParams();
   const [filters, setFilters] = useState({
-    page: 1,
-    pageSize: 10,
     search: "",
     paymentStatus: "",
     venue: "",
@@ -34,18 +30,48 @@ export default function OrderPage() {
   // Data fetching
   const { data: orders, isLoading, error } = useAdminOrders();
 
-  // Reset page to 1 when search parameters change
+  // Reset page to 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [searchParams]);
+  }, [filters]);
 
   const allOrders = orders ?? [];
 
-  // Derived state - Filter orders based on search query
-  const filtered = useMemo(
-    () => filterOrders(allOrders, searchParams),
-    [allOrders, searchParams]
-  );
+  // Derived state - Filter orders based on local filters
+  const filtered = useMemo(() => {
+    let result = allOrders;
+
+    // Filter by search query (order code or customer name)
+    if (filters.search) {
+      const query = filters.search.toLowerCase().trim();
+      result = result.filter((order) => {
+        const customerName =
+          order.user?.profile?.fullName?.toLowerCase() ||
+          order.user?.email?.toLowerCase() ||
+          "";
+        return (
+          order.orderCode.toLowerCase().includes(query) ||
+          customerName.includes(query)
+        );
+      });
+    }
+
+    // Filter by payment status
+    if (filters.paymentStatus) {
+      result = result.filter(
+        (order) => order.payment?.status === filters.paymentStatus
+      );
+    }
+
+    // Filter by venue
+    if (filters.venue) {
+      result = result.filter((order) =>
+        order.bookings.some((booking) => booking.venueId === filters.venue)
+      );
+    }
+
+    return result;
+  }, [allOrders, filters]);
 
   // Derived state - Calculate pagination info
   const paginationInfo = useMemo(
@@ -96,11 +122,31 @@ export default function OrderPage() {
   }
 
   // Conditional rendering - Empty state
-  const isFiltered = Boolean(searchParams.get("search"));
+  const isFiltered =
+    Boolean(filters.search) ||
+    Boolean(filters.paymentStatus) ||
+    Boolean(filters.venue);
   if (filtered.length === 0) {
     return (
       <div className="flex flex-col gap-4">
         <OrderHeader orderCount={allOrders.length} />
+        <OrderFilters
+          searchValue={filters.search}
+          onSearchChange={(value: string) =>
+            setFilters({ ...filters, search: value })
+          }
+          venueFilter={filters.venue}
+          onVenueFilterChange={(value: string) =>
+            setFilters({ ...filters, venue: value === "all" ? "" : value })
+          }
+          paymentStatusFilter={filters.paymentStatus}
+          onPaymentStatusFilterChange={(value: string) =>
+            setFilters({
+              ...filters,
+              paymentStatus: value === "all" ? "" : value,
+            })
+          }
+        />
         <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
           <OrderEmptyState isFiltered={isFiltered} />
         </div>
@@ -112,7 +158,7 @@ export default function OrderPage() {
   return (
     <div className="flex flex-col gap-4">
       <OrderHeader orderCount={filtered.length} />
-      {/* <OrderFilters
+      <OrderFilters
         searchValue={filters.search}
         onSearchChange={(value: string) =>
           setFilters({ ...filters, search: value })
@@ -128,7 +174,7 @@ export default function OrderPage() {
             paymentStatus: value === "all" ? "" : value,
           })
         }
-      /> */}
+      />
 
       <OrderTable
         orders={paginated}

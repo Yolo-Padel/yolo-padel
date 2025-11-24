@@ -11,6 +11,7 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChevronLeft, ChevronRight, MoreHorizontal, Eye } from "lucide-react";
 import { generatePageNumbers } from "@/lib/pagination-utils";
 import { PaymentStatus } from "@/types/prisma";
@@ -65,7 +66,7 @@ export function OrderTable({
           {orders.map((order) => {
             const bookingCount = order.bookings.length;
             const customerName =
-              order.user?.profile?.fullName || order.user?.email || "N/A";
+              order.user?.profile?.fullName || order.user?.email || "-";
             const paymentStatus = order.payment?.status || PaymentStatus.UNPAID;
 
             return (
@@ -75,7 +76,15 @@ export function OrderTable({
                     <span className="font-medium">{order.orderCode}</span>
                   </div>
                 </TableCell>
-                <TableCell>{customerName}</TableCell>
+                <TableCell className="flex items-center gap-2">
+                  <Avatar>
+                    <AvatarImage src={order.user?.profile?.avatar || ""} />
+                    <AvatarFallback className="uppercase">
+                      {customerName.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  {customerName}
+                </TableCell>
                 <TableCell>
                   {bookingCount} {bookingCount === 1 ? "booking" : "bookings"}
                 </TableCell>

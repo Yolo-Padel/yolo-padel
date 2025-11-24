@@ -109,6 +109,7 @@ export const authService = {
         userId: result.user.id,
         email: result.user.email,
         userType: result.user.userType,
+        assignedVenueIds: result.user.assignedVenueIds,
       })
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
@@ -176,6 +177,7 @@ export const authService = {
         userId: user.id,
         email: user.email,
         userType: user.userType,
+        assignedVenueIds: user.assignedVenueIds,
       })
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
