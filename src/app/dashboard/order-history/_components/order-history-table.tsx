@@ -6,10 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { LandPlot, Dot } from "lucide-react";
 import { useState } from "react";
 import { Card, CardFooter } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrderHistoryModal } from "./order-history-modal";
 import { OrderHistorySkeleton } from "./order-history-skeleton";
 import { useOrders, type Order } from "@/hooks/use-order";
-import { PaymentStatus } from "@/types/prisma";
+import { PaymentStatus, OrderStatus } from "@/types/prisma";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import Image from "next/image";
@@ -22,6 +23,7 @@ export default function OrderHistoryTable() {
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderModal, setOrderModal] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
   const [modeModal, setModeModal] = useState<
     | "order-details"
     | "payment-instruction"
@@ -38,6 +40,7 @@ export default function OrderHistoryTable() {
   } = useOrders({
     page,
     limit: PAGE_SIZE,
+    status: statusFilter === "ALL" ? undefined : statusFilter,
   });
 
   // Map PaymentStatus enum to display styles
@@ -88,11 +91,29 @@ export default function OrderHistoryTable() {
     return format(date, "d MMM yyyy", { locale: idLocale });
   };
 
+  // Handle status filter change - reset to page 1
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value as OrderStatus | "ALL");
+    setPage(1);
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center">
         <h3 className="text-xl font-semibold">My Order</h3>
       </div>
+
+      {/* Status Filter Tabs */}
+      <Tabs value={statusFilter} onValueChange={handleStatusChange}>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="ALL">All</TabsTrigger>
+          <TabsTrigger value="PENDING">Pending</TabsTrigger>
+          <TabsTrigger value="PAID">Paid</TabsTrigger>
+          <TabsTrigger value="COMPLETED">Completed</TabsTrigger>
+          <TabsTrigger value="FAILED">Failed</TabsTrigger>
+          <TabsTrigger value="EXPIRED">Expired</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Loading State */}
       {isLoading && <OrderHistorySkeleton count={4} />}

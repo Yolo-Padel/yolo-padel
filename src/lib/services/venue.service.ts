@@ -20,17 +20,26 @@ export const venueService = {
       const accessError = requirePermission(context, UserType.USER);
       if (accessError) return accessError;
 
-      const venues = await prisma.venue.findMany({
-        where: { isArchived: false },
-        orderBy: { createdAt: "desc" },
-      });
+      // Build where clause based on user type
+      const whereClause: any = { isArchived: false };
 
-      // Filter venues berdasarkan userType
-      const filteredVenues = venues.filter((venue) => {
-        if (context.userRole === UserType.STAFF) {
-          return venue.id === context.assignedVenueId;
-        }
-        return true; // USER can access all venues
+      if (context.userRole === UserType.USER) {
+        // USER: only active venues
+        whereClause.isActive = true;
+      } else if (context.userRole === UserType.STAFF) {
+        // STAFF: only assigned venues (active or inactive)
+        const assignedVenues = Array.isArray(context.assignedVenueId)
+          ? context.assignedVenueId
+          : context.assignedVenueId
+            ? [context.assignedVenueId]
+            : [];
+        whereClause.id = { in: assignedVenues };
+      }
+      // ADMIN: all venues (no additional filter)
+
+      const venues = await prisma.venue.findMany({
+        where: whereClause,
+        orderBy: { createdAt: "desc" },
       });
 
       // Enrich with counts: courts count and today's bookings count per venue
@@ -40,7 +49,7 @@ export const venueService = {
       endOfDay.setHours(23, 59, 59, 999);
 
       const enriched = await Promise.all(
-        filteredVenues.map(async (venue) => {
+        venues.map(async (venue) => {
           const [courtsCount, bookingsToday] = await Promise.all([
             prisma.court.count({
               where: { venueId: venue.id, isArchived: false },
@@ -125,18 +134,6 @@ export const venueService = {
           success: false,
           data: null,
           message: "Venue not found",
-        };
-      }
-
-      // Check venue access for STAFF role
-      if (
-        context.userRole === UserType.STAFF &&
-        venue.id !== context.assignedVenueId
-      ) {
-        return {
-          success: false,
-          data: null,
-          message: "You are not authorized to access this resource",
         };
       }
 

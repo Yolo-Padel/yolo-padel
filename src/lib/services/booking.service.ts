@@ -491,22 +491,30 @@ export const bookingService = {
       const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
-      const assignedVenueIds = Array.isArray(context.assignedVenueId)
-        ? context.assignedVenueId.filter(Boolean)
-        : context.assignedVenueId
-          ? [context.assignedVenueId]
-          : [];
+      // Build venue filter based on user type
+      let venueWhere: any = {};
+      let courtVenueWhere: any = {};
 
-      if (assignedVenueIds.length === 0) {
-        return {
-          success: false,
-          data: null,
-          message: "Assigned venue is required for admin dashboard",
-        };
+      if (context.userRole === UserType.STAFF) {
+        // STAFF: only assigned venues
+        const assignedVenueIds = Array.isArray(context.assignedVenueId)
+          ? context.assignedVenueId.filter(Boolean)
+          : context.assignedVenueId
+            ? [context.assignedVenueId]
+            : [];
+
+        if (assignedVenueIds.length === 0) {
+          return {
+            success: false,
+            data: null,
+            message: "Assigned venue is required for admin dashboard",
+          };
+        }
+
+        venueWhere = { venueId: { in: assignedVenueIds } };
+        courtVenueWhere = { court: { venueId: { in: assignedVenueIds } } };
       }
-
-      const venueWhere = { venueId: { in: assignedVenueIds } };
-      const courtVenueWhere = { court: { venueId: { in: assignedVenueIds } } };
+      // ADMIN: all venues (no filter)
 
       const todayRange = getUtcDayRange(new Date());
       const utilizationRange = getUtcRangeForPastDays(7);

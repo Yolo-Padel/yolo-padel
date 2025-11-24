@@ -8,7 +8,7 @@ import {
 } from "@/lib/services/rbac.service";
 
 // Admin roles that can access RBAC endpoints
-const ALLOWED_ADMIN_ROLES: UserType[] = [UserType.STAFF];
+const ALLOWED_ADMIN_ROLES: UserType[] = [UserType.ADMIN, UserType.STAFF];
 
 /**
  * GET /api/rbac/roles
