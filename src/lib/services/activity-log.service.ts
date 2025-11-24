@@ -1,8 +1,16 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission, ServiceContext } from "@/types/service-context";
+import { ServiceContext } from "@/types/service-context"; // Keep for record() method backward compatibility
+import { RequestContext } from "@/types/request-context";
+import { requireModulePermission } from "@/lib/rbac/permission-checker";
 import { ActionType } from "@/types/action";
 import { EntityType } from "@/types/entity";
-import { Role } from "@prisma/client";
+
+// Service metadata for RBAC
+export const activityLogServiceMetadata = {
+  moduleKey: "activity_log", // Harus match dengan key di tabel modules
+  serviceName: "activityLogService",
+  description: "Activity log management operations",
+} as const;
 
 type RecordActivityParams = {
   context: ServiceContext;
@@ -204,9 +212,13 @@ export const activityLogService = {
       console.error("recordActivity error:", error);
     }
   },
-  getActivity: async (context: ServiceContext) => {
+  getActivity: async (context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        activityLogServiceMetadata.moduleKey,
+        "read"
+      );
 
       if (accessError) return accessError;
       // Get all users
