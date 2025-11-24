@@ -16,6 +16,7 @@ import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { stringUtils } from "@/lib/format/string";
 import { PaymentStatus } from "@/types/prisma";
+import { CancelBookingDetail } from "./booking-cancel";
 
 // Extended booking type dengan payment info
 export type BookingDetail = {
@@ -216,9 +217,31 @@ export function BookingDetailModal({
                   Mark as Complete
                 </Button>
               )}
+            {onMarkAsComplete &&
+              booking.paymentStatus === PaymentStatus.UNPAID && (
+                <Button
+                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920] text-white"
+                  onClick={() => onOpenChange(true)}
+                >
+                  Mark as Complete
+                </Button>
+              )}
           </div>
         </div>
       </DialogContent>
+      <CancelBookingDetail
+        open={open}
+        onOpenChange={onOpenChange}
+        cancelBookingDetail={{
+          id: booking.id,
+          venue: booking.venueName,
+          courtName: booking.courtName,
+          bookingTime: formatDate(booking.bookingDate),
+          bookingDate: formatTimeRange(booking.timeSlots),
+          duration: `${booking.duration} hrs`,
+          
+        }}
+      />
     </Dialog>
   );
 }
