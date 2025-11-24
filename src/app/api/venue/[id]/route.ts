@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { venueService } from "@/lib/services/venue.service";
 import { venueUpdateSchema } from "@/lib/validations/venue.validation";
 import { verifyAuth } from "@/lib/auth-utils";
-import { createServiceContext } from "@/types/service-context";
+import { createRequestContext } from "@/types/request-context";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
@@ -19,8 +20,26 @@ export async function GET(
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
-    const result = await venueService.getById(id, serviceContext);
+
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
+    const result = await venueService.getById(id, requestContext);
 
     if (!result.success) {
       return NextResponse.json(
@@ -32,7 +51,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: result.data,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("GET /api/venue/[id] error:", error);
@@ -60,8 +79,26 @@ export async function PUT(
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
-    const result = await venueService.update(validatedData, serviceContext);
+
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
+    const result = await venueService.update(validatedData, requestContext);
 
     if (!result.success) {
       return NextResponse.json(
@@ -73,12 +110,12 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       data: result.data,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("PUT /api/venue/[id] error:", error);
-    
-    if (error instanceof Error && error.name === 'ZodError') {
+
+    if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
         { success: false, message: "Validation error", errors: error.message },
         { status: 400 }
@@ -107,8 +144,26 @@ export async function DELETE(
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
-    const result = await venueService.delete({ venueId: id }, serviceContext);
+
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
+    const result = await venueService.delete({ venueId: id }, requestContext);
 
     if (!result.success) {
       return NextResponse.json(
@@ -119,7 +174,7 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("DELETE /api/venue/[id] error:", error);
@@ -129,5 +184,3 @@ export async function DELETE(
     );
   }
 }
-
-

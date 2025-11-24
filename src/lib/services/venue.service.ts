@@ -4,7 +4,8 @@ import {
   VenueDeleteData,
   VenueUpdateData,
 } from "../validations/venue.validation";
-import { ServiceContext, requirePermission } from "@/types/service-context";
+import { RequestContext } from "@/types/request-context";
+import { requireModulePermission } from "@/lib/rbac/permission-checker";
 import { Role } from "@/types/prisma";
 import {
   activityLogService,
@@ -14,10 +15,21 @@ import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 import { vercelBlobService } from "@/lib/services/vercel-blob.service";
 
+// Service metadata for RBAC
+export const venueServiceMetadata = {
+  moduleKey: "venue", // Harus match dengan key di tabel modules
+  serviceName: "venueService",
+  description: "Venue management operations",
+} as const;
+
 export const venueService = {
-  getAll: async (context: ServiceContext) => {
+  getAll: async (context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.USER);
+      const accessError = await requireModulePermission(
+        context,
+        venueServiceMetadata.moduleKey,
+        "read"
+      );
       if (accessError) return accessError;
 
       const venues = await prisma.venue.findMany({
@@ -25,15 +37,15 @@ export const venueService = {
         orderBy: { createdAt: "desc" },
       });
 
-      // Filter venues berdasarkan role
+      // Filter venues berdasarkan assignedVenueId
       const filteredVenues = venues.filter((venue) => {
-        if (
-          context.userRole === Role.ADMIN ||
-          context.userRole === Role.FINANCE
-        ) {
-          return venue.id === context.assignedVenueId;
+        if (context.assignedVenueId) {
+          const venueIds = Array.isArray(context.assignedVenueId)
+            ? context.assignedVenueId
+            : [context.assignedVenueId];
+          return venueIds.includes(venue.id);
         }
-        return true; // USER dan SUPER_ADMIN bisa akses semua venue
+        return true; // Jika tidak ada assignedVenueId, bisa akses semua venue
       });
 
       // Enrich with counts: courts count and today's bookings count per venue
@@ -114,9 +126,13 @@ export const venueService = {
       };
     }
   },
-  getById: async (venueId: string, context: ServiceContext) => {
+  getById: async (venueId: string, context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.USER);
+      const accessError = await requireModulePermission(
+        context,
+        venueServiceMetadata.moduleKey,
+        "read"
+      );
       if (accessError) return accessError;
 
       const venue = await prisma.venue.findUnique({
@@ -131,17 +147,18 @@ export const venueService = {
         };
       }
 
-      // Check venue access untuk ADMIN/FINANCE roles
-      if (
-        (context.userRole === Role.ADMIN ||
-          context.userRole === Role.FINANCE) &&
-        venue.id !== context.assignedVenueId
-      ) {
-        return {
-          success: false,
-          data: null,
-          message: "You are not authorized to access this resource",
-        };
+      // Check venue access berdasarkan assignedVenueId
+      if (context.assignedVenueId) {
+        const venueIds = Array.isArray(context.assignedVenueId)
+          ? context.assignedVenueId
+          : [context.assignedVenueId];
+        if (!venueIds.includes(venue.id)) {
+          return {
+            success: false,
+            data: null,
+            message: "You are not authorized to access this resource",
+          };
+        }
       }
 
       return {
@@ -161,11 +178,15 @@ export const venueService = {
   },
   create: async (
     data: VenueCreateData,
-    context: ServiceContext,
+    context: RequestContext,
     userId: string
   ) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        venueServiceMetadata.moduleKey,
+        "create"
+      );
       if (accessError) return accessError;
 
       const baseSlug = data.name.trim().toLowerCase().replace(/\s+/g, "-");
@@ -204,7 +225,9 @@ export const venueService = {
       });
       // audit log
       activityLogService.record({
-        context,
+        context: {
+          actorUserId: context.actorUserId,
+        } as any, // activityLogService masih pakai ServiceContext, akan di-migrate nanti
         action: ACTION_TYPES.CREATE_VENUE,
         entityType: ENTITY_TYPES.VENUE,
         entityId: result.id,
@@ -224,9 +247,13 @@ export const venueService = {
       };
     }
   },
-  update: async (data: VenueUpdateData, context: ServiceContext) => {
+  update: async (data: VenueUpdateData, context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        venueServiceMetadata.moduleKey,
+        "update"
+      );
       if (accessError) return accessError;
 
       const { venueId, ...payload } = data;
@@ -299,7 +326,9 @@ export const venueService = {
         Object.keys(updateData) as any
       );
       activityLogService.record({
-        context,
+        context: {
+          actorUserId: context.actorUserId,
+        } as any, // activityLogService masih pakai ServiceContext, akan di-migrate nanti
         action: ACTION_TYPES.UPDATE_VENUE,
         entityType: ENTITY_TYPES.VENUE,
         entityId: venueId,
@@ -320,9 +349,13 @@ export const venueService = {
       };
     }
   },
-  delete: async (data: VenueDeleteData, context: ServiceContext) => {
+  delete: async (data: VenueDeleteData, context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        venueServiceMetadata.moduleKey,
+        "delete"
+      );
       if (accessError) return accessError;
 
       await prisma.venue.update({
@@ -330,7 +363,9 @@ export const venueService = {
         data: { isArchived: true },
       });
       activityLogService.record({
-        context,
+        context: {
+          actorUserId: context.actorUserId,
+        } as any, // activityLogService masih pakai ServiceContext, akan di-migrate nanti
         action: ACTION_TYPES.DELETE_VENUE,
         entityType: ENTITY_TYPES.VENUE,
         entityId: data.venueId,
