@@ -107,7 +107,7 @@ export function UserFilters({
 
       {/* User Type Filter */}
       <Select value={userTypeFilter || "all"} onValueChange={onUserTypeChange}>
-        <SelectTrigger className="w-[200px]">
+        <SelectTrigger className="w-full max-w-[160px]">
           <SelectValue placeholder="All user types" />
         </SelectTrigger>
         <SelectContent>
@@ -120,7 +120,7 @@ export function UserFilters({
 
       {/* Status Filter */}
       <Select value={statusFilter || "all"} onValueChange={onStatusChange}>
-        <SelectTrigger className="w-[200px]">
+        <SelectTrigger className="w-full max-w-[160px]">
           <SelectValue placeholder="All statuses" />
         </SelectTrigger>
         <SelectContent>
@@ -133,7 +133,7 @@ export function UserFilters({
 
       {/* Venue Filter */}
       <Select value={venueFilter || "all"} onValueChange={onVenueChange}>
-        <SelectTrigger className="w-[200px]">
+        <SelectTrigger className="w-full max-w-[160px]">
           <SelectValue placeholder="All venues" />
         </SelectTrigger>
         <SelectContent>

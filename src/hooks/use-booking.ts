@@ -9,6 +9,7 @@ import type {
   AdminDashboardSnapshot,
   SuperAdminDashboardSnapshot,
 } from "@/types/booking-dashboard";
+import type { BookingStatus } from "@/types/prisma";
 
 interface DashboardSnapshotResponse<T> {
   success: boolean;
@@ -146,8 +147,7 @@ const bookingApi = {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(
-        errorData.message ||
-          "Failed to fetch super admin dashboard snapshot"
+        errorData.message || "Failed to fetch super admin dashboard snapshot"
       );
     }
     return response.json();
@@ -279,3 +279,156 @@ export const useManualBooking = () => {
     },
   });
 };
+
+// ════════════════════════════════════════════════════════
+// Admin Bookings with Filtering
+// ════════════════════════════════════════════════════════
+
+/**
+ * Options for filtering admin bookings
+ * Matches the filter state from useBookingFilters hook
+ */
+export interface UseAdminBookingsOptions {
+  search?: string;
+  venueId?: string;
+  status?: BookingStatus | string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * Response type for admin bookings API
+ */
+interface AdminBookingsResponse {
+  success: boolean;
+  message: string;
+  data: Array<{
+    id: string;
+    bookingCode: string;
+    bookingDate: Date;
+    duration: number;
+    totalPrice: number;
+    status: BookingStatus;
+    createdAt: Date;
+    updatedAt: Date;
+    timeSlots: Array<{
+      id: string;
+      openHour: string;
+      closeHour: string;
+    }>;
+    user: {
+      id: string;
+      email: string;
+      profile: {
+        fullName: string;
+        avatar: string | null;
+      } | null;
+    };
+    court: {
+      id: string;
+      name: string;
+      venue: {
+        id: string;
+        name: string;
+        city: string;
+      };
+    };
+    order: {
+      id: string;
+      orderCode: string;
+      status: string;
+      totalAmount: number;
+    } | null;
+    payments: Array<{
+      id: string;
+      amount: number;
+      status: string;
+      paymentDate: Date | null;
+      channelName: string | null;
+    }>;
+  }>;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+/**
+ * API function to fetch admin bookings with filters
+ */
+async function getAdminBookingsApi(
+  options: UseAdminBookingsOptions = {}
+): Promise<AdminBookingsResponse> {
+  // Build query parameters from filter options
+  const searchParams = new URLSearchParams();
+
+  // Only add defined values to query string
+  if (options.search) searchParams.append("search", options.search);
+  if (options.venueId) searchParams.append("venue", options.venueId);
+  if (options.status) searchParams.append("status", options.status);
+  if (options.startDate) searchParams.append("startDate", options.startDate);
+  if (options.endDate) searchParams.append("endDate", options.endDate);
+  if (options.page) searchParams.append("page", options.page.toString());
+  if (options.limit) searchParams.append("limit", options.limit.toString());
+
+  // Build URL with query string
+  const queryString = searchParams.toString();
+  const url = queryString
+    ? `/api/admin/bookings?${queryString}`
+    : "/api/admin/bookings";
+
+  // Fetch from API endpoint
+  const response = await fetch(url, {
+    credentials: "include",
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "Failed to fetch admin bookings");
+  }
+
+  return result;
+}
+
+/**
+ * Hook to fetch bookings for admin dashboard with filtering support
+ *
+ * Features:
+ * - Server-side filtering (search, venue, status, date range)
+ * - Pagination support
+ * - React Query caching (staleTime: 30s, cacheTime: 5min)
+ * - Automatic refetch on filter changes
+ * - Loading and error states
+ *
+ * @param options - Filter options (search, venueId, status, startDate, endDate, page, limit)
+ * @returns React Query result with data, loading, and error states
+ *
+ * @example
+ * ```tsx
+ * const { data, isLoading, error } = useAdminBookings({
+ *   search: "BK-123",
+ *   venueId: "venue-id",
+ *   status: "UPCOMING",
+ *   page: 1,
+ *   limit: 10
+ * });
+ * ```
+ */
+export function useAdminBookings(options: UseAdminBookingsOptions = {}) {
+  return useQuery({
+    // Include filter options in query key for proper cache invalidation
+    // Different filter combinations will be cached separately
+    queryKey: ["admin-bookings", options],
+    queryFn: () => getAdminBookingsApi(options),
+    // Cache configuration as per requirements
+    staleTime: 30000, // 30 seconds - data is considered fresh for 30s
+    gcTime: 300000, // 5 minutes - cache time (formerly cacheTime in v4)
+    // Disable automatic refetch on window focus to prevent unnecessary requests
+    refetchOnWindowFocus: false,
+  });
+}

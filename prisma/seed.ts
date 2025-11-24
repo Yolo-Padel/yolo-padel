@@ -69,23 +69,28 @@ const PERMISSIONS = [
 
 const ROLES = [
   {
-    name: "super_admin",
+    name: "Director",
     description: "Role with full access to every module",
     isActive: true,
   },
   {
-    name: "venue_manager",
+    name: "IT Division",
+    description: "Manage system, users, and technical configurations",
+    isActive: true,
+  },
+  {
+    name: "Venue Manager",
     description: "Manage specific venues, courts, and bookings",
     isActive: true,
   },
   {
-    name: "receptionist",
-    description: "Handle bookings and customer service",
+    name: "Finance",
+    description: "View reports and manage orders/payments",
     isActive: true,
   },
   {
-    name: "accountant",
-    description: "View reports and manage orders/payments",
+    name: "Reception",
+    description: "Handle bookings and customer service",
     isActive: true,
   },
 ] as const;
@@ -100,7 +105,7 @@ const ROLE_PERMISSIONS: Record<
   string,
   Record<string, Array<"create" | "read" | "update" | "delete">>
 > = {
-  super_admin: {
+  Director: {
     users: ["create", "read", "update", "delete"],
     venues: ["create", "read", "update", "delete"],
     courts: ["create", "read", "update", "delete"],
@@ -108,7 +113,15 @@ const ROLE_PERMISSIONS: Record<
     orders: ["create", "read", "update", "delete"],
     roles: ["create", "read", "update", "delete"],
   },
-  venue_manager: {
+  "IT Division": {
+    users: ["create", "read", "update", "delete"],
+    venues: ["create", "read", "update", "delete"],
+    courts: ["create", "read", "update", "delete"],
+    bookings: ["read"],
+    orders: ["read"],
+    roles: ["create", "read", "update", "delete"],
+  },
+  "Venue Manager": {
     users: ["read"],
     venues: ["read", "update"],
     courts: ["create", "read", "update", "delete"],
@@ -116,20 +129,20 @@ const ROLE_PERMISSIONS: Record<
     orders: ["read"],
     roles: [],
   },
-  receptionist: {
-    users: [],
-    venues: ["read"],
-    courts: ["read"],
-    bookings: ["create", "read", "update"],
-    orders: ["read"],
-    roles: [],
-  },
-  accountant: {
+  Finance: {
     users: [],
     venues: ["read"],
     courts: ["read"],
     bookings: ["read"],
     orders: ["read", "update"],
+    roles: [],
+  },
+  Reception: {
+    users: [],
+    venues: ["read"],
+    courts: ["read"],
+    bookings: ["create", "read", "update"],
+    orders: ["read"],
     roles: [],
   },
 };
@@ -222,12 +235,12 @@ async function seedRolePermissions() {
 }
 
 async function seedSystemAdmin() {
-  const superAdminRole = await prisma.roles.findUnique({
-    where: { name: "super_admin" },
+  const directorRole = await prisma.roles.findUnique({
+    where: { name: "Director" },
   });
 
-  if (!superAdminRole) {
-    throw new Error("super_admin role not found. Run role seeding first.");
+  if (!directorRole) {
+    throw new Error("Director role not found. Run role seeding first.");
   }
 
   const hashedPassword = await bcrypt.hash("YoloPadel2024!", 10);
@@ -236,14 +249,14 @@ async function seedSystemAdmin() {
     where: { email: "systemadmin@yolopadel.com" },
     update: {
       userType: UserType.ADMIN,
-      roleId: superAdminRole.id,
+      roleId: directorRole.id,
       isEmailVerified: true,
     },
     create: {
       email: "systemadmin@yolopadel.com",
       password: hashedPassword,
       userType: UserType.ADMIN,
-      roleId: superAdminRole.id,
+      roleId: directorRole.id,
       isEmailVerified: true,
       profile: {
         create: {

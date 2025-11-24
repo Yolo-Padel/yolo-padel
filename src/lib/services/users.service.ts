@@ -55,7 +55,7 @@ export interface GetUsersForAdminResult {
   data: Array<
     Omit<
       Prisma.UserGetPayload<{
-        include: { profile: true; membership: true };
+        include: { profile: true; membership: true; roles: true };
       }>,
       "password"
     > & {
@@ -499,6 +499,7 @@ export async function getUsersForAdmin(
       include: {
         profile: true,
         membership: true,
+        roles: true,
       },
       orderBy: {
         createdAt: "desc",

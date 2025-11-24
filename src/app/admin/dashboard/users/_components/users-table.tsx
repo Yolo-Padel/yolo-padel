@@ -24,6 +24,7 @@ import {
   UserType,
   UserStatus,
   Membership,
+  Roles,
 } from "@/types/prisma";
 import { generatePageNumbers } from "@/lib/pagination-utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -43,6 +44,7 @@ export interface UsersTableProps {
   users: (User & {
     profile?: Profile | null;
     membership?: Membership | null;
+    roles?: Roles | null;
     invitation?: {
       state: "valid" | "expired" | "used" | "none";
       expiresAt?: string;
@@ -63,11 +65,10 @@ export function UsersTable({
 }: UsersTableProps) {
   // Define table columns for colSpan
   const columns = [
-    "Name",
+    "Profile",
     "Status",
-    "User Type",
+    "Assigned Role",
     "Membership",
-    "Email",
     "Join Date",
     "Actions",
   ];
@@ -137,8 +138,13 @@ export function UsersTable({
     );
   };
 
-  const getUserTypeDisplay = (userType: UserType) =>
-    stringUtils.getRoleDisplay(userType);
+  const getAssignedRole = (user: User & { roles?: Roles | null }) => {
+    // Jika USER biasa, tidak ada assigned role
+    if (user.userType === UserType.USER) return "-";
+
+    // Jika ADMIN atau STAFF, tampilkan role name dari relasi roles
+    return user.roles?.name || "-";
+  };
 
   return (
     <>
@@ -146,11 +152,10 @@ export function UsersTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="h-11">Name</TableHead>
+              <TableHead className="h-11">Profile</TableHead>
               <TableHead className="h-11">Status</TableHead>
-              <TableHead className="h-11">User Type</TableHead>
+              <TableHead className="h-11">Assigned Role</TableHead>
               <TableHead className="h-11">Membership</TableHead>
-              <TableHead className="h-11">Email address</TableHead>
               <TableHead className="h-11">Join Date</TableHead>
               <TableHead className="h-11 text-right"></TableHead>
             </TableRow>
@@ -159,14 +164,17 @@ export function UsersTable({
             {users.map((u) => {
               return (
                 <TableRow key={u.id}>
-                  <TableCell className="flex items-center gap-2">
+                  <TableCell className="flex items-center gap-3">
                     <Avatar>
                       <AvatarImage src={u.profile?.avatar || ""} />
                       <AvatarFallback className="uppercase">
                         {u.profile?.fullName?.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    {u.profile?.fullName || "-"}
+                    <div className="flex flex-col">
+                      <span className="font-medium">{u.profile?.fullName}</span>
+                      <span className="text-muted-foreground">{u.email}</span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -174,7 +182,7 @@ export function UsersTable({
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {getUserTypeDisplay(u.userType)}
+                    {getAssignedRole(u)}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {u.userType !== UserType.USER
@@ -182,9 +190,6 @@ export function UsersTable({
                       : u.membership
                         ? `${u.membership.name} Member`
                         : "Non-member"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {u.email}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {u.joinDate
