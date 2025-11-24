@@ -1,7 +1,8 @@
 import { verifyAuth } from "@/lib/auth-utils";
 import { membershipService } from "@/lib/services/membership.service";
-import { createServiceContext } from "@/types/service-context";
+import { createRequestContext } from "@/types/request-context";
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,8 +14,26 @@ export async function GET(request: NextRequest) {
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId);
-    const response = await membershipService.getMemberships(serviceContext);
+
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
+    const response = await membershipService.getMemberships(requestContext);
     if (!response.success) {
       return NextResponse.json(
         { success: false, data: null, message: response.message },

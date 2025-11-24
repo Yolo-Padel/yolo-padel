@@ -1,10 +1,21 @@
 import { prisma } from "@/lib/prisma";
-import { Role } from "@/types/prisma";
-import { requirePermission, ServiceContext } from "@/types/service-context";
+import { RequestContext } from "@/types/request-context";
+import { requireModulePermission } from "@/lib/rbac/permission-checker";
+
+// Service metadata for RBAC
+export const membershipServiceMetadata = {
+  moduleKey: "membership", // Harus match dengan key di tabel modules
+  serviceName: "membershipService",
+  description: "Membership management operations",
+} as const;
 
 export const membershipService = {
-  getMemberships: async (context: ServiceContext) => {
-    const accessError = requirePermission(context, Role.ADMIN);
+  getMemberships: async (context: RequestContext) => {
+    const accessError = await requireModulePermission(
+      context,
+      membershipServiceMetadata.moduleKey,
+      "read"
+    );
     if (accessError) return accessError;
     const memberships = await prisma.membership.findMany();
     return {
