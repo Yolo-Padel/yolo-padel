@@ -10,11 +10,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  SUPER_ADMIN
-  ADMIN
+enum UserType {
+  STAFF
   USER
-  FINANCE
 }
 
 enum UserStatus {
@@ -50,7 +48,7 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String   @default("")
-  role      Role     @default(USER)
+  userType  UserType @default(USER)
   userStatus UserStatus @default(ACTIVE)
   isEmailVerified Boolean @default(false)
   joinDate  DateTime?
@@ -77,6 +75,10 @@ model User {
   // Membership relation
   membershipId String?     // nullable so not all users must have membership
   membership   Membership? @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+
+  // RBAC role relation
+  roleId String?
+  roles  Roles? @relation(fields: [roleId], references: [id])
 
   @@map("users")
 }
@@ -384,6 +386,7 @@ model Roles {
   updatedAt   DateTime @updatedAt
 
   rolePermissions RolePermission[]
+  users           User[]
 
   @@map("roles")
 }

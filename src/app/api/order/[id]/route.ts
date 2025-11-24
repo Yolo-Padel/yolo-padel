@@ -88,7 +88,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Check if user is admin
-    if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+    if (user.userType !== "STAFF") {
       return NextResponse.json(
         { success: false, message: "Forbidden - Admin access required" },
         { status: 403 }

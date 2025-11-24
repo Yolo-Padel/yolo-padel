@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-utils";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 import { getAllModules, getAllPermissions } from "@/lib/services/rbac.service";
 
 // Admin roles that can access RBAC endpoints
-const ALLOWED_ADMIN_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN"];
+const ALLOWED_ADMIN_ROLES: UserType[] = [UserType.STAFF];
 
 /**
  * GET /api/rbac/modules
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const { user } = tokenResult;
 
     // Check if user has admin role
-    if (!user || !ALLOWED_ADMIN_ROLES.includes(user.role as Role)) {
+    if (!user || !ALLOWED_ADMIN_ROLES.includes(user.userType)) {
       return NextResponse.json(
         { success: false, message: "Forbidden - Admin access required" },
         { status: 403 }

@@ -2,7 +2,12 @@
 import { prisma } from "@/lib/prisma";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
-import { BookingStatus, Booking, Role, PaymentStatus } from "@/types/prisma";
+import {
+  BookingStatus,
+  Booking,
+  UserType,
+  PaymentStatus,
+} from "@/types/prisma";
 import { activityLogService } from "@/lib/services/activity-log.service";
 import { requirePermission, ServiceContext } from "@/types/service-context";
 import { BookingCreateData } from "../validations/booking.validation";
@@ -483,7 +488,7 @@ export const bookingService = {
     message: string;
   }> => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const assignedVenueIds = Array.isArray(context.assignedVenueId)
@@ -815,7 +820,7 @@ export const bookingService = {
   // Create booking (deprecated)
   create: async (booking: BookingCreateData, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.USER);
+      const accessError = requirePermission(context, UserType.USER);
       if (accessError) return accessError;
 
       const nanoId = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 5);

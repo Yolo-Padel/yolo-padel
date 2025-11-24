@@ -19,7 +19,11 @@ export async function GET(
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
+    const serviceContext = createServiceContext(
+      user.userType,
+      user.userId,
+      user.assignedVenueId
+    );
     const result = await venueService.getById(id, serviceContext);
 
     if (!result.success) {
@@ -32,7 +36,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: result.data,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("GET /api/venue/[id] error:", error);
@@ -60,7 +64,11 @@ export async function PUT(
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
+    const serviceContext = createServiceContext(
+      user.userType,
+      user.userId,
+      user.assignedVenueId
+    );
     const result = await venueService.update(validatedData, serviceContext);
 
     if (!result.success) {
@@ -73,12 +81,12 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       data: result.data,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("PUT /api/venue/[id] error:", error);
-    
-    if (error instanceof Error && error.name === 'ZodError') {
+
+    if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
         { success: false, message: "Validation error", errors: error.message },
         { status: 400 }
@@ -107,7 +115,11 @@ export async function DELETE(
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
+    const serviceContext = createServiceContext(
+      user.userType,
+      user.userId,
+      user.assignedVenueId
+    );
     const result = await venueService.delete({ venueId: id }, serviceContext);
 
     if (!result.success) {
@@ -119,7 +131,7 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("DELETE /api/venue/[id] error:", error);
@@ -129,5 +141,3 @@ export async function DELETE(
     );
   }
 }
-
-

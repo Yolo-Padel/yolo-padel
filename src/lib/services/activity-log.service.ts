@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission, ServiceContext } from "@/types/service-context";
 import { ActionType } from "@/types/action";
 import { EntityType } from "@/types/entity";
-import { Role } from "@prisma/client";
+import { UserType } from "@prisma/client";
 
 type RecordActivityParams = {
   context: ServiceContext;
@@ -206,7 +206,7 @@ export const activityLogService = {
   },
   getActivity: async (context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
 
       if (accessError) return accessError;
       // Get all users

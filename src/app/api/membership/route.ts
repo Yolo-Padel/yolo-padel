@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId);
+    const serviceContext = createServiceContext(user.userType, user.userId);
     const response = await membershipService.getMemberships(serviceContext);
     if (!response.success) {
       return NextResponse.json(

@@ -5,7 +5,7 @@ import { usersService } from "./users.service";
 import { resendService } from "./resend.service";
 import { prisma } from "@/lib/prisma";
 import { requirePermission, ServiceContext } from "@/types/service-context";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 import { activityLogService } from "@/lib/services/activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
@@ -13,7 +13,7 @@ import { ENTITY_TYPES } from "@/types/entity";
 export const inviteUserService = {
   inviteUser: async (data: UserCreateData, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
       const existingUser = await prisma.user.findUnique({
         where: { email: data.email },
@@ -83,7 +83,7 @@ export const inviteUserService = {
           process.env.NEXT_PUBLIC_APP_URL +
           "/auth/verify?token=" +
           magicLink.token!,
-        role: data.role,
+        userType: data.userType,
       });
 
       console.log("email", email);
@@ -106,7 +106,7 @@ export const inviteUserService = {
           before: {},
           after: {
             email: inviteResult.data!.user.email,
-            role: data.role,
+            userType: data.userType,
             assignedVenueId: inviteResult.data!.user.assignedVenueIds,
           },
         } as any,
@@ -128,7 +128,7 @@ export const inviteUserService = {
   },
   resendInvitation: async (userId: string, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const user = await prisma.user.findUnique({
@@ -161,7 +161,7 @@ export const inviteUserService = {
         email: user.email,
         userName: fullName,
         invitationUrl,
-        role: user.role,
+        userType: user.userType,
       } as any);
 
       if (!emailResult.success) {

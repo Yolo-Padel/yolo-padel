@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 import { MetricCard } from "./metric-card";
 import {
   DollarSign,
@@ -22,7 +22,7 @@ import type {
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardMetricsProps {
-  role: Role;
+  userType: UserType;
 }
 
 type MetricItem = {
@@ -166,37 +166,37 @@ function MetricSkeletonRow() {
   );
 }
 
-export function DashboardMetrics({ role }: DashboardMetricsProps) {
-  const isSuperAdmin = role === "SUPER_ADMIN";
+export function DashboardMetrics({ userType }: DashboardMetricsProps) {
+  const isStaff = userType === "STAFF";
 
   const {
     data: superAdminData,
     isLoading: isSuperAdminLoading,
     error: superAdminError,
-  } = useSuperAdminBookingDashboard({ enabled: isSuperAdmin });
+  } = useSuperAdminBookingDashboard({ enabled: isStaff });
 
   const {
     data: adminData,
     isLoading: isAdminLoading,
     error: adminError,
-  } = useAdminBookingDashboard({ enabled: !isSuperAdmin });
+  } = useAdminBookingDashboard({ enabled: !isStaff });
 
   const snapshot:
     | SuperAdminDashboardSnapshot
     | AdminDashboardSnapshot
     | undefined =
-    (isSuperAdmin ? superAdminData?.data : adminData?.data) ?? undefined;
+    (isStaff ? superAdminData?.data : adminData?.data) ?? undefined;
 
   const metrics = useMemo(() => {
-    return isSuperAdmin
+    return isStaff
       ? buildSuperAdminMetrics(
           snapshot as SuperAdminDashboardSnapshot | undefined
         )
       : buildAdminMetrics(snapshot as AdminDashboardSnapshot | undefined);
-  }, [snapshot, isSuperAdmin]);
+  }, [snapshot, isStaff]);
 
-  const isLoading = isSuperAdmin ? isSuperAdminLoading : isAdminLoading;
-  const error = (isSuperAdmin ? superAdminError : adminError) as Error | null;
+  const isLoading = isStaff ? isSuperAdminLoading : isAdminLoading;
+  const error = (isStaff ? superAdminError : adminError) as Error | null;
 
   return (
     <div className="flex flex-col gap-6">

@@ -21,7 +21,7 @@ export async function GET(
 
     const { user } = tokenResult;
     const serviceContext = createServiceContext(
-      user.role,
+      user.userType,
       user.userId,
       user.assignedVenueId
     );
@@ -64,7 +64,7 @@ export async function PUT(
 
     const { user } = tokenResult;
     const serviceContext = createServiceContext(
-      user.role,
+      user.userType,
       user.userId,
       user.assignedVenueId
     );
@@ -120,7 +120,7 @@ export async function DELETE(
 
     const { user } = tokenResult;
     const serviceContext = createServiceContext(
-      user.role,
+      user.userType,
       user.userId,
       user.assignedVenueId
     );

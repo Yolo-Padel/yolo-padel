@@ -25,7 +25,13 @@ import { UsersTableLoading } from "@/app/admin/dashboard/users/_components/users
 import { UserModal } from "@/app/admin/dashboard/users/_components/user-modal";
 import { DeleteUserModal } from "@/app/admin/dashboard/users/_components/delete-user-modal";
 import { useUsers } from "@/hooks/use-users";
-import { User, Profile, Role, UserStatus, Membership } from "@/types/prisma";
+import {
+  User,
+  Profile,
+  UserType,
+  UserStatus,
+  Membership,
+} from "@/types/prisma";
 import {
   generatePageNumbers,
   calculatePaginationInfo,
@@ -55,7 +61,7 @@ export function UsersTable() {
   const columns = [
     "Name",
     "Email",
-    "Role",
+    "User Type",
     "Status",
     "Email Verified",
     "Created",
@@ -170,7 +176,8 @@ export function UsersTable() {
     );
   };
 
-  const getRole = (role: Role) => stringUtils.getRoleDisplay(role);
+  const getUserTypeDisplay = (userType: UserType) =>
+    stringUtils.getRoleDisplay(userType);
 
   return (
     <div className="flex flex-col space-y-6">
@@ -198,7 +205,7 @@ export function UsersTable() {
             <TableRow>
               <TableHead className="h-11">Name</TableHead>
               <TableHead className="h-11">Status</TableHead>
-              <TableHead className="h-11">Role</TableHead>
+              <TableHead className="h-11">User Type</TableHead>
               <TableHead className="h-11">Membership</TableHead>
               <TableHead className="h-11">Email address</TableHead>
               <TableHead className="h-11">Join Date</TableHead>
@@ -229,10 +236,10 @@ export function UsersTable() {
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {getRole(u.role)}
+                      {getUserTypeDisplay(u.userType)}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {u.role !== Role.USER
+                      {u.userType !== UserType.USER
                         ? "Staff"
                         : u.membership
                           ? `${u.membership.name} Member`

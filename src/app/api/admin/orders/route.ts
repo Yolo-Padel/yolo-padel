@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-utils";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 import { getAllOrdersForAdmin } from "@/lib/services/order.service";
 
-const ALLOWED_ADMIN_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "FINANCE"];
+const ALLOWED_ADMIN_ROLES: UserType[] = [UserType.STAFF];
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { user } = tokenResult;
-    if (!user || !ALLOWED_ADMIN_ROLES.includes(user.role as Role)) {
+    if (!user || !ALLOWED_ADMIN_ROLES.includes(user.userType)) {
       return NextResponse.json(
         { success: false, message: "Forbidden - Admin access required" },
         { status: 403 }

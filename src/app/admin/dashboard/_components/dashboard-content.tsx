@@ -1,25 +1,25 @@
 "use client";
 
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 import { DashboardHeader } from "./dashboard-header";
 import { DashboardMetrics } from "./dashboard-metrics";
 import { TodaysBookingSection } from "./todays-booking-section";
 import { BookingTableSection } from "./booking-table-section";
 
 interface DashboardContentProps {
-  role: Role;
+  userType: UserType;
 }
 
-export function DashboardContent({ role }: DashboardContentProps) {
-  const isSuperAdmin = role === "SUPER_ADMIN";
+export function DashboardContent({ userType }: DashboardContentProps) {
+  const isStaff = userType === "STAFF";
 
   return (
     <div className="flex flex-col gap-8">
       <DashboardHeader />
 
-      <DashboardMetrics role={role} />
+      <DashboardMetrics userType={userType} />
 
-      {isSuperAdmin ? <BookingTableSection /> : <TodaysBookingSection />}
+      {isStaff ? <BookingTableSection /> : <TodaysBookingSection />}
     </div>
   );
 }

@@ -21,7 +21,7 @@ export type {
 } from "@prisma/client";
 
 export {
-  Role,
+  UserType,
   UserStatus,
   DayOfWeek,
   OpeningHoursType,

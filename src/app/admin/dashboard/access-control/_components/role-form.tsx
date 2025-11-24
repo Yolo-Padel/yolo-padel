@@ -64,7 +64,7 @@ export function RoleForm({
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">Nama Role</Label>
-          <Input id="name" placeholder="super_admin" {...register("name")} />
+          <Input id="name" placeholder="admin" {...register("name")} />
           {errors.name ? (
             <p className="text-sm text-destructive">{errors.name.message}</p>
           ) : null}

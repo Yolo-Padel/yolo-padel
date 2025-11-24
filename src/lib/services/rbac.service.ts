@@ -222,9 +222,9 @@ export async function deleteRole(roleId: string): Promise<void> {
   }
 
   // Check if role is assigned to any users
-  // Note: The User model uses an enum Role, not a relation to Roles table
+  // Note: The User model uses an enum UserType, not a relation to Roles table
   // So we need to check if the role name matches any of the enum values being used
-  // For now, we'll skip this check since the User.role is an enum, not a foreign key
+  // For now, we'll skip this check since the User.userType is an enum, not a foreign key
   // If you want to prevent deletion of system roles, you could check the role name
 
   // Delete role and associated rolePermissions in a transaction
