@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-utils";
 import { manualBookingSchema } from "@/lib/validations/manual-booking.validation";
 import { manualBookingService } from "@/lib/services/manual-booking.service";
-import { createServiceContext } from "@/types/service-context";
+import { createRequestContext } from "@/types/request-context";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,13 +37,30 @@ export async function POST(request: NextRequest) {
     }
 
     const { user } = tokenResult;
-    const context = createServiceContext(
-      user.role,
+
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
       user.userId,
       user.assignedVenueId
     );
 
-    const result = await manualBookingService.create(parsed.data, context);
+    const result = await manualBookingService.create(
+      parsed.data,
+      requestContext
+    );
 
     if (!result.success) {
       return NextResponse.json(
@@ -75,4 +93,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

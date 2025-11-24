@@ -1,9 +1,10 @@
 // src/app/api/booking/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { bookingService } from "@/lib/services/booking.service";
-import { createServiceContext } from "@/types/service-context";
+import { createRequestContext } from "@/types/request-context";
 import { bookingCreateSchema } from "@/lib/validations/booking.validation";
 import { verifyAuth } from "@/lib/auth-utils";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
@@ -71,12 +72,26 @@ export async function POST(request: NextRequest) {
     }
 
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(
-      user.role,
+
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
       user.userId,
       user.assignedVenueId
     );
-    const result = await bookingService.create(validatedData, serviceContext);
+    const result = await bookingService.create(validatedData, requestContext);
 
     if (!result.success) {
       return NextResponse.json(

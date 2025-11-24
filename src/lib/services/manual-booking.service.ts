@@ -4,8 +4,9 @@ import { bookingService, createBooking } from "@/lib/services/booking.service";
 import { createBlocking } from "@/lib/services/blocking.service";
 import { resendService } from "@/lib/services/resend.service";
 import { calculateSlotsPrice } from "@/lib/booking-pricing-utils";
-import { ServiceContext, requirePermission } from "@/types/service-context";
-import { BookingStatus, Role, UserStatus } from "@/types/prisma";
+import { RequestContext } from "@/types/request-context";
+import { requireModulePermission } from "@/lib/rbac/permission-checker";
+import { BookingStatus, UserStatus } from "@/types/prisma";
 import { customAlphabet } from "nanoid";
 
 type TimeSlot = { openHour: string; closeHour: string };
@@ -89,10 +90,21 @@ function getLoginUrl(): string {
   return `${baseUrl}/auth`;
 }
 
+// Service metadata for RBAC
+export const manualBookingServiceMetadata = {
+  moduleKey: "booking", // Orchestration service, akses bookings table
+  serviceName: "manualBookingService",
+  description: "Manual booking operations",
+} as const;
+
 export const manualBookingService = {
-  create: async (data: ManualBookingInput, context: ServiceContext) => {
+  create: async (data: ManualBookingInput, context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        manualBookingServiceMetadata.moduleKey,
+        "create"
+      );
       if (accessError) return accessError;
 
       const slots = buildTimeSlots(data.startTime, data.endTime);
