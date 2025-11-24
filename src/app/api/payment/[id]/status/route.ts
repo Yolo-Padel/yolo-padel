@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPaymentById } from "@/lib/services/payment.service";
 import { verifyAuth } from "@/lib/auth-utils";
+import { createRequestContext } from "@/types/request-context";
+import { prisma } from "@/lib/prisma";
 
 /**
  * GET /api/payment/[id]/status
@@ -29,7 +31,26 @@ export async function GET(
       );
     }
 
-    const payment = await getPaymentById(paymentId);
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: tokenResult.user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      tokenResult.user.userId,
+      tokenResult.user.assignedVenueId
+    );
+
+    const payment = await getPaymentById(paymentId, requestContext);
 
     if (!payment) {
       return NextResponse.json(

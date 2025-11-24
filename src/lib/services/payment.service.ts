@@ -2,6 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { Payment, PaymentStatus } from "@/types/prisma";
 import { syncPaymentStatusToOrder } from "./status-sync.service";
 import type { PrismaTransaction } from "@/types/prisma-transaction";
+import { RequestContext } from "@/types/request-context";
+import { requireModulePermission } from "@/lib/rbac/permission-checker";
+
+// Service metadata for RBAC
+export const paymentServiceMetadata = {
+  moduleKey: "payment", // Harus match dengan key di tabel modules
+  serviceName: "paymentService",
+  description: "Payment management operations",
+} as const;
 
 /**
  * Create payment for an order
@@ -73,7 +82,21 @@ export async function createPayment(
 /**
  * Get payment by ID
  */
-export async function getPaymentById(paymentId: string) {
+export async function getPaymentById(
+  paymentId: string,
+  context?: RequestContext
+) {
+  // Check permission if context is provided
+  if (context) {
+    const accessError = await requireModulePermission(
+      context,
+      paymentServiceMetadata.moduleKey,
+      "read"
+    );
+    if (accessError) {
+      throw new Error(accessError.message);
+    }
+  }
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: {
@@ -116,7 +139,21 @@ export async function getPaymentById(paymentId: string) {
 /**
  * Get payment by order ID
  */
-export async function getPaymentByOrderId(orderId: string) {
+export async function getPaymentByOrderId(
+  orderId: string,
+  context?: RequestContext
+) {
+  // Check permission if context is provided
+  if (context) {
+    const accessError = await requireModulePermission(
+      context,
+      paymentServiceMetadata.moduleKey,
+      "read"
+    );
+    if (accessError) {
+      throw new Error(accessError.message);
+    }
+  }
   const payment = await prisma.payment.findUnique({
     where: { orderId },
   });
@@ -127,11 +164,24 @@ export async function getPaymentByOrderId(orderId: string) {
 /**
  * Update payment status
  * This will trigger cascading updates to order, bookings, and blockings
+ * Context is optional - if not provided, assumes webhook/cron call (no RBAC check)
  */
 export async function updatePaymentStatus(
   paymentId: string,
-  newStatus: PaymentStatus
+  newStatus: PaymentStatus,
+  context?: RequestContext
 ): Promise<Payment> {
+  // Check permission if context is provided (not from webhook/cron)
+  if (context) {
+    const accessError = await requireModulePermission(
+      context,
+      paymentServiceMetadata.moduleKey,
+      "update"
+    );
+    if (accessError) {
+      throw new Error(accessError.message);
+    }
+  }
   // Update payment status in database
   const payment = await prisma.payment.update({
     where: { id: paymentId },
@@ -152,6 +202,7 @@ export async function updatePaymentStatus(
 /**
  * Update Xendit payment data
  * Used after creating payment request/invoice to store Xendit response
+ * Context is optional - if not provided, assumes webhook call (no RBAC check)
  */
 export async function updatePaymentXenditData(
   paymentId: string,
@@ -160,8 +211,20 @@ export async function updatePaymentXenditData(
     xenditReferenceId?: string | null;
     paymentUrl?: string | null;
     xenditMetadata?: Record<string, unknown> | null;
-  }
+  },
+  context?: RequestContext
 ): Promise<Payment> {
+  // Check permission if context is provided (not from webhook)
+  if (context) {
+    const accessError = await requireModulePermission(
+      context,
+      paymentServiceMetadata.moduleKey,
+      "update"
+    );
+    if (accessError) {
+      throw new Error(accessError.message);
+    }
+  }
   const payment = await prisma.payment.update({
     where: { id: paymentId },
     data: {
@@ -188,8 +251,23 @@ export async function updatePaymentXenditData(
 
 /**
  * Get payment by Xendit Invoice ID
+ * Context is optional - if not provided, assumes webhook call (no RBAC check)
  */
-export async function getPaymentByXenditInvoiceId(xenditInvoiceId: string) {
+export async function getPaymentByXenditInvoiceId(
+  xenditInvoiceId: string,
+  context?: RequestContext
+) {
+  // Check permission if context is provided (not from webhook)
+  if (context) {
+    const accessError = await requireModulePermission(
+      context,
+      paymentServiceMetadata.moduleKey,
+      "read"
+    );
+    if (accessError) {
+      throw new Error(accessError.message);
+    }
+  }
   const payment = await prisma.payment.findFirst({
     where: { xenditInvoiceId },
     include: {
@@ -218,6 +296,7 @@ export async function getPaymentByXenditInvoiceId(xenditInvoiceId: string) {
 /**
  * Handle payment success
  * Called from webhook when payment is confirmed
+ * No RBAC check - webhook call
  */
 export async function handlePaymentSuccess(
   paymentId: string
