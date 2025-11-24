@@ -50,7 +50,9 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String   @default("")
-  role      Role     @default(USER)
+  role      Role     @default(USER)  // TO BE DEPRECATED: keep for backward compatibility
+  roleId    String?  // NEW: relasi ke Roles table untuk dynamic RBAC
+  roleRef   Roles?   @relation(fields: [roleId], references: [id], onDelete: SetNull)
   userStatus UserStatus @default(ACTIVE)
   isEmailVerified Boolean @default(false)
   joinDate  DateTime?
@@ -384,6 +386,7 @@ model Roles {
   updatedAt   DateTime @updatedAt
 
   rolePermissions RolePermission[]
+  users           User[]  // Relasi ke User
 
   @@map("roles")
 }

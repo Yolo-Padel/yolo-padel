@@ -5,17 +5,28 @@ import {
   UserUpdateData,
 } from "../validations/user.validation";
 import { Prisma } from "@prisma/client";
-import { UserStatus } from "@/types/prisma";
-import { ServiceContext, requirePermission } from "@/types/service-context";
-import { Role } from "@/types/prisma";
+import { UserStatus, Role } from "@/types/prisma";
+import { RequestContext } from "@/types/request-context";
+import { requireModulePermission } from "@/lib/rbac/permission-checker";
 import { activityLogService } from "@/lib/services/activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 
+// Service metadata for RBAC
+export const usersServiceMetadata = {
+  moduleKey: "users", // Harus match dengan key di tabel modules
+  serviceName: "usersService",
+  description: "User management operations",
+} as const;
+
 export const usersService = {
-  getUsers: async (context: ServiceContext) => {
+  getUsers: async (context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        usersServiceMetadata.moduleKey,
+        "read"
+      );
 
       if (accessError) return accessError;
       // Get all users
@@ -91,11 +102,15 @@ export const usersService = {
 
   createUser: async (
     data: UserCreateData,
-    context: ServiceContext,
+    context: RequestContext,
     tx?: Prisma.TransactionClient
   ) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        usersServiceMetadata.moduleKey,
+        "create"
+      );
       if (accessError) return accessError;
 
       const user = await (tx || prisma).user.create({
@@ -109,7 +124,9 @@ export const usersService = {
       });
       // audit log (non-blocking)
       activityLogService.record({
-        context,
+        context: {
+          actorUserId: context.actorUserId,
+        } as any, // activityLogService masih pakai ServiceContext, akan di-migrate nanti
         action: ACTION_TYPES.CREATE_USER,
         entityType: ENTITY_TYPES.USER,
         entityId: user.id,
@@ -117,7 +134,7 @@ export const usersService = {
           before: {},
           after: {
             email: user.email,
-            role: user.role,
+            role: data.role,
             assignedVenueIds: user.assignedVenueIds,
             userStatus: user.userStatus,
             membershipId: user.membershipId ?? null,
@@ -141,9 +158,13 @@ export const usersService = {
     }
   },
 
-  updateUser: async (data: UserUpdateData, context: ServiceContext) => {
+  updateUser: async (data: UserUpdateData, context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        usersServiceMetadata.moduleKey,
+        "update"
+      );
       if (accessError) return accessError;
 
       const existing = await prisma.user.findUnique({
@@ -185,7 +206,9 @@ export const usersService = {
 
       // audit log (minimal diff)
       activityLogService.record({
-        context,
+        context: {
+          actorUserId: context.actorUserId,
+        } as any, // activityLogService masih pakai ServiceContext, akan di-migrate nanti
         action: ACTION_TYPES.UPDATE_USER,
         entityType: ENTITY_TYPES.USER,
         entityId: data.userId,
@@ -223,9 +246,13 @@ export const usersService = {
     }
   },
 
-  deleteUser: async (data: UserDeleteData, context: ServiceContext) => {
+  deleteUser: async (data: UserDeleteData, context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        usersServiceMetadata.moduleKey,
+        "delete"
+      );
       if (accessError) return accessError;
 
       const updated = await prisma.user.update({
@@ -234,7 +261,9 @@ export const usersService = {
       });
       // audit log
       activityLogService.record({
-        context,
+        context: {
+          actorUserId: context.actorUserId,
+        } as any, // activityLogService masih pakai ServiceContext, akan di-migrate nanti
         action: ACTION_TYPES.DELETE_USER,
         entityType: ENTITY_TYPES.USER,
         entityId: data.userId,
