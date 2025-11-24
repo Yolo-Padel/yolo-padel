@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-utils";
-import { Role } from "@/types/prisma";
 import { getAllOrdersForAdmin } from "@/lib/services/order.service";
-
-const ALLOWED_ADMIN_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "FINANCE"];
+import { createRequestContext } from "@/types/request-context";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,14 +15,27 @@ export async function GET(request: NextRequest) {
     }
 
     const { user } = tokenResult;
-    if (!user || !ALLOWED_ADMIN_ROLES.includes(user.role as Role)) {
+    
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
       return NextResponse.json(
-        { success: false, message: "Forbidden - Admin access required" },
+        { success: false, message: "User role not found" },
         { status: 403 }
       );
     }
 
-    const orders = await getAllOrdersForAdmin();
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
+
+    const orders = await getAllOrdersForAdmin(requestContext);
 
     return NextResponse.json({
       success: true,
