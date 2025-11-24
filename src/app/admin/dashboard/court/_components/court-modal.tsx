@@ -28,11 +28,12 @@ import { OpeningHoursType } from "@/types/prisma";
 import { useCreateCourt, useUpdateCourt } from "@/hooks/use-court";
 import { FileUploader } from "@/components/file-uploader";
 import { useVenueById } from "@/hooks/use-venue";
+import Image from "next/image";
 
 interface CourtModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  mode: "add" | "edit";
+  mode: "add" | "edit" | "view";
   venueId: string;
   venueName?: string;
   court?: {
@@ -119,7 +120,7 @@ export function CourtModal({
   // Reset form when modal opens/closes or court changes
   useEffect(() => {
     if (open && venue) {
-      if (mode === "edit" && court) {
+      if ((mode === "edit" || mode === "view") && court) {
         console.log("Edit mode - court data:", court);
 
         setValue("courtName", court.name || "");
@@ -398,11 +399,20 @@ export function CourtModal({
   };
 
   const isAddMode = mode === "add";
-  const title = isAddMode ? "Add New Court" : "Edit Court";
+  const isEditMode = mode === "edit";
+  const isViewMode = mode === "view";
+
+  const title = isAddMode
+    ? "Add New Court"
+    : isEditMode
+      ? "Edit Court"
+      : "View Court";
+
   const description = isAddMode
     ? "Create a new court under this venue and set its base information for booking."
-    : "Update court information and schedule settings.";
-  const primaryButtonText = isAddMode ? "Add Court" : "Save Changes";
+    : isEditMode
+      ? "Update court information and schedule settings."
+      : "View court information and schedule settings.";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -451,6 +461,7 @@ export function CourtModal({
                     placeholder="e.g., Court 1, Court A"
                     {...register("courtName")}
                     className="w-full h-11"
+                    disabled={isViewMode}
                   />
                   {errors.courtName && (
                     <p className="text-sm text-red-600">
@@ -495,6 +506,7 @@ export function CourtModal({
                         console.log("Price input changed:", e.target.value);
                         console.log("Price input type:", typeof e.target.value);
                       }}
+                      disabled={isViewMode}
                     />
                     <InputGroupAddon align="inline-end">
                       <InputGroupText>per hour</InputGroupText>
@@ -516,18 +528,28 @@ export function CourtModal({
                   >
                     Court Image <span className="text-red-500">*</span>
                   </Label>
-                  <FileUploader
-                    folderPath="court"
-                    value={watch("image") ? [watch("image")] : []}
-                    onChange={(urls) => {
-                      setValue("image", urls[0] || "", {
-                        shouldValidate: true,
-                      });
-                    }}
-                    multiple={false}
-                    accept={{ "image/*": [".png", ".jpg", ".jpeg", ".webp"] }}
-                    maxFiles={1}
-                  />
+                  {!isViewMode ? (
+                    <FileUploader
+                      folderPath="court"
+                      value={watch("image") ? [watch("image")] : []}
+                      onChange={(urls) => {
+                        setValue("image", urls[0] || "", {
+                          shouldValidate: true,
+                        });
+                      }}
+                      multiple={false}
+                      accept={{ "image/*": [".png", ".jpg", ".jpeg", ".webp"] }}
+                      maxFiles={1}
+                    />
+                  ) : (
+                    <Image
+                      src={watch("image")}
+                      alt="Court Image"
+                      width={100}
+                      height={100}
+                      className="w-full h-full"
+                    />
+                  )}
                   {errors.image && (
                     <p className="text-sm text-red-600">
                       {errors.image.message}
@@ -547,6 +569,7 @@ export function CourtModal({
                       setValue("openingHours", value as OpeningHoursType);
                     }}
                     className="space-y-3"
+                    disabled={isViewMode}
                   >
                     <div className="flex items-start space-x-3">
                       <RadioGroupItem
@@ -624,6 +647,7 @@ export function CourtModal({
                                   toggleDayClosed(day, e.target.checked)
                                 }
                                 className="rounded"
+                                disabled={isViewMode}
                               />
                               <Label
                                 htmlFor={`${day}-closed`}
@@ -656,6 +680,7 @@ export function CourtModal({
                                         )
                                       }
                                       className="w-full p-2 border rounded-md text-sm"
+                                      disabled={isViewMode}
                                     >
                                       {getAvailableOpenHours(day, index).map(
                                         (time) => (
@@ -681,6 +706,7 @@ export function CourtModal({
                                         )
                                       }
                                       className="w-full p-2 border rounded-md text-sm"
+                                      disabled={isViewMode}
                                     >
                                       {getAvailableCloseHours(
                                         slot.openHour
@@ -698,6 +724,7 @@ export function CourtModal({
                                       size="sm"
                                       onClick={() => addTimeSlot(day)}
                                       className="h-8 w-8 p-0"
+                                      disabled={isViewMode}
                                     >
                                       <Plus className="h-3 w-3" />
                                     </Button>
@@ -707,7 +734,10 @@ export function CourtModal({
                                       size="sm"
                                       onClick={() => removeTimeSlot(day, index)}
                                       className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                                      disabled={timeSlots[day].length === 1}
+                                      disabled={
+                                        timeSlots[day].length === 1 ||
+                                        isViewMode
+                                      }
                                     >
                                       <Trash2 className="h-3 w-3" />
                                     </Button>
@@ -728,30 +758,32 @@ export function CourtModal({
           </div>
 
           {/* Footer */}
-          <div className="flex flex-1 h-fit items-center bg-background gap-3 p-6 border-t rounded-b-3xl">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1"
-              onClick={handleSubmit(onSubmit)}
-            >
-              {isSubmitting
-                ? mode === "add"
-                  ? "Creating Court..."
-                  : "Updating Court..."
-                : mode === "add"
-                  ? "Create Court"
-                  : "Save Changes"}
-            </Button>
-          </div>
+          {!isViewMode && (
+            <div className="flex flex-1 h-fit items-center bg-background gap-3 p-6 border-t rounded-b-3xl">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex-1"
+                onClick={handleSubmit(onSubmit)}
+              >
+                {isSubmitting
+                  ? mode === "add"
+                    ? "Creating Court..."
+                    : "Updating Court..."
+                  : mode === "add"
+                    ? "Create Court"
+                    : "Save Changes"}
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
