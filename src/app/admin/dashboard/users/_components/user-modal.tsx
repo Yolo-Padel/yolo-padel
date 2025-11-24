@@ -41,7 +41,7 @@ import { useRoles } from "@/hooks/use-rbac";
 interface UserModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  mode: "add" | "edit";
+  mode: "add" | "edit" | "view";
   user?: User & { profile?: Profile | null };
 }
 
@@ -84,7 +84,7 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
   // Reset form when modal opens/closes or user changes
   useEffect(() => {
     if (open) {
-      if (mode === "edit" && user) {
+      if ((mode === "edit" || mode === "view") && user) {
         setValue("fullName", user.profile?.fullName || "");
         setValue("email", user.email);
         setValue("userType", user.userType);
@@ -130,10 +130,18 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
   };
 
   const isAddMode = mode === "add";
-  const title = isAddMode ? "Invite New User" : "Edit User";
+  const isEditMode = mode === "edit";
+  const isViewMode = mode === "view";
+  const title = isAddMode
+    ? "Invite New User"
+    : isEditMode
+      ? "Edit User"
+      : "User Details";
   const description = isAddMode
     ? "Add a new member or staff to your YOLO Padel system. They'll receive an email invitation to join right away."
-    : "Update user information, user type, or access permissions.";
+    : isEditMode
+      ? "Update user information, user type."
+      : "View user information, user type.";
   const primaryButtonText = isAddMode ? "Send Invitation" : "Save Changes";
 
   return (
@@ -170,6 +178,7 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
               placeholder="Enter full name"
               {...register("fullName")}
               className="w-full"
+              disabled={isViewMode}
             />
             {errors.fullName && (
               <p className="text-sm text-red-500">{errors.fullName.message}</p>
@@ -190,6 +199,7 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
                   setValue("roleId", "");
                 }
               }}
+              disabled={isViewMode}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select User Type" />
@@ -212,6 +222,7 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
               <Select
                 value={watch("membershipId")}
                 onValueChange={(value) => setValue("membershipId", value)}
+                disabled={isViewMode}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue
@@ -244,6 +255,7 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
               <Select
                 value={watch("roleId")}
                 onValueChange={(value) => setValue("roleId", value)}
+                disabled={isViewMode}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue
@@ -282,7 +294,7 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
                   setValue("assignedVenueIds", values)
                 }
               >
-                <MultiSelectTrigger className="w-full">
+                <MultiSelectTrigger className="w-full" disabled={isViewMode}>
                   <MultiSelectValue
                     placeholder={
                       isLoadingVenues ? "Loading venues..." : "Select venues"
@@ -320,30 +332,33 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
               placeholder="Enter email address"
               {...register("email")}
               className="w-full"
+              disabled={isViewMode}
             />
             {errors.email && (
               <p className="text-sm text-red-500">{errors.email.message}</p>
             )}
           </div>
 
-          <div className="flex gap-3 pt-4 w-full">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1 border-primary text-gray-700 hover:bg-gray-50"
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1 bg-primary hover:bg-primary/90"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Processing..." : primaryButtonText}
-            </Button>
-          </div>
+          {!isViewMode && (
+            <div className="flex gap-3 pt-4 w-full">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="flex-1 border-primary text-gray-700 hover:bg-gray-50"
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-primary hover:bg-primary/90"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Processing..." : primaryButtonText}
+              </Button>
+            </div>
+          )}
         </form>
       </DialogContent>
     </Dialog>

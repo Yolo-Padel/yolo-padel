@@ -17,7 +17,10 @@ import {
   ChevronRight,
   MoreHorizontal,
   Trash,
+  Eye,
 } from "lucide-react";
+import { useUsers } from "@/hooks/use-users";
+import { usePermissionGuard } from "@/hooks/use-permission-guard";
 import {
   User,
   Profile,
@@ -71,6 +74,28 @@ export function UsersTable({
     "Join Date",
     "Actions",
   ];
+
+  // Fetch users data
+  const { data, isLoading, error } = useUsers();
+  const { canAccess: canCreateUser, isLoading: isCreateLoading } =
+    usePermissionGuard({
+      moduleKey: "users",
+      action: "create",
+    });
+  const { canAccess: canEditUser, isLoading: isEditLoading } =
+    usePermissionGuard({
+      moduleKey: "users",
+      action: "update",
+    });
+  const { canAccess: canDeleteUser, isLoading: isDeleteLoading } =
+    usePermissionGuard({
+      moduleKey: "users",
+      action: "delete",
+    });
+  const isPermissionLoading =
+    isCreateLoading || isEditLoading || isDeleteLoading;
+
+  const allUsers = data?.data?.users || [];
 
   const paginationButtonBaseClass =
     "w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]";
