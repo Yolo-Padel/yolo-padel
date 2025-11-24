@@ -4,16 +4,28 @@ import { profileService } from "./profile.service";
 import { usersService } from "./users.service";
 import { resendService } from "./resend.service";
 import { prisma } from "@/lib/prisma";
-import { requirePermission, ServiceContext } from "@/types/service-context";
-import { Role } from "@/types/prisma";
+import { RequestContext } from "@/types/request-context";
+import { requireModulePermission } from "@/lib/rbac/permission-checker";
 import { activityLogService } from "@/lib/services/activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
+import { usersServiceMetadata } from "./users.service";
+
+// Service metadata for RBAC
+export const inviteUserServiceMetadata = {
+  moduleKey: "user", // Orchestration service, akses users table
+  serviceName: "inviteUserService",
+  description: "User invitation operations",
+} as const;
 
 export const inviteUserService = {
-  inviteUser: async (data: UserCreateData, context: ServiceContext) => {
+  inviteUser: async (data: UserCreateData, context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        inviteUserServiceMetadata.moduleKey,
+        "create"
+      );
       if (accessError) return accessError;
       const existingUser = await prisma.user.findUnique({
         where: { email: data.email },
@@ -28,7 +40,7 @@ export const inviteUserService = {
       }
 
       const inviteResult = await prisma.$transaction(async (tx) => {
-        const user = await usersService.createUser(data, context, tx);
+        const user = await usersService.createUser(data, context as any, tx);
         if (!user.success) {
           return {
             success: false,
@@ -98,7 +110,9 @@ export const inviteUserService = {
 
       // audit log
       activityLogService.record({
-        context,
+        context: {
+          actorUserId: context.actorUserId,
+        } as any, // activityLogService masih pakai ServiceContext, akan di-migrate nanti
         action: ACTION_TYPES.INVITE_USER,
         entityType: ENTITY_TYPES.USER,
         entityId: inviteResult.data!.user.id,
@@ -126,9 +140,13 @@ export const inviteUserService = {
       };
     }
   },
-  resendInvitation: async (userId: string, context: ServiceContext) => {
+  resendInvitation: async (userId: string, context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        inviteUserServiceMetadata.moduleKey,
+        "update"
+      );
       if (accessError) return accessError;
 
       const user = await prisma.user.findUnique({
@@ -173,7 +191,9 @@ export const inviteUserService = {
       }
 
       activityLogService.record({
-        context,
+        context: {
+          actorUserId: context.actorUserId,
+        } as any, // activityLogService masih pakai ServiceContext, akan di-migrate nanti
         action: ACTION_TYPES.INVITE_USER,
         entityType: ENTITY_TYPES.USER,
         entityId: user.id,

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-utils";
-import { createServiceContext } from "@/types/service-context";
+import { createRequestContext } from "@/types/request-context";
 import { inviteUserService } from "@/lib/services/invite-user.service";
 import { userResendInviteSchema } from "@/lib/validations/user.validation";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,8 +25,26 @@ export async function POST(request: NextRequest) {
     }
 
     const { user } = tokenResult;
-    const context = createServiceContext(user.role, user.userId, user.assignedVenueId);
-    const result = await inviteUserService.resendInvitation(parsed.data.userId, context);
+    
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
+    const result = await inviteUserService.resendInvitation(parsed.data.userId, requestContext);
 
     if (!result.success) {
       return NextResponse.json({ success: false, message: result.message }, { status: 400 });

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { usersService } from "@/lib/services/users.service";
-import { userDeleteSchema, userUpdateSchema } from "@/lib/validations/user.validation";
+import {
+  userDeleteSchema,
+  userUpdateSchema,
+} from "@/lib/validations/user.validation";
 import { verifyAuth } from "@/lib/auth-utils";
 import { createRequestContext } from "@/types/request-context";
 import { prisma } from "@/lib/prisma";
@@ -16,7 +19,7 @@ export async function GET(request: NextRequest) {
       );
     }
     const { user } = tokenResult;
-    
+
     // Get user dengan roleId untuk dynamic RBAC
     const userWithRole = await prisma.user.findUnique({
       where: { id: user.userId },
@@ -71,7 +74,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
     const { user } = tokenResult;
-    
+
     // Get user dengan roleId untuk dynamic RBAC
     const userWithRole = await prisma.user.findUnique({
       where: { id: user.userId },
@@ -101,12 +104,12 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("DELETE /api/users error:", error);
-    
-    if (error instanceof Error && error.name === 'ZodError') {
+
+    if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
         { success: false, message: "Validation error", errors: error.message },
         { status: 400 }
@@ -133,7 +136,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
     const { user } = tokenResult;
-    
+
     // Get user dengan roleId untuk dynamic RBAC
     const userWithRole = await prisma.user.findUnique({
       where: { id: user.userId },
@@ -152,7 +155,10 @@ export async function PATCH(request: NextRequest) {
       user.userId,
       user.assignedVenueId
     );
-    const result = await usersService.updateUser(validatedData as any, requestContext);
+    const result = await usersService.updateUser(
+      validatedData as any,
+      requestContext
+    );
 
     if (!result.success) {
       return NextResponse.json(
@@ -169,7 +175,7 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     console.error("PATCH /api/users error:", error);
 
-    if (error instanceof Error && error.name === 'ZodError') {
+    if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
         { success: false, message: "Validation error", errors: error.message },
         { status: 400 }
