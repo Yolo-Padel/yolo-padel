@@ -23,6 +23,9 @@ type DynamicPriceCellProps = {
   onMouseDown?: (court: Court, timeSlot: string) => void;
   onMouseEnter?: (court: Court, timeSlot: string) => void;
   isDragPreview?: boolean;
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  isPermissionLoading?: boolean;
 };
 
 export function DynamicPriceCell({
@@ -35,6 +38,9 @@ export function DynamicPriceCell({
   onMouseDown,
   onMouseEnter,
   isDragPreview = false,
+  canCreate = false,
+  canUpdate = false,
+  isPermissionLoading = false,
 }: DynamicPriceCellProps) {
   const hasPrice = dynamicPrice !== null;
 
@@ -50,7 +56,12 @@ export function DynamicPriceCell({
 
   const isInactive = dynamicPrice ? !dynamicPrice.isActive : false;
 
-  const isClickable = Boolean(onClick);
+  const isCreateLocked = !hasPrice && !canCreate;
+  const isUpdateLocked = hasPrice && !canUpdate;
+  const isInteractionDisabled =
+    isDisabled || isPermissionLoading || isCreateLocked || isUpdateLocked;
+
+  const isClickable = Boolean(onClick) && !isInteractionDisabled;
 
   return (
     <td
@@ -67,20 +78,29 @@ export function DynamicPriceCell({
         isClickable &&
           `cursor-pointer hover:bg-[${DYNAMIC_PRICE_COLORS.ACTIVE_HOVER}] transition-colors`,
         hasPrice && `bg-[#ECF1BB] border-l-2 border-l-[#B1BF20] `,
-        isDisabled && "bg-muted/30 opacity-50 cursor-not-allowed"
+        !isClickable && "cursor-not-allowed opacity-60"
       )}
       onClick={() => {
-        if (isDisabled) return;
+        if (!isClickable) {
+          return;
+        }
+
         onClick?.(dynamicPrice, court, timeSlot);
       }}
       onMouseDown={(event) => {
-        if (isDisabled) return;
+        if (isDisabled || isPermissionLoading || !canCreate) {
+          return;
+        }
+
         event.preventDefault();
         onMouseDown?.(court, timeSlot);
       }}
       onMouseEnter={() => {
         if (hasPrice && !isFirstSlot && span === 0) return;
-        if (isDisabled) return;
+        if (isDisabled || isPermissionLoading || !canCreate) {
+          return;
+        }
+
         onMouseEnter?.(court, timeSlot);
       }}
     >

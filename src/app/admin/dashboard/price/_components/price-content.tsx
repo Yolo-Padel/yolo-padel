@@ -12,6 +12,7 @@ import { useVenue } from "@/hooks/use-venue";
 import { useCourtByVenue } from "@/hooks/use-court";
 import { useCourtDynamicPrices } from "@/hooks/use-court-dynamic-price";
 import { transformPrismaCourtToTimetable } from "@/lib/booking-transform";
+import { usePermissionGuard } from "@/hooks/use-permission-guard";
 import type {
   Court,
   Venue,
@@ -113,6 +114,32 @@ export function PriceContent() {
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
   };
+  const {
+    canAccess: canCreateDynamicPrice,
+    isLoading: isCreatePermissionLoading,
+  } = usePermissionGuard({
+    moduleKey: "courts",
+    action: "create",
+  });
+  const {
+    canAccess: canUpdateDynamicPrice,
+    isLoading: isUpdatePermissionLoading,
+  } = usePermissionGuard({
+    moduleKey: "courts",
+    action: "update",
+  });
+  const {
+    canAccess: canDeleteDynamicPrice,
+    isLoading: isDeletePermissionLoading,
+  } = usePermissionGuard({
+    moduleKey: "courts",
+    action: "delete",
+  });
+
+  const isPermissionLoading =
+    isCreatePermissionLoading ||
+    isUpdatePermissionLoading ||
+    isDeletePermissionLoading;
 
   const openModal = React.useCallback(
     (context: {
@@ -166,6 +193,9 @@ export function PriceContent() {
           isFirstSlot={isFirstSlot}
           span={span}
           isDragPreview={isDragPreview && !dynamicPrice}
+          canCreate={canCreateDynamicPrice}
+          canUpdate={canUpdateDynamicPrice}
+          isPermissionLoading={isPermissionLoading}
           onClick={(dynamicPrice, cellCourt, slot) => {
             if (!dragState) {
               openModal({
@@ -194,7 +224,14 @@ export function PriceContent() {
         />
       );
     },
-    [pricesByCourt, dragState, openModal]
+    [
+      pricesByCourt,
+      dragState,
+      openModal,
+      canCreateDynamicPrice,
+      canUpdateDynamicPrice,
+      isPermissionLoading,
+    ]
   );
 
   React.useEffect(() => {
@@ -228,7 +265,7 @@ export function PriceContent() {
   }, [dragState, openModal]);
 
   const handleAddCustomPrice = () => {
-    if (!courts.length) return;
+    if (!courts.length || !canCreateDynamicPrice || isPermissionLoading) return;
     const defaultStart = timeSlots[0] ?? "06:00";
     openModal({
       courtId: courts[0].id,
@@ -299,6 +336,8 @@ export function PriceContent() {
           selectedVenueId={selectedVenueId}
           onVenueChange={handleVenueChange}
           isLoading={courtsLoading}
+          canCreateBooking={canCreateDynamicPrice}
+          isLoadingPermission={isPermissionLoading}
         />
         <TimetableEmptyState type="no-courts" />
       </div>
@@ -306,6 +345,14 @@ export function PriceContent() {
   }
 
   const isTableLoading = dynamicPriceLoading;
+
+  const primaryAction = canCreateDynamicPrice
+    ? {
+        label: "Add Custom Price",
+        onClick: handleAddCustomPrice,
+        disabled: courts.length === 0 || isPermissionLoading,
+      }
+    : undefined;
 
   return (
     <div className="space-y-4 w-full max-w-full">
@@ -319,6 +366,8 @@ export function PriceContent() {
         selectedVenueId={selectedVenueId}
         onVenueChange={handleVenueChange}
         isLoading={courtsLoading}
+        canCreateBooking={canCreateDynamicPrice}
+        isLoadingPermission={isPermissionLoading}
       />
 
       <Timetable
@@ -326,11 +375,7 @@ export function PriceContent() {
         selectedDate={selectedDate}
         onDateChange={handleDateChange}
         showQuickJumpButtons={false}
-        primaryAction={{
-          label: "Add Custom Price",
-          onClick: handleAddCustomPrice,
-          disabled: courts.length === 0,
-        }}
+        primaryAction={primaryAction}
         isLoading={isTableLoading}
         renderCell={renderDynamicPriceCell}
       />
@@ -355,6 +400,9 @@ export function PriceContent() {
             venues.find((v) => v.id === selectedVenueId)?.name ?? undefined
           }
           disableCourtSelection={modalContext.fromCell === true}
+          canCreate={canCreateDynamicPrice}
+          canUpdate={canUpdateDynamicPrice}
+          canDelete={canDeleteDynamicPrice}
         />
       )}
     </div>
