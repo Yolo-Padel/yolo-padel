@@ -2,14 +2,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { courtService } from "@/lib/services/court.service";
 import { courtCreateSchema } from "@/lib/validations/court.validation";
-import { createServiceContext } from "@/types/service-context";
+import { createRequestContext } from "@/types/request-context";
 import { verifyAuth } from "@/lib/auth-utils";
+import { prisma } from "@/lib/prisma";
 
 // GET /api/court - Get all courts
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const venueId = searchParams.get('venueId');
+    const venueId = searchParams.get("venueId");
     const tokenResult = await verifyAuth(request);
 
     if (!tokenResult.isValid) {
@@ -19,13 +20,31 @@ export async function GET(request: NextRequest) {
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
-    
+
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
+
     let result;
     if (venueId) {
-      result = await courtService.getByVenue(venueId, serviceContext);
+      result = await courtService.getByVenue(venueId, requestContext);
     } else {
-      result = await courtService.getAll(serviceContext);
+      result = await courtService.getAll(requestContext);
     }
 
     if (!result.success) {
@@ -38,7 +57,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: result.data,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("GET /api/court error:", error);
@@ -52,7 +71,7 @@ export async function GET(request: NextRequest) {
 // POST /api/court - Create new court
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();    
+    const body = await request.json();
     const validatedData = courtCreateSchema.parse(body);
     const tokenResult = await verifyAuth(request);
 
@@ -63,9 +82,27 @@ export async function POST(request: NextRequest) {
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
-    
-    const result = await courtService.create(validatedData, serviceContext);
+
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
+
+    const result = await courtService.create(validatedData, requestContext);
 
     if (!result.success) {
       return NextResponse.json(
@@ -74,15 +111,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      data: result.data,
-      message: result.message
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        data: result.data,
+        message: result.message,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("POST /api/court error:", error);
-    
-    if (error instanceof Error && error.name === 'ZodError') {
+
+    if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
         { success: false, message: "Validation error", errors: error.message },
         { status: 400 }

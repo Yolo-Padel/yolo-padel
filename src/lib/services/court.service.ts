@@ -7,11 +7,8 @@ import {
   Role,
   BookingStatus,
 } from "@/types/prisma";
-import {
-  ServiceContext,
-  hasPermission,
-  requirePermission,
-} from "@/types/service-context";
+import { RequestContext } from "@/types/request-context";
+import { requireModulePermission } from "@/lib/rbac/permission-checker";
 import {
   activityLogService,
   buildChangesDiff,
@@ -21,11 +18,22 @@ import { ENTITY_TYPES } from "@/types/entity";
 import { vercelBlobService } from "@/lib/services/vercel-blob.service";
 import { getDayOfWeekKey } from "@/lib/booking-slots-utils";
 
+// Service metadata for RBAC
+export const courtServiceMetadata = {
+  moduleKey: "court", // Harus match dengan key di tabel modules
+  serviceName: "courtService",
+  description: "Court management operations",
+} as const;
+
 export const courtService = {
   // Get all courts with venue and schedule info
-  getAll: async (context: ServiceContext) => {
+  getAll: async (context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.USER);
+      const accessError = await requireModulePermission(
+        context,
+        courtServiceMetadata.moduleKey,
+        "read"
+      );
       if (accessError) return accessError;
 
       const courts = await prisma.court.findMany({
@@ -50,11 +58,11 @@ export const courtService = {
       });
 
       const filteredCourts = courts.filter((court) => {
-        if (
-          context.userRole === Role.ADMIN ||
-          context.userRole === Role.FINANCE
-        ) {
-          return court.venueId === context.assignedVenueId;
+        if (context.assignedVenueId) {
+          const venueIds = Array.isArray(context.assignedVenueId)
+            ? context.assignedVenueId
+            : [context.assignedVenueId];
+          return venueIds.includes(court.venueId);
         }
         return true;
       });
@@ -136,9 +144,13 @@ export const courtService = {
   },
 
   // Get courts by venue
-  getByVenue: async (venueId: string, context: ServiceContext) => {
+  getByVenue: async (venueId: string, context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.FINANCE);
+      const accessError = await requireModulePermission(
+        context,
+        courtServiceMetadata.moduleKey,
+        "read"
+      );
       if (accessError) return accessError;
 
       const courts = await prisma.court.findMany({
@@ -165,16 +177,18 @@ export const courtService = {
         },
       });
 
-      if (
-        (context.userRole === Role.ADMIN ||
-          context.userRole === Role.FINANCE) &&
-        venueId !== context.assignedVenueId
-      ) {
-        return {
-          success: false,
-          data: null,
-          message: "You are not authorized to access this resource",
-        };
+      // Check venue access berdasarkan assignedVenueId
+      if (context.assignedVenueId) {
+        const venueIds = Array.isArray(context.assignedVenueId)
+          ? context.assignedVenueId
+          : [context.assignedVenueId];
+        if (!venueIds.includes(venueId)) {
+          return {
+            success: false,
+            data: null,
+            message: "You are not authorized to access this resource",
+          };
+        }
       }
 
       return {
@@ -194,9 +208,13 @@ export const courtService = {
   },
 
   // Get court by ID with full details
-  getById: async (id: string, context: ServiceContext) => {
+  getById: async (id: string, context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.USER);
+      const accessError = await requireModulePermission(
+        context,
+        courtServiceMetadata.moduleKey,
+        "read"
+      );
       if (accessError) return accessError;
 
       const court = await prisma.court.findUnique({
@@ -225,17 +243,18 @@ export const courtService = {
         };
       }
 
-      // Check venue access for ADMIN/FINANCE roles
-      if (
-        (context.userRole === Role.ADMIN ||
-          context.userRole === Role.FINANCE) &&
-        court.venueId !== context.assignedVenueId
-      ) {
-        return {
-          success: false,
-          data: null,
-          message: "You are not authorized to access this resource",
-        };
+      // Check venue access berdasarkan assignedVenueId
+      if (context.assignedVenueId) {
+        const venueIds = Array.isArray(context.assignedVenueId)
+          ? context.assignedVenueId
+          : [context.assignedVenueId];
+        if (!venueIds.includes(court.venueId)) {
+          return {
+            success: false,
+            data: null,
+            message: "You are not authorized to access this resource",
+          };
+        }
       }
 
       return {
@@ -255,9 +274,13 @@ export const courtService = {
   },
 
   // Create new court
-  create: async (data: CourtCreateData, context: ServiceContext) => {
+  create: async (data: CourtCreateData, context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        courtServiceMetadata.moduleKey,
+        "create"
+      );
       if (accessError) return accessError;
 
       // 1. Get venue data for REGULAR opening hours
@@ -366,7 +389,9 @@ export const courtService = {
 
       // audit log
       activityLogService.record({
-        context,
+        context: {
+          actorUserId: context.actorUserId,
+        } as any, // activityLogService masih pakai ServiceContext, akan di-migrate nanti
         action: ACTION_TYPES.CREATE_COURT,
         entityType: ENTITY_TYPES.COURT,
         entityId: court.id,
@@ -400,10 +425,14 @@ export const courtService = {
   update: async (
     id: string,
     data: CourtCreateData,
-    context: ServiceContext
+    context: RequestContext
   ) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        courtServiceMetadata.moduleKey,
+        "update"
+      );
       if (accessError) return accessError;
 
       console.log("updating court");
@@ -570,7 +599,9 @@ export const courtService = {
       );
 
       activityLogService.record({
-        context,
+        context: {
+          actorUserId: context.actorUserId,
+        } as any, // activityLogService masih pakai ServiceContext, akan di-migrate nanti
         action: ACTION_TYPES.UPDATE_COURT,
         entityType: ENTITY_TYPES.COURT,
         entityId: court.id,
@@ -593,8 +624,12 @@ export const courtService = {
   },
 
   // Soft delete court
-  delete: async (id: string, context: ServiceContext) => {
-    const accessError = requirePermission(context, Role.SUPER_ADMIN);
+  delete: async (id: string, context: RequestContext) => {
+    const accessError = await requireModulePermission(
+      context,
+      courtServiceMetadata.moduleKey,
+      "delete"
+    );
     if (accessError) return accessError;
 
     try {
@@ -646,7 +681,9 @@ export const courtService = {
       });
 
       activityLogService.record({
-        context,
+        context: {
+          actorUserId: context.actorUserId,
+        } as any, // activityLogService masih pakai ServiceContext, akan di-migrate nanti
         action: ACTION_TYPES.DELETE_COURT,
         entityType: ENTITY_TYPES.COURT,
         entityId: id,
@@ -675,10 +712,14 @@ export const courtService = {
   toggleAvailability: async (
     id: string,
     isActive: boolean,
-    context: ServiceContext
+    context: RequestContext
   ) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        courtServiceMetadata.moduleKey,
+        "update"
+      );
       if (accessError) return accessError;
 
       const court = await prisma.court.findUnique({
@@ -705,7 +746,9 @@ export const courtService = {
         after: { isActive },
       } as any;
       activityLogService.record({
-        context,
+        context: {
+          actorUserId: context.actorUserId,
+        } as any, // activityLogService masih pakai ServiceContext, akan di-migrate nanti
         action: ACTION_TYPES.UPDATE_COURT,
         entityType: ENTITY_TYPES.COURT,
         entityId: id,

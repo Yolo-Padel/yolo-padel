@@ -2,8 +2,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { courtService } from "@/lib/services/court.service";
 import { courtCreateSchema } from "@/lib/validations/court.validation";
-import { createServiceContext } from "@/types/service-context";
+import { createRequestContext } from "@/types/request-context";
 import { verifyAuth } from "@/lib/auth-utils";
+import { prisma } from "@/lib/prisma";
 
 // GET /api/court/[id] - Get court by ID
 export async function GET(
@@ -21,8 +22,26 @@ export async function GET(
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
-    const result = await courtService.getById(id, serviceContext);
+
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
+    const result = await courtService.getById(id, requestContext);
 
     if (!result.success) {
       return NextResponse.json(
@@ -34,7 +53,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: result.data,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("GET /api/court/[id] error:", error);
@@ -62,19 +81,30 @@ export async function PUT(
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
-    
+
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
+
     // Validate request body
-    console.log("Raw body received:", body);
-    console.log("Body price:", body.price);
-    console.log("Body price type:", typeof body.price);
-    
     const validatedData = courtCreateSchema.parse(body);
-    console.log("validatedData", validatedData);
-    console.log("Validated price:", validatedData.price);
-    console.log("Validated price type:", typeof validatedData.price);
-    
-    const result = await courtService.update(id, validatedData, serviceContext);
+
+    const result = await courtService.update(id, validatedData, requestContext);
 
     if (!result.success) {
       return NextResponse.json(
@@ -86,12 +116,12 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       data: result.data,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("PUT /api/court/[id] error:", error);
-    
-    if (error instanceof Error && error.name === 'ZodError') {
+
+    if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
         { success: false, message: "Validation error", errors: error.message },
         { status: 400 }
@@ -121,9 +151,27 @@ export async function DELETE(
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
 
-    const result = await courtService.delete(id, serviceContext);
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
+
+    const result = await courtService.delete(id, requestContext);
 
     if (!result.success) {
       return NextResponse.json(
@@ -135,7 +183,7 @@ export async function DELETE(
     return NextResponse.json({
       success: true,
       data: result.data,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("DELETE /api/court/[id] error:", error);
