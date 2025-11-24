@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { User, Profile, Membership } from "@/types/prisma";
+import {
+  User,
+  Profile,
+  Membership,
+  UserType,
+  UserStatus,
+} from "@/types/prisma";
 import {
   UserCreateData,
   UserDeleteData,
@@ -23,6 +29,35 @@ interface UsersResponse {
   } | null;
   message: string;
   errors?: any[];
+}
+
+// Types for admin users with filtering
+export interface UseAdminUsersOptions {
+  search?: string;
+  userType?: string;
+  status?: string;
+  venue?: string;
+  page?: number;
+  limit?: number;
+}
+
+interface AdminUsersResponse {
+  success: boolean;
+  message: string;
+  data: (User & {
+    profile?: Profile | null;
+    membership?: Membership | null;
+    invitation?: {
+      state: "valid" | "expired" | "used" | "none";
+      expiresAt?: string;
+    };
+  })[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 interface DeleteUserResponse {
@@ -167,12 +202,75 @@ const inviteUserApi = {
   },
 };
 
+// API function for admin users with filtering
+const getAdminUsersApi = async (
+  options: UseAdminUsersOptions = {}
+): Promise<AdminUsersResponse> => {
+  // Build query string from filter options
+  const searchParams = new URLSearchParams();
+
+  // Only add defined values to query string
+  if (options.search) searchParams.append("search", options.search);
+  if (options.userType) searchParams.append("userType", options.userType);
+  if (options.status) searchParams.append("status", options.status);
+  if (options.venue) searchParams.append("venue", options.venue);
+  if (options.page) searchParams.append("page", options.page.toString());
+  if (options.limit) searchParams.append("limit", options.limit.toString());
+
+  const queryString = searchParams.toString();
+  const url = queryString ? `/api/users?${queryString}` : "/api/users";
+
+  const response = await fetch(url, {
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Failed to fetch users");
+  }
+
+  return response.json();
+};
+
 // Custom hooks
 export const useUsers = () => {
   return useQuery({
     queryKey: ["users"],
     queryFn: () => usersApi.getUsers(),
     staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
+
+/**
+ * Hook to get all users for admin dashboard with filtering support
+ *
+ * Accepts filter options as parameters:
+ * - search: Search by name or email
+ * - userType: Filter by user type (ADMIN, STAFF, USER)
+ * - status: Filter by status (ACTIVE, INACTIVE, INVITED)
+ * - venue: Filter by assigned venue ID
+ * - page: Current page number (default: 1)
+ * - limit: Results per page (default: 10, max: 100)
+ *
+ * Returns:
+ * - data: Array of users with pagination metadata
+ * - isLoading: Initial loading state
+ * - isFetching: Refetching state (for filter changes)
+ * - error: Error object if request fails
+ *
+ * React Query configuration:
+ * - staleTime: 30 seconds (cache results for 30s)
+ * - queryKey includes filter options for proper cache invalidation
+ *
+ * Requirements: 7.1, 8.5
+ */
+export const useAdminUsers = (options: UseAdminUsersOptions = {}) => {
+  // Include filter options in query key for proper caching
+  // This ensures different filter combinations are cached separately
+  return useQuery({
+    queryKey: ["admin-users", options],
+    queryFn: () => getAdminUsersApi(options),
+    staleTime: 30000, // 30 seconds - cache for performance (Requirement 8.5)
   });
 };
 
@@ -188,8 +286,9 @@ export const useInviteUser = () => {
         toast.error(data.message || "Failed to invite user. Please try again.");
       }
 
-      // Invalidate users query to refetch users
+      // Invalidate users queries to refetch users
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (error: Error) => {
       console.error("Invite user error:", error);
@@ -209,6 +308,7 @@ export const useResendInvitation = () => {
         toast.error(data.message || "Failed to resend invitation.");
       }
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (error: Error) => {
       console.error("Resend invitation error:", error);
@@ -231,6 +331,7 @@ export const useDeleteUser = () => {
         );
       }
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (error: Error) => {
       console.error("Delete user error:", error);
@@ -253,6 +354,7 @@ export const useUpdateUser = () => {
         );
       }
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (error: Error) => {
       console.error("Update user error:", error);

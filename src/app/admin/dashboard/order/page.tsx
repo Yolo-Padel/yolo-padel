@@ -7,7 +7,6 @@ import { OrderHeader } from "./_components/order-header";
 import { OrderFilters } from "./_components/order-filters";
 import { OrderTable } from "./_components/order-table";
 import { OrderDetailsModal } from "./_components/order-details-modal";
-import { OrderTableLoading } from "./_components/order-table-loading";
 import { OrderTableSkeleton } from "./_components/order-table-skeleton";
 import { OrderEmptyState } from "./_components/order-empty-state";
 import { PaymentStatus } from "@/types/prisma";
@@ -87,16 +86,21 @@ export default function OrderPage() {
     setPaymentStatus(value === "all" ? "" : value);
   };
 
-  // Display full-page loading skeleton on initial load
-  if (isInitialLoad) {
-    return <OrderTableLoading />;
-  }
-
   // Display error message on failure
   if (error) {
     return (
       <div className="flex flex-col gap-4">
         <OrderHeader orderCount={0} />
+        <OrderFilters
+          searchValue={filters.search}
+          onSearchSubmit={setSearch}
+          venueFilter={filters.venue}
+          onVenueFilterChange={handleVenueChange}
+          paymentStatusFilter={filters.paymentStatus}
+          onPaymentStatusFilterChange={handlePaymentStatusChange}
+          hasActiveFilters={hasActiveFilters}
+          onReset={resetFilters}
+        />
         <div className="rounded-2xl border border-[#E9EAEB] p-8 text-center">
           <p className="text-red-600 font-medium mb-2">Failed to load orders</p>
           <p className="text-sm text-muted-foreground">
@@ -110,7 +114,7 @@ export default function OrderPage() {
   }
 
   // Conditional rendering - Empty state
-  if (orders.length === 0) {
+  if (!isInitialLoad && orders.length === 0) {
     return (
       <div className="flex flex-col gap-4">
         <OrderHeader orderCount={apiPagination?.total ?? 0} />
@@ -131,10 +135,10 @@ export default function OrderPage() {
     );
   }
 
-  // Main UI rendering
+  // Main UI rendering (includes initial load state)
   return (
     <div className="flex flex-col gap-4">
-      <OrderHeader orderCount={apiPagination?.total ?? orders.length} />
+      <OrderHeader orderCount={apiPagination?.total ?? 0} />
       <OrderFilters
         searchValue={filters.search}
         onSearchSubmit={setSearch}
@@ -146,7 +150,7 @@ export default function OrderPage() {
         onReset={resetFilters}
       />
 
-      {isRefetching ? (
+      {isInitialLoad || isRefetching ? (
         <OrderTableSkeleton />
       ) : (
         <OrderTable

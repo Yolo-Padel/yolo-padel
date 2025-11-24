@@ -44,12 +44,7 @@ export function OrderFilters({
   const { user } = useAuth();
   const [localSearchValue, setLocalSearchValue] = useState(searchValue);
 
-  // Debug: Check user data
-  console.log("[ORDER FILTERS] User data:", user);
-  console.log("[ORDER FILTERS] assignedVenueIds:", user?.assignedVenueIds);
-
   // API returns { success, data: Venue[], message }
-  // So we access venuesData.data directly, not venuesData.data.venues
   const allVenues: Venue[] = venuesData?.data || [];
 
   // Filter venues based on user type and assigned venues
@@ -62,7 +57,6 @@ export function OrderFilters({
     }
     // Staff can only see assigned venues
     else if (user.userType === UserType.STAFF) {
-      // Handle old tokens that don't have assignedVenueIds
       if (user.assignedVenueIds && user.assignedVenueIds.length > 0) {
         venues = allVenues.filter((venue) =>
           user.assignedVenueIds.includes(venue.id)

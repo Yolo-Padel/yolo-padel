@@ -81,6 +81,9 @@ model User {
   roleId String?
   roles  Roles? @relation(fields: [roleId], references: [id])
 
+  @@index([userType])
+  @@index([userStatus])
+  @@index([assignedVenueIds])
   @@map("users")
 }
 
@@ -96,6 +99,7 @@ model Profile {
   // Relasi ke User
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([fullName])
   @@map("profiles")
 }
 
