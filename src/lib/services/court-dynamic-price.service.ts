@@ -1,10 +1,17 @@
 import { prisma } from "@/lib/prisma";
-import { Role } from "@/types/prisma";
-import { ServiceContext, requirePermission } from "@/types/service-context";
+import { RequestContext } from "@/types/request-context";
+import { requireModulePermission } from "@/lib/rbac/permission-checker";
 import {
   CourtDynamicPriceCreateData,
   CourtDynamicPriceUpdateData,
 } from "@/lib/validations/court-dynamic-price.validation";
+
+// Service metadata for RBAC
+export const courtDynamicPriceServiceMetadata = {
+  moduleKey: "dynamic_price", // Harus match dengan key di tabel modules
+  serviceName: "courtDynamicPriceService",
+  description: "Court dynamic price management operations",
+} as const;
 
 const buildSuccess = <T>(data: T, message: string) => ({
   success: true,
@@ -18,7 +25,7 @@ const buildError = (message: string) => ({
   message,
 });
 
-const ensureCourtAccess = async (courtId: string, context: ServiceContext) => {
+const ensureCourtAccess = async (courtId: string, context: RequestContext) => {
   const court = await prisma.court.findUnique({
     where: { id: courtId },
     select: {
@@ -33,14 +40,16 @@ const ensureCourtAccess = async (courtId: string, context: ServiceContext) => {
     };
   }
 
-  if (
-    (context.userRole === Role.ADMIN || context.userRole === Role.FINANCE) &&
-    context.assignedVenueId &&
-    court.venueId !== context.assignedVenueId
-  ) {
-    return {
-      error: buildError("You are not authorized to access this court"),
-    };
+  // Check venue access berdasarkan assignedVenueId
+  if (context.assignedVenueId) {
+    const venueIds = Array.isArray(context.assignedVenueId)
+      ? context.assignedVenueId
+      : [context.assignedVenueId];
+    if (!venueIds.includes(court.venueId)) {
+      return {
+        error: buildError("You are not authorized to access this court"),
+      };
+    }
   }
 
   return { court };
@@ -48,7 +57,7 @@ const ensureCourtAccess = async (courtId: string, context: ServiceContext) => {
 
 const ensureDynamicPriceAccess = async (
   id: string,
-  context: ServiceContext
+  context: RequestContext
 ) => {
   const dynamicPrice = await prisma.courtDynamicPrice.findUnique({
     where: { id },
@@ -68,14 +77,18 @@ const ensureDynamicPriceAccess = async (
     };
   }
 
-  if (
-    (context.userRole === Role.ADMIN || context.userRole === Role.FINANCE) &&
-    context.assignedVenueId &&
-    dynamicPrice.court.venueId !== context.assignedVenueId
-  ) {
-    return {
-      error: buildError("You are not authorized to access this dynamic price"),
-    };
+  // Check venue access berdasarkan assignedVenueId
+  if (context.assignedVenueId) {
+    const venueIds = Array.isArray(context.assignedVenueId)
+      ? context.assignedVenueId
+      : [context.assignedVenueId];
+    if (!venueIds.includes(dynamicPrice.court.venueId)) {
+      return {
+        error: buildError(
+          "You are not authorized to access this dynamic price"
+        ),
+      };
+    }
   }
 
   return { dynamicPrice };
@@ -99,9 +112,13 @@ const minutesToTimeString = (minutes: number) => {
 };
 
 export const courtDynamicPriceService = {
-  listByCourt: async (courtId: string, context: ServiceContext) => {
+  listByCourt: async (courtId: string, context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.FINANCE);
+      const accessError = await requireModulePermission(
+        context,
+        courtDynamicPriceServiceMetadata.moduleKey,
+        "read"
+      );
       if (accessError) return accessError;
 
       const { error } = await ensureCourtAccess(courtId, context);
@@ -122,9 +139,13 @@ export const courtDynamicPriceService = {
     }
   },
 
-  getById: async (id: string, context: ServiceContext) => {
+  getById: async (id: string, context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.FINANCE);
+      const accessError = await requireModulePermission(
+        context,
+        courtDynamicPriceServiceMetadata.moduleKey,
+        "read"
+      );
       if (accessError) return accessError;
 
       const { dynamicPrice, error } = await ensureDynamicPriceAccess(
@@ -142,10 +163,14 @@ export const courtDynamicPriceService = {
 
   create: async (
     data: CourtDynamicPriceCreateData,
-    context: ServiceContext
+    context: RequestContext
   ) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        courtDynamicPriceServiceMetadata.moduleKey,
+        "create"
+      );
       if (accessError) return accessError;
 
       const { error } = await ensureCourtAccess(data.courtId, context);
@@ -160,15 +185,15 @@ export const courtDynamicPriceService = {
         isArchived: false,
       };
 
-        const dynamicPrice = await prisma.courtDynamicPrice.create({
-          data: {
-            ...baseData,
+      const dynamicPrice = await prisma.courtDynamicPrice.create({
+        data: {
+          ...baseData,
           startHour: data.startHour,
           endHour: data.endHour,
-          },
-        });
+        },
+      });
 
-        return buildSuccess(dynamicPrice, "Dynamic price created successfully");
+      return buildSuccess(dynamicPrice, "Dynamic price created successfully");
     } catch (err) {
       console.error("create dynamic price error:", err);
       return buildError("Failed to create dynamic price");
@@ -178,10 +203,14 @@ export const courtDynamicPriceService = {
   update: async (
     id: string,
     data: CourtDynamicPriceUpdateData,
-    context: ServiceContext
+    context: RequestContext
   ) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        courtDynamicPriceServiceMetadata.moduleKey,
+        "update"
+      );
       if (accessError) return accessError;
 
       const { dynamicPrice, error } = await ensureDynamicPriceAccess(
@@ -224,9 +253,13 @@ export const courtDynamicPriceService = {
     }
   },
 
-  delete: async (id: string, context: ServiceContext) => {
+  delete: async (id: string, context: RequestContext) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = await requireModulePermission(
+        context,
+        courtDynamicPriceServiceMetadata.moduleKey,
+        "delete"
+      );
       if (accessError) return accessError;
 
       const { dynamicPrice, error } = await ensureDynamicPriceAccess(

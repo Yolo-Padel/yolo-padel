@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { verifyAuth } from "@/lib/auth-utils";
-import { createServiceContext } from "@/types/service-context";
+import { createRequestContext } from "@/types/request-context";
 import { courtDynamicPriceService } from "@/lib/services/court-dynamic-price.service";
 import { courtDynamicPriceUpdateSchema } from "@/lib/validations/court-dynamic-price.validation";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
@@ -20,13 +21,27 @@ export async function GET(
     }
 
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(
-      user.role,
+
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
       user.userId,
       user.assignedVenueId
     );
 
-    const result = await courtDynamicPriceService.getById(id, serviceContext);
+    const result = await courtDynamicPriceService.getById(id, requestContext);
 
     if (!result.success) {
       return NextResponse.json(
@@ -63,8 +78,22 @@ export async function PUT(
     }
 
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(
-      user.role,
+
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
       user.userId,
       user.assignedVenueId
     );
@@ -72,7 +101,7 @@ export async function PUT(
     const result = await courtDynamicPriceService.update(
       id,
       payload,
-      serviceContext
+      requestContext
     );
 
     if (!result.success) {
@@ -119,13 +148,27 @@ export async function DELETE(
     }
 
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(
-      user.role,
+
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
       user.userId,
       user.assignedVenueId
     );
 
-    const result = await courtDynamicPriceService.delete(id, serviceContext);
+    const result = await courtDynamicPriceService.delete(id, requestContext);
 
     if (!result.success) {
       return NextResponse.json(
