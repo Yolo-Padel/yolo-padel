@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrderById } from "@/lib/services/order.service";
 import { verifyAuth } from "@/lib/auth-utils";
+import { createRequestContext } from "@/types/request-context";
+import { prisma } from "@/lib/prisma";
 import { renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
 import { ReceiptPDF } from "@/components/receipt/receipt-pdf";
@@ -34,8 +36,27 @@ export async function GET(
       );
     }
 
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
+
     // Get order
-    const orderData = await getOrderById(id);
+    const orderData = await getOrderById(id, requestContext);
 
     if (!orderData) {
       return NextResponse.json(

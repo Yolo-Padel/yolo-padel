@@ -3,6 +3,8 @@ import { getOrderById, updateOrderStatus } from "@/lib/services/order.service";
 import { updateOrderStatusSchema } from "@/lib/validations/order.validation";
 import { syncOrderStatusToBookings } from "@/lib/services/status-sync.service";
 import { verifyAuth } from "@/lib/auth-utils";
+import { createRequestContext } from "@/types/request-context";
+import { prisma } from "@/lib/prisma";
 
 /**
  * GET /api/order/[id]
@@ -28,8 +30,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
+
     // Get order
-    const order = await getOrderById(orderId ?? "");
+    const order = await getOrderById(orderId ?? "", requestContext);
 
     if (!order) {
       return NextResponse.json(
@@ -87,13 +108,24 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Check if user is admin
-    if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
       return NextResponse.json(
-        { success: false, message: "Forbidden - Admin access required" },
+        { success: false, message: "User role not found" },
         { status: 403 }
       );
     }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
 
     const body = await request.json();
 
@@ -117,10 +149,10 @@ export async function PATCH(request: NextRequest) {
     const data = validation.data;
 
     // Update order status with cascading updates
-    await syncOrderStatusToBookings(data.orderId, data.status);
+    await updateOrderStatus(data.orderId, data.status, requestContext);
 
     // Get updated order
-    const updatedOrder = await getOrderById(data.orderId);
+    const updatedOrder = await getOrderById(data.orderId, requestContext);
 
     return NextResponse.json({
       success: true,

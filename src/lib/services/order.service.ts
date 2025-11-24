@@ -9,6 +9,15 @@ import { customAlphabet } from "nanoid";
 import { createBooking } from "./booking.service";
 import { createPayment } from "./payment.service";
 import { createBlocking } from "./blocking.service";
+import { RequestContext } from "@/types/request-context";
+import { requireModulePermission } from "@/lib/rbac/permission-checker";
+
+// Service metadata for RBAC
+export const orderServiceMetadata = {
+  moduleKey: "order", // Harus match dengan key di tabel modules
+  serviceName: "orderService",
+  description: "Order management operations",
+} as const;
 
 /**
  * Generate unique order code
@@ -198,7 +207,18 @@ export async function createOrder(data: {
 /**
  * Get order by ID with full details
  */
-export async function getOrderById(orderId: string) {
+export async function getOrderById(orderId: string, context?: RequestContext) {
+  // Check permission if context is provided
+  if (context) {
+    const accessError = await requireModulePermission(
+      context,
+      orderServiceMetadata.moduleKey,
+      "read"
+    );
+    if (accessError) {
+      throw new Error(accessError.message);
+    }
+  }
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
@@ -269,8 +289,25 @@ export async function getOrdersByUserId(
     page?: number;
     limit?: number;
     status?: OrderStatus;
-  }
+  },
+  context?: RequestContext
 ) {
+  // Check permission if context is provided
+  if (context) {
+    const accessError = await requireModulePermission(
+      context,
+      orderServiceMetadata.moduleKey,
+      "read"
+    );
+    if (accessError) {
+      throw new Error(accessError.message);
+    }
+
+    // If not admin, only allow access to own orders
+    if (context.actorUserId !== userId) {
+      throw new Error("You can only access your own orders");
+    }
+  }
   const { page = 1, limit = 10, status } = options || {};
   const skip = (page - 1) * limit;
 
@@ -352,7 +389,15 @@ export async function getOrdersByUserId(
 /**
  * Get all orders for admin dashboard (no pagination/filter)
  */
-export async function getAllOrdersForAdmin() {
+export async function getAllOrdersForAdmin(context: RequestContext) {
+  const accessError = await requireModulePermission(
+    context,
+    orderServiceMetadata.moduleKey,
+    "read"
+  );
+  if (accessError) {
+    throw new Error(accessError.message);
+  }
   const orders = await prisma.order.findMany({
     include: {
       user: {
@@ -418,8 +463,17 @@ export async function getAllOrdersForAdmin() {
  */
 export async function updateOrderStatus(
   orderId: string,
-  newStatus: OrderStatus
+  newStatus: OrderStatus,
+  context: RequestContext
 ): Promise<Order> {
+  const accessError = await requireModulePermission(
+    context,
+    orderServiceMetadata.moduleKey,
+    "update"
+  );
+  if (accessError) {
+    throw new Error(accessError.message);
+  }
   const order = await prisma.order.update({
     where: { id: orderId },
     data: { status: newStatus },
@@ -432,7 +486,18 @@ export async function updateOrderStatus(
  * Cancel order
  * This will cancel all bookings, release blockings, and update payment status
  */
-export async function cancelOrder(orderId: string): Promise<Order> {
+export async function cancelOrder(
+  orderId: string,
+  context: RequestContext
+): Promise<Order> {
+  const accessError = await requireModulePermission(
+    context,
+    orderServiceMetadata.moduleKey,
+    "update"
+  );
+  if (accessError) {
+    throw new Error(accessError.message);
+  }
   const order = await prisma.$transaction(async (tx) => {
     // Get order with bookings
     const orderData = await tx.order.findUnique({

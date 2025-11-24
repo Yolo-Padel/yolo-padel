@@ -4,6 +4,8 @@ import { getOrderById } from "@/lib/services/order.service";
 import { getPaymentByOrderId } from "@/lib/services/payment.service";
 import { createXenditInvoiceForOrder } from "@/lib/services/xendit-payment.service";
 import { createInvoiceSchema } from "@/lib/validations/xendit.validation";
+import { createRequestContext } from "@/types/request-context";
+import { prisma } from "@/lib/prisma";
 
 /**
  * POST /api/order/[id]/xendit/invoice
@@ -26,8 +28,27 @@ export async function POST(
     const { id: orderId } = await params;
     const { user } = tokenResult;
 
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
+    });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
+
     // Verify order exists and belongs to user
-    const order = await getOrderById(orderId);
+    const order = await getOrderById(orderId, requestContext);
     if (!order) {
       return NextResponse.json(
         { success: false, message: "Order not found" },
@@ -43,7 +64,7 @@ export async function POST(
     }
 
     // Get payment for this order
-    const payment = await getPaymentByOrderId(orderId);
+    const payment = await getPaymentByOrderId(orderId, requestContext);
     if (!payment) {
       return NextResponse.json(
         { success: false, message: "Payment not found for this order" },
@@ -152,7 +173,7 @@ export async function POST(
     }
 
     // Get updated payment
-    const updatedPayment = await getPaymentByOrderId(orderId);
+    const updatedPayment = await getPaymentByOrderId(orderId, requestContext);
 
     return NextResponse.json(
       {

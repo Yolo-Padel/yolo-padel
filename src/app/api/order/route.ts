@@ -5,6 +5,8 @@ import {
   getUserOrdersSchema,
 } from "@/lib/validations/order.validation";
 import { verifyAuth } from "@/lib/auth-utils";
+import { createRequestContext } from "@/types/request-context";
+import { prisma } from "@/lib/prisma";
 
 /**
  * POST /api/order
@@ -141,12 +143,35 @@ export async function GET(request: NextRequest) {
 
     const data = validation.data;
 
-    // Get orders
-    const result = await getOrdersByUserId(data.userId, {
-      page: data.page,
-      limit: data.limit,
-      status: data.status,
+    // Get user dengan roleId untuk dynamic RBAC
+    const userWithRole = await prisma.user.findUnique({
+      where: { id: user.userId },
+      include: { roleRef: true },
     });
+
+    if (!userWithRole?.roleId) {
+      return NextResponse.json(
+        { success: false, message: "User role not found" },
+        { status: 403 }
+      );
+    }
+
+    const requestContext = createRequestContext(
+      userWithRole.roleId,
+      user.userId,
+      user.assignedVenueId
+    );
+
+    // Get orders
+    const result = await getOrdersByUserId(
+      data.userId,
+      {
+        page: data.page,
+        limit: data.limit,
+        status: data.status,
+      },
+      requestContext
+    );
 
     return NextResponse.json({
       success: true,
