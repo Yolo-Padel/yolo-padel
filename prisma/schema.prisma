@@ -10,11 +10,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  SUPER_ADMIN
-  ADMIN
+enum UserType {
+  STAFF
   USER
-  FINANCE
 }
 
 enum UserStatus {
@@ -50,7 +48,7 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String   @default("")
-  role      Role     @default(USER)
+  userType  UserType @default(USER)
   userStatus UserStatus @default(ACTIVE)
   isEmailVerified Boolean @default(false)
   joinDate  DateTime?
@@ -74,6 +72,14 @@ model User {
   // Relasi ke log
   activityLogs ActivityLog[] @relation("ActivityLogs")
 
+  // Membership relation
+  membershipId String?     // nullable so not all users must have membership
+  membership   Membership? @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+
+  // RBAC role relation
+  roleId String?
+  roles  Roles? @relation(fields: [roleId], references: [id])
+
   @@map("users")
 }
 
@@ -90,6 +96,18 @@ model Profile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("profiles")
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  name      String   @unique   // e.g. "Gold", "Silver", "Platinum"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation to users
+  users User[]
+
+  @@map("memberships")
 }
 
 enum OpeningHoursType {
@@ -333,4 +351,57 @@ model ActivityLog {
   user User? @relation("ActivityLogs", fields: [userId], references: [id])
 
   @@map("activity_logs")
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  label       String
+  description String?
+  orderIndex  Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+
+  @@map("modules")
+}
+
+model Permission {
+  id      String @id @default(cuid())
+  action  String @unique
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model Roles {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+  users           User[]
+
+  @@map("roles")
+}
+
+model RolePermission {
+  id           String  @id @default(cuid())
+  roleId       String
+  moduleId     String
+  permissionId String
+  allowed      Boolean @default(false)
+
+  role        Roles      @relation(fields: [roleId], references: [id])
+  module      Module     @relation(fields: [moduleId], references: [id])
+  permission  Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, moduleId, permissionId])
+  @@map("role_permissions")
 }

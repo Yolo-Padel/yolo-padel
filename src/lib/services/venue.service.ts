@@ -5,7 +5,7 @@ import {
   VenueUpdateData,
 } from "../validations/venue.validation";
 import { ServiceContext, requirePermission } from "@/types/service-context";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 import {
   activityLogService,
   buildChangesDiff,
@@ -17,7 +17,7 @@ import { vercelBlobService } from "@/lib/services/vercel-blob.service";
 export const venueService = {
   getAll: async (context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.USER);
+      const accessError = requirePermission(context, UserType.USER);
       if (accessError) return accessError;
 
       const venues = await prisma.venue.findMany({
@@ -25,15 +25,12 @@ export const venueService = {
         orderBy: { createdAt: "desc" },
       });
 
-      // Filter venues berdasarkan role
+      // Filter venues berdasarkan userType
       const filteredVenues = venues.filter((venue) => {
-        if (
-          context.userRole === Role.ADMIN ||
-          context.userRole === Role.FINANCE
-        ) {
+        if (context.userRole === UserType.STAFF) {
           return venue.id === context.assignedVenueId;
         }
-        return true; // USER dan SUPER_ADMIN bisa akses semua venue
+        return true; // USER can access all venues
       });
 
       // Enrich with counts: courts count and today's bookings count per venue
@@ -116,7 +113,7 @@ export const venueService = {
   },
   getById: async (venueId: string, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.USER);
+      const accessError = requirePermission(context, UserType.USER);
       if (accessError) return accessError;
 
       const venue = await prisma.venue.findUnique({
@@ -131,10 +128,9 @@ export const venueService = {
         };
       }
 
-      // Check venue access untuk ADMIN/FINANCE roles
+      // Check venue access for STAFF role
       if (
-        (context.userRole === Role.ADMIN ||
-          context.userRole === Role.FINANCE) &&
+        context.userRole === UserType.STAFF &&
         venue.id !== context.assignedVenueId
       ) {
         return {
@@ -165,7 +161,7 @@ export const venueService = {
     userId: string
   ) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const baseSlug = data.name.trim().toLowerCase().replace(/\s+/g, "-");
@@ -226,7 +222,7 @@ export const venueService = {
   },
   update: async (data: VenueUpdateData, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const { venueId, ...payload } = data;
@@ -322,7 +318,7 @@ export const venueService = {
   },
   delete: async (data: VenueDeleteData, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       await prisma.venue.update({

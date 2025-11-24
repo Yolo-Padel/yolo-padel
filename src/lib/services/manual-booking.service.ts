@@ -5,7 +5,7 @@ import { createBlocking } from "@/lib/services/blocking.service";
 import { resendService } from "@/lib/services/resend.service";
 import { calculateSlotsPrice } from "@/lib/booking-pricing-utils";
 import { ServiceContext, requirePermission } from "@/types/service-context";
-import { BookingStatus, Role, UserStatus } from "@/types/prisma";
+import { BookingStatus, UserType, UserStatus } from "@/types/prisma";
 import { customAlphabet } from "nanoid";
 
 type TimeSlot = { openHour: string; closeHour: string };
@@ -92,7 +92,7 @@ function getLoginUrl(): string {
 export const manualBookingService = {
   create: async (data: ManualBookingInput, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const slots = buildTimeSlots(data.startTime, data.endTime);
@@ -182,7 +182,7 @@ export const manualBookingService = {
             data: {
               email: data.email,
               password: "",
-              role: Role.USER,
+              userType: UserType.USER,
               userStatus: UserStatus.ACTIVE,
               assignedVenueIds: [],
             },

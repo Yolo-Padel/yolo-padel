@@ -1,40 +1,44 @@
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 
 export interface ServiceContext {
-  userRole: Role;
+  userRole: UserType;
   assignedVenueId?: string | string[];
   actorUserId?: string; // for audit logging
 }
 
 export const createServiceContext = (
-  userRole: Role,
+  userRole: UserType,
   actorUserId: string,
-  assignedVenueId?: string | string[],
+  assignedVenueId?: string | string[]
 ): ServiceContext => ({
   userRole,
   assignedVenueId,
   actorUserId,
 });
 
-export const hasPermission = (context: ServiceContext, requiredRole: Role): boolean => {
-  const roleHierarchy: Record<Role, number> = {
+export const hasPermission = (
+  context: ServiceContext,
+  requiredRole: UserType
+): boolean => {
+  const roleHierarchy: Record<UserType, number> = {
     USER: 1,
-    FINANCE: 2,
-    ADMIN: 3,
-    SUPER_ADMIN: 4,
+    STAFF: 2,
   };
 
   return roleHierarchy[context.userRole] >= roleHierarchy[requiredRole];
 };
 
-export const requirePermission = (context: ServiceContext, requiredRole: Role) => {
-    if (!hasPermission(context, requiredRole)) {
-        return {
-        success: false,
-        data: null,
-        message: "You are not authorized to access this resource",
-        };
-    }
-    
-    return null;
+export const requirePermission = (
+  context: ServiceContext,
+  requiredRole: UserType
+) => {
+  if (!hasPermission(context, requiredRole)) {
+    return {
+      success: false,
+      data: null,
+      message: "You are not authorized to access this resource",
+    };
+  }
+
+  return null;
 };

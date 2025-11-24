@@ -29,7 +29,7 @@ export const resendService = {
           userName: data.userName,
           email: data.email,
           invitationUrl: data.invitationUrl,
-          role: data.role,
+          userType: data.userType,
         }),
       });
 

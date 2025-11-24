@@ -15,12 +15,12 @@ import { useUpdateProfile } from "@/hooks/use-profile";
 import { profileUpdateSchema } from "@/lib/validations/profile.validation";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
-import { Role, Profile } from "@/types/prisma";
+import { UserType, Profile } from "@/types/prisma";
 import { NextBookingInfo } from "@/types/profile";
 import { stringUtils } from "@/lib/format/string";
 import { AvatarUploader } from "@/app/_components/avatar-uploader";
 
-type ProfileStatus = "active" | "membership" | "non-membership";
+type ProfileStatus = "active" | "member" | "non-member";
 type ExtendedProfile = Profile & { phoneNumber?: string | null };
 
 interface ProfileModalProps {
@@ -40,7 +40,7 @@ interface ProfileModalProps {
  * Menampilkan informasi profil pengguna serta form untuk memperbarui data.
  */
 export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
-  const { user, profile, nextBooking, isLoading } = useAuth();
+  const { user, profile, nextBooking, isLoading, membership } = useAuth();
   const updateProfileMutation = useUpdateProfile();
 
   const formSchema = profileUpdateSchema;
@@ -65,11 +65,16 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
     form.reset(defaultValues);
   }, [defaultValues, form]);
 
-  const derivedRole = user?.role && user.role !== Role.USER ? "staff" : "user";
+  const derivedUserType =
+    user?.userType && user.userType !== UserType.USER ? "staff" : "user";
   const profileStatus: ProfileStatus =
-    derivedRole === "staff" ? "active" : "non-membership";
+    derivedUserType === "staff"
+      ? "active"
+      : membership
+        ? "member"
+        : "non-member";
   const description =
-    derivedRole === "staff"
+    derivedUserType === "staff"
       ? "Manage your personal information."
       : "View all information related to your booking.";
 
@@ -86,11 +91,11 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
   const nextBookingLabel = formatNextBookingLabel(nextBooking);
 
   const infoItems =
-    derivedRole === "staff"
+    derivedUserType === "staff"
       ? [
           {
-            label: "Role",
-            value: stringUtils.getRoleDisplay(user?.role ?? "-"),
+            label: "User Type",
+            value: stringUtils.getRoleDisplay(user?.userType ?? "-"),
           },
           { label: "Assign Venue", value: assignedVenuesLabel },
           { label: "Joined", value: joinedDateLabel },
@@ -315,15 +320,15 @@ function getBadgeConfig(status: ProfileStatus) {
         label: "Active",
         className: "bg-[#d0fbe9] text-[#1a7544] border-transparent",
       };
-    case "membership":
+    case "member":
       return {
-        label: "Membership",
+        label: "Member",
         className: "bg-[#d5f1ff] text-[#1f7ead] border-transparent",
       };
-    case "non-membership":
+    case "non-member":
     default:
       return {
-        label: "Non-membership",
+        label: "Non-member",
         className: "bg-[#f2f5f8] text-[#222530] border-transparent",
       };
   }

@@ -1,10 +1,10 @@
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 import { z } from "zod";
 
 const emailSchema = z.string().email("Invalid email format");
 
 export const invitationEmailSchema = z.object({
-  role: z.nativeEnum(Role),
+  userType: z.nativeEnum(UserType),
   email: emailSchema,
   userName: z.string().min(1, "User name is required"),
   invitationUrl: z.string().url("Invalid URL format"),

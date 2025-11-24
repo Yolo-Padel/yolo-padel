@@ -28,14 +28,15 @@ import {
   MultiSelectItem,
 } from "@/components/ui/multi-select";
 import { X } from "lucide-react";
-import { User, Profile, Role, Venue } from "@/types/prisma";
+import { User, Profile, UserType, Venue, Membership } from "@/types/prisma";
 import { useInviteUser, useUpdateUser } from "@/hooks/use-users";
 import {
   userCreateSchema,
-  UserCreateData,
   UserUpdateData,
 } from "@/lib/validations/user.validation";
 import { useVenue } from "@/hooks/use-venue";
+import { useMemberships } from "@/hooks/use-membership";
+import { useRoles } from "@/hooks/use-rbac";
 
 interface UserModalProps {
   open: boolean;
@@ -46,15 +47,20 @@ interface UserModalProps {
 
 type UserFormData = {
   email: string;
-  role: Role;
+  userType: UserType;
   fullName: string;
   assignedVenueIds: string[];
+  membershipId?: string;
+  roleId?: string;
 };
 
 export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
   const inviteUserMutation = useInviteUser();
   const updateUserMutation = useUpdateUser();
   const { data: venues, isLoading: isLoadingVenues } = useVenue();
+  const { data: memberships, isLoading: isLoadingMemberships } =
+    useMemberships();
+  const { data: roles, isLoading: isLoadingRoles } = useRoles();
 
   const {
     register,
@@ -68,8 +74,10 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
     defaultValues: {
       fullName: "",
       email: "",
-      role: Role.USER,
+      userType: UserType.USER,
       assignedVenueIds: [],
+      membershipId: "",
+      roleId: "",
     },
   });
 
@@ -79,14 +87,18 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
       if (mode === "edit" && user) {
         setValue("fullName", user.profile?.fullName || "");
         setValue("email", user.email);
-        setValue("role", user.role);
+        setValue("userType", user.userType);
         setValue("assignedVenueIds", user.assignedVenueIds || []);
+        setValue("membershipId", user.membershipId || "");
+        setValue("roleId", user.roleId || "");
       } else {
         reset({
           fullName: "",
           email: "",
-          role: Role.USER,
+          userType: UserType.USER,
           assignedVenueIds: [],
+          membershipId: "",
+          roleId: "",
         });
       }
     }
@@ -102,9 +114,11 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
         const payload: UserUpdateData = {
           userId: user.id,
           email: data.email,
-          role: data.role,
+          userType: data.userType,
           fullName: data.fullName,
           assignedVenueIds: data.assignedVenueIds,
+          membershipId: data.membershipId,
+          roleId: data.roleId,
         };
         await updateUserMutation.mutateAsync(payload);
         onOpenChange(false);
@@ -118,8 +132,8 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
   const isAddMode = mode === "add";
   const title = isAddMode ? "Invite New User" : "Edit User";
   const description = isAddMode
-    ? "Add a new member or admin to your YOLO Padel system. They'll receive an email invitation to join right away."
-    : "Update user information, role, or access permissions.";
+    ? "Add a new member or staff to your YOLO Padel system. They'll receive an email invitation to join right away."
+    : "Update user information, user type, or access permissions.";
   const primaryButtonText = isAddMode ? "Send Invitation" : "Save Changes";
 
   return (
@@ -163,36 +177,101 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role" className="text-sm font-medium">
-              Role <span className="text-red-500">*</span>
+            <Label htmlFor="userType" className="text-sm font-medium">
+              User Type <span className="text-red-500">*</span>
             </Label>
             <Select
-              value={watch("role")}
+              value={watch("userType")}
               onValueChange={(value) => {
-                setValue("role", value as Role);
-                // Reset assignedVenueIds if role is USER
-                if (value === Role.USER) {
+                setValue("userType", value as UserType);
+                // Reset assignedVenueIds and roleId if userType is USER
+                if (value === UserType.USER) {
                   setValue("assignedVenueIds", []);
+                  setValue("roleId", "");
                 }
               }}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Role" />
+                <SelectValue placeholder="Select User Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={Role.USER}>User</SelectItem>
-                <SelectItem value={Role.ADMIN}>Admin</SelectItem>
-                <SelectItem value={Role.SUPER_ADMIN}>Super Admin</SelectItem>
-                <SelectItem value={Role.FINANCE}>Finance</SelectItem>
+                <SelectItem value={UserType.USER}>User</SelectItem>
+                <SelectItem value={UserType.STAFF}>Staff</SelectItem>
               </SelectContent>
             </Select>
-            {errors.role && (
-              <p className="text-sm text-red-500">{errors.role.message}</p>
+            {errors.userType && (
+              <p className="text-sm text-red-500">{errors.userType.message}</p>
             )}
           </div>
 
-          {/* Venue Assignment - Only show if role is not USER */}
-          {watch("role") === Role.ADMIN && (
+          {watch("userType") === UserType.USER && (
+            <div className="space-y-2">
+              <Label htmlFor="membershipId" className="text-sm font-medium">
+                Membership
+              </Label>
+              <Select
+                value={watch("membershipId")}
+                onValueChange={(value) => setValue("membershipId", value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder={
+                      isLoadingMemberships
+                        ? "Loading memberships..."
+                        : memberships?.data?.length === 0
+                          ? "No memberships found"
+                          : "Select Membership"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {memberships?.data?.map((membership: Membership) => (
+                    <SelectItem key={membership.id} value={membership.id}>
+                      {membership.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Access Role - Only show if userType is STAFF */}
+          {watch("userType") === UserType.STAFF && (
+            <div className="space-y-2">
+              <Label htmlFor="roleId" className="text-sm font-medium">
+                Access Role
+              </Label>
+              <Select
+                value={watch("roleId")}
+                onValueChange={(value) => setValue("roleId", value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder={
+                      isLoadingRoles
+                        ? "Loading roles..."
+                        : roles?.length === 0
+                          ? "No roles found"
+                          : "Select Access Role"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles?.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.roleId && (
+                <p className="text-sm text-red-500">{errors.roleId.message}</p>
+              )}
+            </div>
+          )}
+
+          {/* Venue Assignment - Only show if userType is STAFF */}
+          {watch("userType") === UserType.STAFF && (
             <div className="space-y-2">
               <Label htmlFor="assignedVenueIds" className="text-sm font-medium">
                 Assigned Venues

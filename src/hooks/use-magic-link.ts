@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { MagicLinkVerifyInput } from "@/lib/validations/magic-link.validation";
 import { toast } from "sonner";
 import { LoginWithMagicLinkData } from "@/lib/validations/auth.validation";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 
 // Types for API Response
 export type VerifyMagicLinkResult = {
@@ -13,7 +13,7 @@ export type VerifyMagicLinkResult = {
     id: string;
     email: string;
     username: string;
-    role: string;
+    userType: string;
     isActive: boolean;
     isEmailVerified: boolean;
     profile: {
@@ -84,8 +84,8 @@ export const useMagicLinkVerify = () => {
       // Invalidate user query to refresh data
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
 
-      // Redirect based on user role from the response data
-      if (data.user.role === Role.USER) {
+      // Redirect based on user type from the response data
+      if (data.user.userType === UserType.USER) {
         router.push("/dashboard/booking");
       } else {
         router.push("/admin/dashboard");

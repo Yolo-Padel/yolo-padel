@@ -35,7 +35,7 @@ export function UsersTableLoading() {
             <TableRow>
               <TableHead className="h-11">Name</TableHead>
               <TableHead className="h-11">Status</TableHead>
-              <TableHead className="h-11">Role</TableHead>
+              <TableHead className="h-11">User Type</TableHead>
               <TableHead className="h-11">Email address</TableHead>
               <TableHead className="h-11">Join Date</TableHead>
               <TableHead className="h-11 text-right"></TableHead>

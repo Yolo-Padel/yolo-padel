@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 
 export const registerFormSchema = z
   .object({
@@ -12,7 +12,7 @@ export const registerFormSchema = z
       .regex(/[a-z]/, "Password must contain at least one lowercase letter")
       .regex(/[0-9]/, "Password must contain at least one number"),
     confirmPassword: z.string().min(1, "Confirm password is required"),
-    role: z.nativeEnum(Role),
+    userType: z.nativeEnum(UserType),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",

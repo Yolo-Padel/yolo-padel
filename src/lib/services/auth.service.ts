@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
 import { Prisma, BookingStatus } from "@prisma/client";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 import {
   RegisterFormData,
   LoginFormData,
@@ -89,7 +89,7 @@ export const authService = {
             data: {
               email: data.email,
               password: hashedPassword,
-              role: data.role || Role.USER,
+              userType: data.userType || UserType.USER,
             },
           });
 
@@ -108,7 +108,7 @@ export const authService = {
       const token = await new SignJWT({
         userId: result.user.id,
         email: result.user.email,
-        role: result.user.role,
+        userType: result.user.userType,
       })
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
@@ -175,7 +175,7 @@ export const authService = {
       const token = await new SignJWT({
         userId: user.id,
         email: user.email,
-        role: user.role,
+        userType: user.userType,
       })
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
@@ -214,7 +214,7 @@ export const authService = {
       // Get fresh user data
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
-        include: { profile: true },
+        include: { profile: true, membership: true },
       });
 
       if (!user) {
@@ -230,6 +230,7 @@ export const authService = {
           user: userWithoutPassword,
           profile: user.profile,
           nextBooking,
+          membership: user.membership,
         },
       };
     } catch (error) {

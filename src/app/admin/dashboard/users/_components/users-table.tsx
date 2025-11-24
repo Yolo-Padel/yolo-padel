@@ -25,7 +25,13 @@ import { UsersTableLoading } from "@/app/admin/dashboard/users/_components/users
 import { UserModal } from "@/app/admin/dashboard/users/_components/user-modal";
 import { DeleteUserModal } from "@/app/admin/dashboard/users/_components/delete-user-modal";
 import { useUsers } from "@/hooks/use-users";
-import { User, Profile, Role, UserStatus } from "@/types/prisma";
+import {
+  User,
+  Profile,
+  UserType,
+  UserStatus,
+  Membership,
+} from "@/types/prisma";
 import {
   generatePageNumbers,
   calculatePaginationInfo,
@@ -55,7 +61,7 @@ export function UsersTable() {
   const columns = [
     "Name",
     "Email",
-    "Role",
+    "User Type",
     "Status",
     "Email Verified",
     "Created",
@@ -170,7 +176,8 @@ export function UsersTable() {
     );
   };
 
-  const getRole = (role: Role) => stringUtils.getRoleDisplay(role);
+  const getUserTypeDisplay = (userType: UserType) =>
+    stringUtils.getRoleDisplay(userType);
 
   return (
     <div className="flex flex-col space-y-6">
@@ -198,72 +205,86 @@ export function UsersTable() {
             <TableRow>
               <TableHead className="h-11">Name</TableHead>
               <TableHead className="h-11">Status</TableHead>
-              <TableHead className="h-11">Role</TableHead>
+              <TableHead className="h-11">User Type</TableHead>
+              <TableHead className="h-11">Membership</TableHead>
               <TableHead className="h-11">Email address</TableHead>
               <TableHead className="h-11">Join Date</TableHead>
               <TableHead className="h-11 text-right"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginated.map((u: User & { profile?: Profile | null }) => {
-              return (
-                <TableRow key={u.id}>
-                  <TableCell className="flex items-center gap-2">
-                    <Avatar>
-                      <AvatarImage src={u.profile?.avatar || ""} />
-                      <AvatarFallback className="uppercase">
-                        {u.profile?.fullName?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    {u.profile?.fullName || "-"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {renderStatusBadge(u as any)}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {getRole(u.role)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {u.email}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {u.joinDate
-                      ? new Date(u.joinDate).toLocaleDateString()
-                      : "-"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {/* Resend dipindah ke kolom Status */}
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setUserToDelete(u);
-                        setDeleteModalOpen(true);
-                      }}
-                      className="border-none shadow-none"
-                    >
-                      <Trash className="size-4 text-[#A4A7AE]" />
-                    </Button>
-                    {u.userStatus === UserStatus.INVITED ? (
-                      <ResendInviteButton userId={u.id} />
-                    ) : (
+            {paginated.map(
+              (
+                u: User & { profile?: Profile | null } & {
+                  membership?: Membership | null;
+                }
+              ) => {
+                return (
+                  <TableRow key={u.id}>
+                    <TableCell className="flex items-center gap-2">
+                      <Avatar>
+                        <AvatarImage src={u.profile?.avatar || ""} />
+                        <AvatarFallback className="uppercase">
+                          {u.profile?.fullName?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      {u.profile?.fullName || "-"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {renderStatusBadge(u as any)}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {getUserTypeDisplay(u.userType)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {u.userType !== UserType.USER
+                        ? "Staff"
+                        : u.membership
+                          ? `${u.membership.name} Member`
+                          : "Non-member"}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {u.email}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {u.joinDate
+                        ? new Date(u.joinDate).toLocaleDateString()
+                        : "-"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {/* Resend dipindah ke kolom Status */}
                       <Button
                         variant="outline"
                         onClick={() => {
-                          setSelected(u);
-                          setModalMode("edit");
-                          setModalOpen(true);
+                          setUserToDelete(u);
+                          setDeleteModalOpen(true);
                         }}
                         className="border-none shadow-none"
                       >
-                        <Pencil className="size-4 text-[#A4A7AE]" />
+                        <Trash className="size-4 text-[#A4A7AE]" />
                       </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+                      {u.userStatus === UserStatus.INVITED ? (
+                        <ResendInviteButton userId={u.id} />
+                      ) : (
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setSelected(u);
+                            setModalMode("edit");
+                            setModalOpen(true);
+                          }}
+                          className="border-none shadow-none"
+                        >
+                          <Pencil className="size-4 text-[#A4A7AE]" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              }
+            )}
           </TableBody>
           <TableFooter className="bg-transparent">
             <TableRow>

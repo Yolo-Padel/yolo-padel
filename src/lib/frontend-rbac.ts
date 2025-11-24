@@ -1,21 +1,26 @@
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 
 // Frontend RBAC utilities
 export interface MenuItem {
   name: string;
   url: string;
   icon: any;
-  roles: Role[];
+  userTypes: UserType[];
   permissions?: string[]; // Optional: untuk granular permissions
 }
 
 // Helper functions untuk frontend RBAC
-export const hasRole = (userRole: Role, requiredRoles: Role[]): boolean => {
-  return requiredRoles.includes(userRole);
+export const hasUserType = (
+  userType: UserType,
+  requiredUserTypes: UserType[]
+): boolean => {
+  return requiredUserTypes.includes(userType);
 };
 
-// Filter menu items berdasarkan role
-export const filterMenuByRole = (menuItems: MenuItem[], userRole: Role): MenuItem[] => {
-  return menuItems.filter(item => hasRole(userRole, item.roles));
+// Filter menu items berdasarkan userType
+export const filterMenuByUserType = (
+  menuItems: MenuItem[],
+  userType: UserType
+): MenuItem[] => {
+  return menuItems.filter((item) => hasUserType(userType, item.userTypes));
 };
-

@@ -1,7 +1,7 @@
 import { SignJWT } from "jose";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";
 const JWT_EXPIRES_IN = "7d";
@@ -39,7 +39,7 @@ export const guestUserService = {
             data: {
               email,
               password: "", // Password deprecated, using magic link only
-              role: Role.USER,
+              userType: UserType.USER,
               userStatus: "ACTIVE",
               joinDate: new Date(),
             },
@@ -61,7 +61,7 @@ export const guestUserService = {
       const jwtToken = await new SignJWT({
         userId: result.user.id,
         email: result.user.email,
-        role: result.user.role,
+        userType: result.user.userType,
         assignedVenueId: result.user.assignedVenueIds,
       })
         .setProtectedHeader({ alg: "HS256" })

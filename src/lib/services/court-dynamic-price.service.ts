@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 import { ServiceContext, requirePermission } from "@/types/service-context";
 import {
   CourtDynamicPriceCreateData,
@@ -34,7 +34,7 @@ const ensureCourtAccess = async (courtId: string, context: ServiceContext) => {
   }
 
   if (
-    (context.userRole === Role.ADMIN || context.userRole === Role.FINANCE) &&
+    context.userRole === UserType.STAFF &&
     context.assignedVenueId &&
     court.venueId !== context.assignedVenueId
   ) {
@@ -69,7 +69,7 @@ const ensureDynamicPriceAccess = async (
   }
 
   if (
-    (context.userRole === Role.ADMIN || context.userRole === Role.FINANCE) &&
+    context.userRole === UserType.STAFF &&
     context.assignedVenueId &&
     dynamicPrice.court.venueId !== context.assignedVenueId
   ) {
@@ -101,7 +101,7 @@ const minutesToTimeString = (minutes: number) => {
 export const courtDynamicPriceService = {
   listByCourt: async (courtId: string, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.FINANCE);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const { error } = await ensureCourtAccess(courtId, context);
@@ -124,7 +124,7 @@ export const courtDynamicPriceService = {
 
   getById: async (id: string, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.FINANCE);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const { dynamicPrice, error } = await ensureDynamicPriceAccess(
@@ -145,7 +145,7 @@ export const courtDynamicPriceService = {
     context: ServiceContext
   ) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const { error } = await ensureCourtAccess(data.courtId, context);
@@ -160,15 +160,15 @@ export const courtDynamicPriceService = {
         isArchived: false,
       };
 
-        const dynamicPrice = await prisma.courtDynamicPrice.create({
-          data: {
-            ...baseData,
+      const dynamicPrice = await prisma.courtDynamicPrice.create({
+        data: {
+          ...baseData,
           startHour: data.startHour,
           endHour: data.endHour,
-          },
-        });
+        },
+      });
 
-        return buildSuccess(dynamicPrice, "Dynamic price created successfully");
+      return buildSuccess(dynamicPrice, "Dynamic price created successfully");
     } catch (err) {
       console.error("create dynamic price error:", err);
       return buildError("Failed to create dynamic price");
@@ -181,7 +181,7 @@ export const courtDynamicPriceService = {
     context: ServiceContext
   ) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const { dynamicPrice, error } = await ensureDynamicPriceAccess(
@@ -226,7 +226,7 @@ export const courtDynamicPriceService = {
 
   delete: async (id: string, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const { dynamicPrice, error } = await ensureDynamicPriceAccess(

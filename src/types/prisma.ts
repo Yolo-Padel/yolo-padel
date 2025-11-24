@@ -13,10 +13,15 @@ export type {
   Blocking,
   ActivityLog,
   CourtDynamicPrice,
+  Membership,
+  Module,
+  Permission,
+  Roles,
+  RolePermission,
 } from "@prisma/client";
 
 export {
-  Role,
+  UserType,
   UserStatus,
   DayOfWeek,
   OpeningHoursType,

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     const { user } = tokenResult;
     const serviceContext = createServiceContext(
-      user.role,
+      user.userType,
       user.userId,
       user.assignedVenueId
     );
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     const { user } = tokenResult;
     const serviceContext = createServiceContext(
-      user.role,
+      user.userType,
       user.userId,
       user.assignedVenueId
     );
@@ -115,5 +115,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

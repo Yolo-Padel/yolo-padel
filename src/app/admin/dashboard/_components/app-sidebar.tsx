@@ -10,6 +10,7 @@ import {
   CalendarDays,
   DollarSign,
   Activity,
+  ShieldCheck,
 } from "lucide-react";
 
 import { MenuItems } from "@/app/admin/dashboard/_components/menu-items";
@@ -26,64 +27,64 @@ import {
 
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Role } from "@/types/prisma";
-import { MenuItem, filterMenuByRole } from "@/lib/frontend-rbac";
+import { UserType } from "@/types/prisma";
+import { MenuItem, filterMenuByUserType } from "@/lib/frontend-rbac";
 
-// Menu configuration dengan role requirements
+// Menu configuration with userType requirements
 const menuConfig: MenuItem[] = [
   {
     name: "Dashboard",
     url: "/admin/dashboard",
     icon: Home,
-    roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN],
+    userTypes: [UserType.STAFF],
   },
   {
     name: "Users Management",
     url: "/admin/dashboard/users",
     icon: Users,
-    roles: [Role.SUPER_ADMIN],
+    userTypes: [UserType.STAFF],
   },
   {
     name: "Booking List",
     url: "/admin/dashboard/booking",
     icon: LandPlot,
-    roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN],
+    userTypes: [UserType.STAFF],
   },
   {
     name: "Booking Time Table",
     url: "/admin/dashboard/timetable",
     icon: CalendarDays,
-    roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN],
+    userTypes: [UserType.STAFF],
   },
   {
     name: "Price Configuration",
     url: "/admin/dashboard/price",
     icon: DollarSign,
-    roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN],
+    userTypes: [UserType.STAFF],
   },
   {
     name: "Order List",
     url: "/admin/dashboard/order",
     icon: CalendarDays,
-    roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN],
+    userTypes: [UserType.STAFF],
   },
   {
     name: "Venue Management",
     url: "/admin/dashboard/venue",
     icon: TableCellsMerge,
-    roles: [Role.ADMIN, Role.SUPER_ADMIN],
-  },
-  {
-    name: "Membership",
-    url: "/admin/dashboard/membership",
-    icon: Crown,
-    roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN], // Semua role bisa akses
+    userTypes: [UserType.STAFF],
   },
   {
     name: "Activity Log",
     url: "/admin/dashboard/activity-log",
     icon: Activity,
-    roles: [Role.FINANCE, Role.ADMIN, Role.SUPER_ADMIN], // Semua role bisa akses
+    userTypes: [UserType.STAFF],
+  },
+  {
+    name: "Access Control",
+    url: "/admin/dashboard/access-control",
+    icon: ShieldCheck,
+    userTypes: [UserType.STAFF],
   },
 ];
 
@@ -108,10 +109,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     avatar: profile?.avatar || "/avatars/shadcn.jpg",
   };
 
-  // Filter menu items berdasarkan role user
-  const userRole = user?.role as Role;
-  const filteredMenuItems = userRole
-    ? filterMenuByRole(menuConfig, userRole)
+  // Filter menu items based on user type
+  const userType = user?.userType as UserType;
+  const filteredMenuItems = userType
+    ? filterMenuByUserType(menuConfig, userType)
     : [];
 
   return (

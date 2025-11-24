@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { usersService } from "@/lib/services/users.service";
-import { userDeleteSchema, userUpdateSchema } from "@/lib/validations/user.validation";
+import {
+  userDeleteSchema,
+  userUpdateSchema,
+} from "@/lib/validations/user.validation";
 import { verifyAuth } from "@/lib/auth-utils";
 import { createServiceContext } from "@/types/service-context";
 
@@ -15,7 +18,11 @@ export async function GET(request: NextRequest) {
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
+    const serviceContext = createServiceContext(
+      user.userType,
+      user.userId,
+      user.assignedVenueId
+    );
     const result = await usersService.getUsers(serviceContext);
 
     if (!result.success) {
@@ -52,7 +59,11 @@ export async function DELETE(request: NextRequest) {
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
+    const serviceContext = createServiceContext(
+      user.userType,
+      user.userId,
+      user.assignedVenueId
+    );
     const result = await usersService.deleteUser(validatedData, serviceContext);
 
     if (!result.success) {
@@ -64,12 +75,12 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("DELETE /api/users error:", error);
-    
-    if (error instanceof Error && error.name === 'ZodError') {
+
+    if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
         { success: false, message: "Validation error", errors: error.message },
         { status: 400 }
@@ -96,8 +107,15 @@ export async function PATCH(request: NextRequest) {
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
-    const result = await usersService.updateUser(validatedData as any, serviceContext);
+    const serviceContext = createServiceContext(
+      user.userType,
+      user.userId,
+      user.assignedVenueId
+    );
+    const result = await usersService.updateUser(
+      validatedData as any,
+      serviceContext
+    );
 
     if (!result.success) {
       return NextResponse.json(
@@ -114,7 +132,7 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     console.error("PATCH /api/users error:", error);
 
-    if (error instanceof Error && error.name === 'ZodError') {
+    if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
         { success: false, message: "Validation error", errors: error.message },
         { status: 400 }

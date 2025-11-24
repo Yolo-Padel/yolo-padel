@@ -7,7 +7,7 @@ import {
 import { Prisma } from "@prisma/client";
 import { UserStatus } from "@/types/prisma";
 import { ServiceContext, requirePermission } from "@/types/service-context";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 import { activityLogService } from "@/lib/services/activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
@@ -15,13 +15,13 @@ import { ENTITY_TYPES } from "@/types/entity";
 export const usersService = {
   getUsers: async (context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
 
       if (accessError) return accessError;
       // Get all users
       const users = await prisma.user.findMany({
         where: { isArchived: false },
-        include: { profile: true },
+        include: { profile: true, membership: true },
         orderBy: { createdAt: "desc" },
       });
 
@@ -95,15 +95,17 @@ export const usersService = {
     tx?: Prisma.TransactionClient
   ) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const user = await (tx || prisma).user.create({
         data: {
           email: data.email,
-          role: data.role,
+          userType: data.userType,
           userStatus: UserStatus.INVITED,
           assignedVenueIds: data.assignedVenueIds || [],
+          membershipId: data.membershipId || null,
+          roleId: data.roleId || null,
         },
       });
       // audit log (non-blocking)
@@ -116,9 +118,11 @@ export const usersService = {
           before: {},
           after: {
             email: user.email,
-            role: user.role,
+            userType: user.userType,
             assignedVenueIds: user.assignedVenueIds,
             userStatus: user.userStatus,
+            membershipId: user.membershipId ?? null,
+            roleId: user.roleId ?? null,
           },
         } as any,
       });
@@ -141,7 +145,7 @@ export const usersService = {
 
   updateUser: async (data: UserUpdateData, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const existing = await prisma.user.findUnique({
@@ -153,16 +157,20 @@ export const usersService = {
       }
 
       const assignedVenueIds =
-        data.role === Role.USER ? [] : (data.assignedVenueIds ?? []);
+        data.userType === UserType.USER ? [] : (data.assignedVenueIds ?? []);
+      const roleId =
+        data.userType === UserType.USER ? null : data.roleId || null;
 
       const updated = await prisma.user.update({
         where: { id: data.userId },
         data: {
           email: data.email,
-          role: data.role,
+          userType: data.userType,
           assignedVenueIds,
+          membershipId: data.membershipId || null,
+          roleId,
         },
-        include: { profile: true },
+        include: { profile: true, membership: true },
       });
 
       // Update or create profile fullName
@@ -189,15 +197,19 @@ export const usersService = {
         changes: {
           before: {
             email: existing.email,
-            role: existing.role,
+            userType: existing.userType,
             assignedVenueIds: existing.assignedVenueIds,
             fullName: existing.profile?.fullName ?? null,
+            membershipId: existing.membershipId ?? null,
+            roleId: existing.roleId ?? null,
           },
           after: {
             email: data.email,
-            role: data.role,
+            userType: data.userType,
             assignedVenueIds,
             fullName: data.fullName,
+            membershipId: data.membershipId ?? null,
+            roleId: data.roleId ?? null,
           },
         } as any,
       });
@@ -220,7 +232,7 @@ export const usersService = {
 
   deleteUser: async (data: UserDeleteData, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.SUPER_ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const updated = await prisma.user.update({

@@ -7,7 +7,7 @@ import {
   RegisterFormData,
 } from "@/lib/validations/auth.validation";
 import { useRegister } from "@/hooks/use-auth";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ export function SignupForm({
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
-      role: Role.USER,
+      userType: UserType.USER,
     },
   });
 
