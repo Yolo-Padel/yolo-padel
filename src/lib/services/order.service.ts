@@ -184,13 +184,28 @@ export async function createOrder(data: {
 
   // All operations in a single transaction (all-or-nothing)
   const order = await prisma.$transaction(async (tx) => {
-    // 1. Create Order entry
+    // 1. Get venue IDs from courts before creating order
+    const courts = await tx.court.findMany({
+      where: {
+        id: {
+          in: bookingData.map((b) => b.courtId),
+        },
+      },
+      select: {
+        venueId: true,
+      },
+    });
+
+    const uniqueVenueIds = [...new Set(courts.map((c) => c.venueId))];
+
+    // 2. Create Order entry with venue IDs
     const newOrder = await tx.order.create({
       data: {
         userId,
         orderCode,
         totalAmount,
         status: OrderStatus.PENDING,
+        venueIds: uniqueVenueIds,
       },
     });
 
@@ -260,6 +275,29 @@ export async function createOrder(data: {
       },
       tx // Pass transaction client
     );
+
+    // 4. Assign user to venues from order (for end users)
+    // Get current user to check existing assigned venues
+    const currentUser = await tx.user.findUnique({
+      where: { id: userId },
+      select: { assignedVenueIds: true, userType: true },
+    });
+
+    // Only assign venues to end users (USER type), not ADMIN or STAFF
+    if (currentUser && currentUser.userType === "USER") {
+      // Merge with existing assigned venues (avoid duplicates)
+      const updatedVenueIds = [
+        ...new Set([...currentUser.assignedVenueIds, ...uniqueVenueIds]),
+      ];
+
+      // Update user's assigned venues
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          assignedVenueIds: updatedVenueIds,
+        },
+      });
+    }
 
     // Return order with relations (backward compatibility)
     return {

@@ -11,7 +11,6 @@ const PROTECTED_ROUTES = ["/admin", "/dashboard"];
 const PUBLIC_ROUTES = ["/auth"];
 
 export async function middleware(request: NextRequest) {
-  console.log("execute middleware");
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("auth-token")?.value;
 
@@ -55,7 +54,7 @@ export async function middleware(request: NextRequest) {
       // Verify token with jose (Edge compatible)
       const secret = new TextEncoder().encode(JWT_SECRET);
       const { payload } = await jwtVerify(token, secret);
-      console.log("payload", payload);
+
       const userType = (payload as any).userType as string | undefined;
 
       // UserType-based access control
