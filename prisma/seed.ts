@@ -58,6 +58,12 @@ const MODULES = [
     description: "Manage system roles and permissions",
     orderIndex: 6,
   },
+  {
+    key: "logs",
+    label: "Logs",
+    description: "Manage system logs",
+    orderIndex: 7,
+  },
 ] as const;
 
 const PERMISSIONS = [
