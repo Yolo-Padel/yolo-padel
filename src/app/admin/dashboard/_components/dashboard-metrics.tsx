@@ -204,7 +204,7 @@ export function DashboardMetrics({ userType }: DashboardMetricsProps) {
         {isLoading && !snapshot ? (
           <MetricSkeletonRow />
         ) : (
-          <div className="flex gap-2 items-start w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 items-start w-full">
             {metrics.map((metric, index) => (
               <MetricCard key={index} {...metric} />
             ))}

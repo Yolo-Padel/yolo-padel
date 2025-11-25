@@ -101,7 +101,7 @@ export function BookingTableSection() {
         />
       )}
 
-      <div className="bg-card border-[1.5px] border-border/50 rounded-xl max-w-[360px] w-[360px] h-fit flex-1">
+      <div className="bg-card border-[1.5px] border-border/50 rounded-xl w-full md:max-w-full h-fit flex-1">
         <div className="flex flex-col">
           <div className="flex flex-col gap-5 border-b border-border pb-5 pt-5 px-4">
             <div className="flex items-start justify-between">

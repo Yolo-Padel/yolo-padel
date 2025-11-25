@@ -29,7 +29,7 @@ export function HeroSection() {
         <GlobalHeader />
 
         {/* Main Content */}
-        <div className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        <div className="flex-1 container mx-auto p-6 pb-8">
           <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
             {/* Left Section - Hero Title & Description */}
             <div className="flex flex-col justify-center space-y-6 text-primary pt-35">
