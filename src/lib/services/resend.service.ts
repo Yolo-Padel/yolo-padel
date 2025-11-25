@@ -323,7 +323,7 @@ export const resendService = {
     try {
       const response = await resend.emails.send({
         from: EMAIL_CONFIG.FROM_EMAIL,
-        to: "thufails505@gmail.com",
+        to: data.email,
         subject: "Magic Link",
         react: LoginWithMagicLink({
           email: data.email,
