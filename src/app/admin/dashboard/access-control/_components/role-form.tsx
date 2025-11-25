@@ -30,7 +30,7 @@ export interface RoleFormProps {
 
 export function RoleForm({
   defaultValues,
-  submitLabel = "Simpan",
+  submitLabel = "Save",
   onSubmit,
   onCancel,
   isSubmitting,
@@ -56,7 +56,7 @@ export function RoleForm({
       await onSubmit(values);
     } catch (error) {
       setFormError(
-        error instanceof Error ? error.message : "Gagal menyimpan role"
+        error instanceof Error ? error.message : "Failed to save role"
       );
     }
   });
@@ -65,7 +65,7 @@ export function RoleForm({
     <form onSubmit={submitHandler} className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Nama Role</Label>
+          <Label htmlFor="name">Role Name</Label>
           <Input
             id="name"
             placeholder="admin"
@@ -78,10 +78,10 @@ export function RoleForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="description">Deskripsi</Label>
+          <Label htmlFor="description">Description</Label>
           <Textarea
             id="description"
-            placeholder="Tambahkan deskripsi singkat"
+            placeholder="Add a short description"
             rows={4}
             {...register("description")}
             disabled={!canEdit}
@@ -99,15 +99,15 @@ export function RoleForm({
           render={({ field }) => (
             <div className="flex items-center justify-between rounded-md border p-4">
               <div>
-                <p className="font-medium">Status aktif</p>
+                <p className="font-medium">Active Status</p>
                 <p className="text-sm text-muted-foreground">
-                  Nonaktifkan jika role tidak boleh digunakan.
+                  Disable if role is not allowed to be used.
                 </p>
               </div>
               <Switch
                 checked={field.value}
                 onCheckedChange={field.onChange}
-                aria-label="Status aktif role"
+                aria-label="Active status of role"
                 disabled={!canEdit}
               />
             </div>
@@ -130,11 +130,11 @@ export function RoleForm({
               onClick={onCancel}
               disabled={isSubmitting}
             >
-              Batal
+              Cancel
             </Button>
           ) : null}
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Menyimpan..." : submitLabel}
+            {isSubmitting ? "Saving..." : submitLabel}
           </Button>
         </div>
       )}
