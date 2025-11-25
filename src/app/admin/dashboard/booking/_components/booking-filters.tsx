@@ -204,7 +204,7 @@ export function BookingFilters({
             )}
             aria-label="Filter by date range"
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
+            <CalendarIcon className="h-4 w-4" />
             {formatDateRange()}
           </Button>
         </PopoverTrigger>
@@ -236,7 +236,7 @@ export function BookingFilters({
       {/* Venue Filter */}
       <Select value={venueFilter || "all"} onValueChange={onVenueChange}>
         <SelectTrigger
-          className="flex-1 max-w-[144px]"
+          className="w-full max-w-[160px]"
           aria-label="Filter by venue"
         >
           <SelectValue placeholder="All venues" />
@@ -254,7 +254,7 @@ export function BookingFilters({
       {/* Status Filter */}
       <Select value={statusFilter || "all"} onValueChange={onStatusChange}>
         <SelectTrigger
-          className="flex-1 max-w-[144px]"
+          className="w-full max-w-[160px]"
           aria-label="Filter by status"
         >
           <SelectValue placeholder="All statuses" />

@@ -11,6 +11,7 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChevronLeft, ChevronRight, MoreHorizontal, Eye } from "lucide-react";
 import { generatePageNumbers } from "@/lib/pagination-utils";
 import { BookingStatus } from "@/types/prisma";
@@ -107,7 +108,8 @@ export function BookingTable({
           <TableRow>
             <TableHead className="h-11">Booking Code</TableHead>
             <TableHead className="h-11">Customer</TableHead>
-            <TableHead className="h-11">Date & Time</TableHead>
+            <TableHead className="h-11">Date</TableHead>
+            <TableHead className="h-11">Time</TableHead>
             <TableHead className="h-11">Status</TableHead>
             <TableHead className="h-11 text-right"></TableHead>
           </TableRow>
@@ -115,6 +117,8 @@ export function BookingTable({
         <TableBody>
           {bookings.map((b) => {
             const userName = b.user?.profile?.fullName || "N/A";
+            const userEmail = b.user?.email || "";
+            const userAvatar = b.user?.profile?.avatar || "";
             const venueName = b.court?.venue?.name || "N/A";
             const courtName = b.court?.name || "N/A";
 
@@ -128,16 +132,25 @@ export function BookingTable({
                     </span>
                   </div>
                 </TableCell>
-                <TableCell>{userName}</TableCell>
                 <TableCell>
-                  <div className="flex flex-col">
-                    <span className="text-muted-foreground">
-                      {formatDate(b.bookingDate)}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatTimeRange(b.timeSlots)}
-                    </span>
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      <AvatarImage src={userAvatar} />
+                      <AvatarFallback className="uppercase">
+                        {userName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{userName}</span>
+                      <span className="text-muted-foreground">{userEmail}</span>
+                    </div>
                   </div>
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {formatDate(b.bookingDate)}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {formatTimeRange(b.timeSlots)}
                 </TableCell>
                 <TableCell>
                   <Badge
@@ -162,7 +175,7 @@ export function BookingTable({
         </TableBody>
         <TableFooter className="bg-transparent">
           <TableRow>
-            <TableCell colSpan={5} className="p-4">
+            <TableCell colSpan={6} className="p-4">
               <div className="flex items-center justify-between">
                 <Button
                   variant="outline"

@@ -29,7 +29,6 @@ import {
 import { generatePageNumbers } from "@/lib/pagination-utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ResendInviteButton } from "@/app/admin/dashboard/users/_components/resend-invite-button";
-import { stringUtils } from "@/lib/format/string";
 import { cn } from "@/lib/utils";
 
 export interface PaginationInfo {
