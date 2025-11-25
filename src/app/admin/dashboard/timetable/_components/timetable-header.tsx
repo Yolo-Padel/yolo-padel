@@ -17,6 +17,8 @@ type TimetableHeaderProps = {
   onVenueChange?: (venueId: string) => void;
   onAddBooking?: () => void;
   isLoading?: boolean;
+  canCreateBooking: boolean;
+  isLoadingPermission: boolean;
 };
 
 /**
@@ -29,6 +31,8 @@ export function TimetableHeader({
   onVenueChange,
   onAddBooking,
   isLoading = false,
+  canCreateBooking = false,
+  isLoadingPermission = false,
 }: TimetableHeaderProps) {
   return (
     <div className="flex flex-col gap-4 w-full max-w-full">
@@ -52,13 +56,12 @@ export function TimetableHeader({
         </Select>
 
         <div className="flex items-center gap-2 shrink-0">
-
           {/* Add Booking Button */}
-          {onAddBooking && (
+          {onAddBooking && canCreateBooking && (
             <Button
               className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}] gap-2`}
               onClick={onAddBooking}
-              disabled={isLoading || !selectedVenueId}
+              disabled={isLoading || !selectedVenueId || isLoadingPermission}
             >
               Add Booking
               <Plus className="h-4 w-4" />
@@ -66,7 +69,7 @@ export function TimetableHeader({
           )}
         </div>
         {/* Filter Button */}
-        
+
         {/* Hide Filter Button
         <Button
           variant="outline"

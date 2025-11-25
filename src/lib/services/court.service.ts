@@ -28,8 +28,28 @@ export const courtService = {
       const accessError = requirePermission(context, UserType.USER);
       if (accessError) return accessError;
 
+      // Build where clause based on user type
+      const whereClause: any = { isArchived: false };
+
+      if (context.userRole === UserType.USER) {
+        // USER: only courts from active venues
+        whereClause.venue = {
+          isActive: true,
+          isArchived: false,
+        };
+      } else if (context.userRole === UserType.STAFF) {
+        // STAFF: only courts from assigned venues
+        const assignedVenues = Array.isArray(context.assignedVenueId)
+          ? context.assignedVenueId
+          : context.assignedVenueId
+            ? [context.assignedVenueId]
+            : [];
+        whereClause.venueId = { in: assignedVenues };
+      }
+      // ADMIN: all courts (no additional filter)
+
       const courts = await prisma.court.findMany({
-        where: { isArchived: false },
+        where: whereClause,
         include: {
           venue: {
             select: {
@@ -49,16 +69,9 @@ export const courtService = {
         },
       });
 
-      const filteredCourts = courts.filter((court) => {
-        if (context.userRole === UserType.STAFF) {
-          return court.venueId === context.assignedVenueId;
-        }
-        return true;
-      });
-
       return {
         success: true,
-        data: filteredCourts,
+        data: courts,
         message: "Get all courts successful",
       };
     } catch (error) {
@@ -161,17 +174,6 @@ export const courtService = {
           name: "asc",
         },
       });
-
-      if (
-        context.userRole === UserType.STAFF &&
-        venueId !== context.assignedVenueId
-      ) {
-        return {
-          success: false,
-          data: null,
-          message: "You are not authorized to access this resource",
-        };
-      }
 
       return {
         success: true,

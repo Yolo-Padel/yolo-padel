@@ -71,6 +71,8 @@ export function TimetableContainer({
   isLoadingTable = false,
   onAddBooking,
   onSelectEmptySlot,
+  canCreateBooking = false,
+  isLoadingPermission = false,
 }: TimetableProps & {
   onAddBooking?: () => void;
   onSelectEmptySlot?: (payload: {
@@ -78,6 +80,8 @@ export function TimetableContainer({
     startTime: string;
     endTime?: string;
   }) => void;
+  canCreateBooking: boolean;
+  isLoadingPermission: boolean;
 }) {
   const [selectedDate, setSelectedDate] = React.useState<Date>(
     initialDate || new Date()
@@ -167,14 +171,13 @@ export function TimetableContainer({
 
       // Check if this cell is part of the drag preview
       const isDragPreview =
-        dragState !== null &&
-        dragState.court.id === court.id &&
-        !booking;
-      
+        dragState !== null && dragState.court.id === court.id && !booking;
+
       let isInDragRange = false;
       if (isDragPreview) {
         const sortedSlots = [dragState.startSlot, dragState.lastSlot].sort();
-        isInDragRange = timeSlot >= sortedSlots[0] && timeSlot <= sortedSlots[1];
+        isInDragRange =
+          timeSlot >= sortedSlots[0] && timeSlot <= sortedSlots[1];
       }
 
       return (
@@ -185,7 +188,13 @@ export function TimetableContainer({
           isFirstSlot={isFirstSlot}
           span={span}
           isDragPreview={isDragPreview && isInDragRange}
-          onClick={({ booking: selectedBooking, court: selectedCourt, timeSlot: slot }) => {
+          canCreateBooking={canCreateBooking}
+          isLoadingPermission={isLoadingPermission}
+          onClick={({
+            booking: selectedBooking,
+            court: selectedCourt,
+            timeSlot: slot,
+          }) => {
             // Don't trigger onClick if we're in drag mode
             if (!dragState) {
               handleCellInteraction({
@@ -263,6 +272,8 @@ export function TimetableContainer({
         onVenueChange={onVenueChange}
         onAddBooking={onAddBooking}
         isLoading={isLoadingTable}
+        canCreateBooking={canCreateBooking}
+        isLoadingPermission={isLoadingPermission}
       />
 
       {/* Table: Courts x Time Slots Grid */}

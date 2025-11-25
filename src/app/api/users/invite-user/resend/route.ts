@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const context = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
     const result = await inviteUserService.resendInvitation(
       parsed.data.userId,

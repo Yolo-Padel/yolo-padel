@@ -25,6 +25,7 @@ import { Venue } from "@/types/prisma";
 import { useRouter } from "next/navigation";
 import { VenueTableSkeleton } from "@/app/admin/dashboard/venue/_components/venue-skeleton";
 import { VenueEmptyState } from "@/app/admin/dashboard/venue/_components/venue-empty-state";
+import { usePermissionGuard } from "@/hooks/use-permission-guard";
 
 type VenueRow = {
   id: string;
@@ -55,6 +56,12 @@ export function VenueTable() {
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
   const { data, isLoading, error } = useVenue();
   const router = useRouter();
+
+  const { canAccess: canCreateVenue, isLoading: isCreateVenueLoading } =
+    usePermissionGuard({
+      moduleKey: "venues",
+      action: "create",
+    });
 
   const allVenues =
     (data?.data as
@@ -167,14 +174,16 @@ export function VenueTable() {
           </Badge>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setAddVenueOpen(true)}
-            className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
-          >
-            Add Venue
-            <PlusIcon className="mr-0 size-4" />
-          </Button>
+          {canCreateVenue && (
+            <Button
+              variant="outline"
+              onClick={() => setAddVenueOpen(true)}
+              className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
+            >
+              Add Venue
+              <PlusIcon className="mr-0 size-4" />
+            </Button>
+          )}
         </div>
       </div>
       {filtered.length === 0 ? (

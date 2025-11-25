@@ -6,7 +6,8 @@ export interface MenuItem {
   url: string;
   icon: any;
   userTypes: UserType[];
-  permissions?: string[]; // Optional: untuk granular permissions
+  permissions?: string[]; // Optional granular permissions
+  moduleKey?: string; // Module key untuk RBAC dinamis (contoh: "users", "bookings")
 }
 
 // Helper functions untuk frontend RBAC
@@ -23,4 +24,40 @@ export const filterMenuByUserType = (
   userType: UserType
 ): MenuItem[] => {
   return menuItems.filter((item) => hasUserType(userType, item.userTypes));
+};
+
+// Filter menu items menggunakan kombinasi userType dan module access
+export const filterMenuByAccess = ({
+  menuItems,
+  userType,
+  moduleKeyMap,
+  allowedModuleIds,
+}: {
+  menuItems: MenuItem[];
+  userType: UserType;
+  moduleKeyMap?: Record<string, string> | null;
+  allowedModuleIds?: Set<string> | null;
+}): MenuItem[] => {
+  return menuItems.filter((item) => {
+    if (!hasUserType(userType, item.userTypes)) {
+      return false;
+    }
+
+    // Jika menu tidak terkait module spesifik, cukup cek role
+    if (!item.moduleKey) {
+      return true;
+    }
+
+    // Pastikan data module siap
+    if (!moduleKeyMap || !allowedModuleIds) {
+      return false;
+    }
+
+    const moduleId = moduleKeyMap[item.moduleKey];
+    if (!moduleId) {
+      return false;
+    }
+
+    return allowedModuleIds.has(moduleId);
+  });
 };

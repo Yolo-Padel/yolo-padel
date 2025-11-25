@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const context = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
 
     const result = await manualBookingService.create(parsed.data, context);

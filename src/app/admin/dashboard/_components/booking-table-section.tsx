@@ -2,8 +2,14 @@
 
 import { cn } from "@/lib/utils";
 import { BookingTable } from "@/app/admin/dashboard/booking/_components/booking-table";
-import { useSuperAdminBookingDashboard } from "@/hooks/use-booking";
+import { BookingTableLoading } from "@/app/admin/dashboard/booking/_components/booking-table-loading";
+import {
+  useSuperAdminBookingDashboard,
+  useAdminBookings,
+} from "@/hooks/use-booking";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
+import type { BookingWithRelations } from "@/app/admin/dashboard/booking/_components/booking-table";
 
 const numberFormatter = new Intl.NumberFormat("id-ID");
 
@@ -34,11 +40,26 @@ function SummarySkeleton() {
 }
 
 export function BookingTableSection() {
-  const { data, isLoading, error } = useSuperAdminBookingDashboard();
+  const [page, setPage] = useState(1);
 
-  const summary = data?.data?.bookingSummary;
+  // Fetch summary data for the sidebar
+  const { data: summaryData } = useSuperAdminBookingDashboard();
 
-  const summaryData = [
+  // Fetch bookings data with pagination
+  const {
+    data: bookingsData,
+    isLoading,
+    error,
+  } = useAdminBookings({
+    page,
+    limit: 5, // Show 5 recent bookings on dashboard
+  });
+
+  const summary = summaryData?.data?.bookingSummary;
+  const bookings = bookingsData?.data || [];
+  const pagination = bookingsData?.pagination;
+
+  const summaryItems = [
     { label: "Total Bookings", value: summary?.total },
     { label: "Completed", value: summary?.completed },
     { label: "Pending", value: summary?.pending },
@@ -47,11 +68,40 @@ export function BookingTableSection() {
     { label: "Expired Payment", value: summary?.expiredPayment },
   ];
 
+  const paginationInfo = {
+    pageSafe: pagination?.page || 1,
+    totalPages: pagination?.totalPages || 1,
+    hasPreviousPage: (pagination?.page || 1) > 1,
+    hasNextPage: (pagination?.page || 1) < (pagination?.totalPages || 1),
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleViewBooking = (booking: BookingWithRelations) => {
+    // TODO: Open modal or navigate to detail page
+    console.log("View booking:", booking.bookingCode);
+  };
+
   return (
     <div className="flex flex-row gap-6 w-full">
-      <BookingTable showAddButton={false} />
+      {isLoading ? (
+        <BookingTableLoading />
+      ) : bookings.length === 0 ? (
+        <div className="flex-1 rounded-2xl border border-[#E9EAEB] p-8 text-center">
+          <p className="text-muted-foreground">No bookings found</p>
+        </div>
+      ) : (
+        <BookingTable
+          bookings={bookings}
+          paginationInfo={paginationInfo}
+          onPageChange={handlePageChange}
+          onViewBooking={handleViewBooking}
+        />
+      )}
 
-      <div className="bg-card border-[1.5px] border-border/50 rounded-xl max-w-[360px] w-[360px] h-fit flex-1">
+      <div className="bg-card border-[1.5px] border-border/50 rounded-xl w-full md:max-w-full h-fit flex-1">
         <div className="flex flex-col">
           <div className="flex flex-col gap-5 border-b border-border pb-5 pt-5 px-4">
             <div className="flex items-start justify-between">
@@ -67,15 +117,16 @@ export function BookingTableSection() {
           </div>
 
           <div className="flex flex-col">
-            {isLoading && !summary ? (
+            {!summary ? (
               <SummarySkeleton />
             ) : (
-              summaryData.map((item, index) => (
+              summaryItems.map((item, index) => (
                 <div
                   key={item.label}
                   className={cn(
                     "flex gap-4 items-start px-4 py-8",
-                    index !== summaryData.length - 1 && "border-b border-border"
+                    index !== summaryItems.length - 1 &&
+                      "border-b border-border"
                   )}
                 >
                   <div className="flex flex-col">

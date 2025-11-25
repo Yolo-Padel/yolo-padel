@@ -24,6 +24,7 @@ export type RoleWithPermissionCount = Role & {
   _count: {
     rolePermissions: number;
   };
+  allowedPermissionCount: number;
 };
 
 /**
@@ -57,7 +58,8 @@ export type Module = {
  */
 export type Permission = {
   id: string;
-  action: string; // "create", "read", "update", "delete"
+  action: string;
+  orderIndex: number;
 };
 
 /**

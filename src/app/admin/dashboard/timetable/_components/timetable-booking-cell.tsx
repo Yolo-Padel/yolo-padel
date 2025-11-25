@@ -21,6 +21,8 @@ type TimetableBookingCellProps = {
   onMouseDown?: (court: Court, timeSlot: string) => void;
   onMouseEnter?: (court: Court, timeSlot: string) => void;
   isDragPreview?: boolean;
+  canCreateBooking: boolean;
+  isLoadingPermission: boolean;
 };
 
 /**
@@ -37,6 +39,8 @@ export function TimetableBookingCell({
   onMouseDown,
   onMouseEnter,
   isDragPreview = false,
+  canCreateBooking = false,
+  isLoadingPermission = false,
 }: TimetableBookingCellProps) {
   const isBooked = booking !== null;
 
@@ -69,13 +73,13 @@ export function TimetableBookingCell({
           "bg-primary/10 border-primary/60 ring-1 ring-primary/40"
       )}
       onClick={() => {
-        if (!isDisabled) {
+        if (!isDisabled && canCreateBooking) {
           onClick?.({ booking, court, timeSlot });
         }
       }}
       onMouseDown={(event) => {
         // Only allow dragging on empty, enabled cells
-        if (!isBooked && !isDisabled && onMouseDown) {
+        if (!isBooked && !isDisabled && onMouseDown && canCreateBooking) {
           event.preventDefault();
           onMouseDown(court, timeSlot);
         }
@@ -83,7 +87,7 @@ export function TimetableBookingCell({
       onMouseEnter={() => {
         // Only trigger onMouseEnter for valid cells (not booked continuation slots)
         if (isBooked && !isFirstSlot && span === 0) return;
-        if (!isBooked && !isDisabled && onMouseEnter) {
+        if (!isBooked && !isDisabled && onMouseEnter && canCreateBooking) {
           onMouseEnter(court, timeSlot);
         }
       }}

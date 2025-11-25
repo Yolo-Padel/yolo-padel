@@ -11,6 +11,7 @@ datasource db {
 }
 
 enum UserType {
+  ADMIN
   STAFF
   USER
 }
@@ -80,6 +81,9 @@ model User {
   roleId String?
   roles  Roles? @relation(fields: [roleId], references: [id])
 
+  @@index([userType])
+  @@index([userStatus])
+  @@index([assignedVenueIds])
   @@map("users")
 }
 
@@ -95,6 +99,7 @@ model Profile {
   // Relasi ke User
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([fullName])
   @@map("profiles")
 }
 
@@ -326,6 +331,7 @@ model Order {
   orderCode   String      @unique
   totalAmount Int
   status      OrderStatus @default(PENDING)
+  venueIds    String[]    @default([])  // Array of venue IDs from bookings
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -334,6 +340,7 @@ model Order {
   bookings Booking[]
   payment  Payment?
 
+  @@index([venueIds])
   @@map("orders")
 }
 
@@ -369,8 +376,9 @@ model Module {
 }
 
 model Permission {
-  id      String @id @default(cuid())
-  action  String @unique
+  id         String @id @default(cuid())
+  action     String @unique
+  orderIndex Int?
 
   rolePermissions RolePermission[]
 

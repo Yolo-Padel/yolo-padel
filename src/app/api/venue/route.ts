@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
     const result = await venueService.getAll(serviceContext);
 
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
     const result = await venueService.create(
       validatedData,
@@ -118,7 +118,7 @@ export async function DELETE(request: NextRequest) {
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
     const result = await venueService.delete(validatedData, serviceContext);
 

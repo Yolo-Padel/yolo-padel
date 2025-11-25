@@ -32,6 +32,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { DynamicPrice } from "@/components/timetable-types";
 import { transformPrismaDynamicPrice } from "@/lib/dynamic-price-transform";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 
 type CourtSelectionContainerProps = {
   onClose: () => void;
@@ -56,6 +64,7 @@ export function CourtSelectionContainer({
 }: CourtSelectionContainerProps) {
   const [selectedVenueId, setSelectedVenueId] = useState<string>("");
   const { isAuthenticated } = useAuth();
+  const isMobile = useIsMobile();
 
   // Guest info state (only for non-authenticated users)
   const [guestEmail, setGuestEmail] = useState<string>("");
@@ -328,7 +337,46 @@ export function CourtSelectionContainer({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col">
           <p className="text-sm">Available Date</p>
-          <div className="rounded-lg border p-2">
+          {isMobile ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !watchDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {watchDate ? (
+                    format(watchDate, "PPP")
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={watchDate}
+                  onSelect={(d) => {
+                    form.setValue("date", d);
+                    // Slots will be loaded by useEffect if there's a previous selection
+                    // Otherwise will be reset to empty
+                  }}
+                  showOutsideDays
+                  className="w-full"
+                  disabled={(date) => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const compareDate = new Date(date);
+                    compareDate.setHours(0, 0, 0, 0);
+                    return compareDate < today;
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+          ) : (
             <Calendar
               mode="single"
               selected={watchDate}
@@ -347,7 +395,7 @@ export function CourtSelectionContainer({
                 return compareDate < today;
               }}
             />
-          </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-2">
@@ -359,8 +407,10 @@ export function CourtSelectionContainer({
               size="sm"
               onClick={() => {
                 // All slots in allSlots are already filtered (not blocked)
-                
-                if (form.watch("slots").length === availableFutureSlots.length) {
+
+                if (
+                  form.watch("slots").length === availableFutureSlots.length
+                ) {
                   form.setValue("slots", []);
                 } else {
                   form.setValue("slots", availableFutureSlots);

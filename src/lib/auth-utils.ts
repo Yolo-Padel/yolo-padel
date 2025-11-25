@@ -8,7 +8,7 @@ export interface AuthUser {
   userId: string;
   email: string;
   userType: UserType;
-  assignedVenueId?: string;
+  assignedVenueIds: string[];
 }
 
 type AuthSuccess = { isValid: true; user: AuthUser };
@@ -33,7 +33,7 @@ export async function verifyAuth(
     const userId = (payload as any).userId;
     const email = (payload as any).email;
     const userType = (payload as any).userType;
-    const assignedVenueId = (payload as any).assignedVenueId;
+    const assignedVenueIds = (payload as any).assignedVenueIds || [];
 
     // Validate required fields
     if (!userId || typeof userId !== "string") {
@@ -50,7 +50,7 @@ export async function verifyAuth(
       userId,
       email,
       userType: userType as UserType,
-      assignedVenueId,
+      assignedVenueIds: Array.isArray(assignedVenueIds) ? assignedVenueIds : [],
     };
 
     return { isValid: true, user };

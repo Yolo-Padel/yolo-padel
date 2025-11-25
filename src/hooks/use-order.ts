@@ -71,6 +71,14 @@ type GetOrdersParams = {
   status?: OrderStatus;
 };
 
+export type UseAdminOrdersOptions = {
+  search?: string;
+  venueId?: string;
+  paymentStatus?: PaymentStatus;
+  page?: number;
+  limit?: number;
+};
+
 // ════════════════════════════════════════════════════════
 // API Functions
 // ════════════════════════════════════════════════════════
@@ -134,8 +142,32 @@ async function getOrderByIdApi(orderId: string): Promise<Order> {
   return result.data;
 }
 
-async function getAdminOrdersApi(): Promise<Order[]> {
-  const response = await fetch("/api/admin/orders");
+async function getAdminOrdersApi(options: UseAdminOrdersOptions = {}): Promise<{
+  data: Order[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}> {
+  // Subtask 4.2: Build query string from options
+  const searchParams = new URLSearchParams();
+
+  // Handle undefined/null values - only add defined values to query string
+  if (options.search) searchParams.append("search", options.search);
+  if (options.venueId) searchParams.append("venue", options.venueId);
+  if (options.paymentStatus)
+    searchParams.append("paymentStatus", options.paymentStatus);
+  if (options.page) searchParams.append("page", options.page.toString());
+  if (options.limit) searchParams.append("limit", options.limit.toString());
+
+  const queryString = searchParams.toString();
+  const url = queryString
+    ? `/api/admin/orders?${queryString}`
+    : "/api/admin/orders";
+
+  const response = await fetch(url);
 
   const result = await response.json();
 
@@ -143,7 +175,10 @@ async function getAdminOrdersApi(): Promise<Order[]> {
     throw new Error(result.message || "Failed to get admin orders");
   }
 
-  return result.data;
+  return {
+    data: result.data,
+    pagination: result.pagination,
+  };
 }
 
 async function updateOrderStatusApi(
@@ -209,13 +244,18 @@ export function useOrders(params: GetOrdersParams = {}) {
 }
 
 /**
- * Hook to get all orders for admin dashboard
+ * Hook to get all orders for admin dashboard with filtering support
+ *
+ * Subtask 4.1: Updated to accept options parameter with search, venueId, paymentStatus, page, limit
+ * and return pagination metadata
  */
-export function useAdminOrders() {
+export function useAdminOrders(options: UseAdminOrdersOptions = {}) {
+  // Subtask 4.3: Include filter options in query key for proper caching
+  // This ensures that different filter combinations are cached separately
   return useQuery({
-    queryKey: ["admin-orders"],
-    queryFn: () => getAdminOrdersApi(),
-    staleTime: 1000 * 60 * 5,
+    queryKey: ["admin-orders", options],
+    queryFn: () => getAdminOrdersApi(options),
+    staleTime: 1000 * 60 * 2, // 2 minutes - shorter than default since filters change frequently
   });
 }
 

@@ -4,7 +4,6 @@ import * as React from "react";
 import {
   Home,
   Users,
-  Crown,
   TableCellsMerge,
   LandPlot,
   CalendarDays,
@@ -28,7 +27,8 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserType } from "@/types/prisma";
-import { MenuItem, filterMenuByUserType } from "@/lib/frontend-rbac";
+import { MenuItem, filterMenuByAccess } from "@/lib/frontend-rbac";
+import { useModules, useRolePermissions } from "@/hooks/use-rbac";
 
 // Menu configuration with userType requirements
 const menuConfig: MenuItem[] = [
@@ -36,55 +36,63 @@ const menuConfig: MenuItem[] = [
     name: "Dashboard",
     url: "/admin/dashboard",
     icon: Home,
-    userTypes: [UserType.STAFF],
+    userTypes: [UserType.ADMIN, UserType.STAFF],
   },
   {
     name: "Users Management",
     url: "/admin/dashboard/users",
     icon: Users,
-    userTypes: [UserType.STAFF],
+    userTypes: [UserType.ADMIN, UserType.STAFF],
+    moduleKey: "users",
   },
   {
     name: "Booking List",
     url: "/admin/dashboard/booking",
     icon: LandPlot,
-    userTypes: [UserType.STAFF],
+    userTypes: [UserType.ADMIN, UserType.STAFF],
+    moduleKey: "bookings",
   },
   {
     name: "Booking Time Table",
     url: "/admin/dashboard/timetable",
     icon: CalendarDays,
-    userTypes: [UserType.STAFF],
+    userTypes: [UserType.ADMIN, UserType.STAFF],
+    moduleKey: "bookings",
   },
   {
     name: "Price Configuration",
     url: "/admin/dashboard/price",
     icon: DollarSign,
-    userTypes: [UserType.STAFF],
+    userTypes: [UserType.ADMIN, UserType.STAFF],
+    moduleKey: "courts",
   },
   {
     name: "Order List",
     url: "/admin/dashboard/order",
     icon: CalendarDays,
-    userTypes: [UserType.STAFF],
+    userTypes: [UserType.ADMIN, UserType.STAFF],
+    moduleKey: "orders",
   },
   {
     name: "Venue Management",
     url: "/admin/dashboard/venue",
     icon: TableCellsMerge,
-    userTypes: [UserType.STAFF],
+    userTypes: [UserType.ADMIN, UserType.STAFF],
+    moduleKey: "venues",
   },
   {
     name: "Activity Log",
     url: "/admin/dashboard/activity-log",
     icon: Activity,
-    userTypes: [UserType.STAFF],
+    userTypes: [UserType.ADMIN, UserType.STAFF],
+    moduleKey: "logs",
   },
   {
     name: "Access Control",
     url: "/admin/dashboard/access-control",
     icon: ShieldCheck,
-    userTypes: [UserType.STAFF],
+    userTypes: [UserType.ADMIN, UserType.STAFF],
+    moduleKey: "roles",
   },
 ];
 
@@ -102,6 +110,36 @@ function UserSkeleton() {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, profile, isLoading, isAuthenticated } = useAuth();
+  const roleId = user?.roleId ?? "";
+  const userType = user?.userType as UserType | undefined;
+
+  const { data: modulesData, isLoading: isModulesLoading } = useModules();
+
+  const { data: rolePermissions, isLoading: isRolePermissionsLoading } =
+    useRolePermissions(roleId, Boolean(roleId));
+
+  const moduleKeyMap = React.useMemo(() => {
+    if (!modulesData?.modules?.length) {
+      return null;
+    }
+
+    return modulesData.modules.reduce<Record<string, string>>((acc, module) => {
+      acc[module.key] = module.id;
+      return acc;
+    }, {});
+  }, [modulesData]);
+
+  const allowedModuleIds = React.useMemo(() => {
+    if (!rolePermissions) {
+      return null;
+    }
+
+    return new Set(
+      rolePermissions
+        .filter((permission) => permission.allowed)
+        .map((permission) => permission.moduleId)
+    );
+  }, [rolePermissions]);
 
   const userData = {
     name: profile?.fullName || "User",
@@ -109,11 +147,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     avatar: profile?.avatar || "/avatars/shadcn.jpg",
   };
 
-  // Filter menu items based on user type
-  const userType = user?.userType as UserType;
   const filteredMenuItems = userType
-    ? filterMenuByUserType(menuConfig, userType)
+    ? filterMenuByAccess({
+        menuItems: menuConfig,
+        userType,
+        moduleKeyMap,
+        allowedModuleIds,
+      })
     : [];
+
+  const isMenuLoading =
+    isLoading || isModulesLoading || isRolePermissionsLoading;
 
   return (
     <Sidebar collapsible="icon" {...props} className="bg-[#f9fafb]">
@@ -121,7 +165,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <CompanyProfile />
       </SidebarHeader>
       <SidebarContent className="bg-background">
-        {isLoading ? (
+        {isMenuLoading ? (
           <MenuItemsSkeleton />
         ) : (
           <MenuItems menuItems={filteredMenuItems} />

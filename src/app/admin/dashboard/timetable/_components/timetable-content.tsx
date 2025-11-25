@@ -23,6 +23,7 @@ import {
   ManualBookingDefaults,
   ManualBookingSheet,
 } from "@/app/admin/dashboard/_components/booking-sheet";
+import { usePermissionGuard } from "@/hooks/use-permission-guard";
 
 export function TimetableContent() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -36,6 +37,12 @@ export function TimetableContent() {
   const prevVenueIdRef = useRef<string>("");
   const prevDateRef = useRef<Date | null>(null);
   const isFirstRenderRef = useRef(true);
+
+  const { canAccess: canCreateBooking, isLoading: isCreateLoading } =
+    usePermissionGuard({
+      moduleKey: "bookings",
+      action: "create",
+    });
 
   // Fetch venues
   const {
@@ -288,6 +295,8 @@ export function TimetableContent() {
             onVenueChange={handleVenueChange}
             onAddBooking={handleAddBooking}
             isLoading={courtsLoading}
+            canCreateBooking={canCreateBooking}
+            isLoadingPermission={isCreateLoading}
           />
           <TimetableEmptyState type="no-courts" />
         </div>
@@ -317,6 +326,8 @@ export function TimetableContent() {
             isLoadingTable={isDateChangeLoading}
             onAddBooking={handleAddBooking}
             onSelectEmptySlot={handleAddBookingFromCell}
+            canCreateBooking={canCreateBooking}
+            isLoadingPermission={isCreateLoading}
           />
         </div>
       </ErrorBoundary>

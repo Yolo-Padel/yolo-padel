@@ -13,7 +13,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (tokenResult.user.userType !== UserType.STAFF) {
+    if (
+      tokenResult.user.userType !== UserType.ADMIN &&
+      tokenResult.user.userType !== UserType.STAFF
+    ) {
       return NextResponse.json(
         { success: false, data: null, message: "Forbidden" },
         { status: 403 }

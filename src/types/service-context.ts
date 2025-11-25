@@ -23,6 +23,7 @@ export const hasPermission = (
   const roleHierarchy: Record<UserType, number> = {
     USER: 1,
     STAFF: 2,
+    ADMIN: 3,
   };
 
   return roleHierarchy[context.userRole] >= roleHierarchy[requiredRole];

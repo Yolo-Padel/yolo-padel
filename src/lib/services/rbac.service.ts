@@ -22,6 +22,7 @@ export type RoleWithPermissionCount = Roles & {
   _count: {
     rolePermissions: number;
   };
+  allowedPermissionCount: number;
 };
 
 /**
@@ -113,20 +114,40 @@ export async function createRole(data: CreateRoleInput): Promise<Roles> {
  * @returns Array of roles ordered by creation date (newest first)
  */
 export async function getAllRoles(): Promise<RoleWithPermissionCount[]> {
-  const roles = await prisma.roles.findMany({
-    include: {
-      _count: {
-        select: {
-          rolePermissions: true,
+  const [roles, allowedCounts] = await Promise.all([
+    prisma.roles.findMany({
+      include: {
+        _count: {
+          select: {
+            rolePermissions: true,
+          },
         },
       },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
+    prisma.rolePermission.groupBy({
+      by: ["roleId"],
+      where: { allowed: true },
+      _count: {
+        _all: true,
+      },
+    }),
+  ]);
 
-  return roles;
+  const allowedMap = allowedCounts.reduce<Record<string, number>>(
+    (acc, entry) => {
+      acc[entry.roleId] = entry._count._all;
+      return acc;
+    },
+    {}
+  );
+
+  return roles.map((role) => ({
+    ...role,
+    allowedPermissionCount: allowedMap[role.id] ?? 0,
+  }));
 }
 
 /**
@@ -260,14 +281,14 @@ export async function getAllModules(): Promise<Module[]> {
 }
 
 /**
- * Get all permissions ordered by action
+ * Get all permissions ordered by orderIndex
  *
- * @returns Array of permissions ordered by action alphabetically
+ * @returns Array of permissions ordered by orderIndex ascending
  */
 export async function getAllPermissions(): Promise<Permission[]> {
   const permissions = await prisma.permission.findMany({
     orderBy: {
-      action: "asc",
+      orderIndex: "asc",
     },
   });
 
@@ -321,6 +342,29 @@ export async function updateRolePermissions(
   roleId: string,
   updates: RolePermissionUpdate[]
 ): Promise<void> {
+  const permissions = await prisma.permission.findMany({
+    select: {
+      id: true,
+      action: true,
+    },
+  });
+
+  const permissionActionMap = permissions.reduce<Record<string, string>>(
+    (acc, permission) => {
+      acc[permission.id] = permission.action;
+      return acc;
+    },
+    {}
+  );
+
+  const readPermissionId = permissions.find(
+    (permission) => permission.action === "read"
+  )?.id;
+
+  if (!readPermissionId) {
+    throw new Error('Permission with action "read" not found');
+  }
+
   // Check if role exists
   const role = await prisma.roles.findUnique({
     where: { id: roleId },
@@ -334,15 +378,53 @@ export async function updateRolePermissions(
   await prisma.$transaction(async (tx) => {
     for (const update of updates) {
       const { moduleId, permissionId, allowed } = update;
+      const permissionAction = permissionActionMap[permissionId];
 
-      if (allowed) {
-        // For allowed=true: upsert the rolePermission entry
+      await tx.rolePermission.upsert({
+        where: {
+          roleId_moduleId_permissionId: {
+            roleId,
+            moduleId,
+            permissionId,
+          },
+        },
+        update: {
+          allowed,
+        },
+        create: {
+          roleId,
+          moduleId,
+          permissionId,
+          allowed,
+        },
+      });
+
+      if (!permissionAction) {
+        continue;
+      }
+
+      if (permissionAction === "read" && allowed === false) {
+        await tx.rolePermission.updateMany({
+          where: {
+            roleId,
+            moduleId,
+            NOT: {
+              permissionId,
+            },
+          },
+          data: {
+            allowed: false,
+          },
+        });
+      }
+
+      if (permissionAction !== "read" && allowed === true) {
         await tx.rolePermission.upsert({
           where: {
             roleId_moduleId_permissionId: {
               roleId,
               moduleId,
-              permissionId,
+              permissionId: readPermissionId,
             },
           },
           update: {
@@ -351,17 +433,8 @@ export async function updateRolePermissions(
           create: {
             roleId,
             moduleId,
-            permissionId,
+            permissionId: readPermissionId,
             allowed: true,
-          },
-        });
-      } else {
-        // For allowed=false: delete the rolePermission entry if it exists
-        await tx.rolePermission.deleteMany({
-          where: {
-            roleId,
-            moduleId,
-            permissionId,
           },
         });
       }

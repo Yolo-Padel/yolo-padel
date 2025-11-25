@@ -25,6 +25,7 @@ export interface RoleFormProps {
   onSubmit: (values: RoleFormValues) => Promise<void> | void;
   onCancel?: () => void;
   isSubmitting?: boolean;
+  canEdit?: boolean;
 }
 
 export function RoleForm({
@@ -33,6 +34,7 @@ export function RoleForm({
   onSubmit,
   onCancel,
   isSubmitting,
+  canEdit = true,
 }: RoleFormProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const { register, handleSubmit, control, formState } =
@@ -64,7 +66,12 @@ export function RoleForm({
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">Nama Role</Label>
-          <Input id="name" placeholder="admin" {...register("name")} />
+          <Input
+            id="name"
+            placeholder="admin"
+            {...register("name")}
+            disabled={!canEdit}
+          />
           {errors.name ? (
             <p className="text-sm text-destructive">{errors.name.message}</p>
           ) : null}
@@ -77,6 +84,7 @@ export function RoleForm({
             placeholder="Tambahkan deskripsi singkat"
             rows={4}
             {...register("description")}
+            disabled={!canEdit}
           />
           {errors.description ? (
             <p className="text-sm text-destructive">
@@ -100,6 +108,7 @@ export function RoleForm({
                 checked={field.value}
                 onCheckedChange={field.onChange}
                 aria-label="Status aktif role"
+                disabled={!canEdit}
               />
             </div>
           )}
@@ -112,21 +121,23 @@ export function RoleForm({
         </div>
       ) : null}
 
-      <div className="flex justify-end gap-3">
-        {onCancel ? (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isSubmitting}
-          >
-            Batal
+      {canEdit && (
+        <div className="flex justify-end gap-3">
+          {onCancel ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
+              Batal
+            </Button>
+          ) : null}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Menyimpan..." : submitLabel}
           </Button>
-        ) : null}
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Menyimpan..." : submitLabel}
-        </Button>
-      </div>
+        </div>
+      )}
     </form>
   );
 }

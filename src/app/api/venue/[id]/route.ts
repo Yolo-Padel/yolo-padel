@@ -22,7 +22,7 @@ export async function GET(
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
     const result = await venueService.getById(id, serviceContext);
 
@@ -67,7 +67,7 @@ export async function PUT(
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
     const result = await venueService.update(validatedData, serviceContext);
 
@@ -118,7 +118,7 @@ export async function DELETE(
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
     const result = await venueService.delete({ venueId: id }, serviceContext);
 

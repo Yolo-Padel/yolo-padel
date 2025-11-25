@@ -23,6 +23,7 @@ import {
   ChevronRight,
   MoreHorizontal,
   Trash,
+  Eye,
 } from "lucide-react";
 import { CourtModal } from "./court-modal";
 import { CourtDeleteModal } from "./court-delete-modal";
@@ -38,6 +39,7 @@ import { CourtTableSkeleton } from "@/app/admin/dashboard/court/_components/cour
 import { CourtEmptyState } from "@/app/admin/dashboard/court/_components/court-empty-state";
 import { CourtBreadcrumb } from "@/app/admin/dashboard/court/_components/court-breadcrumb";
 import { formatOperatingHours } from "@/lib/operating-hours-utils";
+import { usePermissionGuard } from "@/hooks/use-permission-guard";
 
 // Types
 type Court = {
@@ -67,7 +69,7 @@ export function CourtTable() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Court | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"add" | "edit">("add");
+  const [modalMode, setModalMode] = useState<"add" | "edit" | "view">("add");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [courtToDelete, setCourtToDelete] = useState<Court | null>(null);
   const searchParams = useSearchParams();
@@ -84,6 +86,24 @@ export function CourtTable() {
 
   // Toggle court availability hook
   const toggleCourtAvailability = useToggleCourtAvailability();
+
+  const { canAccess: canCreateCourt, isLoading: isCreateCourtLoading } =
+    usePermissionGuard({
+      moduleKey: "courts",
+      action: "create",
+    });
+
+  const { canAccess: canUpdateCourt, isLoading: isUpdateCourtLoading } =
+    usePermissionGuard({
+      moduleKey: "courts",
+      action: "update",
+    });
+
+  const { canAccess: canDeleteCourt, isLoading: isDeleteCourtLoading } =
+    usePermissionGuard({
+      moduleKey: "courts",
+      action: "delete",
+    });
 
   // Transform Prisma Court data to match our Court type
   const courts: Court[] = useMemo(() => {
@@ -236,17 +256,19 @@ export function CourtTable() {
       <div className="flex items-center gap-2 justify-between">
         <CourtBreadcrumb venueName={venueData?.data?.name} />
         <div className="flex items-center gap-2">
-          <Button
-            onClick={() => {
-              setModalMode("add");
-              setSelected(null);
-              setSheetOpen(true);
-            }}
-            className="text-black"
-          >
-            Add Court
-            <Plus className="ml-2 size-4" />
-          </Button>
+          {canCreateCourt && (
+            <Button
+              onClick={() => {
+                setModalMode("add");
+                setSelected(null);
+                setSheetOpen(true);
+              }}
+              className="text-black"
+            >
+              Add Court
+              <Plus className="ml-2 size-4" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -315,22 +337,28 @@ export function CourtTable() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            setModalMode("edit");
+                            setModalMode(canUpdateCourt ? "edit" : "view");
                             setSelected(court);
                             setSheetOpen(true);
                           }}
                           className="border-none shadow-none"
                         >
-                          <Pencil className="size-4 text-[#A4A7AE]" />
+                          {canUpdateCourt ? (
+                            <Pencil className="size-4 text-[#A4A7AE]" />
+                          ) : (
+                            <Eye className="size-4 text-[#A4A7AE]" />
+                          )}
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteCourt(court)}
-                          className="border-none shadow-none"
-                        >
-                          <Trash className="size-4 text-[#A4A7AE]" />
-                        </Button>
+                        {canDeleteCourt && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteCourt(court)}
+                            className="border-none shadow-none"
+                          >
+                            <Trash className="size-4 text-[#A4A7AE]" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

@@ -15,8 +15,12 @@ export async function POST(request: NextRequest) {
 
     const { token } = validation.data!;
 
+    console.log("[MAGIC LINK VERIFY] Token received:", token);
+
     // Verify magic link
     const result = await magicLinkService.verifyMagicLink(token);
+
+    console.log("[MAGIC LINK VERIFY] Verification result:", result);
 
     if (!result.success) {
       return NextResponse.json(
@@ -48,7 +52,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       email: user.email,
       userType: user.userType,
-      assignedVenueId: user.assignedVenueIds,
+      assignedVenueIds: user.assignedVenueIds,
     })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()

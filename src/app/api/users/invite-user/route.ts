@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
     const result = await inviteUserService.inviteUser(
       validation.data!,

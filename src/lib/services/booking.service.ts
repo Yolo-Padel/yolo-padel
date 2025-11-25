@@ -20,6 +20,7 @@ import type {
   SuperAdminDashboardSnapshot,
   TodaysBookingCollection,
 } from "@/types/booking-dashboard";
+import { Prisma } from "@prisma/client";
 
 /**
  * Parse date string (YYYY-MM-DD) and return Date object representing start of day in local timezone
@@ -491,22 +492,30 @@ export const bookingService = {
       const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
-      const assignedVenueIds = Array.isArray(context.assignedVenueId)
-        ? context.assignedVenueId.filter(Boolean)
-        : context.assignedVenueId
-          ? [context.assignedVenueId]
-          : [];
+      // Build venue filter based on user type
+      let venueWhere: any = {};
+      let courtVenueWhere: any = {};
 
-      if (assignedVenueIds.length === 0) {
-        return {
-          success: false,
-          data: null,
-          message: "Assigned venue is required for admin dashboard",
-        };
+      if (context.userRole === UserType.STAFF) {
+        // STAFF: only assigned venues
+        const assignedVenueIds = Array.isArray(context.assignedVenueId)
+          ? context.assignedVenueId.filter(Boolean)
+          : context.assignedVenueId
+            ? [context.assignedVenueId]
+            : [];
+
+        if (assignedVenueIds.length === 0) {
+          return {
+            success: false,
+            data: null,
+            message: "Assigned venue is required for admin dashboard",
+          };
+        }
+
+        venueWhere = { venueId: { in: assignedVenueIds } };
+        courtVenueWhere = { court: { venueId: { in: assignedVenueIds } } };
       }
-
-      const venueWhere = { venueId: { in: assignedVenueIds } };
-      const courtVenueWhere = { court: { venueId: { in: assignedVenueIds } } };
+      // ADMIN: all venues (no filter)
 
       const todayRange = getUtcDayRange(new Date());
       const utilizationRange = getUtcRangeForPastDays(7);
@@ -1008,6 +1017,495 @@ export const bookingService = {
     }
   },
 };
+
+/**
+ * Options for filtering bookings in admin dashboard
+ */
+export interface GetBookingsForAdminOptions {
+  // User context for authorization
+  userType: UserType;
+  assignedVenueIds: string[];
+
+  // Filter options
+  search?: string;
+  venueId?: string;
+  status?: BookingStatus;
+  startDate?: Date;
+  endDate?: Date;
+
+  // Pagination options
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * Pagination metadata for booking results
+ */
+export interface BookingPaginationMetadata {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+/**
+ * Result type for getBookingsForAdmin function
+ */
+export interface GetBookingsForAdminResult {
+  data: Array<
+    Booking & {
+      timeSlots: Array<{
+        id: string;
+        openHour: string;
+        closeHour: string;
+      }>;
+      user: {
+        id: string;
+        email: string;
+        profile: {
+          fullName: string | null;
+          avatar: string | null;
+        } | null;
+      };
+      court: {
+        id: string;
+        name: string;
+        venue: {
+          id: string;
+          name: string;
+          city: string | null;
+        };
+      };
+      order: {
+        id: string;
+        orderCode: string;
+        status: string;
+        totalAmount: number;
+      } | null;
+      payments: Array<{
+        id: string;
+        amount: number;
+        status: PaymentStatus;
+        paymentDate: Date | null;
+        channelName: string | null;
+      }>;
+    }
+  >;
+  pagination: BookingPaginationMetadata;
+}
+
+/**
+ * Sanitize search input to prevent SQL injection
+ * Prisma handles parameterization, but we still trim and validate
+ *
+ * @param search - Raw search string from user input
+ * @returns Sanitized search string or undefined if empty
+ */
+function sanitizeSearchInput(search?: string): string | undefined {
+  if (!search) return undefined;
+
+  // Trim whitespace
+  const trimmed = search.trim();
+
+  // Return undefined if empty after trimming
+  if (trimmed.length === 0) return undefined;
+
+  // Prisma handles SQL injection prevention through parameterized queries
+  // We just need to ensure the string is valid
+  return trimmed;
+}
+
+/**
+ * Build search filter for booking code, customer name, email, court name, and venue name
+ *
+ * @param search - Search query string
+ * @returns Prisma OR clause for searching multiple fields
+ */
+function buildSearchFilter(search?: string): Prisma.BookingWhereInput["OR"] {
+  const sanitizedSearch = sanitizeSearchInput(search);
+
+  if (!sanitizedSearch) {
+    return undefined;
+  }
+
+  // Build OR clause to search across multiple fields (case-insensitive)
+  return [
+    {
+      bookingCode: {
+        contains: sanitizedSearch,
+        mode: "insensitive",
+      },
+    },
+    {
+      user: {
+        profile: {
+          fullName: {
+            contains: sanitizedSearch,
+            mode: "insensitive",
+          },
+        },
+      },
+    },
+    {
+      user: {
+        email: {
+          contains: sanitizedSearch,
+          mode: "insensitive",
+        },
+      },
+    },
+    {
+      court: {
+        name: {
+          contains: sanitizedSearch,
+          mode: "insensitive",
+        },
+      },
+    },
+    {
+      court: {
+        venue: {
+          name: {
+            contains: sanitizedSearch,
+            mode: "insensitive",
+          },
+        },
+      },
+    },
+  ];
+}
+
+/**
+ * Build venue filter based on user type and assigned venues
+ *
+ * @param userType - The type of user (ADMIN or STAFF)
+ * @param assignedVenueIds - Array of venue IDs assigned to STAFF users
+ * @param venueId - Optional specific venue filter
+ * @returns Prisma where clause for venue filtering
+ */
+function buildVenueFilter(
+  userType: UserType,
+  assignedVenueIds: string[],
+  venueId?: string
+): { venueId: string } | { venueId: { in: string[] } } | undefined {
+  // ADMIN users have unrestricted access
+  if (userType === "ADMIN") {
+    // If a specific venue is requested, filter by that venue
+    if (venueId) {
+      return {
+        venueId: venueId,
+      };
+    }
+    // Otherwise, no venue restriction
+    return undefined;
+  }
+
+  // STAFF users are restricted to their assigned venues
+  if (userType === "STAFF") {
+    // If STAFF has no assigned venues, return a filter that matches nothing
+    if (assignedVenueIds.length === 0) {
+      return {
+        venueId: {
+          in: [], // Empty array will match no venues
+        },
+      };
+    }
+
+    // If a specific venue is requested, ensure it's in the assigned list
+    if (venueId) {
+      // Only allow filtering by assigned venues
+      if (assignedVenueIds.includes(venueId)) {
+        return {
+          venueId: venueId,
+        };
+      } else {
+        // Requested venue is not assigned, return no results
+        return {
+          venueId: {
+            in: [], // Empty array will match no venues
+          },
+        };
+      }
+    }
+
+    // No specific venue requested, filter by all assigned venues
+    return {
+      venueId: {
+        in: assignedVenueIds,
+      },
+    };
+  }
+
+  // For other user types (USER), return no results
+  return {
+    venueId: {
+      in: [], // Empty array will match no venues
+    },
+  };
+}
+
+/**
+ * Build status filter
+ *
+ * @param status - Booking status to filter by
+ * @returns Prisma where clause for status filtering
+ */
+function buildStatusFilter(
+  status?: BookingStatus
+): Prisma.BookingWhereInput["status"] {
+  // If no status specified, return undefined (no filter)
+  if (!status) {
+    return undefined;
+  }
+
+  // Filter by the specified status
+  return status;
+}
+
+/**
+ * Build date range filter
+ *
+ * @param startDate - Start date for filtering
+ * @param endDate - End date for filtering
+ * @returns Prisma where clause for date range filtering
+ */
+function buildDateRangeFilter(
+  startDate?: Date,
+  endDate?: Date
+): Prisma.BookingWhereInput["bookingDate"] {
+  // If neither date is specified, return undefined (no filter)
+  if (!startDate && !endDate) {
+    return undefined;
+  }
+
+  // Build date range filter
+  const dateFilter: Prisma.DateTimeFilter = {};
+
+  if (startDate) {
+    dateFilter.gte = startDate;
+  }
+
+  if (endDate) {
+    dateFilter.lte = endDate;
+  }
+
+  return dateFilter;
+}
+
+/**
+ * Build pagination parameters and calculate metadata
+ *
+ * @param page - Page number (1-indexed)
+ * @param limit - Items per page
+ * @returns Pagination parameters and metadata
+ */
+function buildPaginationParams(
+  page?: number,
+  limit?: number
+): {
+  skip: number;
+  take: number;
+  metadata: (total: number) => BookingPaginationMetadata;
+} {
+  // Default values
+  const validPage = Math.max(1, page || 1);
+  const validLimit = Math.max(1, Math.min(100, limit || 10)); // Cap at 100
+
+  // Calculate skip for Prisma query
+  const skip = (validPage - 1) * validLimit;
+
+  // Return skip, take, and a function to build metadata
+  return {
+    skip,
+    take: validLimit,
+    metadata: (total: number) => ({
+      page: validPage,
+      limit: validLimit,
+      total,
+      totalPages: Math.ceil(total / validLimit),
+    }),
+  };
+}
+
+/**
+ * Build complete Prisma where clause combining all filters
+ *
+ * @param options - Filter options from GetBookingsForAdminOptions
+ * @returns Complete Prisma where clause
+ */
+function buildWhereClause(
+  options: GetBookingsForAdminOptions
+): Prisma.BookingWhereInput {
+  const {
+    userType,
+    assignedVenueIds,
+    search,
+    venueId,
+    status,
+    startDate,
+    endDate,
+  } = options;
+
+  // Build individual filter components
+  const searchFilter = buildSearchFilter(search);
+  const venueFilter = buildVenueFilter(userType, assignedVenueIds, venueId);
+  const statusFilter = buildStatusFilter(status);
+  const dateRangeFilter = buildDateRangeFilter(startDate, endDate);
+
+  // Debug logging
+  console.log("[Booking Service] buildWhereClause - Input options:", {
+    userType,
+    venueId,
+    assignedVenueIds,
+    search,
+    status,
+  });
+  console.log(
+    "[Booking Service] buildWhereClause - Venue filter:",
+    venueFilter
+  );
+
+  // Combine all filters with AND logic
+  const where: Prisma.BookingWhereInput = {
+    // Search filter (OR clause for multiple fields)
+    OR: searchFilter,
+
+    // Venue filter (handles both ADMIN and STAFF authorization)
+    court: venueFilter,
+
+    // Status filter
+    status: statusFilter,
+
+    // Date range filter
+    bookingDate: dateRangeFilter,
+  };
+
+  console.log(
+    "[Booking Service] buildWhereClause - Final where clause:",
+    JSON.stringify(where, null, 2)
+  );
+
+  return where;
+}
+
+/**
+ * Get bookings for admin dashboard with server-side filtering and pagination
+ *
+ * This function implements comprehensive filtering based on:
+ * - User authorization (ADMIN vs STAFF with venue restrictions)
+ * - Search query (booking code, customer name, email, court name, venue name)
+ * - Booking status
+ * - Venue
+ * - Date range
+ * - Pagination
+ *
+ * All filters are applied at the database level for optimal performance.
+ *
+ * @param options - Filter and pagination options
+ * @returns Filtered bookings with pagination metadata
+ *
+ * @example
+ * // ADMIN user searching for bookings
+ * const result = await getBookingsForAdmin({
+ *   userType: "ADMIN",
+ *   assignedVenueIds: [],
+ *   search: "BK-123",
+ *   page: 1,
+ *   limit: 10
+ * });
+ *
+ * @example
+ * // STAFF user viewing bookings from assigned venues
+ * const result = await getBookingsForAdmin({
+ *   userType: "STAFF",
+ *   assignedVenueIds: ["venue-1", "venue-2"],
+ *   status: "UPCOMING",
+ *   page: 1,
+ *   limit: 10
+ * });
+ */
+export async function getBookingsForAdmin(
+  options: GetBookingsForAdminOptions
+): Promise<GetBookingsForAdminResult> {
+  // Build where clause combining all filters
+  const where = buildWhereClause(options);
+
+  // Build pagination parameters
+  const { skip, take, metadata } = buildPaginationParams(
+    options.page,
+    options.limit
+  );
+
+  // Execute query with filters and pagination
+  const [bookings, total] = await Promise.all([
+    prisma.booking.findMany({
+      where,
+      include: {
+        timeSlots: {
+          select: {
+            id: true,
+            openHour: true,
+            closeHour: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            profile: {
+              select: {
+                fullName: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+        court: {
+          select: {
+            id: true,
+            name: true,
+            venue: {
+              select: {
+                id: true,
+                name: true,
+                city: true,
+              },
+            },
+          },
+        },
+        order: {
+          select: {
+            id: true,
+            orderCode: true,
+            status: true,
+            totalAmount: true,
+          },
+        },
+        payments: {
+          select: {
+            id: true,
+            amount: true,
+            status: true,
+            paymentDate: true,
+            channelName: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take,
+    }),
+    prisma.booking.count({ where }),
+  ]);
+
+  // Return data with pagination metadata
+  return {
+    data: bookings,
+    pagination: metadata(total),
+  };
+}
 
 /**
  * Create a booking with time slots

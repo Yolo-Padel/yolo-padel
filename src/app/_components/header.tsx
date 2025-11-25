@@ -10,7 +10,7 @@ export default function GlobalHeader() {
   const { user, profile, isLoading, isAuthenticated } = useAuth();
   return (
     <header className="relative z-30 w-full">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto p-6">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Image

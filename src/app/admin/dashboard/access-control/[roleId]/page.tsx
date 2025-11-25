@@ -19,6 +19,7 @@ import {
   useUpdateRole,
   useUpdateRolePermissions,
 } from "@/hooks/use-rbac";
+import { usePermissionGuard } from "@/hooks/use-permission-guard";
 
 export default function AccessControlDetailPage() {
   const params = useParams<{ roleId: string }>();
@@ -73,6 +74,12 @@ export default function AccessControlDetailPage() {
     });
   };
 
+  const { canAccess: canEditRole, isLoading: isEditRolePermissionLoading } =
+    usePermissionGuard({
+      moduleKey: "roles",
+      action: "update",
+    });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -120,6 +127,7 @@ export default function AccessControlDetailPage() {
               onSubmit={handleRoleSubmit}
               onCancel={() => router.back()}
               isSubmitting={updateRole.isPending}
+              canEdit={canEditRole}
             />
           </RoleFormCard>
 
@@ -137,6 +145,7 @@ export default function AccessControlDetailPage() {
                   rolePermissions={rolePermissions}
                   onToggle={handleTogglePermission}
                   isUpdating={updateRolePermissions.isPending}
+                  canEdit={canEditRole}
                 />
               )}
             </div>

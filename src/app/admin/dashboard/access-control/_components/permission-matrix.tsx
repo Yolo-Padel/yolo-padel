@@ -10,8 +10,6 @@ import {
 } from "@/components/ui/table";
 import { PermissionRow } from "./permission-row";
 
-const PERMISSION_ORDER = ["create", "read", "update", "delete"];
-
 export interface RolePermissionEntry {
   moduleId: string;
   permissionId: string;
@@ -24,6 +22,7 @@ export interface PermissionMatrixProps {
   rolePermissions: RolePermissionEntry[];
   onToggle: (moduleId: string, permissionId: string, allowed: boolean) => void;
   isUpdating?: boolean;
+  canEdit?: boolean;
 }
 
 export function PermissionMatrix({
@@ -32,21 +31,8 @@ export function PermissionMatrix({
   rolePermissions,
   onToggle,
   isUpdating,
+  canEdit,
 }: PermissionMatrixProps) {
-  // Sort permissions in CRUD order
-  const sortedPermissions = [...permissions].sort((a, b) => {
-    const indexA =
-      PERMISSION_ORDER.indexOf(a.action) !== -1
-        ? PERMISSION_ORDER.indexOf(a.action)
-        : PERMISSION_ORDER.length;
-    const indexB =
-      PERMISSION_ORDER.indexOf(b.action) !== -1
-        ? PERMISSION_ORDER.indexOf(b.action)
-        : PERMISSION_ORDER.length;
-    return indexA - indexB;
-  });
-
-  // Sort modules by orderIndex
   const sortedModules = [...modules].sort(
     (a, b) => a.orderIndex - b.orderIndex
   );
@@ -57,7 +43,7 @@ export function PermissionMatrix({
         <TableHeader>
           <TableRow>
             <TableHead>Module</TableHead>
-            {sortedPermissions.map((permission) => (
+            {permissions.map((permission) => (
               <TableHead key={permission.id} className="text-center capitalize">
                 {permission.action}
               </TableHead>
@@ -77,12 +63,12 @@ export function PermissionMatrix({
               <PermissionRow
                 key={module.id}
                 module={module}
-                permissions={sortedPermissions}
+                permissions={permissions}
                 allowedMap={allowedMap}
                 onToggle={(permissionId, allowed) =>
                   onToggle(module.id, permissionId, allowed)
                 }
-                disabled={isUpdating}
+                disabled={isUpdating || !canEdit}
               />
             );
           })}

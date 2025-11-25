@@ -58,6 +58,9 @@ type DynamicPriceModalProps = {
   initialDynamicPriceId?: string;
   venueName?: string;
   disableCourtSelection?: boolean;
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 };
 
 const dynamicPriceFormSchema = courtDynamicPriceCreateSchema.safeExtend({
@@ -81,6 +84,9 @@ export function DynamicPriceModal({
   initialDynamicPriceId,
   venueName,
   disableCourtSelection = false,
+  canCreate = false,
+  canUpdate = false,
+  canDelete = false,
 }: DynamicPriceModalProps) {
   const timeOptions = React.useMemo(() => generateTimeSlots(), []);
 
@@ -113,7 +119,11 @@ export function DynamicPriceModal({
 
   const selectedStartHour = watch("startHour");
   const selectedCourtId = watch("courtId");
-  const canDelete = Boolean(initialDynamicPriceId);
+  const isEditingExisting = Boolean(initialDynamicPriceId);
+  const canSubmit = isEditingExisting ? canUpdate : canCreate;
+  const isReadOnly =
+    (isEditingExisting && !canUpdate) || (!isEditingExisting && !canCreate);
+  const showDeleteButton = isEditingExisting && canDelete;
 
   const selectedCourtName =
     courts.find((court) => court.id === selectedCourtId)?.name ??
@@ -156,7 +166,7 @@ export function DynamicPriceModal({
   ]);
 
   const onSubmit = async (values: FormOutput) => {
-    if (!values.courtId) {
+    if (!values.courtId || !canSubmit) {
       return;
     }
 
@@ -189,7 +199,7 @@ export function DynamicPriceModal({
   };
 
   const handleDelete = async () => {
-    if (!initialDynamicPriceId) {
+    if (!initialDynamicPriceId || !canDelete) {
       onOpenChange(false);
       return;
     }
@@ -251,7 +261,7 @@ export function DynamicPriceModal({
                     <Select
                       value={field.value}
                       onValueChange={(value) => field.onChange(value)}
-                      disabled={disableCourtSelection}
+                      disabled={disableCourtSelection || isReadOnly}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select court" />
@@ -290,6 +300,7 @@ export function DynamicPriceModal({
                           type="button"
                           variant="outline"
                           className="w-full justify-start text-left font-normal"
+                          disabled={isReadOnly}
                         >
                           {field.value ? (
                             format(field.value, "EEE, d MMM yyyy")
@@ -347,6 +358,7 @@ export function DynamicPriceModal({
                             shouldValidate: true,
                           });
                         }}
+                        disabled={isReadOnly}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select start time" />
@@ -379,6 +391,7 @@ export function DynamicPriceModal({
                       <Select
                         value={field.value}
                         onValueChange={(value) => field.onChange(value)}
+                        disabled={isReadOnly}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select end time" />
@@ -435,6 +448,7 @@ export function DynamicPriceModal({
                         onBlur={() => {
                           setPriceInputFocused(false);
                         }}
+                        disabled={isReadOnly}
                       />
                     );
                   }}
@@ -447,7 +461,7 @@ export function DynamicPriceModal({
           </div>
 
           <div className="mt-8 flex gap-3 border-t bg-muted/30 p-4 sm:px-6 rounded-b-full">
-            {canDelete && (
+            {showDeleteButton && (
               <Button
                 type="button"
                 variant="destructive"
@@ -466,15 +480,20 @@ export function DynamicPriceModal({
               type="submit"
               className={cn(
                 "flex-1 bg-primary hover:bg-primary/90",
-                !canDelete && "w-full"
+                !showDeleteButton && "w-full"
               )}
               disabled={
                 isSubmitting ||
                 createMutation.isPending ||
-                deleteMutation.isPending
+                deleteMutation.isPending ||
+                isReadOnly
               }
             >
-              {createMutation.isPending ? "Saving..." : "Save Custom Price"}
+              {createMutation.isPending
+                ? "Saving..."
+                : isReadOnly
+                  ? "View Only"
+                  : "Save Custom Price"}
             </Button>
           </div>
         </form>
