@@ -11,10 +11,18 @@ import { BookingDetailsModal } from "./_components/booking-details-modal";
 import { BookingTableSkeleton } from "./_components/booking-table-skeleton";
 import { BookingEmptyState } from "./_components/booking-empty-state";
 import { BookingStatus } from "@/types/prisma";
+import { ManualBookingSheet } from "../_components/booking-sheet";
+import { usePermissionGuard } from "@/hooks/use-permission-guard";
 
 const PAGE_SIZE = 10;
 
 export default function BookingPage() {
+  // Access Control
+  const { canAccess: canCreateBooking, isLoading: isCreateLoading } =
+    usePermissionGuard({
+      moduleKey: "bookings",
+      action: "create",
+    });
   // Use the useBookingFilters hook for all filter logic
   const {
     filters,
@@ -31,6 +39,9 @@ export default function BookingPage() {
   // Modal state
   const [viewOpen, setViewOpen] = useState(false);
   const [selected, setSelected] = useState<BookingWithRelations | null>(null);
+
+  // Manual Booking Sheet state
+  const [manualBookingSheetOpen, setManualBookingSheetOpen] = useState(false);
 
   // Build options object from filter state and pass to hook
   const filterOptions = {
@@ -92,11 +103,24 @@ export default function BookingPage() {
     setStatus(value === "all" ? "" : value);
   };
 
+  const handleOpenAddBooking = () => {
+    setManualBookingSheetOpen(true);
+  };
+
+  const handleCloseAddBooking = () => {
+    setManualBookingSheetOpen(false);
+  };
+
   // Display error message on failure
   if (error) {
     return (
       <div className="flex flex-col gap-4">
-        <BookingHeader bookingCount={0} />
+        <BookingHeader
+          bookingCount={0}
+          onAddBooking={handleOpenAddBooking}
+          canCreateBooking={canCreateBooking}
+          isLoadingPermission={isCreateLoading}
+        />
         <BookingFilters
           searchValue={filters.search}
           onSearchSubmit={setSearch}
@@ -129,7 +153,12 @@ export default function BookingPage() {
   if (!isInitialLoad && bookings.length === 0) {
     return (
       <div className="flex flex-col gap-4">
-        <BookingHeader bookingCount={apiPagination?.total ?? 0} />
+        <BookingHeader
+          bookingCount={apiPagination?.total ?? 0}
+          onAddBooking={handleOpenAddBooking}
+          canCreateBooking={canCreateBooking}
+          isLoadingPermission={isCreateLoading}
+        />
         <BookingFilters
           searchValue={filters.search}
           onSearchSubmit={setSearch}
@@ -154,7 +183,12 @@ export default function BookingPage() {
   // Main UI rendering (includes initial load state)
   return (
     <div className="flex flex-col gap-4">
-      <BookingHeader bookingCount={apiPagination?.total ?? 0} />
+      <BookingHeader
+        bookingCount={apiPagination?.total ?? 0}
+        onAddBooking={handleOpenAddBooking}
+        canCreateBooking={canCreateBooking}
+        isLoadingPermission={isCreateLoading}
+      />
       <BookingFilters
         searchValue={filters.search}
         onSearchSubmit={setSearch}
@@ -185,6 +219,12 @@ export default function BookingPage() {
         open={viewOpen}
         onOpenChange={handleModalClose}
         booking={selected}
+      />
+
+      <ManualBookingSheet
+        open={manualBookingSheetOpen}
+        onOpenChange={handleCloseAddBooking}
+        onSuccess={handleCloseAddBooking}
       />
     </div>
   );
