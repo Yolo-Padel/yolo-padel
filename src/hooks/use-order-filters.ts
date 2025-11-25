@@ -78,7 +78,7 @@ export function useOrderFilters(): UseOrderFiltersReturn {
   const setVenue = (value: string) => {
     setFilters((prev) => ({
       ...prev,
-      venue: value,
+      venue: value === "all" ? "" : value, // Convert "all" to empty string
       page: 1, // Auto-reset page to 1 when venue changes
     }));
   };
@@ -86,7 +86,7 @@ export function useOrderFilters(): UseOrderFiltersReturn {
   const setPaymentStatus = (value: string) => {
     setFilters((prev) => ({
       ...prev,
-      paymentStatus: value,
+      paymentStatus: value === "all" ? "" : value, // Convert "all" to empty string
       page: 1, // Auto-reset page to 1 when payment status changes
     }));
   };

@@ -620,6 +620,7 @@ export async function checkOrderCompletion(orderId: string): Promise<boolean> {
 
 /**
  * Build venue filter based on user type and assigned venues
+ * Uses the Order.venueIds field for efficient filtering
  *
  * @param userType - The type of user (ADMIN or STAFF)
  * @param assignedVenueIds - Array of venue IDs assigned to STAFF users
@@ -630,17 +631,13 @@ function buildVenueFilter(
   userType: UserType,
   assignedVenueIds: string[],
   venueId?: string
-): Prisma.OrderWhereInput["bookings"] {
+): Prisma.OrderWhereInput["venueIds"] {
   // ADMIN users have unrestricted access
   if (userType === "ADMIN") {
     // If a specific venue is requested, filter by that venue
     if (venueId) {
       return {
-        some: {
-          court: {
-            venueId: venueId,
-          },
-        },
+        has: venueId,
       };
     }
     // Otherwise, no venue restriction
@@ -652,13 +649,7 @@ function buildVenueFilter(
     // If STAFF has no assigned venues, return a filter that matches nothing
     if (assignedVenueIds.length === 0) {
       return {
-        some: {
-          court: {
-            venueId: {
-              in: [], // Empty array will match no venues
-            },
-          },
-        },
+        isEmpty: true, // This will match no orders since all orders have venueIds
       };
     }
 
@@ -667,47 +658,26 @@ function buildVenueFilter(
       // Only allow filtering by assigned venues
       if (assignedVenueIds.includes(venueId)) {
         return {
-          some: {
-            court: {
-              venueId: venueId,
-            },
-          },
+          has: venueId,
         };
       } else {
         // Requested venue is not assigned, return no results
         return {
-          some: {
-            court: {
-              venueId: {
-                in: [], // Empty array will match no venues
-              },
-            },
-          },
+          isEmpty: true, // This will match no orders
         };
       }
     }
 
     // No specific venue requested, filter by all assigned venues
+    // Order must have at least one venue ID that overlaps with assigned venues
     return {
-      some: {
-        court: {
-          venueId: {
-            in: assignedVenueIds,
-          },
-        },
-      },
+      hasSome: assignedVenueIds,
     };
   }
 
   // For other user types (USER), return no results
   return {
-    some: {
-      court: {
-        venueId: {
-          in: [], // Empty array will match no venues
-        },
-      },
-    },
+    isEmpty: true, // This will match no orders
   };
 }
 
@@ -853,8 +823,8 @@ function buildWhereClause(
     // Search filter (OR clause for multiple fields)
     OR: searchFilter,
 
-    // Venue filter (handles both ADMIN and STAFF authorization)
-    bookings: venueFilter,
+    // Venue filter (uses Order.venueIds field for efficient filtering)
+    venueIds: venueFilter,
 
     // Payment status filter
     payment: paymentFilter,

@@ -76,14 +76,21 @@ export function OrderTable({
                     <span className="font-medium">{order.orderCode}</span>
                   </div>
                 </TableCell>
-                <TableCell className="flex items-center gap-2">
+                <TableCell className="flex items-center gap-3">
                   <Avatar>
                     <AvatarImage src={order.user?.profile?.avatar || ""} />
                     <AvatarFallback className="uppercase">
                       {customerName.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  {customerName}
+                  <div className="flex flex-col">
+                    <span className="font-medium">
+                      {order.user?.profile?.fullName || "-"}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {order.user?.email}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell>
                   {bookingCount} {bookingCount === 1 ? "booking" : "bookings"}
