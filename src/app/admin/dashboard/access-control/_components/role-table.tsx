@@ -11,12 +11,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Eye, Pencil, Trash } from "lucide-react";
 
 export interface RoleTableProps {
   roles: RoleWithPermissionCount[];
   onEdit: (roleId: string) => void;
   onDelete: (roleId: string) => void;
   isDeletingId: string | null;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
 export function RoleTable({
@@ -24,6 +27,8 @@ export function RoleTable({
   onEdit,
   onDelete,
   isDeletingId,
+  canEdit,
+  canDelete,
 }: RoleTableProps) {
   return (
     <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
@@ -64,17 +69,23 @@ export function RoleTable({
                     variant="outline"
                     onClick={() => onEdit(role.id)}
                   >
-                    Edit
+                    {canEdit ? (
+                      <Pencil className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => onDelete(role.id)}
-                    disabled={isDeletingId === role.id}
-                  >
-                    {isDeletingId === role.id ? "Menghapus..." : "Hapus"}
-                  </Button>
+                  {canDelete && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => onDelete(role.id)}
+                      disabled={isDeletingId === role.id}
+                    >
+                      <Trash className="size-4" />
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             );
