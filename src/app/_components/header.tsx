@@ -21,7 +21,7 @@ export default function GlobalHeader() {
           />
 
           {/* Navigation Menu */}
-          <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+          {/* <nav className="hidden md:flex items-center gap-6 lg:gap-8">
             <Link
               href="/"
               className="text-white hover:text-primary transition-colors text-sm lg:text-base"
@@ -52,7 +52,7 @@ export default function GlobalHeader() {
             >
               Contact Us
             </Link>
-          </nav>
+          </nav> */}
 
           {/* Join Membership Button */}
           {isAuthenticated && !isLoading ? (
