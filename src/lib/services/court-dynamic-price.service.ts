@@ -36,7 +36,8 @@ const ensureCourtAccess = async (courtId: string, context: ServiceContext) => {
   if (
     context.userRole === UserType.STAFF &&
     context.assignedVenueId &&
-    court.venueId !== context.assignedVenueId
+    // court.venueId !== context.assignedVenueId
+    !context.assignedVenueId.includes(court.venueId)
   ) {
     return {
       error: buildError("You are not authorized to access this court"),
