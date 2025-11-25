@@ -35,6 +35,7 @@ import { ActionType } from "@/types/action";
 import { EntityType } from "@/types/entity";
 import { date } from "zod/v3";
 import { JsonValue } from "@prisma/client/runtime/library";
+import { stringUtils } from "@/lib/format/string";
 
 const PAGE_SIZE = 10;
 
@@ -60,7 +61,7 @@ export function ActivityLogTable() {
             <TableHead>Role</TableHead>
             <TableHead>Modul</TableHead>
             <TableHead>Action</TableHead>
-            <TableHead>Detail</TableHead>
+            {/* <TableHead>Detail</TableHead> */}
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -69,7 +70,13 @@ export function ActivityLogTable() {
             (log: ActivityLog & { user: User & { profile: Profile } }) => (
               <TableRow key={log.id}>
                 <TableCell>
-                  {new Date(log.createdAt).toLocaleString()}
+                  {new Date(log.createdAt).toLocaleDateString("id-ID", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </TableCell>
                 <TableCell>
                   <span className="text-sm font-medium">
@@ -80,10 +87,13 @@ export function ActivityLogTable() {
                     {log.user?.email}
                   </span>
                 </TableCell>
-                <TableCell>{log.user?.userType}</TableCell>
+                <TableCell>
+                  {stringUtils.toTitleCase(log.user?.userType)}
+                </TableCell>
                 <TableCell>{log.entityType}</TableCell>
-                <TableCell>{log.action}</TableCell>
-                <TableCell>{log.description}</TableCell>
+                <TableCell>
+                  {stringUtils.toTitleCase(log.action.split("_")[0])}
+                </TableCell>
                 <TableCell>
                   <Button
                     variant="outline"
