@@ -19,8 +19,6 @@ import {
   Trash,
   Eye,
 } from "lucide-react";
-import { useUsers } from "@/hooks/use-users";
-import { usePermissionGuard } from "@/hooks/use-permission-guard";
 import {
   User,
   Profile,
@@ -56,6 +54,9 @@ export interface UsersTableProps {
   onPageChange: (page: number) => void;
   onEditUser: (user: User & { profile?: Profile | null }) => void;
   onDeleteUser: (user: User & { profile?: Profile | null }) => void;
+  canDeleteUser: boolean;
+  canEditUser: boolean;
+  isPermissionLoading: boolean;
 }
 
 export function UsersTable({
@@ -64,6 +65,9 @@ export function UsersTable({
   onPageChange,
   onEditUser,
   onDeleteUser,
+  canDeleteUser,
+  canEditUser,
+  isPermissionLoading,
 }: UsersTableProps) {
   // Define table columns for colSpan
   const columns = [
@@ -74,28 +78,6 @@ export function UsersTable({
     "Join Date",
     "Actions",
   ];
-
-  // Fetch users data
-  const { data, isLoading, error } = useUsers();
-  const { canAccess: canCreateUser, isLoading: isCreateLoading } =
-    usePermissionGuard({
-      moduleKey: "users",
-      action: "create",
-    });
-  const { canAccess: canEditUser, isLoading: isEditLoading } =
-    usePermissionGuard({
-      moduleKey: "users",
-      action: "update",
-    });
-  const { canAccess: canDeleteUser, isLoading: isDeleteLoading } =
-    usePermissionGuard({
-      moduleKey: "users",
-      action: "delete",
-    });
-  const isPermissionLoading =
-    isCreateLoading || isEditLoading || isDeleteLoading;
-
-  const allUsers = data?.data?.users || [];
 
   const paginationButtonBaseClass =
     "w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]";
@@ -221,13 +203,15 @@ export function UsersTable({
                       : "-"}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      onClick={() => onDeleteUser(u)}
-                      className="border-none shadow-none"
-                    >
-                      <Trash className="size-4 text-[#A4A7AE]" />
-                    </Button>
+                    {canDeleteUser && !isPermissionLoading && (
+                      <Button
+                        variant="outline"
+                        onClick={() => onDeleteUser(u)}
+                        className="border-none shadow-none"
+                      >
+                        <Trash className="size-4 text-[#A4A7AE]" />
+                      </Button>
+                    )}
                     {u.userStatus === UserStatus.INVITED ? (
                       <ResendInviteButton userId={u.id} />
                     ) : (
@@ -236,7 +220,11 @@ export function UsersTable({
                         onClick={() => onEditUser(u)}
                         className="border-none shadow-none"
                       >
-                        <Pencil className="size-4 text-[#A4A7AE]" />
+                        {canEditUser ? (
+                          <Pencil className="size-4 text-[#A4A7AE]" />
+                        ) : (
+                          <Eye className="size-4 text-[#A4A7AE]" />
+                        )}
                       </Button>
                     )}
                   </TableCell>
