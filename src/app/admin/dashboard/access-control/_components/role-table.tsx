@@ -35,10 +35,10 @@ export function RoleTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Nama Role</TableHead>
+            <TableHead>Role Name</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Jumlah Permissions</TableHead>
-            <TableHead className="text-right">Aksi</TableHead>
+            <TableHead>Number of Permissions</TableHead>
+            <TableHead className="text-right"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -59,14 +59,14 @@ export function RoleTable({
                 </TableCell>
                 <TableCell>
                   <Badge variant={role.isActive ? "default" : "secondary"}>
-                    {role.isActive ? "Aktif" : "Nonaktif"}
+                    {role.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </TableCell>
                 <TableCell>{permissionCount}</TableCell>
                 <TableCell className="flex justify-end gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => onEdit(role.id)}
                   >
                     {canEdit ? (

@@ -10,7 +10,7 @@ export default function GlobalHeader() {
   const { user, profile, isLoading, isAuthenticated } = useAuth();
   return (
     <header className="relative z-30 w-full">
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-6 lg:p-2">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Image
@@ -19,40 +19,6 @@ export default function GlobalHeader() {
             width={100}
             height={38}
           />
-
-          {/* Navigation Menu */}
-          {/* <nav className="hidden md:flex items-center gap-6 lg:gap-8">
-            <Link
-              href="/"
-              className="text-white hover:text-primary transition-colors text-sm lg:text-base"
-            >
-              Home
-            </Link>
-            <Link
-              href="/location"
-              className="text-white hover:text-primary transition-colors text-sm lg:text-base"
-            >
-              Location
-            </Link>
-            <Link
-              href="/membership"
-              className="text-white hover:text-primary transition-colors text-sm lg:text-base"
-            >
-              Membership
-            </Link>
-            <Link
-              href="/about"
-              className="text-white hover:text-primary transition-colors text-sm lg:text-base"
-            >
-              About
-            </Link>
-            <Link
-              href="/contact"
-              className="text-white hover:text-primary transition-colors text-sm lg:text-base"
-            >
-              Contact Us
-            </Link>
-          </nav> */}
 
           {/* Join Membership Button */}
           {isAuthenticated && !isLoading ? (

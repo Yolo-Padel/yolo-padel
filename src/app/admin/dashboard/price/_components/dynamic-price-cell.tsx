@@ -59,7 +59,7 @@ export function DynamicPriceCell({
   const isCreateLocked = !hasPrice && !canCreate;
   const isUpdateLocked = hasPrice && !canUpdate;
   const isInteractionDisabled =
-    isDisabled || isPermissionLoading || isCreateLocked || isUpdateLocked;
+    isDisabled || isPermissionLoading || isCreateLocked;
 
   const isClickable = Boolean(onClick) && !isInteractionDisabled;
 

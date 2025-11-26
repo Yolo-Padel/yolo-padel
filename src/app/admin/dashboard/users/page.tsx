@@ -13,10 +13,29 @@ import { DeleteUserModal } from "@/app/admin/dashboard/users/_components/delete-
 import { User, Profile } from "@/types/prisma";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { usePermissionGuard } from "@/hooks/use-permission-guard";
 
 const PAGE_SIZE = 10;
 
 export default function UsersPage() {
+  // Access Control
+  const { canAccess: canCreateUser, isLoading: isCreateLoading } =
+    usePermissionGuard({
+      moduleKey: "users",
+      action: "create",
+    });
+  const { canAccess: canEditUser, isLoading: isEditLoading } =
+    usePermissionGuard({
+      moduleKey: "users",
+      action: "update",
+    });
+  const { canAccess: canDeleteUser, isLoading: isDeleteLoading } =
+    usePermissionGuard({
+      moduleKey: "users",
+      action: "delete",
+    });
+  const isPermissionLoading =
+    isCreateLoading || isEditLoading || isDeleteLoading;
   // Use the useUserFilters hook for all filter logic
   const {
     filters,
@@ -69,7 +88,7 @@ export default function UsersPage() {
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"add" | "edit">("add");
+  const [modalMode, setModalMode] = useState<"add" | "edit" | "view">("add");
   const [selectedUser, setSelectedUser] = useState<
     (User & { profile?: Profile | null }) | undefined
   >(undefined);
@@ -102,7 +121,7 @@ export default function UsersPage() {
   };
 
   const handleEditUser = (user: User & { profile?: Profile | null }) => {
-    setModalMode("edit");
+    setModalMode(canEditUser && !isPermissionLoading ? "edit" : "view");
     setSelectedUser(user);
     setModalOpen(true);
   };
@@ -182,10 +201,13 @@ export default function UsersPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <UserHeader userCount={apiPagination?.total ?? 0} />
-        <Button onClick={handleAddUser} className="text-black">
-          Add User
-          <Plus className="ml-0 size-4" />
-        </Button>
+
+        {canCreateUser && !isPermissionLoading && (
+          <Button onClick={handleAddUser} className="text-black">
+            Add User
+            <Plus className="ml-0 size-4" />
+          </Button>
+        )}
       </div>
 
       <UserFilters
@@ -211,6 +233,9 @@ export default function UsersPage() {
           onPageChange={handlePageChange}
           onEditUser={handleEditUser}
           onDeleteUser={handleDeleteUser}
+          canDeleteUser={canDeleteUser}
+          canEditUser={canEditUser}
+          isPermissionLoading={isPermissionLoading}
         />
       )}
 

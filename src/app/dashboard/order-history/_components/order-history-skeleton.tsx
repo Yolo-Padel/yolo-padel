@@ -10,7 +10,7 @@ export function OrderHistorySkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
       {Array.from({ length: count }).map((_, index) => (
-        <Card key={index} className="gap-1 p-1 border-foreground">
+        <Card key={index} className="gap-1 p-1">
           <CardHeader className="p-2 pb-0">
             {/* Image skeleton */}
             <Skeleton className="w-full h-[142px] aspect-square rounded-md" />
