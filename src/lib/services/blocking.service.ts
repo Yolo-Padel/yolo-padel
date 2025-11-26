@@ -219,6 +219,7 @@ export async function getActiveBlockingsByVenueAndDate(
       id: string;
       courtId: string;
       bookingCode: string;
+      source: string;
       userId: string;
       bookingDate: Date;
       status: string;
@@ -269,6 +270,7 @@ export async function getActiveBlockingsByVenueAndDate(
           userId: true,
           bookingCode: true,
           bookingDate: true,
+          source: true,
           status: true,
           timeSlots: {
             select: {

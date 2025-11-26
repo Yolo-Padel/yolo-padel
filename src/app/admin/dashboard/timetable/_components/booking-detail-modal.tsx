@@ -23,6 +23,7 @@ import { formatTimeRange } from "@/components/timetable-utils";
 export type BookingDetail = {
   id: string;
   bookingCode: string;
+  source: string;
   userName: string;
   venueName: string;
   courtName: string;
@@ -176,41 +177,42 @@ export function BookingDetailModal({
             </div>
           </div>
 
-          {/* Payment Info Section */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Payment Info</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Total Amount</span>
-                <span className="font-medium">
-                  {stringUtils.formatRupiah(booking.totalAmount)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Payment Method</span>
-                <span className="font-medium">{booking.paymentMethod}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Status</span>
-                <Badge
-                  className={cn(
-                    "rounded-full px-3 py-1 text-xs font-medium",
-                    getPaymentStatusBadgeClass(booking.paymentStatus)
-                  )}
-                >
-                  {booking.paymentStatus === PaymentStatus.PAID
-                    ? "Paid"
-                    : booking.paymentStatus}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Created On</span>
-                <span className="font-medium">
-                  {formatDateTime(booking.createdAt)}
-                </span>
+          {booking.source !== "ADMIN_MANUAL" && (
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">Payment Info</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Total Amount</span>
+                  <span className="font-medium">
+                    {stringUtils.formatRupiah(booking.totalAmount)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Payment Method</span>
+                  <span className="font-medium">{booking.paymentMethod}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Status</span>
+                  <Badge
+                    className={cn(
+                      "rounded-full px-3 py-1 text-xs font-medium",
+                      getPaymentStatusBadgeClass(booking.paymentStatus)
+                    )}
+                  >
+                    {booking.paymentStatus === PaymentStatus.PAID
+                      ? "Paid"
+                      : booking.paymentStatus}
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Created On</span>
+                  <span className="font-medium">
+                    {formatDateTime(booking.createdAt)}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">

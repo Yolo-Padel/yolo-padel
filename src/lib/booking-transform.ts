@@ -14,6 +14,7 @@ type PrismaBooking = {
   courtId: string;
   userId: string;
   bookingDate: string | Date;
+  source: string;
   status: string;
   totalPrice: number;
   timeSlots: Array<{
@@ -101,6 +102,7 @@ export function transformPrismaBookingToTimetable(
       timeSlots: booking.timeSlots,
       status: booking.status as TimetableBooking["status"],
       bookingCode: booking.bookingCode,
+      source: booking.source,
     }));
 }
 
@@ -179,6 +181,7 @@ export function transformPrismaBookingToDetail(
 
   return {
     id: booking.id,
+    source: booking.source,
     userName: booking.user.profile?.fullName || "Unknown User",
     venueName,
     courtName,
@@ -228,6 +231,7 @@ export function transformPrismaBlockingToTimetable(
     timeSlots: blocking.booking.timeSlots,
     status: blocking.booking.status as TimetableBooking["status"],
     bookingCode: blocking.booking.bookingCode,
+    source: blocking.booking.source,
   }));
 }
 
@@ -241,6 +245,7 @@ export function transformPrismaBlockingToDetail(
 ): BookingDetail {
   return {
     id: blocking.booking.id,
+    source: blocking.booking.source,
     userName: blocking.booking.user.profile?.fullName || "Unknown User",
     venueName,
     courtName: blocking.booking.court.name,

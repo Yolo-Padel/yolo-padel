@@ -33,6 +33,7 @@ export type Booking = {
   }>;
   status: BookingStatus;
   bookingCode: string;
+  source: string;
 };
 
 export type Venue = {
