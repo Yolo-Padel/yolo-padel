@@ -386,7 +386,7 @@ export function CourtSelectionContainer({
                 // Otherwise will be reset to empty
               }}
               showOutsideDays
-              className="w-full"
+              className="w-full border rounded-sm"
               disabled={(date) => {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -439,7 +439,7 @@ export function CourtSelectionContainer({
                   <ToggleGroupItem
                     key={slot}
                     value={slot}
-                    className="justify-center border rounded-md"
+                    className="justify-center border rounded-md data-[state=on]:bg-primary data-[state=on]:text-black"
                   >
                     {slot}
                   </ToggleGroupItem>
