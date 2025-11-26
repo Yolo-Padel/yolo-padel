@@ -55,6 +55,7 @@ export type TimetableProps = {
     courtName: string
   ) => BookingDetail;
   onMarkAsComplete?: (bookingId: string) => void;
+  onCancelBooking?: (bookingId: string) => void;
   // Loading states
   isLoadingTable?: boolean; // When only table is loading (date change)
 };

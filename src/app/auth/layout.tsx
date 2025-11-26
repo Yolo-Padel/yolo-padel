@@ -14,11 +14,11 @@ export default function AdminAuthLayout({
           </div>
         </div>
       </div>
-      <div className="bg-muted relative hidden lg:block">
+      <div className="relative hidden lg:block">
         <img
-          src="/padel-court.png"
+          src="/side.png"
           alt="Image"
-          className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+          className="absolute inset-0 h-full w-full p-4 dark:brightness-[0.2] dark:grayscale"
         />
       </div>
     </div>

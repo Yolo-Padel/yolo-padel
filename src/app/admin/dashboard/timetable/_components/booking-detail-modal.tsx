@@ -41,6 +41,7 @@ type BookingDetailModalProps = {
   onOpenChange: (open: boolean) => void;
   booking: BookingDetail | null;
   onMarkAsComplete?: () => void;
+  onCancelBooking?: () => void;
 };
 
 // Format waktu: "06:00" -> "06.00"
@@ -101,6 +102,7 @@ export function BookingDetailModal({
   onOpenChange,
   booking,
   onMarkAsComplete,
+  onCancelBooking,
 }: BookingDetailModalProps) {
   if (!booking) return null;
 
@@ -204,9 +206,12 @@ export function BookingDetailModal({
             <Button
               variant="outline"
               className="flex-1 border-[#C3D223] text-foreground"
-              onClick={() => onOpenChange(false)}
+              onClick={() => {
+                onOpenChange(false);
+                onCancelBooking?.();
+              }}
             >
-              Close
+              Cancel
             </Button>
             {onMarkAsComplete &&
               booking.paymentStatus === PaymentStatus.PAID && (
@@ -229,19 +234,6 @@ export function BookingDetailModal({
           </div>
         </div>
       </DialogContent>
-      <CancelBookingDetail
-        open={open}
-        onOpenChange={onOpenChange}
-        cancelBookingDetail={{
-          id: booking.id,
-          venue: booking.venueName,
-          courtName: booking.courtName,
-          bookingTime: formatDate(booking.bookingDate),
-          bookingDate: formatTimeRange(booking.timeSlots),
-          duration: `${booking.duration} hrs`,
-          
-        }}
-      />
     </Dialog>
   );
 }
