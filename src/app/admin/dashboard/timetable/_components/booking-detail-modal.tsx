@@ -106,6 +106,11 @@ export function BookingDetailModal({
 }: BookingDetailModalProps) {
   if (!booking) return null;
 
+  const handleCancelBooking = React.useCallback(() => {
+    if (onCancelBooking) {
+      onCancelBooking();
+    }
+  }, [onCancelBooking]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]" showCloseButton={false}>
@@ -234,6 +239,12 @@ export function BookingDetailModal({
           </div>
         </div>
       </DialogContent>
+      <CancelBookingDetail
+        open={open}
+        onOpenChange={onOpenChange}
+        cancelBookingDetail={booking}
+        onCancelBooking={handleCancelBooking}
+      />
     </Dialog>
   );
 }

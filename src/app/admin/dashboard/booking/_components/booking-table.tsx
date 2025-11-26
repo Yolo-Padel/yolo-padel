@@ -18,7 +18,6 @@ import { BookingStatus } from "@/types/prisma";
 import { formatTimeRange } from "@/lib/time-slots-formatter";
 import { stringUtils } from "@/lib/format/string";
 import { cn } from "@/lib/utils";
-import { usePermissionGuard } from "@/hooks/use-permission-guard";
 
 export type BookingWithRelations = {
   id: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,7 @@ import {
   PaymentFeedbackDialog,
   PaymentFeedbackState,
 } from "./payment-feedback-dialog";
+import { usePaymentFeedback } from "@/hooks/use-payment-feedback";
 
 type BookingCourtRow = {
   id: string;
@@ -68,8 +69,6 @@ export function BookingCourt() {
   const [bookCourtModalOpen, setBookCourtModalOpen] = useState(false);
   const [selectedBookingCourt, setSelectedBookingCourt] =
     useState<BookingCourtRow | null>(null);
-  const [paymentFeedback, setPaymentFeedback] =
-    useState<PaymentFeedbackState | null>(null);
   const { data: userData, isLoading: isLoadingUser } = useCurrentUser();
   const userId = userData?.data?.user.id || "";
   const {
@@ -83,84 +82,8 @@ export function BookingCourt() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const statusParam = searchParams.get("paymentStatus");
-    const paymentIdParam = searchParams.get("paymentId");
-    const reason = searchParams.get("reason") || undefined;
-
-    if (
-      !statusParam ||
-      !paymentIdParam ||
-      (statusParam !== "success" && statusParam !== "failed")
-    ) {
-      setPaymentFeedback(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    setPaymentFeedback({
-      status: statusParam as "success" | "failed",
-      reason,
-      paymentId: paymentIdParam,
-      loading: true,
-    });
-
-    const fetchPayment = async () => {
-      try {
-        const response = await fetch(`/api/payment/${paymentIdParam}/status`, {
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(errorData?.message || "Failed to fetch payment");
-        }
-
-        const data = await response.json();
-        if (!data.success || !data.data) {
-          throw new Error("Payment not found");
-        }
-
-        if (!cancelled) {
-          setPaymentFeedback((prev) =>
-            prev && prev.paymentId === paymentIdParam
-              ? { ...prev, payment: data.data, loading: false }
-              : {
-                  status: statusParam as "success" | "failed",
-                  reason,
-                  paymentId: paymentIdParam,
-                  payment: data.data,
-                  loading: false,
-                }
-          );
-        }
-      } catch (error) {
-        if (!cancelled) {
-          const message =
-            error instanceof Error ? error.message : "Failed to fetch payment";
-          setPaymentFeedback((prev) =>
-            prev && prev.paymentId === paymentIdParam
-              ? { ...prev, error: message, loading: false }
-              : {
-                  status: statusParam as "success" | "failed",
-                  reason,
-                  paymentId: paymentIdParam,
-                  loading: false,
-                  error: message,
-                }
-          );
-        }
-      }
-    };
-
-    fetchPayment();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [searchParams]);
+  const { paymentFeedback, setPaymentFeedback } =
+    usePaymentFeedback(searchParams);
 
   const clearPaymentFeedback = () => {
     const params = new URLSearchParams(searchParams.toString());
@@ -266,7 +189,7 @@ export function BookingCourt() {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-1">
-          <h3 className="text-xl font-semibold">Booking Court List</h3>
+          <h3 className="text-xl font-semibold">Booking List</h3>
           <Button
             variant="outline"
             onClick={() => setBookCourtModalOpen(true)}
@@ -290,7 +213,7 @@ export function BookingCourt() {
     <>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-1">
-          <h3 className="text-xl font-semibold ">Booking Court List</h3>
+          <h3 className="text-xl font-semibold ">Booking List</h3>
 
           <div className="flex items-center gap-2">
             {/* Hide DatePicker and ComboboxFilter 
@@ -440,7 +363,7 @@ export function BookingCourt() {
         )}
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {paginated.length} of {filtered.length} booking courts
+            Showing {paginated.length} of {filtered.length} bookings
           </div>
           <div className="flex items-center gap-2">
             <Button

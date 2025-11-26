@@ -1,6 +1,9 @@
 import { AppSidebar } from "@/app/admin/dashboard/_components/app-sidebar";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Header } from "@/app/admin/dashboard/_components/header";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 

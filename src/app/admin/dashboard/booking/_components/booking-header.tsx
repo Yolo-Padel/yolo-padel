@@ -1,10 +1,20 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 export interface BookingHeaderProps {
   bookingCount: number;
+  onAddBooking: () => void;
+  canCreateBooking: boolean;
+  isLoadingPermission: boolean;
 }
 
-export function BookingHeader({ bookingCount }: BookingHeaderProps) {
+export function BookingHeader({
+  bookingCount,
+  onAddBooking,
+  canCreateBooking,
+  isLoadingPermission,
+}: BookingHeaderProps) {
   return (
     <div className="flex items-center gap-2 justify-between">
       <div className="flex items-center gap-2">
@@ -13,6 +23,12 @@ export function BookingHeader({ bookingCount }: BookingHeaderProps) {
           {bookingCount} {bookingCount === 1 ? "booking" : "bookings"}
         </Badge>
       </div>
+      {canCreateBooking && !isLoadingPermission && (
+        <Button onClick={onAddBooking}>
+          <Plus className="size-4" />
+          Add Booking
+        </Button>
+      )}
     </div>
   );
 }

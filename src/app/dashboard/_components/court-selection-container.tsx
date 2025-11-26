@@ -420,7 +420,9 @@ export function CourtSelectionContainer({
                 !watchCourtId || !watchDate || availableFutureSlots.length === 0
               }
             >
-              Select All
+              {form.watch("slots").length === availableFutureSlots.length
+                ? "Unselect All"
+                : "Select All"}
             </Button>
           </div>
           <ToggleGroup
