@@ -226,7 +226,8 @@ export const courtService = {
       // Check venue access for STAFF role
       if (
         context.userRole === UserType.STAFF &&
-        court.venueId !== context.assignedVenueId
+        context.assignedVenueId &&
+        !context.assignedVenueId.includes(court.venueId)
       ) {
         return {
           success: false,
