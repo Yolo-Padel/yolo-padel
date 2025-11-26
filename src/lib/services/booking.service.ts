@@ -21,6 +21,7 @@ import type {
   TodaysBookingCollection,
 } from "@/types/booking-dashboard";
 import { Prisma } from "@prisma/client";
+import { NextBookingInfo } from "@/types/profile";
 
 /**
  * Parse date string (YYYY-MM-DD) and return Date object representing start of day in local timezone
@@ -1015,6 +1016,51 @@ export const bookingService = {
           error instanceof Error ? error.message : "Check availability failed",
       };
     }
+  },
+  getNextBookingForUser: async (
+    userId: string
+  ): Promise<NextBookingInfo | null> => {
+    const nextBooking = await prisma.booking.findFirst({
+      where: {
+        userId,
+        status: {
+          in: [BookingStatus.UPCOMING],
+        },
+        bookingDate: {
+          gte: new Date(new Date().setHours(0, 0, 0, 0)),
+        },
+      },
+      orderBy: [{ bookingDate: "asc" }, { createdAt: "asc" }],
+      include: {
+        timeSlots: true,
+        court: {
+          select: {
+            id: true,
+            name: true,
+            venue: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!nextBooking) return null;
+
+    return {
+      bookingId: nextBooking.id,
+      bookingCode: nextBooking.bookingCode,
+      bookingDate: nextBooking.bookingDate.toISOString(),
+      status: nextBooking.status,
+      courtId: nextBooking.court.id,
+      courtName: nextBooking.court.name,
+      venueId: nextBooking.court.venue.id,
+      venueName: nextBooking.court.venue.name,
+      timeSlots: nextBooking.timeSlots ?? [],
+    };
   },
 };
 

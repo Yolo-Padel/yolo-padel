@@ -9,19 +9,37 @@ import { UserType } from "@/types/prisma";
 export type VerifyMagicLinkResult = {
   success: boolean;
   message: string;
-  user: {
-    id: string;
-    email: string;
-    username: string;
-    userType: string;
-    isActive: boolean;
-    isEmailVerified: boolean;
-    profile: {
+  data: {
+    user: {
       id: string;
-      userId: string;
-      fullName: string;
-      phoneNumber: string;
-      address: string;
+      email: string;
+      username: string;
+      userType: string;
+      isActive: boolean;
+      isEmailVerified: boolean;
+      profile: {
+        id: string;
+        userId: string;
+        fullName: string;
+        phoneNumber: string;
+        address: string;
+      };
+      membership: {
+        id: string;
+        userId: string;
+        membershipType: string;
+        startDate: Date;
+        endDate: Date;
+      };
+      nextBooking: {
+        id: string;
+        bookingDate: Date;
+        timeSlots: {
+          id: string;
+          openHour: string;
+          closeHour: string;
+        }[];
+      };
     };
   };
 };
@@ -78,14 +96,16 @@ export const useMagicLinkVerify = () => {
 
       // Update user data in query cache
       queryClient.setQueryData(["currentUser"], {
-        data: { user: data.user },
+        success: data.success,
+        data: data.data,
+        message: data.message,
       });
 
       // Invalidate user query to refresh data
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
 
       // Redirect based on user type from the response data
-      if (data.user.userType === UserType.USER) {
+      if (data.data.user.userType === UserType.USER) {
         router.push("/dashboard/booking");
       } else {
         router.push("/admin/dashboard");
