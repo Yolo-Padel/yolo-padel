@@ -32,6 +32,7 @@ export type Booking = {
     closeHour: string; // Format: "07:00"
   }>;
   status: BookingStatus;
+  bookingCode: string;
 };
 
 export type Venue = {

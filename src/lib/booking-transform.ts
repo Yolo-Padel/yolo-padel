@@ -10,6 +10,7 @@ import { PaymentStatus } from "@/types/prisma";
 // Type untuk Prisma booking result dari API
 type PrismaBooking = {
   id: string;
+  bookingCode: string;
   courtId: string;
   userId: string;
   bookingDate: string | Date;
@@ -99,6 +100,7 @@ export function transformPrismaBookingToTimetable(
       bookingDate: new Date(booking.bookingDate),
       timeSlots: booking.timeSlots,
       status: booking.status as TimetableBooking["status"],
+      bookingCode: booking.bookingCode,
     }));
 }
 
@@ -191,6 +193,7 @@ export function transformPrismaBookingToDetail(
     createdAt: payment?.paymentDate
       ? new Date(payment.paymentDate)
       : new Date(booking.bookingDate),
+    bookingCode: booking.bookingCode,
   };
 }
 
@@ -224,6 +227,7 @@ export function transformPrismaBlockingToTimetable(
     bookingDate: new Date(blocking.booking.bookingDate),
     timeSlots: blocking.booking.timeSlots,
     status: blocking.booking.status as TimetableBooking["status"],
+    bookingCode: blocking.booking.bookingCode,
   }));
 }
 
@@ -247,5 +251,6 @@ export function transformPrismaBlockingToDetail(
     paymentMethod: "N/A",
     paymentStatus: PaymentStatus.UNPAID,
     createdAt: new Date(blocking.booking.bookingDate),
+    bookingCode: blocking.booking.bookingCode,
   };
 }

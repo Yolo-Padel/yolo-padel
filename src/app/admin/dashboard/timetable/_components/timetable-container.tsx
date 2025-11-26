@@ -44,6 +44,7 @@ function defaultTransformBookingToDetail(
     paymentMethod: "QRIS",
     paymentStatus: "PAID",
     createdAt: booking.bookingDate,
+    bookingCode: booking.bookingCode,
   };
 }
 

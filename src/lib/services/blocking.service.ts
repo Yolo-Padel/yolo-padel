@@ -218,6 +218,7 @@ export async function getActiveBlockingsByVenueAndDate(
     booking: {
       id: string;
       courtId: string;
+      bookingCode: string;
       userId: string;
       bookingDate: Date;
       status: string;
@@ -238,12 +239,8 @@ export async function getActiveBlockingsByVenueAndDate(
     };
   }>
 > {
-  console.log("DATE ON SERVICE", date);
   // Normalize date to UTC start/end of day (consistent with booking service)
   const { startOfDay, endOfDay } = normalizeDateToUTC(date);
-
-  console.log("START OF DAY", startOfDay);
-  console.log("END OF DAY", endOfDay);
 
   const blockings = await prisma.blocking.findMany({
     where: {
@@ -270,6 +267,7 @@ export async function getActiveBlockingsByVenueAndDate(
           id: true,
           courtId: true,
           userId: true,
+          bookingCode: true,
           bookingDate: true,
           status: true,
           timeSlots: {

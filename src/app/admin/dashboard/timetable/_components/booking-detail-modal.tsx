@@ -17,10 +17,12 @@ import { cn } from "@/lib/utils";
 import { stringUtils } from "@/lib/format/string";
 import { PaymentStatus } from "@/types/prisma";
 import { CancelBookingDetail } from "./booking-cancel";
+import { formatTimeRange } from "@/components/timetable-utils";
 
 // Extended booking type dengan payment info
 export type BookingDetail = {
   id: string;
+  bookingCode: string;
   userName: string;
   venueName: string;
   courtName: string;
@@ -59,15 +61,15 @@ function formatTimeWithAMPM(time: string): string {
 }
 
 // Format time range: ["06:00", "07:00"] -> "06.00-07.00"
-function formatTimeRange(
-  timeSlots: Array<{ openHour: string; closeHour: string }>
-): string {
-  if (timeSlots.length === 0) return "";
-  const first = timeSlots[0];
-  const last = timeSlots[timeSlots.length - 1];
-  // Format seperti "06.00-07.00" (tanpa AM/PM)
-  return `${formatTimeDisplay(first.openHour)}-${formatTimeDisplay(last.closeHour)}`;
-}
+// function formatTimeRange(
+//   timeSlots: Array<{ openHour: string; closeHour: string }>
+// ): string {
+//   if (timeSlots.length === 0) return "";
+//   const first = timeSlots[0];
+//   const last = timeSlots[timeSlots.length - 1];
+//   // Format seperti "06.00-07.00" (tanpa AM/PM)
+//   return `${formatTimeDisplay(first.openHour)}-${formatTimeDisplay(last.closeHour)}`;
+// }
 
 // Format tanggal: "14 Oktober 2025"
 function formatDate(date: Date): string {
@@ -138,6 +140,10 @@ export function BookingDetailModal({
           {/* Booking Info Section */}
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Booking Info</h3>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Booking Code</span>
+              <span className="font-medium">#{booking.bookingCode}</span>
+            </div>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Name</span>

@@ -28,6 +28,7 @@ export type VenueBlockingData = {
   isBlocking: boolean;
   booking: {
     id: string;
+    bookingCode: string;
     courtId: string;
     userId: string;
     bookingDate: string | Date;
