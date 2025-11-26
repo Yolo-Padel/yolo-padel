@@ -17,8 +17,8 @@ import { cn } from "@/lib/utils";
 import { z } from "zod";
 import { UserType, Profile } from "@/types/prisma";
 import { NextBookingInfo } from "@/types/profile";
-import { stringUtils } from "@/lib/format/string";
 import { AvatarUploader } from "@/app/_components/avatar-uploader";
+import { Separator } from "@/components/ui/separator";
 
 type ProfileStatus = "active" | "member" | "non-member";
 type ExtendedProfile = Profile & { phoneNumber?: string | null };
@@ -40,7 +40,8 @@ interface ProfileModalProps {
  * Menampilkan informasi profil pengguna serta form untuk memperbarui data.
  */
 export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
-  const { user, profile, nextBooking, isLoading, membership } = useAuth();
+  const { user, profile, nextBooking, isLoading, membership, venues, roles } =
+    useAuth();
   const updateProfileMutation = useUpdateProfile();
 
   const formSchema = profileUpdateSchema;
@@ -85,7 +86,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
   const email = user?.email ?? "user@example.com";
   const assignedVenuesLabel =
     user && Array.isArray(user.assignedVenueIds) && user.assignedVenueIds.length
-      ? user.assignedVenueIds.join(", ")
+      ? venues?.map((venue) => venue.name).join(", ")
       : "-";
   const joinedDateLabel = formatDateLabel(user?.joinDate || null);
   const nextBookingLabel = formatNextBookingLabel(nextBooking);
@@ -94,16 +95,22 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
     derivedUserType === "staff"
       ? [
           {
-            label: "User Type",
-            value: stringUtils.getRoleDisplay(user?.userType ?? "-"),
+            label: "Role",
+            value: roles?.name ?? "Staff",
           },
           { label: "Assign Venue", value: assignedVenuesLabel },
           { label: "Joined", value: joinedDateLabel },
         ]
-      : [
-          { label: "Next Booking", value: nextBookingLabel },
-          { label: "Joined", value: joinedDateLabel },
-        ];
+      : membership
+        ? [
+            { label: "Membership", value: membership.name },
+            { label: "Next Booking", value: nextBookingLabel },
+            { label: "Joined", value: joinedDateLabel },
+          ]
+        : [
+            { label: "Next Booking", value: nextBookingLabel },
+            { label: "Joined", value: joinedDateLabel },
+          ];
 
   const handleAvatarChange = (url: string) => {
     form.setValue("avatar", url || undefined, {
@@ -211,18 +218,26 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
               </div>
 
               {/* Info Section */}
-              <div className="flex flex-wrap items-start gap-4 w-full">
-                {infoItems.map((item) => (
-                  <div
-                    key={item.label}
-                    className="flex flex-col gap-2 min-w-[140px] border-r border-dashed border-[#d1d1d1] pr-4 last:border-0"
-                  >
-                    <p className="text-[14px] font-normal text-[#7b7b7b]">
-                      {item.label}
-                    </p>
-                    <p className="text-[14px] font-medium text-[#262626]">
-                      {item.value}
-                    </p>
+              <div className="flex items-start gap-4 w-full">
+                {infoItems.map((item, index) => (
+                  <div key={item.label} className="flex flex-row gap-3 h-full">
+                    <div key={item.label} className="flex flex-col gap-1">
+                      <p
+                        className="text-[14px] font-normal text-[#7b7b7b] truncate"
+                        title={item.label}
+                      >
+                        {item.label}
+                      </p>
+                      <p
+                        className="text-[14px] font-medium text-[#262626] overflow-wrap"
+                        title={item.value}
+                      >
+                        {item.value}
+                      </p>
+                    </div>
+                    {index < infoItems.length - 1 && (
+                      <Separator orientation="vertical" className="!h-auto" />
+                    )}
                   </div>
                 ))}
               </div>

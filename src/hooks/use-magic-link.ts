@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { MagicLinkVerifyInput } from "@/lib/validations/magic-link.validation";
 import { toast } from "sonner";
 import { LoginWithMagicLinkData } from "@/lib/validations/auth.validation";
-import { UserType } from "@/types/prisma";
+import { Membership, Profile, Roles, UserType, Venue } from "@/types/prisma";
 
 // Types for API Response
 export type VerifyMagicLinkResult = {
@@ -17,20 +17,10 @@ export type VerifyMagicLinkResult = {
       userType: string;
       isActive: boolean;
       isEmailVerified: boolean;
-      profile: {
-        id: string;
-        userId: string;
-        fullName: string;
-        phoneNumber: string;
-        address: string;
-      };
-      membership: {
-        id: string;
-        userId: string;
-        membershipType: string;
-        startDate: Date;
-        endDate: Date;
-      };
+      venues: Venue[];
+      profile: Profile;
+      membership: Membership;
+      roles: Roles;
       nextBooking: {
         id: string;
         bookingDate: Date;
@@ -93,13 +83,6 @@ export const useMagicLinkVerify = () => {
     onSuccess: (data: VerifyMagicLinkResult) => {
       // Show success message
       toast.success(data.message || "Magic link verification successful");
-
-      // Update user data in query cache
-      queryClient.setQueryData(["currentUser"], {
-        success: data.success,
-        data: data.data,
-        message: data.message,
-      });
 
       // Invalidate user query to refresh data
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });

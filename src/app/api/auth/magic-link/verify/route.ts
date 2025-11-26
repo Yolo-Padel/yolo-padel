@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
       include: {
         profile: true,
         membership: true,
+        roles: true,
       },
     });
 
@@ -41,6 +42,11 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    const venues = await prisma.venue.findMany({
+      where: { id: { in: user.assignedVenueIds } },
+    });
+
     const { password, ...userWithoutPassword } = user;
     const nextBooking = await bookingService.getNextBookingForUser(user.id);
 
@@ -53,6 +59,7 @@ export async function POST(request: NextRequest) {
       email: user.email,
       userType: user.userType,
       assignedVenueIds: user.assignedVenueIds,
+      roles: user.roles,
     })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
@@ -68,6 +75,8 @@ export async function POST(request: NextRequest) {
         profile: userWithoutPassword.profile,
         nextBooking,
         membership: userWithoutPassword.membership,
+        venues,
+        roles: userWithoutPassword.roles,
       },
     });
 

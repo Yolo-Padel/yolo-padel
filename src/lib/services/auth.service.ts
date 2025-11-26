@@ -172,12 +172,16 @@ export const authService = {
       // Get fresh user data
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
-        include: { profile: true, membership: true },
+        include: { profile: true, membership: true, roles: true },
       });
 
       if (!user) {
         return { success: false, data: null };
       }
+
+      const venues = await prisma.venue.findMany({
+        where: { id: { in: user.assignedVenueIds } },
+      });
 
       const { password, ...userWithoutPassword } = user;
       const nextBooking = await bookingService.getNextBookingForUser(user.id);
@@ -189,6 +193,8 @@ export const authService = {
           profile: user.profile,
           nextBooking,
           membership: user.membership,
+          venues,
+          roles: user.roles,
         },
       };
     } catch (error) {
