@@ -14,19 +14,12 @@ export default function AdminAuthLayout({
           </div>
         </div>
       </div>
-      <div className="bg-muted relative hidden lg:block">
+      <div className="relative hidden lg:block">
         <img
-          src="https://ui.shadcn.com/placeholder.svg"
+          src="/side.png"
           alt="Image"
-          className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+          className="absolute inset-0 h-full w-full p-4 dark:brightness-[0.2] dark:grayscale"
         />
-        <div className="absolute top-4 left-10">
-          <img
-            src="/yolo-yellow-transparent.png"
-            alt="Yolo Logo"
-            className="w-[100px] h-[100px]"
-          />
-        </div>
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ import type {
 } from "@/components/timetable-types";
 import { getTimeSlotBooking } from "@/components/timetable-booking-helpers";
 import { getNextHour } from "@/components/timetable-utils";
+import { CancelBookingDetail } from "./booking-cancel";
 
 // Re-export types untuk backward compatibility
 export type {
@@ -68,6 +69,7 @@ export function TimetableContainer({
   onDateChange,
   transformBookingToDetail = defaultTransformBookingToDetail,
   onMarkAsComplete,
+  onCancelBooking,
   isLoadingTable = false,
   onAddBooking,
   onSelectEmptySlot,
@@ -89,6 +91,7 @@ export function TimetableContainer({
   const [selectedBooking, setSelectedBooking] =
     React.useState<BookingDetail | null>(null);
   const [modalOpen, setModalOpen] = React.useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = React.useState(false);
   const [dragState, setDragState] = React.useState<{
     court: Court;
     startSlot: string;
@@ -111,6 +114,7 @@ export function TimetableContainer({
       );
       setSelectedBooking(bookingDetail);
       setModalOpen(true);
+      setCancelModalOpen(false);
     },
     [transformBookingToDetail, venueName]
   );
@@ -120,6 +124,15 @@ export function TimetableContainer({
     if (selectedBooking) {
       onMarkAsComplete?.(selectedBooking.id);
       setModalOpen(false);
+      setSelectedBooking(null);
+    }
+  };
+
+  // Handle Cancel booking
+  const handleCancelBooking = () => {
+    if (selectedBooking) {
+      onCancelBooking?.(selectedBooking.id);
+      setCancelModalOpen(false);
       setSelectedBooking(null);
     }
   };
@@ -291,6 +304,15 @@ export function TimetableContainer({
         onOpenChange={setModalOpen}
         booking={selectedBooking}
         onMarkAsComplete={handleMarkAsComplete}
+        onCancelBooking={() => setCancelModalOpen(true)}
+      />
+
+      {/* Modal: Cancel Booking */}
+      <CancelBookingDetail
+        open={cancelModalOpen}
+        onOpenChange={setCancelModalOpen}
+        cancelBookingDetail={selectedBooking}
+        onCancelBooking={handleCancelBooking}
       />
     </div>
   );
