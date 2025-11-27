@@ -7,9 +7,9 @@ import { TIMETABLE_HOURS } from "@/constants/timetable";
 
 /**
  * Generate array of hourly time slots from configured start to end hour
- * 
+ *
  * @returns Array of time strings in "HH:00" format
- * 
+ *
  * @example
  * generateTimeSlots()
  * // Returns: ["06:00", "07:00", "08:00", ..., "23:00"]
@@ -25,10 +25,10 @@ export function generateTimeSlots(): string[] {
 
 /**
  * Format time for display by replacing colon with dot
- * 
+ *
  * @param time - Time string in "HH:mm" format
  * @returns Formatted time in "HH.mm" format
- * 
+ *
  * @example
  * formatTimeDisplay("06:00") // Returns: "06.00"
  */
@@ -50,9 +50,33 @@ export function formatTimeRange(
   timeSlots: Array<{ openHour: string; closeHour: string }>
 ): string {
   if (timeSlots.length === 0) return "";
-  const first = timeSlots[0];
-  const last = timeSlots[timeSlots.length - 1];
-  return `${formatTimeWithAMPM(first.openHour)}-${formatTimeWithAMPM(last.closeHour)}`;
+  // Gabungkan slot yang saling menyambung agar range tampil lebih ringkas
+  const sortedSlots = [...timeSlots].sort((a, b) =>
+    a.openHour > b.openHour ? 1 : -1
+  );
+  const merged: Array<{ start: string; end: string }> = [];
+
+  let currentStart = sortedSlots[0].openHour;
+  let currentEnd = sortedSlots[0].closeHour;
+
+  for (let i = 1; i < sortedSlots.length; i++) {
+    const slot = sortedSlots[i];
+    if (slot.openHour === currentEnd) {
+      currentEnd = slot.closeHour;
+    } else {
+      merged.push({ start: currentStart, end: currentEnd });
+      currentStart = slot.openHour;
+      currentEnd = slot.closeHour;
+    }
+  }
+  merged.push({ start: currentStart, end: currentEnd });
+
+  return merged
+    .map(
+      ({ start, end }) =>
+        `${formatTimeWithAMPM(start)}-${formatTimeWithAMPM(end)}`
+    )
+    .join(", ");
 }
 
 // Get next hour: "06:00" -> "07:00"
@@ -63,7 +87,10 @@ export function getNextHour(time: string): string {
 }
 
 // Format operating hours: "10:00" -> "20:00" -> "10.00AM-20.00PM"
-export function formatOperatingHours(openHour: string, closeHour: string): string {
+export function formatOperatingHours(
+  openHour: string,
+  closeHour: string
+): string {
   return `${formatTimeWithAMPM(openHour)}-${formatTimeWithAMPM(closeHour)}`;
 }
 
@@ -72,11 +99,11 @@ export function formatOperatingHours(openHour: string, closeHour: string): strin
  * @param timeSlot - Time slot string in "HH:00" format (e.g., "06:00", "07:00")
  * @param operatingHours - Court operating hours with slots
  * @returns true if time slot is within operating hours, false otherwise
- * 
+ *
  * @example
  * isTimeSlotInOperatingHours("06:00", { closed: false, slots: [{ openHour: "07:00", closeHour: "23:00" }] })
  * // Returns: false (06:00 is before 07:00)
- * 
+ *
  * isTimeSlotInOperatingHours("08:00", { closed: false, slots: [{ openHour: "07:00", closeHour: "23:00" }] })
  * // Returns: true (08:00 is between 07:00 and 23:00)
  */
@@ -106,4 +133,3 @@ export function isTimeSlotInOperatingHours(
     return timeSlot >= slot.openHour && timeSlot < slot.closeHour;
   });
 }
-

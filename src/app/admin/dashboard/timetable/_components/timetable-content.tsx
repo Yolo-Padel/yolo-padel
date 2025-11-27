@@ -130,6 +130,8 @@ export function TimetableContent() {
       // Fallback to basic transform
       return {
         id: booking.id,
+        bookingCode: booking.bookingCode,
+        source: booking.source,
         userName: booking.userName,
         venueName,
         courtName,

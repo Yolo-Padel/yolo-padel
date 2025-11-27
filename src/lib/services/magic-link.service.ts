@@ -92,14 +92,10 @@ class MagicLinkService {
    */
   async verifyMagicLink(token: string): Promise<VerifyMagicLinkResult> {
     try {
-      console.log("[MAGIC LINK SERVICE] Looking for token:", token);
-
       // Find the magic link
       const magicLink = await prisma.magicLink.findUnique({
         where: { token },
       });
-
-      console.log("[MAGIC LINK SERVICE] Magic link found:", magicLink);
 
       if (!magicLink) {
         // Check if there are any magic links in the database
@@ -107,7 +103,6 @@ class MagicLinkService {
           take: 5,
           orderBy: { createdAt: "desc" },
         });
-        console.log("[MAGIC LINK SERVICE] Recent magic links:", allLinks);
 
         return {
           success: false,

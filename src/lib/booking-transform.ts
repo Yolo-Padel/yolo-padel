@@ -10,9 +10,11 @@ import { PaymentStatus } from "@/types/prisma";
 // Type untuk Prisma booking result dari API
 type PrismaBooking = {
   id: string;
+  bookingCode: string;
   courtId: string;
   userId: string;
   bookingDate: string | Date;
+  source: string;
   status: string;
   totalPrice: number;
   timeSlots: Array<{
@@ -99,6 +101,8 @@ export function transformPrismaBookingToTimetable(
       bookingDate: new Date(booking.bookingDate),
       timeSlots: booking.timeSlots,
       status: booking.status as TimetableBooking["status"],
+      bookingCode: booking.bookingCode,
+      source: booking.source,
     }));
 }
 
@@ -177,6 +181,7 @@ export function transformPrismaBookingToDetail(
 
   return {
     id: booking.id,
+    source: booking.source,
     userName: booking.user.profile?.fullName || "Unknown User",
     venueName,
     courtName,
@@ -191,6 +196,7 @@ export function transformPrismaBookingToDetail(
     createdAt: payment?.paymentDate
       ? new Date(payment.paymentDate)
       : new Date(booking.bookingDate),
+    bookingCode: booking.bookingCode,
   };
 }
 
@@ -224,6 +230,8 @@ export function transformPrismaBlockingToTimetable(
     bookingDate: new Date(blocking.booking.bookingDate),
     timeSlots: blocking.booking.timeSlots,
     status: blocking.booking.status as TimetableBooking["status"],
+    bookingCode: blocking.booking.bookingCode,
+    source: blocking.booking.source,
   }));
 }
 
@@ -237,6 +245,7 @@ export function transformPrismaBlockingToDetail(
 ): BookingDetail {
   return {
     id: blocking.booking.id,
+    source: blocking.booking.source,
     userName: blocking.booking.user.profile?.fullName || "Unknown User",
     venueName,
     courtName: blocking.booking.court.name,
@@ -247,5 +256,6 @@ export function transformPrismaBlockingToDetail(
     paymentMethod: "N/A",
     paymentStatus: PaymentStatus.UNPAID,
     createdAt: new Date(blocking.booking.bookingDate),
+    bookingCode: blocking.booking.bookingCode,
   };
 }

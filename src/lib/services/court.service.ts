@@ -226,7 +226,8 @@ export const courtService = {
       // Check venue access for STAFF role
       if (
         context.userRole === UserType.STAFF &&
-        court.venueId !== context.assignedVenueId
+        context.assignedVenueId &&
+        !context.assignedVenueId.includes(court.venueId)
       ) {
         return {
           success: false,
@@ -403,7 +404,6 @@ export const courtService = {
       const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
-      console.log("updating court");
       // 1. Check if court exists
       const existingCourt = await prisma.court.findUnique({
         where: { id },
@@ -417,11 +417,8 @@ export const courtService = {
         };
       }
 
-      console.log("existingCourt", existingCourt);
-
       // 2. Delete old image if it's being replaced
       if (existingCourt.image && existingCourt.image !== data.image) {
-        console.log("Deleting old court image:", existingCourt.image);
         const deleteResult = await vercelBlobService.deleteFile(
           existingCourt.image
         );
@@ -449,11 +446,6 @@ export const courtService = {
         }
       }
 
-      // 4. Update court basic info
-      console.log("Service update - data received:", data);
-      console.log("Service update - price value:", data.price);
-      console.log("Service update - price type:", typeof data.price);
-
       const court = await prisma.court.update({
         where: { id },
         data: {
@@ -464,9 +456,6 @@ export const courtService = {
           venueId: data.venueId,
         },
       });
-
-      console.log("Service update - updated court:", court);
-      console.log("Service update - updated price:", court.price);
 
       // 5. Delete existing operating hours
       await prisma.courtOperatingHour.deleteMany({
@@ -550,8 +539,6 @@ export const courtService = {
           },
         },
       });
-
-      console.log("updatedCourt", updatedCourt);
 
       // audit log
       const courtDiff = buildChangesDiff(
@@ -770,17 +757,16 @@ export const courtService = {
         return {
           success: true,
           data: {
-            startTimeOptions: [],
-            endTimeOptions: [],
-            availableSlots: [],
+            availableSlotRanges: [],
+            bookedRanges: [],
           },
           message: "Court is closed on this day",
         };
       }
 
-      // 4. Generate all possible hourly slots from court time slots
-      const allHourlySlots: string[] = [];
-      const allEndTimeSlots: string[] = []; // Includes closeHour for end time options
+      // 4. Generate all possible hourly slots from operating hours
+      // Format: ["06.00–07.00", "07.00–08.00", ...] (hourly slots only)
+      const allPossibleSlots: string[] = [];
       const timeSlotRanges = operatingHour.slots.map((slot) => ({
         openHour: slot.openHour,
         closeHour: slot.closeHour,
@@ -794,26 +780,22 @@ export const courtService = {
         const end = new Date(0, 0, 0, closeHour, closeMin, 0);
         const current = new Date(start);
 
+        const formatTime = (d: Date) =>
+          `${String(d.getHours()).padStart(2, "0")}.${String(d.getMinutes()).padStart(2, "0")}`;
+
         while (current < end) {
           const next = new Date(current);
           next.setHours(next.getHours() + 1);
           if (next > end) break;
 
-          const formatTime = (d: Date) =>
-            `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-          allHourlySlots.push(formatTime(current));
-          allEndTimeSlots.push(formatTime(current));
+          // Generate hourly slot in UI format
+          allPossibleSlots.push(`${formatTime(current)}–${formatTime(next)}`);
           current.setHours(current.getHours() + 1);
         }
-        // Add closeHour only to endTimeSlots (not to startTimeSlots)
-        allEndTimeSlots.push(range.closeHour);
       }
 
-      // Remove duplicates and sort
-      const uniqueHours = Array.from(new Set(allHourlySlots)).sort();
-      const uniqueEndHours = Array.from(new Set(allEndTimeSlots)).sort();
-
-      // 5. Get bookings for this court and date (excluding cancelled)
+      // 5. Get all bookings for this court and date (excluding cancelled)
+      // This includes both regular bookings and blocking bookings
       const startOfDay = new Date(date);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(date);
@@ -835,31 +817,9 @@ export const courtService = {
         },
       });
 
-      // 6. Get active blockings for this court and date
-      const blockings = await prisma.blocking.findMany({
-        where: {
-          isBlocking: true,
-          booking: {
-            courtId,
-            bookingDate: {
-              gte: startOfDay,
-              lte: endOfDay,
-            },
-          },
-        },
-        include: {
-          booking: {
-            include: {
-              timeSlots: true,
-            },
-          },
-        },
-      });
-
-      // 7. Collect all booked/blocked time ranges
+      // 6. Collect all booked/blocked time ranges
       const bookedRanges: Array<{ openHour: string; closeHour: string }> = [];
 
-      // From bookings
       for (const booking of bookings) {
         for (const slot of booking.timeSlots) {
           bookedRanges.push({
@@ -869,74 +829,63 @@ export const courtService = {
         }
       }
 
-      // From blockings
-      for (const blocking of blockings) {
-        for (const slot of blocking.booking.timeSlots) {
-          bookedRanges.push({
-            openHour: slot.openHour,
-            closeHour: slot.closeHour,
-          });
-        }
-      }
-
-      // 8. Helper function to check if a time is within a booked range
-      const isTimeBooked = (time: string): boolean => {
-        return bookedRanges.some((range) => {
-          return time >= range.openHour && time < range.closeHour;
-        });
-      };
-
-      // 9. Helper function to check if a time range overlaps with booked ranges
-      const isRangeOverlapping = (
-        startTime: string,
-        endTime: string
+      // 7. Helper function to check if a slot overlaps with booked ranges
+      const isSlotOverlapping = (
+        slotStart: string,
+        slotEnd: string
       ): boolean => {
+        // Convert UI format "06.00" to DB format "06:00"
+        const dbStart = slotStart.replace(".", ":");
+        const dbEnd = slotEnd.replace(".", ":");
+
         return bookedRanges.some((range) => {
           // Check if ranges overlap
           return (
-            (startTime < range.closeHour && endTime > range.openHour) ||
-            (startTime === range.openHour && endTime === range.closeHour)
+            (dbStart < range.closeHour && dbEnd > range.openHour) ||
+            (dbStart === range.openHour && dbEnd === range.closeHour)
           );
         });
       };
 
-      // 10. Filter available start times (times that are not booked)
-      const startTimeOptions = uniqueHours.filter(
-        (time) => !isTimeBooked(time)
+      // 8. Filter out past time slots if the date is today
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const selectedDateOnly = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate()
       );
+      const isToday = today.getTime() === selectedDateOnly.getTime();
 
-      // 11. Generate end time options for each start time
-      // This will be used on client side to filter end times based on selected start time
-      const endTimeOptionsMap: Record<string, string[]> = {};
+      let filteredSlots = allPossibleSlots;
 
-      for (const startTime of startTimeOptions) {
-        const endTimes: string[] = [];
+      if (isToday) {
+        // Get current time in "HH:MM" format
+        const currentHour = String(now.getHours()).padStart(2, "0");
+        const currentMinute = String(now.getMinutes()).padStart(2, "0");
+        const currentTime = `${currentHour}:${currentMinute}`;
 
-        // Find startTime in uniqueEndHours to get valid end times (includes closeHour)
-        const startIndex = uniqueEndHours.indexOf(startTime);
-        if (startIndex === -1) continue;
-
-        for (let i = startIndex + 1; i < uniqueEndHours.length; i++) {
-          const endTime = uniqueEndHours[i];
-
-          // Check if the range from startTime to endTime is available
-          // (doesn't overlap with any booked range)
-          if (!isRangeOverlapping(startTime, endTime)) {
-            endTimes.push(endTime);
-          } else {
-            // If we hit a booked slot, stop
-            break;
-          }
-        }
-
-        endTimeOptionsMap[startTime] = endTimes;
+        // Filter out slots that have already started
+        // We check start time because you can't book a slot that has already begun
+        filteredSlots = allPossibleSlots.filter((slot) => {
+          const [slotStart] = slot.split("–");
+          // Convert UI format "06.00" to DB format "06:00" for comparison
+          const slotStartDB = slotStart.replace(".", ":");
+          // Only show slots where start time is after current time
+          return slotStartDB > currentTime;
+        });
       }
+
+      // 9. Filter available slots (only hourly slots that don't overlap with bookings)
+      const availableSlotRanges = filteredSlots.filter((slot) => {
+        const [slotStart, slotEnd] = slot.split("–");
+        return !isSlotOverlapping(slotStart, slotEnd);
+      });
 
       return {
         success: true,
         data: {
-          startTimeOptions,
-          endTimeOptionsMap,
+          availableSlotRanges, // Ready-to-use slot ranges for ToggleGroup
           bookedRanges,
         },
         message: "Available time slots retrieved successfully",

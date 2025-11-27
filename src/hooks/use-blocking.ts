@@ -28,6 +28,8 @@ export type VenueBlockingData = {
   isBlocking: boolean;
   booking: {
     id: string;
+    bookingCode: string;
+    source: string;
     courtId: string;
     userId: string;
     bookingDate: string | Date;
@@ -96,6 +98,7 @@ export function useActiveBlockings(params: GetBlockingsParams) {
     queryFn: () => getActiveBlockingsApi(params),
     staleTime: TIMETABLE_CACHE.BLOCKING_STALE_TIME,
     enabled: !!params.courtId && !!params.date,
+    refetchInterval: 1000,
   });
 }
 

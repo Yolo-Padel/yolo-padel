@@ -8,11 +8,11 @@ import { usePublicVenues } from "@/hooks/use-venue";
 import { Court, Venue } from "@prisma/client";
 import { Separator } from "@/components/ui/separator";
 import { usePublicCourtByVenue } from "@/hooks/use-court";
-import { useState, useMemo, useEffect } from "react";
+import { useMemo, useEffect } from "react";
 import Image from "next/image";
 import { Calendar } from "@/components/ui/calendar";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useForm } from "react-hook-form";
+import { UseFormReturn } from "react-hook-form";
 import {
   getAvailableSlots,
   filterBlockedSlots,
@@ -20,12 +20,15 @@ import {
 import { useActiveBlockings } from "@/hooks/use-blocking";
 import { stringUtils } from "@/lib/format/string";
 import { BookingFormSkeleton } from "./booking-form-skeleton";
-import { CartItem } from "./order-summary-container";
-import { useBookingDefaults } from "@/hooks/use-booking-defaults";
-import { useBookingPricing } from "@/hooks/use-booking-pricing";
-import { useCourtSlotsPersistence } from "@/hooks/use-court-slots-persistence";
-import { useBookingCartSync } from "@/hooks/use-booking-cart-sync";
-import { BookingFormValues, CourtSelections } from "@/types/booking";
+import { BookingItem } from "./order-summary-container";
+import { BookingFormValues } from "@/types/booking";
+import {
+  useBookingDefaults,
+  useBookingPricing,
+  useBookingDateConstraint,
+  useCourtSlotsPersistence,
+  useBookingSelections,
+} from "@/hooks/use-booking-form";
 import { CourtSkeleton } from "./court-skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
@@ -42,57 +45,39 @@ import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 
 type CourtSelectionContainerProps = {
+  form: UseFormReturn<BookingFormValues>;
   onClose: () => void;
   isModal?: boolean;
-  cart: CartItem[];
-  onAddToCart: (item: CartItem | ((prev: CartItem[]) => CartItem[])) => void;
-  onRemoveFromCart: (
-    index: number | ((prev: CartItem[]) => CartItem[])
-  ) => void;
   onProceedToSummary: () => void;
-  onGuestInfoChange?: (email: string, fullName: string) => void;
 };
 
 export function CourtSelectionContainer({
+  form,
   onClose,
   isModal = false,
-  cart,
-  onAddToCart,
-  onRemoveFromCart,
   onProceedToSummary,
-  onGuestInfoChange,
 }: CourtSelectionContainerProps) {
-  const [selectedVenueId, setSelectedVenueId] = useState<string>("");
   const { isAuthenticated } = useAuth();
   const isMobile = useIsMobile();
 
-  // Guest info state (only for non-authenticated users)
-  const [guestEmail, setGuestEmail] = useState<string>("");
-  const [guestFullName, setGuestFullName] = useState<string>("");
-
-  // Track selections per court (courtId + date as key)
-  const [courtSelections, setCourtSelections] = useState<CourtSelections>(
-    new Map()
-  );
-
-  const form = useForm<BookingFormValues>({
-    defaultValues: {
-      venueId: "",
-      courtId: "",
-      date: new Date(),
-      slots: [],
-      totalPrice: 0,
-    },
-  });
+  // All state now comes from RHF
+  const watchVenueId = form.watch("venueId");
   const watchCourtId = form.watch("courtId");
   const watchDate = form.watch("date");
   const watchSlots = form.watch("slots");
+  const watchBookings = form.watch("bookings");
+  const watchGuestEmail = form.watch("guestEmail");
+  const watchGuestFullName = form.watch("guestFullName");
+  const watchCourtSelections = form.watch("courtSelections");
+
+  // Computed: selectedVenueId from form
+  const selectedVenueId = watchVenueId;
 
   const { data: venues, isLoading: isLoadingVenues } = usePublicVenues();
   const venuesData: Venue[] = Array.isArray(venues?.data) ? venues.data : [];
 
   const { data: courts, isLoading: isLoadingCourts } =
-    usePublicCourtByVenue(selectedVenueId);
+    usePublicCourtByVenue(watchVenueId);
   const courtsData: Court[] = Array.isArray(courts?.data)
     ? courts.data.filter((court: Court) => court.isActive === true)
     : [];
@@ -173,31 +158,23 @@ export function CourtSelectionContainer({
   }, [availableFutureSlots, watchSlots, form]);
 
   // Custom hooks untuk manage effects (separation of concerns)
-  useBookingDefaults(
-    form,
-    venuesData,
-    courtsData,
-    selectedVenueId,
-    setSelectedVenueId,
-    watchCourtId
-  );
+  useBookingDefaults(form, venuesData, courtsData, watchVenueId, watchCourtId);
 
   useBookingPricing(form, selectedCourt, watchSlots, watchDate, dynamicPrices);
 
-  useCourtSlotsPersistence(form, watchCourtId, watchDate, courtSelections);
+  // Business Rule: 1 order = 1 date
+  useBookingDateConstraint(form, watchDate, watchCourtId);
 
-  useBookingCartSync(
+  useCourtSlotsPersistence(form, watchCourtId, watchDate, watchCourtSelections);
+
+  useBookingSelections(
+    form,
     watchSlots,
     watchCourtId,
     watchDate,
     selectedCourt,
-    selectedVenueId,
+    watchVenueId,
     venuesData,
-    courtSelections,
-    setCourtSelections,
-    cart,
-    onAddToCart,
-    onRemoveFromCart,
     dynamicPrices
   );
 
@@ -230,18 +207,15 @@ export function CourtSelectionContainer({
         defaultValue={venuesData[0]?.id}
         onValueChange={(value) => {
           // Business Rule: 1 order = 1 venue
-          // When switching venue, force reset all data and cart
+          // When switching venue, force reset all data and bookings
 
-          // 1. Clear all cart items (remove from end to start to avoid index issues)
-          for (let i = cart.length - 1; i >= 0; i--) {
-            onRemoveFromCart(i);
-          }
+          // 1. Clear all bookings
+          form.setValue("bookings", []);
 
           // 2. Clear court selections state
-          setCourtSelections(new Map());
+          form.setValue("courtSelections", new Map());
 
           // 3. Reset all form fields
-          setSelectedVenueId(value);
           form.setValue("venueId", value);
           form.setValue("courtId", "");
           form.setValue("slots", []);
@@ -287,8 +261,8 @@ export function CourtSelectionContainer({
             >
               {courtsData.map((court: Court) => {
                 const isActive = watchCourtId === court.id;
-                // Check both courtId AND date untuk accurate cart status
-                const isInCart = cart.some(
+                // Check both courtId AND date untuk accurate bookings status
+                const isInBookings = watchBookings.some(
                   (item) =>
                     item.courtId === court.id &&
                     item.date.toDateString() === watchDate?.toDateString()
@@ -320,7 +294,7 @@ export function CourtSelectionContainer({
                     <div className="absolute bottom-2 left-2 right-2 text-white text-sm font-medium truncate text-center">
                       {court.name}
                     </div>
-                    {isInCart && (
+                    {isInBookings && (
                       <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1.5 shadow-md">
                         <Check className="h-3 w-3 text-black" />
                       </div>
@@ -386,7 +360,7 @@ export function CourtSelectionContainer({
                 // Otherwise will be reset to empty
               }}
               showOutsideDays
-              className="w-full"
+              className="w-full border rounded-sm"
               disabled={(date) => {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -439,7 +413,7 @@ export function CourtSelectionContainer({
                   <ToggleGroupItem
                     key={slot}
                     value={slot}
-                    className="justify-center border rounded-md"
+                    className="justify-center border rounded-md data-[state=on]:bg-primary data-[state=on]:text-black"
                   >
                     {slot}
                   </ToggleGroupItem>
@@ -468,11 +442,9 @@ export function CourtSelectionContainer({
               id="guest-email"
               type="email"
               placeholder="your.email@example.com"
-              value={guestEmail}
+              value={watchGuestEmail || ""}
               onChange={(e) => {
-                const email = e.target.value;
-                setGuestEmail(email);
-                onGuestInfoChange?.(email, guestFullName);
+                form.setValue("guestEmail", e.target.value);
               }}
               required
             />
@@ -488,11 +460,9 @@ export function CourtSelectionContainer({
               id="guest-name"
               type="text"
               placeholder="John Doe"
-              value={guestFullName}
+              value={watchGuestFullName || ""}
               onChange={(e) => {
-                const name = e.target.value;
-                setGuestFullName(name);
-                onGuestInfoChange?.(guestEmail, name);
+                form.setValue("guestFullName", e.target.value);
               }}
               required
             />
@@ -507,7 +477,7 @@ export function CourtSelectionContainer({
         </div>
         <p className="text-sm font-medium">
           {stringUtils.formatRupiah(
-            cart.reduce((sum, item) => sum + item.totalPrice, 0)
+            watchBookings.reduce((sum, item) => sum + item.totalPrice, 0)
           )}
         </p>
       </div>
@@ -517,11 +487,10 @@ export function CourtSelectionContainer({
         className="w-full h-11"
         onClick={onProceedToSummary}
         disabled={
-          cart.length === 0 ||
-          (!isAuthenticated && (!guestEmail || !guestFullName))
+          watchBookings.length === 0 ||
+          (!isAuthenticated && (!watchGuestEmail || !watchGuestFullName))
         }
       >
-        <ShoppingCart className="mr-2 h-4 w-4" />
         Book
       </Button>
     </div>

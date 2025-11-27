@@ -3,25 +3,33 @@ import { useRouter } from "next/navigation";
 import { MagicLinkVerifyInput } from "@/lib/validations/magic-link.validation";
 import { toast } from "sonner";
 import { LoginWithMagicLinkData } from "@/lib/validations/auth.validation";
-import { UserType } from "@/types/prisma";
+import { Membership, Profile, Roles, UserType, Venue } from "@/types/prisma";
 
 // Types for API Response
 export type VerifyMagicLinkResult = {
   success: boolean;
   message: string;
-  user: {
-    id: string;
-    email: string;
-    username: string;
-    userType: string;
-    isActive: boolean;
-    isEmailVerified: boolean;
-    profile: {
+  data: {
+    user: {
       id: string;
-      userId: string;
-      fullName: string;
-      phoneNumber: string;
-      address: string;
+      email: string;
+      username: string;
+      userType: string;
+      isActive: boolean;
+      isEmailVerified: boolean;
+      venues: Venue[];
+      profile: Profile;
+      membership: Membership;
+      roles: Roles;
+      nextBooking: {
+        id: string;
+        bookingDate: Date;
+        timeSlots: {
+          id: string;
+          openHour: string;
+          closeHour: string;
+        }[];
+      };
     };
   };
 };
@@ -76,16 +84,11 @@ export const useMagicLinkVerify = () => {
       // Show success message
       toast.success(data.message || "Magic link verification successful");
 
-      // Update user data in query cache
-      queryClient.setQueryData(["currentUser"], {
-        data: { user: data.user },
-      });
-
       // Invalidate user query to refresh data
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
 
       // Redirect based on user type from the response data
-      if (data.user.userType === UserType.USER) {
+      if (data.data.user.userType === UserType.USER) {
         router.push("/dashboard/booking");
       } else {
         router.push("/admin/dashboard");
