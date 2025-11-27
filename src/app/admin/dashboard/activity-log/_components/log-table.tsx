@@ -1,9 +1,7 @@
 "use client";
 
-import React from "react";
-import { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableHeader,
@@ -11,33 +9,20 @@ import {
   TableHead,
   TableBody,
   TableCell,
-  TableFooter,
 } from "@/components/ui/table";
-import {
-  Pencil,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  MoreHorizontal,
-  Trash,
-  Eye,
-} from "lucide-react";
+import { Eye } from "lucide-react";
 import {
   User,
   Profile,
-  UserType,
-  UserStatus,
   ActivityLog,
 } from "@/types/prisma";
 import { useActivityLogsAdmin } from "@/hooks/use-activity-log";
 import { LogDetails } from "./log-modal";
 import { ActionType } from "@/types/action";
 import { EntityType } from "@/types/entity";
-import { date } from "zod/v3";
-import { JsonValue } from "@prisma/client/runtime/library";
 import { stringUtils } from "@/lib/format/string";
-
-const PAGE_SIZE = 10;
+import { ActivityLogTableSkeleton } from "./log-table-skeleton";
+import { ActivityLogEmptyState } from "./log-empty-state";
 
 export function ActivityLogTable() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -47,9 +32,16 @@ export function ActivityLogTable() {
     (ActivityLog & { user: User & { profile: Profile } }) | null
   >(null);
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-  if (!data) return <div>No activity logs found.</div>;
+  if (isLoading) return <ActivityLogTableSkeleton />;
+  if (error)
+    return (
+      <div className="rounded-2xl border border-[#E9EAEB] p-8 text-center text-red-600">
+        Error saat memuat log: {error.message}
+      </div>
+    );
+  if (!data || allLogs.length === 0) {
+    return <ActivityLogEmptyState />;
+  }
 
   return (
     <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
