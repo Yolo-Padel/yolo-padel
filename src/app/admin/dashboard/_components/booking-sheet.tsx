@@ -176,31 +176,50 @@ export function ManualBookingSheet({
     return availableTimeSlotsData.availableSlotRanges;
   }, [availableTimeSlotsData]);
 
-  // Get currently selected slot in UI format
-  const selectedSlot = useMemo(() => {
-    if (!watchStartTime || !watchEndTime) return "";
-    const startFormatted = watchStartTime.replace(":", ".");
-    const endFormatted = watchEndTime.replace(":", ".");
-    return `${startFormatted}–${endFormatted}`;
+  // Get currently selected slots in UI format (array)
+  const selectedSlots = useMemo(() => {
+    if (!watchStartTime || !watchEndTime) return [];
+
+    // Convert startTime and endTime back to slot array
+    // This handles the case when defaults are provided
+    const slots: string[] = [];
+    const startHour = parseInt(watchStartTime.split(":")[0]);
+    const endHour = parseInt(watchEndTime.split(":")[0]);
+
+    for (let hour = startHour; hour < endHour; hour++) {
+      const startFormatted = `${String(hour).padStart(2, "0")}.00`;
+      const endFormatted = `${String(hour + 1).padStart(2, "0")}.00`;
+      slots.push(`${startFormatted}–${endFormatted}`);
+    }
+
+    return slots;
   }, [watchStartTime, watchEndTime]);
 
-  // Handle slot selection from ToggleGroup
-  const handleSlotChange = (value: string) => {
-    if (!value) {
+  // Handle slot selection from ToggleGroup (multiple selection)
+  const handleSlotChange = (val: string | string[]) => {
+    const values = val as string[];
+    if (!values || values.length === 0) {
       setValue("startTime", "");
       setValue("endTime", "");
       return;
     }
 
-    // Parse slot format "06.00–07.00" to extract start and end times
-    const [startPart, endPart] = value.split("–");
-    if (startPart && endPart) {
-      // Convert "06.00" back to "06:00" format
-      const startTime = startPart.replace(".", ":");
-      const endTime = endPart.replace(".", ":");
-      setValue("startTime", startTime);
-      setValue("endTime", endTime);
-    }
+    // Sort slots to ensure they're in order
+    const sortedSlots = [...values].sort();
+
+    // Extract first slot start and last slot end
+    const firstSlot = sortedSlots[0];
+    const lastSlot = sortedSlots[sortedSlots.length - 1];
+
+    const [firstStart] = firstSlot.split("–");
+    const [, lastEnd] = lastSlot.split("–");
+
+    // Convert "06.00" back to "06:00" format
+    const startTime = firstStart.replace(".", ":");
+    const endTime = lastEnd.replace(".", ":");
+
+    setValue("startTime", startTime);
+    setValue("endTime", endTime);
   };
 
   const courts =
@@ -384,8 +403,8 @@ export function ManualBookingSheet({
                   Time Slot <span className="text-red-500">*</span>
                 </Label>
                 <ToggleGroup
-                  type="single"
-                  value={selectedSlot}
+                  type="multiple"
+                  value={selectedSlots}
                   onValueChange={handleSlotChange}
                   disabled={manualBooking.isPending}
                   className="grid grid-cols-2 gap-3"
