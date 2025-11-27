@@ -1062,6 +1062,105 @@ export const bookingService = {
       timeSlots: nextBooking.timeSlots ?? [],
     };
   },
+
+  // Cancel booking - set status to CANCELLED
+  cancel: async (id: string, context: ServiceContext) => {
+    try {
+      const accessError = requirePermission(context, UserType.STAFF);
+      if (accessError) return accessError;
+
+      // Get booking before update for audit log
+      const bookingBefore = await prisma.booking.findUnique({
+        where: { id },
+        select: { status: true },
+      });
+
+      if (!bookingBefore) {
+        return {
+          success: false,
+          data: null,
+          message: "Booking not found",
+        };
+      }
+
+      // Update booking status and blocking in a transaction
+      const booking = await prisma.$transaction(async (tx) => {
+        // Update booking status
+        const updatedBooking = await tx.booking.update({
+          where: {
+            id,
+          },
+          data: {
+            status: BookingStatus.CANCELLED,
+          },
+          include: {
+            timeSlots: true,
+            court: {
+              include: {
+                venue: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    city: true,
+                  },
+                },
+              },
+            },
+            user: {
+              include: {
+                profile: {
+                  select: {
+                    fullName: true,
+                    avatar: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        // Update blocking's isBlocking to false if blocking exists
+        await tx.blocking.updateMany({
+          where: {
+            bookingId: id,
+            isBlocking: true, // Only update if currently blocking
+          },
+          data: {
+            isBlocking: false,
+          },
+        });
+
+        return updatedBooking;
+      });
+
+      // audit log
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.UPDATE_BOOKING,
+        entityType: ENTITY_TYPES.BOOKING,
+        entityId: booking.id,
+        changes: {
+          before: { status: bookingBefore.status },
+          after: { status: booking.status },
+        } as any,
+      });
+
+      return {
+        success: true,
+        data: booking,
+        message: "Cancel booking successful",
+      };
+    } catch (error) {
+      console.error("Cancel booking error:", error);
+      return {
+        success: false,
+        data: null,
+        message:
+          error instanceof Error ? error.message : "Cancel booking failed",
+      };
+    }
+  },
 };
 
 /**

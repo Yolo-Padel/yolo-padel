@@ -166,6 +166,20 @@ const bookingApi = {
     }
     return response.json();
   },
+  cancel: async (id: string) => {
+    const response = await fetch(`/api/booking/${id}`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Failed to cancel booking");
+    }
+
+    return data;
+  },
 };
 
 export const useBooking = () => {
@@ -276,6 +290,24 @@ export const useManualBooking = () => {
     onError: (error: Error) => {
       console.error("Manual booking error:", error);
       toast.error(error.message || "Failed to create manual booking");
+    },
+  });
+};
+
+export const useCancelBooking = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: bookingApi.cancel,
+    onSuccess: (data: { message?: string }) => {
+      toast.success(data.message || "Booking cancelled successfully!");
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["blockings"] });
+      queryClient.invalidateQueries({ queryKey: ["booking-dashboard"] });
+    },
+    onError: (error: Error) => {
+      console.error("Cancel booking error:", error);
+      toast.error(error.message || "Failed to cancel booking");
     },
   });
 };

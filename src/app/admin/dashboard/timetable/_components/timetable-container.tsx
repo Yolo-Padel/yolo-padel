@@ -13,7 +13,8 @@ import type {
 } from "@/components/timetable-types";
 import { getTimeSlotBooking } from "@/components/timetable-booking-helpers";
 import { getNextHour } from "@/components/timetable-utils";
-import { CancelBookingDetail } from "./booking-cancel";
+import { CancelBookingModal } from "./booking-cancel";
+import { useCancelBooking } from "@/hooks/use-booking";
 
 // Re-export types untuk backward compatibility
 export type {
@@ -100,6 +101,9 @@ export function TimetableContainer({
     lastSlot: string;
   } | null>(null);
 
+  // Cancel booking hook
+  const cancelBookingMutation = useCancelBooking();
+
   // Get selected venue name for modal display
   const selectedVenue = venues.find((v) => v.id === selectedVenueId);
   const venueName = selectedVenue?.name || "";
@@ -131,12 +135,28 @@ export function TimetableContainer({
   };
 
   // Handle Cancel booking
+  const handleOpenCancelBookingModal = () => {
+    if (selectedBooking) {
+      setCancelModalOpen(true);
+    }
+  };
+
   const handleCancelBooking = () => {
     if (selectedBooking) {
-      onCancelBooking?.(selectedBooking.id);
-      setCancelModalOpen(false);
-      setSelectedBooking(null);
+      cancelBookingMutation.mutate(selectedBooking.id, {
+        onSuccess: () => {
+          setCancelModalOpen(false);
+          setModalOpen(false);
+          setSelectedBooking(null);
+          onCancelBooking?.(selectedBooking.id);
+        },
+      });
     }
+  };
+
+  const handleCloseCancelBookingModal = () => {
+    setCancelModalOpen(false);
+    setSelectedBooking(null);
   };
 
   // Handle date change from header
@@ -310,12 +330,12 @@ export function TimetableContainer({
         onCancelBooking={() => setCancelModalOpen(true)}
       />
 
-      {/* Modal: Cancel Booking */}
-      <CancelBookingDetail
+      <CancelBookingModal
         open={cancelModalOpen}
-        onOpenChange={setCancelModalOpen}
-        cancelBookingDetail={selectedBooking}
+        onOpenChange={handleCloseCancelBookingModal}
+        booking={selectedBooking}
         onCancelBooking={handleCancelBooking}
+        isLoading={cancelBookingMutation.isPending}
       />
     </div>
   );

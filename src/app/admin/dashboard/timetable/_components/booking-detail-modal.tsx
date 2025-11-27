@@ -16,7 +16,7 @@ import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { stringUtils } from "@/lib/format/string";
 import { PaymentStatus } from "@/types/prisma";
-import { CancelBookingDetail } from "./booking-cancel";
+import { CancelBookingModal } from "./booking-cancel";
 import { formatTimeRange } from "@/components/timetable-utils";
 
 // Extended booking type dengan payment info
@@ -109,11 +109,6 @@ export function BookingDetailModal({
 }: BookingDetailModalProps) {
   if (!booking) return null;
 
-  const handleCancelBooking = React.useCallback(() => {
-    if (onCancelBooking) {
-      onCancelBooking();
-    }
-  }, [onCancelBooking]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]" showCloseButton={false}>
@@ -224,12 +219,12 @@ export function BookingDetailModal({
                 onCancelBooking?.();
               }}
             >
-              Cancel
+              Cancel Booking
             </Button>
             {onMarkAsComplete &&
               booking.paymentStatus === PaymentStatus.PAID && (
                 <Button
-                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920] text-white"
+                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920]"
                   onClick={onMarkAsComplete}
                 >
                   Mark as Complete
@@ -238,7 +233,7 @@ export function BookingDetailModal({
             {onMarkAsComplete &&
               booking.paymentStatus === PaymentStatus.UNPAID && (
                 <Button
-                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920] text-white"
+                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920]"
                   onClick={() => onOpenChange(true)}
                 >
                   Mark as Complete
@@ -247,12 +242,6 @@ export function BookingDetailModal({
           </div>
         </div>
       </DialogContent>
-      <CancelBookingDetail
-        open={open}
-        onOpenChange={onOpenChange}
-        cancelBookingDetail={booking}
-        onCancelBooking={handleCancelBooking}
-      />
     </Dialog>
   );
 }
