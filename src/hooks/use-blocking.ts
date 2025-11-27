@@ -98,6 +98,7 @@ export function useActiveBlockings(params: GetBlockingsParams) {
     queryFn: () => getActiveBlockingsApi(params),
     staleTime: TIMETABLE_CACHE.BLOCKING_STALE_TIME,
     enabled: !!params.courtId && !!params.date,
+    refetchInterval: 1000,
   });
 }
 
