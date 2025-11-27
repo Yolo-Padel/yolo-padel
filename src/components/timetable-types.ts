@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { BookingStatus, DayOfWeek } from "@/types/prisma";
 import type { BookingDetail } from "../app/admin/dashboard/timetable/_components/booking-detail-modal";
+import type { Court as PrismaCourt } from "@/types/prisma";
 
 // Types berdasarkan schema Prisma
 export type Court = {
@@ -71,6 +72,7 @@ export type BookingSlotInfo = {
 export type DynamicPrice = {
   id: string;
   courtId: string;
+  court: PrismaCourt;
   dayOfWeek: DayOfWeek | null;
   date: Date | null;
   startHour: string;

@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { DYNAMIC_PRICE_COLORS } from "@/constants/timetable";
 import type { Court, DynamicPrice } from "@/components/timetable-types";
 import { isTimeSlotInOperatingHours } from "@/components/timetable-utils";
+import { stringUtils } from "@/lib/format/string";
 
 const currencyFormatter = new Intl.NumberFormat("id-ID", {
   style: "currency",
@@ -105,11 +106,15 @@ export function DynamicPriceCell({
       }}
     >
       {hasPrice && dynamicPrice && isFirstSlot ? (
-        <div className="flex flex-col gap-1">
-          <span className="text-sm text-[#6B7413]">
-            {currencyFormatter.format(dynamicPrice.price)}
+        <div className="flex flex-col">
+          <span className="text-normal text-[#6B7413]">
+            {stringUtils.formatRupiah(dynamicPrice.price)}
           </span>
-          <span className="text-xs text-[#6B7413]">Custom Price</span>
+          <span className="text-[12px] text-[#6B7413]">Custom Price</span>
+
+          <span className="text-sm text-[#6B7413] pt-1">
+            Default Price: {stringUtils.formatRupiah(dynamicPrice.court.price)}
+          </span>
           {!dynamicPrice.isActive && (
             <span className="text-[10px] uppercase tracking-wide font-medium text-muted-foreground">
               Inactive
