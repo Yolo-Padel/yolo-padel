@@ -1,9 +1,10 @@
 import type { DynamicPrice } from "@/components/timetable-types";
-import type { DayOfWeek } from "@/types/prisma";
+import type { Court, DayOfWeek } from "@/types/prisma";
 
 export type PrismaDynamicPrice = {
   id: string;
   courtId: string;
+  court: Court;
   dayOfWeek: DayOfWeek | null;
   date: string | null;
   startHour: string;
@@ -21,6 +22,7 @@ export function transformPrismaDynamicPrice(
   return {
     id: price.id,
     courtId: price.courtId,
+    court: price.court,
     dayOfWeek: price.dayOfWeek,
     date: price.date ? new Date(price.date) : null,
     startHour: price.startHour,
@@ -44,4 +46,3 @@ export function groupDynamicPricesByCourt(
     return acc;
   }, {});
 }
-

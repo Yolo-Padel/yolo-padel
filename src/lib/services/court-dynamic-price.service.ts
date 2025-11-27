@@ -113,6 +113,9 @@ export const courtDynamicPriceService = {
           courtId,
           isArchived: false,
         } as any,
+        include: {
+          court: true,
+        },
         orderBy: [{ dayOfWeek: "asc" }, { date: "asc" }, { startHour: "asc" }],
       });
 
