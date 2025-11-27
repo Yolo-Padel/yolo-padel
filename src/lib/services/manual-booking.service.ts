@@ -112,6 +112,9 @@ export const manualBookingService = {
             where: {
               isArchived: false,
             },
+            include: {
+              court: true,
+            },
           },
         },
       });
