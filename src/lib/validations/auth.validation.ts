@@ -28,11 +28,16 @@ export const loginWithMagicLinkSchema = z.object({
   email: z.string().email("Invalid email address"),
 });
 
+export const bypassVerifyTokenSchema = z.object({
+  userEmail: z.string().email("Invalid email address"),
+});
+
 export type RegisterFormInput = z.infer<typeof registerFormSchema>;
 export type LoginFormInput = z.infer<typeof loginFormSchema>;
 export type LoginWithMagicLinkInput = z.infer<typeof loginWithMagicLinkSchema>;
-
+export type BypassVerifyTokenInput = z.infer<typeof bypassVerifyTokenSchema>;
 // Legacy type aliases for backward compatibility
 export type RegisterFormData = RegisterFormInput;
 export type LoginFormData = LoginFormInput;
 export type LoginWithMagicLinkData = LoginWithMagicLinkInput;
+export type BypassVerifyTokenData = BypassVerifyTokenInput;
