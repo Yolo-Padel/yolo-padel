@@ -201,4 +201,42 @@ export const authService = {
       return { success: false, data: null };
     }
   },
+  bypassAuth: async (userEmail: string) => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { email: userEmail },
+        include: { profile: true, membership: true, roles: true },
+      });
+
+      if (!user) {
+        return { success: false, message: "User not found", data: null };
+      }
+
+      const venues = await prisma.venue.findMany({
+        where: { id: { in: user.assignedVenueIds } },
+      });
+
+      const { password, ...userWithoutPassword } = user;
+      const nextBooking = await bookingService.getNextBookingForUser(user.id);
+
+      return {
+        success: true,
+        message: "Bypass successful",
+        data: {
+          user: userWithoutPassword,
+          profile: user.profile,
+          nextBooking,
+          membership: user.membership,
+          venues,
+          roles: user.roles,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : "Bypass failed",
+        data: null,
+      };
+    }
+  },
 };

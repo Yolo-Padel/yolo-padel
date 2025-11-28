@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { success: false, message: "User tidak ditemukan" },
+        { success: false, message: "User not found" },
         { status: 404 }
       );
     }
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     // Set HTTP-only cookie
     const response = NextResponse.json({
       success: true,
-      message: "Login berhasil",
+      message: "Login successful",
       data: {
         user: userWithoutPassword,
         profile: userWithoutPassword.profile,
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Magic link verify error:", error);
     return NextResponse.json(
-      { success: false, message: "Terjadi kesalahan server" },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
