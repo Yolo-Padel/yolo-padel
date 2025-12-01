@@ -192,6 +192,7 @@ export function PriceContent() {
           dynamicPrice={dynamicPrice}
           isFirstSlot={isFirstSlot}
           span={span}
+          selectedDate={selectedDate}
           isDragPreview={isDragPreview && !dynamicPrice}
           canCreate={canCreateDynamicPrice}
           canUpdate={canUpdateDynamicPrice}

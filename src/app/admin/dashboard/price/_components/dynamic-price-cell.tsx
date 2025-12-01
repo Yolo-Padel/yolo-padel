@@ -16,6 +16,7 @@ type DynamicPriceCellProps = {
   dynamicPrice: DynamicPrice | null;
   isFirstSlot: boolean;
   span: number;
+  selectedDate: Date;
   onClick?: (
     dynamicPrice: DynamicPrice | null,
     court: Court,
@@ -35,6 +36,7 @@ export function DynamicPriceCell({
   dynamicPrice,
   isFirstSlot,
   span,
+  selectedDate,
   onClick,
   onMouseDown,
   onMouseEnter,
@@ -49,7 +51,44 @@ export function DynamicPriceCell({
     timeSlot,
     court.operatingHours?.fullOperatingHours
   );
-  const isDisabled = !isCourtOpen && !hasPrice;
+
+  // Hitung apakah tanggal/waktu yang dipilih sudah lewat
+  const now = new Date();
+  const today = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  ).getTime();
+  const selectedDay = new Date(
+    selectedDate.getFullYear(),
+    selectedDate.getMonth(),
+    selectedDate.getDate()
+  ).getTime();
+
+  const isPastDate = selectedDay < today;
+
+  let isPastTimeSlot = false;
+  const isToday = selectedDay === today;
+
+  if (isToday) {
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+
+    // Jika waktu sekarang 17:30, cutoff menjadi 18:00
+    const cutoffHour = currentMinute > 0 ? currentHour + 1 : currentHour;
+    const cutoffTime = `${String(cutoffHour).padStart(2, "0")}:00`;
+
+    // Contoh: timeSlot "17:00" < cutoff "18:00" -> dianggap sudah lewat
+    isPastTimeSlot = timeSlot < cutoffTime;
+  }
+
+  const isPast = isPastDate || isPastTimeSlot;
+
+  // Disabled hanya untuk slot yang:
+  // - court-nya tutup ATAU
+  // - sudah lewat (tanggal/waktu lampau)
+  // DAN tidak punya dynamic price
+  const isDisabled = (!isCourtOpen || isPast) && !hasPrice;
 
   if (hasPrice && !isFirstSlot && span === 0) {
     return null;
