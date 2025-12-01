@@ -21,9 +21,9 @@ import { TimetableHeader } from "./timetable-header";
 import { getNextHour } from "@/components/timetable-utils";
 import {
   ManualBookingDefaults,
-  ManualBookingLocks,
   ManualBookingSheet,
 } from "@/app/admin/dashboard/_components/booking-sheet";
+import { usePermissionGuard } from "@/hooks/use-permission-guard";
 
 export function TimetableContent() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -32,14 +32,17 @@ export function TimetableContent() {
   const [sheetDefaults, setSheetDefaults] = useState<
     ManualBookingDefaults | undefined
   >(undefined);
-  const [sheetLocks, setSheetLocks] = useState<ManualBookingLocks | undefined>(
-    undefined
-  );
 
   // Track previous values to detect changes
   const prevVenueIdRef = useRef<string>("");
   const prevDateRef = useRef<Date | null>(null);
   const isFirstRenderRef = useRef(true);
+
+  const { canAccess: canCreateBooking, isLoading: isCreateLoading } =
+    usePermissionGuard({
+      moduleKey: "bookings",
+      action: "create",
+    });
 
   // Fetch venues
   const {
@@ -59,12 +62,19 @@ export function TimetableContent() {
     refetch: refetchCourts,
   } = useCourtByVenue(selectedVenueId);
 
+  const formatDateToString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   // Fetch blockings by venue and date
   // Normalize date to prevent multiple fetches from time differences
   const normalizedDate = useMemo(() => {
     const d = new Date(selectedDate);
-    d.setHours(0, 0, 0, 0);
-    return d;
+    console.log("NORMALIZED DATE", formatDateToString(d));
+    return formatDateToString(d);
   }, [selectedDate]);
 
   const {
@@ -120,6 +130,8 @@ export function TimetableContent() {
       // Fallback to basic transform
       return {
         id: booking.id,
+        bookingCode: booking.bookingCode,
+        source: booking.source,
         userName: booking.userName,
         venueName,
         courtName,
@@ -144,24 +156,17 @@ export function TimetableContent() {
     setSelectedDate(date);
   };
 
-  const openManualBookingSheet = (
-    defaults: ManualBookingDefaults,
-    locks?: ManualBookingLocks
-  ) => {
+  const openManualBookingSheet = (defaults: ManualBookingDefaults) => {
     setSheetDefaults(defaults);
-    setSheetLocks(locks);
     setSheetOpen(true);
   };
 
   const handleAddBooking = () => {
     if (!selectedVenueId) return;
-    openManualBookingSheet(
-      {
-        venueId: selectedVenueId,
-        date: selectedDate,
-      },
-      { lockVenue: true }
-    );
+    openManualBookingSheet({
+      venueId: selectedVenueId,
+      date: selectedDate,
+    });
   };
 
   const handleAddBookingFromCell = (options: {
@@ -170,16 +175,13 @@ export function TimetableContent() {
     endTime?: string;
   }) => {
     if (!selectedVenueId) return;
-    openManualBookingSheet(
-      {
-        venueId: selectedVenueId,
-        courtId: options.courtId,
-        date: selectedDate,
-        startTime: options.startTime,
-        endTime: options.endTime || getNextHour(options.startTime),
-      },
-      { lockCourt: true, lockVenue: true }
-    );
+    openManualBookingSheet({
+      venueId: selectedVenueId,
+      courtId: options.courtId,
+      date: selectedDate,
+      startTime: options.startTime,
+      endTime: options.endTime || getNextHour(options.startTime),
+    });
   };
 
   // Handle mark as complete
@@ -270,7 +272,7 @@ export function TimetableContent() {
         <div className="space-y-6 w-full">
           <div className="flex items-center gap-2 justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold">Booking Time Table</h2>
+              <h2 className="text-2xl font-bold">Booking Time Table</h2>
             </div>
           </div>
           <TimetableEmptyState type="no-venues" />
@@ -286,7 +288,7 @@ export function TimetableContent() {
         <div className="space-y-6 w-full">
           <div className="flex items-center gap-2 justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold">Booking Time Table</h2>
+              <h2 className="text-2xl font-bold">Booking Time Table</h2>
             </div>
           </div>
           <TimetableHeader
@@ -295,6 +297,8 @@ export function TimetableContent() {
             onVenueChange={handleVenueChange}
             onAddBooking={handleAddBooking}
             isLoading={courtsLoading}
+            canCreateBooking={canCreateBooking}
+            isLoadingPermission={isCreateLoading}
           />
           <TimetableEmptyState type="no-courts" />
         </div>
@@ -308,7 +312,7 @@ export function TimetableContent() {
         <div className="space-y-6 w-full">
           <div className="flex items-center gap-2 justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-semibold">Booking Time Table</h2>
+              <h2 className="text-2xl font-bold">Booking Time Table</h2>
             </div>
           </div>
           <TimetableContainer
@@ -324,6 +328,8 @@ export function TimetableContent() {
             isLoadingTable={isDateChangeLoading}
             onAddBooking={handleAddBooking}
             onSelectEmptySlot={handleAddBookingFromCell}
+            canCreateBooking={canCreateBooking}
+            isLoadingPermission={isCreateLoading}
           />
         </div>
       </ErrorBoundary>
@@ -331,7 +337,6 @@ export function TimetableContent() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         defaults={sheetDefaults}
-        locks={sheetLocks}
         onSuccess={() => {
           refetchBlockings();
         }}

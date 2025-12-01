@@ -12,6 +12,7 @@ import { useVenue } from "@/hooks/use-venue";
 import { useCourtByVenue } from "@/hooks/use-court";
 import { useCourtDynamicPrices } from "@/hooks/use-court-dynamic-price";
 import { transformPrismaCourtToTimetable } from "@/lib/booking-transform";
+import { usePermissionGuard } from "@/hooks/use-permission-guard";
 import type {
   Court,
   Venue,
@@ -36,6 +37,7 @@ export function PriceContent() {
     startHour: string;
     endHour: string;
     initialPrice?: number;
+    dynamicPriceId?: string;
     fromCell?: boolean;
   } | null>(null);
   const [dragState, setDragState] = React.useState<DragState | null>(null);
@@ -70,9 +72,19 @@ export function PriceContent() {
     }
   }, [venues, selectedVenueId]);
 
+  const formatDateToString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const courts: Court[] = React.useMemo(() => {
     if (!courtsData?.data) return [];
-    return transformPrismaCourtToTimetable(courtsData.data, selectedDate);
+    return transformPrismaCourtToTimetable(
+      courtsData.data,
+      formatDateToString(selectedDate)
+    );
   }, [courtsData, selectedDate]);
 
   const courtIds = React.useMemo(
@@ -102,6 +114,32 @@ export function PriceContent() {
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
   };
+  const {
+    canAccess: canCreateDynamicPrice,
+    isLoading: isCreatePermissionLoading,
+  } = usePermissionGuard({
+    moduleKey: "courts",
+    action: "create",
+  });
+  const {
+    canAccess: canUpdateDynamicPrice,
+    isLoading: isUpdatePermissionLoading,
+  } = usePermissionGuard({
+    moduleKey: "courts",
+    action: "update",
+  });
+  const {
+    canAccess: canDeleteDynamicPrice,
+    isLoading: isDeletePermissionLoading,
+  } = usePermissionGuard({
+    moduleKey: "courts",
+    action: "delete",
+  });
+
+  const isPermissionLoading =
+    isCreatePermissionLoading ||
+    isUpdatePermissionLoading ||
+    isDeletePermissionLoading;
 
   const openModal = React.useCallback(
     (context: {
@@ -109,6 +147,7 @@ export function PriceContent() {
       startHour: string;
       endHour: string;
       initialPrice?: number;
+      dynamicPriceId?: string;
       fromCell?: boolean;
     }) => {
       setModalContext(context);
@@ -154,6 +193,9 @@ export function PriceContent() {
           isFirstSlot={isFirstSlot}
           span={span}
           isDragPreview={isDragPreview && !dynamicPrice}
+          canCreate={canCreateDynamicPrice}
+          canUpdate={canUpdateDynamicPrice}
+          isPermissionLoading={isPermissionLoading}
           onClick={(dynamicPrice, cellCourt, slot) => {
             if (!dragState) {
               openModal({
@@ -161,6 +203,7 @@ export function PriceContent() {
                 startHour: dynamicPrice?.startHour ?? slot,
                 endHour: dynamicPrice?.endHour ?? getNextHour(slot),
                 initialPrice: dynamicPrice?.price,
+                dynamicPriceId: dynamicPrice?.id,
                 fromCell: true,
               });
             }
@@ -181,7 +224,14 @@ export function PriceContent() {
         />
       );
     },
-    [pricesByCourt, dragState, openModal]
+    [
+      pricesByCourt,
+      dragState,
+      openModal,
+      canCreateDynamicPrice,
+      canUpdateDynamicPrice,
+      isPermissionLoading,
+    ]
   );
 
   React.useEffect(() => {
@@ -199,6 +249,7 @@ export function PriceContent() {
           courtId: current.court.id,
           startHour,
           endHour,
+          dynamicPriceId: undefined,
           fromCell: true,
         });
 
@@ -214,12 +265,13 @@ export function PriceContent() {
   }, [dragState, openModal]);
 
   const handleAddCustomPrice = () => {
-    if (!courts.length) return;
+    if (!courts.length || !canCreateDynamicPrice || isPermissionLoading) return;
     const defaultStart = timeSlots[0] ?? "06:00";
     openModal({
       courtId: courts[0].id,
       startHour: defaultStart,
       endHour: getNextHour(defaultStart),
+      dynamicPriceId: undefined,
     });
   };
 
@@ -262,7 +314,7 @@ export function PriceContent() {
       <div className="space-y-4 w-full max-w-full">
         <div className="flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-semibold">Custom Price Configuration</h2>
+            <h2 className="text-2xl font-bold">Custom Price Configuration</h2>
           </div>
         </div>
         <TimetableEmptyState type="no-venues" />
@@ -276,7 +328,7 @@ export function PriceContent() {
       <div className="space-y-4 w-full max-w-full">
         <div className="flex items-center gap-2 justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-semibold">Custom Price Configuration</h2>
+            <h2 className="text-2xl font-bold">Custom Price Configuration</h2>
           </div>
         </div>
         <TimetableHeader
@@ -284,6 +336,8 @@ export function PriceContent() {
           selectedVenueId={selectedVenueId}
           onVenueChange={handleVenueChange}
           isLoading={courtsLoading}
+          canCreateBooking={canCreateDynamicPrice}
+          isLoadingPermission={isPermissionLoading}
         />
         <TimetableEmptyState type="no-courts" />
       </div>
@@ -292,11 +346,19 @@ export function PriceContent() {
 
   const isTableLoading = dynamicPriceLoading;
 
+  const primaryAction = canCreateDynamicPrice
+    ? {
+        label: "Add Custom Price",
+        onClick: handleAddCustomPrice,
+        disabled: courts.length === 0 || isPermissionLoading,
+      }
+    : undefined;
+
   return (
     <div className="space-y-4 w-full max-w-full">
       <div className="flex items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-semibold">Custom Price Configuration</h2>
+          <h2 className="text-2xl font-bold">Custom Price Configuration</h2>
         </div>
       </div>
       <TimetableHeader
@@ -304,6 +366,8 @@ export function PriceContent() {
         selectedVenueId={selectedVenueId}
         onVenueChange={handleVenueChange}
         isLoading={courtsLoading}
+        canCreateBooking={canCreateDynamicPrice}
+        isLoadingPermission={isPermissionLoading}
       />
 
       <Timetable
@@ -311,11 +375,7 @@ export function PriceContent() {
         selectedDate={selectedDate}
         onDateChange={handleDateChange}
         showQuickJumpButtons={false}
-        primaryAction={{
-          label: "Add Custom Price",
-          onClick: handleAddCustomPrice,
-          disabled: courts.length === 0,
-        }}
+        primaryAction={primaryAction}
         isLoading={isTableLoading}
         renderCell={renderDynamicPriceCell}
       />
@@ -335,10 +395,14 @@ export function PriceContent() {
           initialStartHour={modalContext.startHour}
           initialEndHour={modalContext.endHour}
           initialPrice={modalContext.initialPrice}
+          initialDynamicPriceId={modalContext.dynamicPriceId}
           venueName={
             venues.find((v) => v.id === selectedVenueId)?.name ?? undefined
           }
           disableCourtSelection={modalContext.fromCell === true}
+          canCreate={canCreateDynamicPrice}
+          canUpdate={canUpdateDynamicPrice}
+          canDelete={canDeleteDynamicPrice}
         />
       )}
     </div>

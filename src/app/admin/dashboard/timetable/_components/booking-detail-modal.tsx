@@ -16,10 +16,14 @@ import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { stringUtils } from "@/lib/format/string";
 import { PaymentStatus } from "@/types/prisma";
+import { CancelBookingModal } from "./booking-cancel";
+import { formatTimeRange } from "@/components/timetable-utils";
 
 // Extended booking type dengan payment info
 export type BookingDetail = {
   id: string;
+  bookingCode: string;
+  source: string;
   userName: string;
   venueName: string;
   courtName: string;
@@ -40,6 +44,7 @@ type BookingDetailModalProps = {
   onOpenChange: (open: boolean) => void;
   booking: BookingDetail | null;
   onMarkAsComplete?: () => void;
+  onCancelBooking?: () => void;
 };
 
 // Format waktu: "06:00" -> "06.00"
@@ -57,19 +62,19 @@ function formatTimeWithAMPM(time: string): string {
 }
 
 // Format time range: ["06:00", "07:00"] -> "06.00-07.00"
-function formatTimeRange(
-  timeSlots: Array<{ openHour: string; closeHour: string }>
-): string {
-  if (timeSlots.length === 0) return "";
-  const first = timeSlots[0];
-  const last = timeSlots[timeSlots.length - 1];
-  // Format seperti "06.00-07.00" (tanpa AM/PM)
-  return `${formatTimeDisplay(first.openHour)}-${formatTimeDisplay(last.closeHour)}`;
-}
+// function formatTimeRange(
+//   timeSlots: Array<{ openHour: string; closeHour: string }>
+// ): string {
+//   if (timeSlots.length === 0) return "";
+//   const first = timeSlots[0];
+//   const last = timeSlots[timeSlots.length - 1];
+//   // Format seperti "06.00-07.00" (tanpa AM/PM)
+//   return `${formatTimeDisplay(first.openHour)}-${formatTimeDisplay(last.closeHour)}`;
+// }
 
 // Format tanggal: "14 Oktober 2025"
 function formatDate(date: Date): string {
-  return format(date, "d MMMM yyyy", { locale: id });
+  return format(date, "d MMM yyyy", { locale: id });
 }
 
 // Format tanggal dan waktu: "14 Oktober 2025, 14.07"
@@ -100,6 +105,7 @@ export function BookingDetailModal({
   onOpenChange,
   booking,
   onMarkAsComplete,
+  onCancelBooking,
 }: BookingDetailModalProps) {
   if (!booking) return null;
 
@@ -110,7 +116,7 @@ export function BookingDetailModal({
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-4 right-4 h-10 w-10 rounded-full bg-[#C3D223] hover:bg-[#A9B920] text-white"
+          className="absolute top-4 right-4 size-8 rounded-full bg-[#C3D223] hover:bg-[#A9B920]"
           onClick={() => onOpenChange(false)}
         >
           <X className="h-5 w-5" />
@@ -130,6 +136,10 @@ export function BookingDetailModal({
           {/* Booking Info Section */}
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Booking Info</h3>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Booking Code</span>
+              <span className="font-medium">#{booking.bookingCode}</span>
+            </div>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Name</span>
@@ -162,56 +172,69 @@ export function BookingDetailModal({
             </div>
           </div>
 
-          {/* Payment Info Section */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Payment Info</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Total Amount</span>
-                <span className="font-medium">
-                  {stringUtils.formatRupiah(booking.totalAmount)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Payment Method</span>
-                <span className="font-medium">{booking.paymentMethod}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Status</span>
-                <Badge
-                  className={cn(
-                    "rounded-full px-3 py-1 text-xs font-medium",
-                    getPaymentStatusBadgeClass(booking.paymentStatus)
-                  )}
-                >
-                  {booking.paymentStatus === PaymentStatus.PAID
-                    ? "Paid"
-                    : booking.paymentStatus}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Created On</span>
-                <span className="font-medium">
-                  {formatDateTime(booking.createdAt)}
-                </span>
+          {booking.source !== "ADMIN_MANUAL" && (
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">Payment Info</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Total Amount</span>
+                  <span className="font-medium">
+                    {stringUtils.formatRupiah(booking.totalAmount)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Payment Method</span>
+                  <span className="font-medium">{booking.paymentMethod}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Status</span>
+                  <Badge
+                    className={cn(
+                      "rounded-full px-3 py-1 text-xs font-medium",
+                      getPaymentStatusBadgeClass(booking.paymentStatus)
+                    )}
+                  >
+                    {booking.paymentStatus === PaymentStatus.PAID
+                      ? "Paid"
+                      : booking.paymentStatus}
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Created On</span>
+                  <span className="font-medium">
+                    {formatDateTime(booking.createdAt)}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
             <Button
               variant="outline"
               className="flex-1 border-[#C3D223] text-foreground"
-              onClick={() => onOpenChange(false)}
+              onClick={() => {
+                onOpenChange(false);
+                onCancelBooking?.();
+              }}
             >
-              Close
+              Cancel Booking
             </Button>
             {onMarkAsComplete &&
               booking.paymentStatus === PaymentStatus.PAID && (
                 <Button
-                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920] text-white"
+                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920]"
                   onClick={onMarkAsComplete}
+                >
+                  Mark as Complete
+                </Button>
+              )}
+            {onMarkAsComplete &&
+              booking.paymentStatus === PaymentStatus.UNPAID && (
+                <Button
+                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920]"
+                  onClick={() => onOpenChange(true)}
                 >
                   Mark as Complete
                 </Button>

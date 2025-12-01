@@ -11,6 +11,7 @@ import {
   TableCell,
   TableFooter,
 } from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChevronLeft, ChevronRight, MoreHorizontal, Eye } from "lucide-react";
 import { generatePageNumbers } from "@/lib/pagination-utils";
 import { PaymentStatus } from "@/types/prisma";
@@ -20,6 +21,7 @@ import {
   getPaymentStatusClass,
   formatPaymentStatus,
 } from "@/lib/order-utils";
+import { cn } from "@/lib/utils";
 
 export interface PaginationInfo {
   pageSafe: number;
@@ -41,6 +43,11 @@ export function OrderTable({
   onPageChange,
   onViewOrder,
 }: OrderTableProps) {
+  const paginationButtonBaseClass =
+    "w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]";
+  const paginationButtonActiveClass =
+    "bg-primary text-black border-primary hover:bg-primary";
+
   return (
     <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
       <Table>
@@ -59,9 +66,8 @@ export function OrderTable({
           {orders.map((order) => {
             const bookingCount = order.bookings.length;
             const customerName =
-              order.user?.profile?.fullName || order.user?.email || "N/A";
-            const paymentStatus =
-              order.payment?.status || PaymentStatus.UNPAID;
+              order.user?.profile?.fullName || order.user?.email || "-";
+            const paymentStatus = order.payment?.status || PaymentStatus.UNPAID;
 
             return (
               <TableRow key={order.id}>
@@ -70,7 +76,22 @@ export function OrderTable({
                     <span className="font-medium">{order.orderCode}</span>
                   </div>
                 </TableCell>
-                <TableCell>{customerName}</TableCell>
+                <TableCell className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarImage src={order.user?.profile?.avatar || ""} />
+                    <AvatarFallback className="uppercase">
+                      {customerName.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="font-medium">
+                      {order.user?.profile?.fullName || "-"}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {order.user?.email}
+                    </span>
+                  </div>
+                </TableCell>
                 <TableCell>
                   {bookingCount} {bookingCount === 1 ? "booking" : "bookings"}
                 </TableCell>
@@ -123,14 +144,14 @@ export function OrderTable({
                         </div>
                       ) : (
                         <Button
-                          variant={
-                            pageNum === paginationInfo.pageSafe
-                              ? "default"
-                              : "outline"
-                          }
+                          variant="outline"
                           size="sm"
                           onClick={() => onPageChange(pageNum as number)}
-                          className="w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]"
+                          className={cn(
+                            paginationButtonBaseClass,
+                            pageNum === paginationInfo.pageSafe &&
+                              paginationButtonActiveClass
+                          )}
                         >
                           {pageNum}
                         </Button>

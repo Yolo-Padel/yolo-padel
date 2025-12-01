@@ -28,6 +28,8 @@ export type VenueBlockingData = {
   isBlocking: boolean;
   booking: {
     id: string;
+    bookingCode: string;
+    source: string;
     courtId: string;
     userId: string;
     bookingDate: string | Date;
@@ -96,6 +98,7 @@ export function useActiveBlockings(params: GetBlockingsParams) {
     queryFn: () => getActiveBlockingsApi(params),
     staleTime: TIMETABLE_CACHE.BLOCKING_STALE_TIME,
     enabled: !!params.courtId && !!params.date,
+    refetchInterval: 1000,
   });
 }
 
@@ -104,11 +107,9 @@ export function useActiveBlockings(params: GetBlockingsParams) {
  */
 async function getBlockingsByVenueAndDateApi(
   venueId: string,
-  date: Date
+  date: string
 ): Promise<VenueBlockingData[]> {
-  const dateStr = date.toISOString();
-
-  const url = `/api/blocking/venue?venueId=${encodeURIComponent(venueId)}&date=${encodeURIComponent(dateStr)}`;
+  const url = `/api/blocking/venue?venueId=${encodeURIComponent(venueId)}&date=${encodeURIComponent(date)}`;
 
   const response = await fetch(url, {
     method: "GET",
@@ -130,9 +131,9 @@ async function getBlockingsByVenueAndDateApi(
  * Hook to get active blockings for all courts in a venue
  * Used for timetable display in admin dashboard
  */
-export function useBlockingByVenueAndDate(venueId: string, date: Date) {
+export function useBlockingByVenueAndDate(venueId: string, date: string) {
   return useQuery({
-    queryKey: ["blockings", "venue", venueId, date.toISOString()],
+    queryKey: ["blockings", "venue", venueId, date],
     queryFn: () => getBlockingsByVenueAndDateApi(venueId, date),
     staleTime: TIMETABLE_CACHE.BLOCKING_STALE_TIME,
     enabled: !!venueId && !!date,

@@ -9,7 +9,7 @@ import { OrderStatus, PaymentStatus } from "@/types/prisma";
 export type CreateOrderInput = {
   bookings: Array<{
     courtId: string;
-    date: Date;
+    date: string | Date; // Accept string (YYYY-MM-DD) or Date for flexibility
     slots: string[]; // Format: ["07:00-08:00", "08:00-09:00"]
     price: number;
   }>;
@@ -69,6 +69,14 @@ type GetOrdersParams = {
   page?: number;
   limit?: number;
   status?: OrderStatus;
+};
+
+export type UseAdminOrdersOptions = {
+  search?: string;
+  venueId?: string;
+  paymentStatus?: PaymentStatus;
+  page?: number;
+  limit?: number;
 };
 
 // ════════════════════════════════════════════════════════
@@ -134,6 +142,45 @@ async function getOrderByIdApi(orderId: string): Promise<Order> {
   return result.data;
 }
 
+async function getAdminOrdersApi(options: UseAdminOrdersOptions = {}): Promise<{
+  data: Order[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}> {
+  // Subtask 4.2: Build query string from options
+  const searchParams = new URLSearchParams();
+
+  // Handle undefined/null values - only add defined values to query string
+  if (options.search) searchParams.append("search", options.search);
+  if (options.venueId) searchParams.append("venue", options.venueId);
+  if (options.paymentStatus)
+    searchParams.append("paymentStatus", options.paymentStatus);
+  if (options.page) searchParams.append("page", options.page.toString());
+  if (options.limit) searchParams.append("limit", options.limit.toString());
+
+  const queryString = searchParams.toString();
+  const url = queryString
+    ? `/api/admin/orders?${queryString}`
+    : "/api/admin/orders";
+
+  const response = await fetch(url);
+
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "Failed to get admin orders");
+  }
+
+  return {
+    data: result.data,
+    pagination: result.pagination,
+  };
+}
+
 async function updateOrderStatusApi(
   orderId: string,
   status: OrderStatus
@@ -193,6 +240,22 @@ export function useOrders(params: GetOrdersParams = {}) {
     queryKey: ["orders", params],
     queryFn: () => getOrdersApi(params),
     staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
+ * Hook to get all orders for admin dashboard with filtering support
+ *
+ * Subtask 4.1: Updated to accept options parameter with search, venueId, paymentStatus, page, limit
+ * and return pagination metadata
+ */
+export function useAdminOrders(options: UseAdminOrdersOptions = {}) {
+  // Subtask 4.3: Include filter options in query key for proper caching
+  // This ensures that different filter combinations are cached separately
+  return useQuery({
+    queryKey: ["admin-orders", options],
+    queryFn: () => getAdminOrdersApi(options),
+    staleTime: 1000 * 60 * 2, // 2 minutes - shorter than default since filters change frequently
   });
 }
 

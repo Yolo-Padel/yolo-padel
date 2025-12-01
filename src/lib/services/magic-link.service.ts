@@ -98,6 +98,12 @@ class MagicLinkService {
       });
 
       if (!magicLink) {
+        // Check if there are any magic links in the database
+        const allLinks = await prisma.magicLink.findMany({
+          take: 5,
+          orderBy: { createdAt: "desc" },
+        });
+
         return {
           success: false,
           message: "Magic link tidak valid",
@@ -129,7 +135,7 @@ class MagicLinkService {
       // Update user - only set joinDate if it's the first time (joinDate is null)
       const user = await prisma.user.findUnique({
         where: { email: magicLink.email },
-        select: { joinDate: true }
+        select: { joinDate: true },
       });
 
       const updateData: any = {};
@@ -137,8 +143,8 @@ class MagicLinkService {
       // Only set joinDate if it's the first time user verifies magic link
       if (!user?.joinDate) {
         updateData.joinDate = new Date();
-        updateData.userStatus = UserStatus.ACTIVE; 
-        updateData.isEmailVerified = true; 
+        updateData.userStatus = UserStatus.ACTIVE;
+        updateData.isEmailVerified = true;
       }
 
       await prisma.user.update({

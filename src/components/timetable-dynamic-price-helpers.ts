@@ -75,6 +75,7 @@ export function getTimeSlotDynamicPrice(
   for (const price of dynamicPrices) {
     if (price.courtId !== courtId) continue;
     if (!price.isActive) continue;
+    if (price.isArchived) continue;
 
     if (!matchesSelectedDate(price, selectedDate)) continue;
 

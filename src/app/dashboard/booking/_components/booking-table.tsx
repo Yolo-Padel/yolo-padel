@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,7 @@ import {
   PaymentFeedbackDialog,
   PaymentFeedbackState,
 } from "./payment-feedback-dialog";
+import { usePaymentFeedback } from "@/hooks/use-payment-feedback";
 
 type BookingCourtRow = {
   id: string;
@@ -68,8 +69,6 @@ export function BookingCourt() {
   const [bookCourtModalOpen, setBookCourtModalOpen] = useState(false);
   const [selectedBookingCourt, setSelectedBookingCourt] =
     useState<BookingCourtRow | null>(null);
-  const [paymentFeedback, setPaymentFeedback] =
-    useState<PaymentFeedbackState | null>(null);
   const { data: userData, isLoading: isLoadingUser } = useCurrentUser();
   const userId = userData?.data?.user.id || "";
   const {
@@ -83,84 +82,8 @@ export function BookingCourt() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const statusParam = searchParams.get("paymentStatus");
-    const paymentIdParam = searchParams.get("paymentId");
-    const reason = searchParams.get("reason") || undefined;
-
-    if (
-      !statusParam ||
-      !paymentIdParam ||
-      (statusParam !== "success" && statusParam !== "failed")
-    ) {
-      setPaymentFeedback(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    setPaymentFeedback({
-      status: statusParam as "success" | "failed",
-      reason,
-      paymentId: paymentIdParam,
-      loading: true,
-    });
-
-    const fetchPayment = async () => {
-      try {
-        const response = await fetch(`/api/payment/${paymentIdParam}/status`, {
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(errorData?.message || "Failed to fetch payment");
-        }
-
-        const data = await response.json();
-        if (!data.success || !data.data) {
-          throw new Error("Payment not found");
-        }
-
-        if (!cancelled) {
-          setPaymentFeedback((prev) =>
-            prev && prev.paymentId === paymentIdParam
-              ? { ...prev, payment: data.data, loading: false }
-              : {
-                  status: statusParam as "success" | "failed",
-                  reason,
-                  paymentId: paymentIdParam,
-                  payment: data.data,
-                  loading: false,
-                }
-          );
-        }
-      } catch (error) {
-        if (!cancelled) {
-          const message =
-            error instanceof Error ? error.message : "Failed to fetch payment";
-          setPaymentFeedback((prev) =>
-            prev && prev.paymentId === paymentIdParam
-              ? { ...prev, error: message, loading: false }
-              : {
-                  status: statusParam as "success" | "failed",
-                  reason,
-                  paymentId: paymentIdParam,
-                  loading: false,
-                  error: message,
-                }
-          );
-        }
-      }
-    };
-
-    fetchPayment();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [searchParams]);
+  const { paymentFeedback, setPaymentFeedback } =
+    usePaymentFeedback(searchParams);
 
   const clearPaymentFeedback = () => {
     const params = new URLSearchParams(searchParams.toString());
@@ -176,7 +99,6 @@ export function BookingCourt() {
 
   const handleViewOrderHistory = () => {
     router.push("/dashboard/order-history");
-    clearPaymentFeedback();
   };
 
   const getStatusBadge = (status: BookingStatus) => {
@@ -267,11 +189,11 @@ export function BookingCourt() {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-1">
-          <h3 className="text-xl font-semibold">Booking Court List</h3>
+          <h3 className="text-xl font-semibold">Booking List</h3>
           <Button
             variant="outline"
             onClick={() => setBookCourtModalOpen(true)}
-            className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
+            className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black"
           >
             Book Court
             <LandPlot className="mr-2 size-4" />
@@ -291,15 +213,16 @@ export function BookingCourt() {
     <>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-1">
-          <h3 className="text-xl font-semibold ">Booking Court List</h3>
+          <h3 className="text-xl font-semibold ">Booking List</h3>
+
           <div className="flex items-center gap-2">
+            {/* Hide DatePicker and ComboboxFilter 
             <DatePicker />
             <ComboboxFilter />
-
+            */}
             <Button
-              variant="outline"
               onClick={() => setBookCourtModalOpen(true)}
-              className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
+              className="text-black"
             >
               Book Court
               <LandPlot className="size-4" />
@@ -319,7 +242,7 @@ export function BookingCourt() {
                   <Image
                     src={bookingCourt.image || "/paddle-court1.svg"}
                     alt=""
-                    className="flex-1 w-full rounded-sm aspect-square"
+                    className="flex-1 w-full aspect-square"
                     width={500}
                     height={500}
                   />
@@ -331,7 +254,7 @@ export function BookingCourt() {
                       <Badge
                         className={`rounded-md px-3 py-1 text-xs font-medium ${getStatusBadge(bookingCourt.status)}`}
                       >
-                        {bookingCourt.status}
+                        {stringUtils.toTitleCase(bookingCourt.status)}
                       </Badge>
                     </span>
                   </CardTitle>
@@ -371,6 +294,7 @@ export function BookingCourt() {
                     <Button
                       onClick={() => {
                         setSelectedBookingCourt(bookingCourt);
+                        setModalOpen(true);
                         setMode("booking-details");
                       }}
                       className="w-full border-primary"
@@ -379,8 +303,6 @@ export function BookingCourt() {
                       See Details
                     </Button>
                     <Button
-                      variant="default"
-                      size="sm"
                       className="w-full"
                       onClick={() => setBookCourtModalOpen(true)}
                     >
@@ -402,8 +324,6 @@ export function BookingCourt() {
                       See Details
                     </Button>
                     <Button
-                      variant="default"
-                      size="sm"
                       className="w-full"
                       onClick={() => {
                         window.open(bookingCourt.invoiceUrl, "_blank");
@@ -421,8 +341,7 @@ export function BookingCourt() {
                         setModalOpen(true);
                         setMode("booking-details");
                       }}
-                      className="w-full border-primary"
-                      variant="outline"
+                      className="w-full"
                     >
                       See Details
                     </Button>
@@ -431,8 +350,6 @@ export function BookingCourt() {
                 {bookingCourt.status === BookingStatus.CANCELLED && (
                   <CardFooter className="px-1 pb-1 w-full min-w-0">
                     <Button
-                      variant="default"
-                      size="sm"
                       className="w-full"
                       onClick={() => setBookCourtModalOpen(true)}
                     >
@@ -446,7 +363,7 @@ export function BookingCourt() {
         )}
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {paginated.length} of {filtered.length} booking courts
+            Showing {paginated.length} of {filtered.length} bookings
           </div>
           <div className="flex items-center gap-2">
             <Button

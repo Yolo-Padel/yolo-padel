@@ -2,7 +2,12 @@
 import { prisma } from "@/lib/prisma";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
-import { BookingStatus, Booking, Role, PaymentStatus } from "@/types/prisma";
+import {
+  BookingStatus,
+  Booking,
+  UserType,
+  PaymentStatus,
+} from "@/types/prisma";
 import { activityLogService } from "@/lib/services/activity-log.service";
 import { requirePermission, ServiceContext } from "@/types/service-context";
 import { BookingCreateData } from "../validations/booking.validation";
@@ -15,24 +20,31 @@ import type {
   SuperAdminDashboardSnapshot,
   TodaysBookingCollection,
 } from "@/types/booking-dashboard";
+import { Prisma } from "@prisma/client";
+import { NextBookingInfo } from "@/types/profile";
 
 /**
- * Parse date string (YYYY-MM-DD) and return Date object representing start of day in UTC
- * This ensures consistent date storage regardless of timezone
- * @param dateString Date string in YYYY-MM-DD format
- * @returns Date object representing start of day in UTC
+ * Parse date string (YYYY-MM-DD) and return Date object representing start of day in local timezone
+ * Preserves the exact date selected by user without timezone conversion
+ * @param dateString Date string in YYYY-MM-DD format or Date object
+ * @returns Date object representing start of day in local timezone
  */
-function parseDateString(dateString: string): Date {
+function parseDateString(dateString: string | Date): Date {
+  // If already Date object, use it directly
+  if (dateString instanceof Date) {
+    return dateString;
+  }
+
   // If it's already in ISO format with time, parse directly
   if (dateString.includes("T")) {
     return new Date(dateString);
   }
 
-  // If it's YYYY-MM-DD format, parse as UTC start of day
-  // This ensures the date is stored correctly
-  // Example: "2024-11-09" -> 2024-11-09T00:00:00.000Z
+  // If it's YYYY-MM-DD format, parse as local date (not UTC)
+  // This preserves the exact date selected by user
+  // Example: "2024-11-09" -> 2024-11-09T00:00:00 in local timezone
   const [year, month, day] = dateString.split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+  return new Date(year, month - 1, day);
 }
 
 const BOOKING_STATUSES: BookingStatus[] = [
@@ -75,7 +87,7 @@ function buildSummaryFromCounts(
   return {
     total,
     completed: counts[BookingStatus.COMPLETED],
-    ongoing: counts[BookingStatus.PENDING],
+    pending: counts[BookingStatus.PENDING],
     upcoming: counts[BookingStatus.UPCOMING],
     cancelled: counts[BookingStatus.CANCELLED] + counts[BookingStatus.NO_SHOW],
     expiredPayment,
@@ -105,7 +117,7 @@ function buildMetrics(
       total: summary.total,
       completed: summary.completed,
       upcoming: summary.upcoming,
-      ongoing: summary.ongoing,
+      pending: summary.pending,
       cancelled: summary.cancelled,
     },
     paidRate: {
@@ -478,25 +490,33 @@ export const bookingService = {
     message: string;
   }> => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
-      const assignedVenueIds = Array.isArray(context.assignedVenueId)
-        ? context.assignedVenueId.filter(Boolean)
-        : context.assignedVenueId
-          ? [context.assignedVenueId]
-          : [];
+      // Build venue filter based on user type
+      let venueWhere: any = {};
+      let courtVenueWhere: any = {};
 
-      if (assignedVenueIds.length === 0) {
-        return {
-          success: false,
-          data: null,
-          message: "Assigned venue is required for admin dashboard",
-        };
+      if (context.userRole === UserType.STAFF) {
+        // STAFF: only assigned venues
+        const assignedVenueIds = Array.isArray(context.assignedVenueId)
+          ? context.assignedVenueId.filter(Boolean)
+          : context.assignedVenueId
+            ? [context.assignedVenueId]
+            : [];
+
+        if (assignedVenueIds.length === 0) {
+          return {
+            success: false,
+            data: null,
+            message: "Assigned venue is required for admin dashboard",
+          };
+        }
+
+        venueWhere = { venueId: { in: assignedVenueIds } };
+        courtVenueWhere = { court: { venueId: { in: assignedVenueIds } } };
       }
-
-      const venueWhere = { venueId: { in: assignedVenueIds } };
-      const courtVenueWhere = { court: { venueId: { in: assignedVenueIds } } };
+      // ADMIN: all venues (no filter)
 
       const todayRange = getUtcDayRange(new Date());
       const utilizationRange = getUtcRangeForPastDays(7);
@@ -810,7 +830,7 @@ export const bookingService = {
   // Create booking (deprecated)
   create: async (booking: BookingCreateData, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.USER);
+      const accessError = requirePermission(context, UserType.USER);
       if (accessError) return accessError;
 
       const nanoId = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 5);
@@ -997,7 +1017,640 @@ export const bookingService = {
       };
     }
   },
+  getNextBookingForUser: async (
+    userId: string
+  ): Promise<NextBookingInfo | null> => {
+    const nextBooking = await prisma.booking.findFirst({
+      where: {
+        userId,
+        status: {
+          in: [BookingStatus.UPCOMING],
+        },
+        bookingDate: {
+          gte: new Date(new Date().setHours(0, 0, 0, 0)),
+        },
+      },
+      orderBy: [{ bookingDate: "asc" }, { createdAt: "asc" }],
+      include: {
+        timeSlots: true,
+        court: {
+          select: {
+            id: true,
+            name: true,
+            venue: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!nextBooking) return null;
+
+    return {
+      bookingId: nextBooking.id,
+      bookingCode: nextBooking.bookingCode,
+      bookingDate: nextBooking.bookingDate.toISOString(),
+      status: nextBooking.status,
+      courtId: nextBooking.court.id,
+      courtName: nextBooking.court.name,
+      venueId: nextBooking.court.venue.id,
+      venueName: nextBooking.court.venue.name,
+      timeSlots: nextBooking.timeSlots ?? [],
+    };
+  },
+
+  // Cancel booking - set status to CANCELLED
+  cancel: async (id: string, context: ServiceContext) => {
+    try {
+      const accessError = requirePermission(context, UserType.STAFF);
+      if (accessError) return accessError;
+
+      // Get booking before update for audit log
+      const bookingBefore = await prisma.booking.findUnique({
+        where: { id },
+        select: { status: true },
+      });
+
+      if (!bookingBefore) {
+        return {
+          success: false,
+          data: null,
+          message: "Booking not found",
+        };
+      }
+
+      // Update booking status and blocking in a transaction
+      const booking = await prisma.$transaction(async (tx) => {
+        // Update booking status
+        const updatedBooking = await tx.booking.update({
+          where: {
+            id,
+          },
+          data: {
+            status: BookingStatus.CANCELLED,
+          },
+          include: {
+            timeSlots: true,
+            court: {
+              include: {
+                venue: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    city: true,
+                  },
+                },
+              },
+            },
+            user: {
+              include: {
+                profile: {
+                  select: {
+                    fullName: true,
+                    avatar: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        // Update blocking's isBlocking to false if blocking exists
+        await tx.blocking.updateMany({
+          where: {
+            bookingId: id,
+            isBlocking: true, // Only update if currently blocking
+          },
+          data: {
+            isBlocking: false,
+          },
+        });
+
+        return updatedBooking;
+      });
+
+      // audit log
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.UPDATE_BOOKING,
+        entityType: ENTITY_TYPES.BOOKING,
+        entityId: booking.id,
+        changes: {
+          before: { status: bookingBefore.status },
+          after: { status: booking.status },
+        } as any,
+      });
+
+      return {
+        success: true,
+        data: booking,
+        message: "Cancel booking successful",
+      };
+    } catch (error) {
+      console.error("Cancel booking error:", error);
+      return {
+        success: false,
+        data: null,
+        message:
+          error instanceof Error ? error.message : "Cancel booking failed",
+      };
+    }
+  },
 };
+
+/**
+ * Options for filtering bookings in admin dashboard
+ */
+export interface GetBookingsForAdminOptions {
+  // User context for authorization
+  userType: UserType;
+  assignedVenueIds: string[];
+
+  // Filter options
+  search?: string;
+  venueId?: string;
+  status?: BookingStatus;
+  startDate?: Date;
+  endDate?: Date;
+
+  // Pagination options
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * Pagination metadata for booking results
+ */
+export interface BookingPaginationMetadata {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+/**
+ * Result type for getBookingsForAdmin function
+ */
+export interface GetBookingsForAdminResult {
+  data: Array<
+    Booking & {
+      timeSlots: Array<{
+        id: string;
+        openHour: string;
+        closeHour: string;
+      }>;
+      user: {
+        id: string;
+        email: string;
+        profile: {
+          fullName: string | null;
+          avatar: string | null;
+        } | null;
+      };
+      court: {
+        id: string;
+        name: string;
+        venue: {
+          id: string;
+          name: string;
+          city: string | null;
+        };
+      };
+      order: {
+        id: string;
+        orderCode: string;
+        status: string;
+        totalAmount: number;
+      } | null;
+      payments: Array<{
+        id: string;
+        amount: number;
+        status: PaymentStatus;
+        paymentDate: Date | null;
+        channelName: string | null;
+      }>;
+    }
+  >;
+  pagination: BookingPaginationMetadata;
+}
+
+/**
+ * Sanitize search input to prevent SQL injection
+ * Prisma handles parameterization, but we still trim and validate
+ *
+ * @param search - Raw search string from user input
+ * @returns Sanitized search string or undefined if empty
+ */
+function sanitizeSearchInput(search?: string): string | undefined {
+  if (!search) return undefined;
+
+  // Trim whitespace
+  const trimmed = search.trim();
+
+  // Return undefined if empty after trimming
+  if (trimmed.length === 0) return undefined;
+
+  // Prisma handles SQL injection prevention through parameterized queries
+  // We just need to ensure the string is valid
+  return trimmed;
+}
+
+/**
+ * Build search filter for booking code, customer name, email, court name, and venue name
+ *
+ * @param search - Search query string
+ * @returns Prisma OR clause for searching multiple fields
+ */
+function buildSearchFilter(search?: string): Prisma.BookingWhereInput["OR"] {
+  const sanitizedSearch = sanitizeSearchInput(search);
+
+  if (!sanitizedSearch) {
+    return undefined;
+  }
+
+  // Build OR clause to search across multiple fields (case-insensitive)
+  return [
+    {
+      bookingCode: {
+        contains: sanitizedSearch,
+        mode: "insensitive",
+      },
+    },
+    {
+      user: {
+        profile: {
+          fullName: {
+            contains: sanitizedSearch,
+            mode: "insensitive",
+          },
+        },
+      },
+    },
+    {
+      user: {
+        email: {
+          contains: sanitizedSearch,
+          mode: "insensitive",
+        },
+      },
+    },
+    {
+      court: {
+        name: {
+          contains: sanitizedSearch,
+          mode: "insensitive",
+        },
+      },
+    },
+    {
+      court: {
+        venue: {
+          name: {
+            contains: sanitizedSearch,
+            mode: "insensitive",
+          },
+        },
+      },
+    },
+  ];
+}
+
+/**
+ * Build venue filter based on user type and assigned venues
+ *
+ * @param userType - The type of user (ADMIN or STAFF)
+ * @param assignedVenueIds - Array of venue IDs assigned to STAFF users
+ * @param venueId - Optional specific venue filter
+ * @returns Prisma where clause for venue filtering
+ */
+function buildVenueFilter(
+  userType: UserType,
+  assignedVenueIds: string[],
+  venueId?: string
+): { venueId: string } | { venueId: { in: string[] } } | undefined {
+  // ADMIN users have unrestricted access
+  if (userType === "ADMIN") {
+    // If a specific venue is requested, filter by that venue
+    if (venueId) {
+      return {
+        venueId: venueId,
+      };
+    }
+    // Otherwise, no venue restriction
+    return undefined;
+  }
+
+  // STAFF users are restricted to their assigned venues
+  if (userType === "STAFF") {
+    // If STAFF has no assigned venues, return a filter that matches nothing
+    if (assignedVenueIds.length === 0) {
+      return {
+        venueId: {
+          in: [], // Empty array will match no venues
+        },
+      };
+    }
+
+    // If a specific venue is requested, ensure it's in the assigned list
+    if (venueId) {
+      // Only allow filtering by assigned venues
+      if (assignedVenueIds.includes(venueId)) {
+        return {
+          venueId: venueId,
+        };
+      } else {
+        // Requested venue is not assigned, return no results
+        return {
+          venueId: {
+            in: [], // Empty array will match no venues
+          },
+        };
+      }
+    }
+
+    // No specific venue requested, filter by all assigned venues
+    return {
+      venueId: {
+        in: assignedVenueIds,
+      },
+    };
+  }
+
+  // For other user types (USER), return no results
+  return {
+    venueId: {
+      in: [], // Empty array will match no venues
+    },
+  };
+}
+
+/**
+ * Build status filter
+ *
+ * @param status - Booking status to filter by
+ * @returns Prisma where clause for status filtering
+ */
+function buildStatusFilter(
+  status?: BookingStatus
+): Prisma.BookingWhereInput["status"] {
+  // If no status specified, return undefined (no filter)
+  if (!status) {
+    return undefined;
+  }
+
+  // Filter by the specified status
+  return status;
+}
+
+/**
+ * Build date range filter
+ *
+ * @param startDate - Start date for filtering
+ * @param endDate - End date for filtering
+ * @returns Prisma where clause for date range filtering
+ */
+function buildDateRangeFilter(
+  startDate?: Date,
+  endDate?: Date
+): Prisma.BookingWhereInput["bookingDate"] {
+  // If neither date is specified, return undefined (no filter)
+  if (!startDate && !endDate) {
+    return undefined;
+  }
+
+  // Build date range filter
+  const dateFilter: Prisma.DateTimeFilter = {};
+
+  if (startDate) {
+    dateFilter.gte = startDate;
+  }
+
+  if (endDate) {
+    dateFilter.lte = endDate;
+  }
+
+  return dateFilter;
+}
+
+/**
+ * Build pagination parameters and calculate metadata
+ *
+ * @param page - Page number (1-indexed)
+ * @param limit - Items per page
+ * @returns Pagination parameters and metadata
+ */
+function buildPaginationParams(
+  page?: number,
+  limit?: number
+): {
+  skip: number;
+  take: number;
+  metadata: (total: number) => BookingPaginationMetadata;
+} {
+  // Default values
+  const validPage = Math.max(1, page || 1);
+  const validLimit = Math.max(1, Math.min(100, limit || 10)); // Cap at 100
+
+  // Calculate skip for Prisma query
+  const skip = (validPage - 1) * validLimit;
+
+  // Return skip, take, and a function to build metadata
+  return {
+    skip,
+    take: validLimit,
+    metadata: (total: number) => ({
+      page: validPage,
+      limit: validLimit,
+      total,
+      totalPages: Math.ceil(total / validLimit),
+    }),
+  };
+}
+
+/**
+ * Build complete Prisma where clause combining all filters
+ *
+ * @param options - Filter options from GetBookingsForAdminOptions
+ * @returns Complete Prisma where clause
+ */
+function buildWhereClause(
+  options: GetBookingsForAdminOptions
+): Prisma.BookingWhereInput {
+  const {
+    userType,
+    assignedVenueIds,
+    search,
+    venueId,
+    status,
+    startDate,
+    endDate,
+  } = options;
+
+  // Build individual filter components
+  const searchFilter = buildSearchFilter(search);
+  const venueFilter = buildVenueFilter(userType, assignedVenueIds, venueId);
+  const statusFilter = buildStatusFilter(status);
+  const dateRangeFilter = buildDateRangeFilter(startDate, endDate);
+
+  // Debug logging
+  console.log("[Booking Service] buildWhereClause - Input options:", {
+    userType,
+    venueId,
+    assignedVenueIds,
+    search,
+    status,
+  });
+  console.log(
+    "[Booking Service] buildWhereClause - Venue filter:",
+    venueFilter
+  );
+
+  // Combine all filters with AND logic
+  const where: Prisma.BookingWhereInput = {
+    // Search filter (OR clause for multiple fields)
+    OR: searchFilter,
+
+    // Venue filter (handles both ADMIN and STAFF authorization)
+    court: venueFilter,
+
+    // Status filter
+    status: statusFilter,
+
+    // Date range filter
+    bookingDate: dateRangeFilter,
+  };
+
+  console.log(
+    "[Booking Service] buildWhereClause - Final where clause:",
+    JSON.stringify(where, null, 2)
+  );
+
+  return where;
+}
+
+/**
+ * Get bookings for admin dashboard with server-side filtering and pagination
+ *
+ * This function implements comprehensive filtering based on:
+ * - User authorization (ADMIN vs STAFF with venue restrictions)
+ * - Search query (booking code, customer name, email, court name, venue name)
+ * - Booking status
+ * - Venue
+ * - Date range
+ * - Pagination
+ *
+ * All filters are applied at the database level for optimal performance.
+ *
+ * @param options - Filter and pagination options
+ * @returns Filtered bookings with pagination metadata
+ *
+ * @example
+ * // ADMIN user searching for bookings
+ * const result = await getBookingsForAdmin({
+ *   userType: "ADMIN",
+ *   assignedVenueIds: [],
+ *   search: "BK-123",
+ *   page: 1,
+ *   limit: 10
+ * });
+ *
+ * @example
+ * // STAFF user viewing bookings from assigned venues
+ * const result = await getBookingsForAdmin({
+ *   userType: "STAFF",
+ *   assignedVenueIds: ["venue-1", "venue-2"],
+ *   status: "UPCOMING",
+ *   page: 1,
+ *   limit: 10
+ * });
+ */
+export async function getBookingsForAdmin(
+  options: GetBookingsForAdminOptions
+): Promise<GetBookingsForAdminResult> {
+  // Build where clause combining all filters
+  const where = buildWhereClause(options);
+
+  // Build pagination parameters
+  const { skip, take, metadata } = buildPaginationParams(
+    options.page,
+    options.limit
+  );
+
+  // Execute query with filters and pagination
+  const [bookings, total] = await Promise.all([
+    prisma.booking.findMany({
+      where,
+      include: {
+        timeSlots: {
+          select: {
+            id: true,
+            openHour: true,
+            closeHour: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            profile: {
+              select: {
+                fullName: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+        court: {
+          select: {
+            id: true,
+            name: true,
+            venue: {
+              select: {
+                id: true,
+                name: true,
+                city: true,
+              },
+            },
+          },
+        },
+        order: {
+          select: {
+            id: true,
+            orderCode: true,
+            status: true,
+            totalAmount: true,
+          },
+        },
+        payments: {
+          select: {
+            id: true,
+            amount: true,
+            status: true,
+            paymentDate: true,
+            channelName: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take,
+    }),
+    prisma.booking.count({ where }),
+  ]);
+
+  // Return data with pagination metadata
+  return {
+    data: bookings,
+    pagination: metadata(total),
+  };
+}
 
 /**
  * Create a booking with time slots

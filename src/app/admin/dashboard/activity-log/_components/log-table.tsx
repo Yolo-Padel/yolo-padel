@@ -1,9 +1,7 @@
-"use client"
+"use client";
 
-import React from "react"
-import { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableHeader,
@@ -11,36 +9,39 @@ import {
   TableHead,
   TableBody,
   TableCell,
-  TableFooter,
 } from "@/components/ui/table";
+import { Eye } from "lucide-react";
 import {
-  Pencil,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  MoreHorizontal,
-  Trash,
-} from "lucide-react";
-import { User, Profile, Role, UserStatus, ActivityLog } from "@/types/prisma";
+  User,
+  Profile,
+  ActivityLog,
+} from "@/types/prisma";
 import { useActivityLogsAdmin } from "@/hooks/use-activity-log";
 import { LogDetails } from "./log-modal";
 import { ActionType } from "@/types/action";
 import { EntityType } from "@/types/entity";
-import { date } from "zod/v3";
-import { JsonValue } from "@prisma/client/runtime/library";
-
-
-const PAGE_SIZE = 10;
+import { stringUtils } from "@/lib/format/string";
+import { ActivityLogTableSkeleton } from "./log-table-skeleton";
+import { ActivityLogEmptyState } from "./log-empty-state";
 
 export function ActivityLogTable() {
   const [modalOpen, setModalOpen] = useState(false);
   const { data, isLoading, error } = useActivityLogsAdmin();
   const allLogs = data?.data || [];
-  const [selectedLog, setSelectedLog] = useState<ActivityLog & {user: User & { profile: Profile }} | null>(null);
+  const [selectedLog, setSelectedLog] = useState<
+    (ActivityLog & { user: User & { profile: Profile } }) | null
+  >(null);
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-  if (!data) return <div>No activity logs found.</div>;
+  if (isLoading) return <ActivityLogTableSkeleton />;
+  if (error)
+    return (
+      <div className="rounded-2xl border border-[#E9EAEB] p-8 text-center text-red-600">
+        Error saat memuat log: {error.message}
+      </div>
+    );
+  if (!data || allLogs.length === 0) {
+    return <ActivityLogEmptyState />;
+  }
 
   return (
     <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
@@ -52,45 +53,72 @@ export function ActivityLogTable() {
             <TableHead>Role</TableHead>
             <TableHead>Modul</TableHead>
             <TableHead>Action</TableHead>
-            <TableHead>Detail</TableHead>
+            {/* <TableHead>Detail</TableHead> */}
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {allLogs.map((log: ActivityLog & { user: User & { profile: Profile } }) => (
-            <TableRow key={log.id}>
-              <TableCell>{new Date(log.createdAt).toLocaleString()}</TableCell>
-              <TableCell><span className="text-sm font-medium">{log.user?.profile?.fullName}</span> <br/> <span className="text-xs text-muted-foreground">{log.user?.email}</span></TableCell>
-              <TableCell>{log.user?.role}</TableCell>
-              <TableCell>{log.entityType}</TableCell>
-              <TableCell>{log.action}</TableCell>
-              <TableCell>{log.description}</TableCell>
-              <TableCell>
-                <Button variant="outline" size="sm" onClick={() => {setSelectedLog(log); setModalOpen(true);}}>
-                  View Details
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+          {allLogs.map(
+            (log: ActivityLog & { user: User & { profile: Profile } }) => (
+              <TableRow key={log.id}>
+                <TableCell>
+                  {new Date(log.createdAt).toLocaleDateString("id-ID", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </TableCell>
+                <TableCell>
+                  <span className="text-sm font-medium">
+                    {log.user?.profile?.fullName}
+                  </span>{" "}
+                  <br />{" "}
+                  <span className="text-xs text-muted-foreground">
+                    {log.user?.email}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  {stringUtils.toTitleCase(log.user?.userType)}
+                </TableCell>
+                <TableCell>{log.entityType}</TableCell>
+                <TableCell>
+                  {stringUtils.toTitleCase(log.action.split("_")[0])}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-none shadow-none"
+                    onClick={() => {
+                      setSelectedLog(log);
+                      setModalOpen(true);
+                    }}
+                  >
+                    <Eye className="size-4 text-[#A4A7AE]" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            )
+          )}
         </TableBody>
         {/*Log Details Modal*/}
         <LogDetails
           open={modalOpen}
           onOpenChange={setModalOpen}
-          logDetailsProps={
-            ({
-              date: new Date(selectedLog?.createdAt || ''),
-              performedBy: selectedLog?.user?.profile?.fullName || '',
-              role: selectedLog?.user?.role || '',
-              module: selectedLog?.entityType as EntityType,
-              action: selectedLog?.action as ActionType,
-              reference: selectedLog?.entityId || '',
-              description: selectedLog?.description || '',
-              changes: selectedLog?.changes || null,
-            })
-          }
+          logDetailsProps={{
+            date: new Date(selectedLog?.createdAt || ""),
+            performedBy: selectedLog?.user?.profile?.fullName || "",
+            role: selectedLog?.user?.userType || "",
+            module: selectedLog?.entityType as EntityType,
+            action: selectedLog?.action as ActionType,
+            reference: selectedLog?.entityId || "",
+            description: selectedLog?.description || "",
+            changes: selectedLog?.changes || null,
+          }}
         />
       </Table>
     </div>
-  )
+  );
 }

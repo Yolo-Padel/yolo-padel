@@ -24,7 +24,10 @@ import {
   courtDynamicPriceCreateSchema,
   CourtDynamicPriceCreateData,
 } from "@/lib/validations/court-dynamic-price.validation";
-import { useCreateCourtDynamicPrice } from "@/hooks/use-court-dynamic-price";
+import {
+  useCreateCourtDynamicPrice,
+  useDeleteCourtDynamicPrice,
+} from "@/hooks/use-court-dynamic-price";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -52,8 +55,12 @@ type DynamicPriceModalProps = {
   initialStartHour: string;
   initialEndHour: string;
   initialPrice?: number;
+  initialDynamicPriceId?: string;
   venueName?: string;
   disableCourtSelection?: boolean;
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 };
 
 const dynamicPriceFormSchema = courtDynamicPriceCreateSchema.safeExtend({
@@ -74,8 +81,12 @@ export function DynamicPriceModal({
   initialStartHour,
   initialEndHour,
   initialPrice,
+  initialDynamicPriceId,
   venueName,
   disableCourtSelection = false,
+  canCreate = false,
+  canUpdate = false,
+  canDelete = false,
 }: DynamicPriceModalProps) {
   const timeOptions = React.useMemo(() => generateTimeSlots(), []);
 
@@ -83,6 +94,7 @@ export function DynamicPriceModal({
   const [priceInputFocused, setPriceInputFocused] = React.useState(false);
 
   const createMutation = useCreateCourtDynamicPrice();
+  const deleteMutation = useDeleteCourtDynamicPrice();
 
   const {
     register,
@@ -107,6 +119,11 @@ export function DynamicPriceModal({
 
   const selectedStartHour = watch("startHour");
   const selectedCourtId = watch("courtId");
+  const isEditingExisting = Boolean(initialDynamicPriceId);
+  const canSubmit = isEditingExisting ? canUpdate : canCreate;
+  const isReadOnly =
+    (isEditingExisting && !canUpdate) || (!isEditingExisting && !canCreate);
+  const showDeleteButton = isEditingExisting && canDelete;
 
   const selectedCourtName =
     courts.find((court) => court.id === selectedCourtId)?.name ??
@@ -149,25 +166,49 @@ export function DynamicPriceModal({
   ]);
 
   const onSubmit = async (values: FormOutput) => {
-    if (!values.courtId) {
+    if (!values.courtId || !canSubmit) {
       return;
     }
 
-    const payload: CourtDynamicPriceCreateData = {
+    // Convert date to YYYY-MM-DD string to prevent timezone issues
+    // This ensures the date selected by user is preserved exactly when sent to API
+    const formatDateToString = (date: Date | null): string | null => {
+      if (!date) return null;
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    const payload = {
       courtId: values.courtId,
       dayOfWeek: null,
-      date: values.date,
+      date: formatDateToString(values.date),
       startHour: values.startHour,
       endHour: values.endHour,
       price: values.price,
       isActive: values.isActive ?? true,
-    };
+    } as CourtDynamicPriceCreateData;
 
     try {
       await createMutation.mutateAsync(payload);
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to create dynamic price:", error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!initialDynamicPriceId || !canDelete) {
+      onOpenChange(false);
+      return;
+    }
+
+    try {
+      await deleteMutation.mutateAsync(initialDynamicPriceId);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Failed to delete dynamic price:", error);
     }
   };
 
@@ -190,7 +231,7 @@ export function DynamicPriceModal({
               type="button"
               variant="ghost"
               size="icon"
-              className="absolute top-4 right-4 h-8 w-8 rounded-full bg-primary hover:bg-primary/90 text-white"
+              className="absolute top-4 right-4 h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
               onClick={() => onOpenChange(false)}
             >
               <X className="h-4 w-4 text-black" />
@@ -220,7 +261,7 @@ export function DynamicPriceModal({
                     <Select
                       value={field.value}
                       onValueChange={(value) => field.onChange(value)}
-                      disabled={disableCourtSelection}
+                      disabled={disableCourtSelection || isReadOnly}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select court" />
@@ -259,6 +300,7 @@ export function DynamicPriceModal({
                           type="button"
                           variant="outline"
                           className="w-full justify-start text-left font-normal"
+                          disabled={isReadOnly}
                         >
                           {field.value ? (
                             format(field.value, "EEE, d MMM yyyy")
@@ -316,6 +358,7 @@ export function DynamicPriceModal({
                             shouldValidate: true,
                           });
                         }}
+                        disabled={isReadOnly}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select start time" />
@@ -348,6 +391,7 @@ export function DynamicPriceModal({
                       <Select
                         value={field.value}
                         onValueChange={(value) => field.onChange(value)}
+                        disabled={isReadOnly}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select end time" />
@@ -404,6 +448,7 @@ export function DynamicPriceModal({
                         onBlur={() => {
                           setPriceInputFocused(false);
                         }}
+                        disabled={isReadOnly}
                       />
                     );
                   }}
@@ -416,21 +461,39 @@ export function DynamicPriceModal({
           </div>
 
           <div className="mt-8 flex gap-3 border-t bg-muted/30 p-4 sm:px-6 rounded-b-full">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1 border-primary text-gray-700 hover:bg-gray-50"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting || createMutation.isPending}
-            >
-              Cancel
-            </Button>
+            {showDeleteButton && (
+              <Button
+                type="button"
+                variant="destructive"
+                className="flex-1"
+                onClick={handleDelete}
+                disabled={
+                  isSubmitting ||
+                  createMutation.isPending ||
+                  deleteMutation.isPending
+                }
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              </Button>
+            )}
             <Button
               type="submit"
-              className="flex-1 bg-primary hover:bg-primary/90 text-white"
-              disabled={isSubmitting || createMutation.isPending}
+              className={cn(
+                "flex-1 bg-primary hover:bg-primary/90",
+                !showDeleteButton && "w-full"
+              )}
+              disabled={
+                isSubmitting ||
+                createMutation.isPending ||
+                deleteMutation.isPending ||
+                isReadOnly
+              }
             >
-              {createMutation.isPending ? "Saving..." : "Save Custom Price"}
+              {createMutation.isPending
+                ? "Saving..."
+                : isReadOnly
+                  ? "View Only"
+                  : "Save Custom Price"}
             </Button>
           </div>
         </form>

@@ -21,9 +21,9 @@ export async function GET(
 
     const { user } = tokenResult;
     const serviceContext = createServiceContext(
-      user.role,
+      user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
 
     const result = await courtDynamicPriceService.getById(id, serviceContext);
@@ -64,9 +64,9 @@ export async function PUT(
 
     const { user } = tokenResult;
     const serviceContext = createServiceContext(
-      user.role,
+      user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
 
     const result = await courtDynamicPriceService.update(
@@ -120,9 +120,9 @@ export async function DELETE(
 
     const { user } = tokenResult;
     const serviceContext = createServiceContext(
-      user.role,
+      user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
 
     const result = await courtDynamicPriceService.delete(id, serviceContext);

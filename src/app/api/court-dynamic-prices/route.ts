@@ -33,9 +33,9 @@ export async function GET(request: NextRequest) {
 
     const { user } = tokenResult;
     const serviceContext = createServiceContext(
-      user.role,
+      user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
 
     const result = await courtDynamicPriceService.listByCourt(
@@ -77,9 +77,9 @@ export async function POST(request: NextRequest) {
 
     const { user } = tokenResult;
     const serviceContext = createServiceContext(
-      user.role,
+      user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
 
     const result = await courtDynamicPriceService.create(
@@ -115,5 +115,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

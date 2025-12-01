@@ -11,7 +11,7 @@ function formatDate(dateInput: string): string {
   const date = new Date(dateInput);
   return date.toLocaleDateString("en-US", {
     weekday: "long",
-    month: "long",
+    month: "short",
     day: "numeric",
     year: "numeric",
   });

@@ -1,6 +1,7 @@
 import { xendit } from "@/lib/xendit";
 import type { CreateInvoiceRequest } from "xendit-node/invoice/models/CreateInvoiceRequest";
 import type { Invoice as XenditInvoice } from "xendit-node/invoice/models/Invoice";
+import config from "@/config.json";
 
 type ServiceResponse<T> = {
   success: boolean;
@@ -48,10 +49,22 @@ export const xenditService = {
   ): Promise<ServiceResponse<XenditInvoice>> => {
     try {
       const { externalId, amount, currency, metadata, ...rest } = params;
+      const taxAmount = config.taxPercentageDecimal * amount;
+      const bookingFeeAmount = config.bookingFeePercentageDecimal * amount;
       const payload: CreateInvoiceRequest = {
         externalId,
-        amount,
+        amount: amount + taxAmount + bookingFeeAmount,
         currency: currency ?? "IDR",
+        fees: [
+          {
+            type: "tax",
+            value: taxAmount,
+          },
+          {
+            type: "booking fee",
+            value: bookingFeeAmount,
+          },
+        ],
         // Ensure metadata is an object (not null) for Xendit API
         ...(metadata && typeof metadata === "object" && { metadata }),
         ...rest,

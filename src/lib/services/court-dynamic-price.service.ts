@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 import { ServiceContext, requirePermission } from "@/types/service-context";
 import {
   CourtDynamicPriceCreateData,
@@ -34,9 +34,10 @@ const ensureCourtAccess = async (courtId: string, context: ServiceContext) => {
   }
 
   if (
-    (context.userRole === Role.ADMIN || context.userRole === Role.FINANCE) &&
+    context.userRole === UserType.STAFF &&
     context.assignedVenueId &&
-    court.venueId !== context.assignedVenueId
+    // court.venueId !== context.assignedVenueId
+    !context.assignedVenueId.includes(court.venueId)
   ) {
     return {
       error: buildError("You are not authorized to access this court"),
@@ -69,7 +70,7 @@ const ensureDynamicPriceAccess = async (
   }
 
   if (
-    (context.userRole === Role.ADMIN || context.userRole === Role.FINANCE) &&
+    context.userRole === UserType.STAFF &&
     context.assignedVenueId &&
     dynamicPrice.court.venueId !== context.assignedVenueId
   ) {
@@ -98,46 +99,23 @@ const minutesToTimeString = (minutes: number) => {
     .padStart(2, "0")}`;
 };
 
-const splitIntoHourlyIntervals = (startHour: string, endHour: string) => {
-  const startMinutes = timeStringToMinutes(startHour);
-  const endMinutes = timeStringToMinutes(endHour);
-
-  if (endMinutes <= startMinutes) {
-    return [{ startHour, endHour }];
-  }
-
-  const intervals: Array<{ startHour: string; endHour: string }> = [];
-  let currentStart = startMinutes;
-
-  while (currentStart < endMinutes) {
-    const nextEnd = Math.min(currentStart + 60, endMinutes);
-
-    intervals.push({
-      startHour: minutesToTimeString(currentStart),
-      endHour: minutesToTimeString(nextEnd),
-    });
-
-    if (nextEnd === currentStart) {
-      break;
-    }
-
-    currentStart = nextEnd;
-  }
-
-  return intervals;
-};
-
 export const courtDynamicPriceService = {
   listByCourt: async (courtId: string, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.FINANCE);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const { error } = await ensureCourtAccess(courtId, context);
       if (error) return error;
 
       const dynamicPrices = await prisma.courtDynamicPrice.findMany({
-        where: { courtId },
+        where: {
+          courtId,
+          isArchived: false,
+        } as any,
+        include: {
+          court: true,
+        },
         orderBy: [{ dayOfWeek: "asc" }, { date: "asc" }, { startHour: "asc" }],
       });
 
@@ -150,7 +128,7 @@ export const courtDynamicPriceService = {
 
   getById: async (id: string, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.FINANCE);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const { dynamicPrice, error } = await ensureDynamicPriceAccess(
@@ -171,49 +149,30 @@ export const courtDynamicPriceService = {
     context: ServiceContext
   ) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const { error } = await ensureCourtAccess(data.courtId, context);
       if (error) return error;
 
-      const intervals = splitIntoHourlyIntervals(data.startHour, data.endHour);
       const baseData = {
         courtId: data.courtId,
         dayOfWeek: data.dayOfWeek ?? null,
         date: data.date ?? null,
         price: data.price,
         isActive: data.isActive ?? true,
+        isArchived: false,
       };
 
-      if (intervals.length === 1) {
-        const [singleInterval] = intervals;
-        const dynamicPrice = await prisma.courtDynamicPrice.create({
-          data: {
-            ...baseData,
-            startHour: singleInterval.startHour,
-            endHour: singleInterval.endHour,
-          },
-        });
+      const dynamicPrice = await prisma.courtDynamicPrice.create({
+        data: {
+          ...baseData,
+          startHour: data.startHour,
+          endHour: data.endHour,
+        },
+      });
 
-        return buildSuccess(dynamicPrice, "Dynamic price created successfully");
-      }
-
-      const dynamicPrices = await prisma.$transaction((tx) =>
-        Promise.all(
-          intervals.map(({ startHour, endHour }) =>
-            tx.courtDynamicPrice.create({
-              data: {
-                ...baseData,
-                startHour,
-                endHour,
-              },
-            })
-          )
-        )
-      );
-
-      return buildSuccess(dynamicPrices, "Dynamic prices created successfully");
+      return buildSuccess(dynamicPrice, "Dynamic price created successfully");
     } catch (err) {
       console.error("create dynamic price error:", err);
       return buildError("Failed to create dynamic price");
@@ -226,7 +185,7 @@ export const courtDynamicPriceService = {
     context: ServiceContext
   ) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const { dynamicPrice, error } = await ensureDynamicPriceAccess(
@@ -271,7 +230,7 @@ export const courtDynamicPriceService = {
 
   delete: async (id: string, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const { dynamicPrice, error } = await ensureDynamicPriceAccess(
@@ -280,8 +239,19 @@ export const courtDynamicPriceService = {
       );
       if (error) return error;
 
-      await prisma.courtDynamicPrice.delete({
+      const isArchived =
+        (dynamicPrice as typeof dynamicPrice & { isArchived?: boolean })
+          .isArchived ?? false;
+
+      if (isArchived) {
+        return buildSuccess(null, "Dynamic price already archived");
+      }
+
+      await prisma.courtDynamicPrice.update({
         where: { id: dynamicPrice.id },
+        data: {
+          isArchived: true,
+        } as any,
       });
 
       return buildSuccess(null, "Dynamic price deleted successfully");

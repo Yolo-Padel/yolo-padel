@@ -2,7 +2,8 @@
 
 import React from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { XIcon } from "lucide-react";
+import { XIcon, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 {
   /*Import Modal*/
 }
@@ -60,10 +61,14 @@ export function BookingModal({
         Booking Details
       </DialogTitle>
       <DialogContent showCloseButton={false} className="p-8">
-        <XIcon
-          className="absolute top-8 right-6 cursor-pointer bg-primary rounded-full p-1"
-          onClick={() => onOpenChange(false)}
-        />
+        <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-8 right-8 h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
+            onClick={() => onOpenChange(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
 
         {/*Booking Details Modal*/}
         {mode === "booking-details" && (

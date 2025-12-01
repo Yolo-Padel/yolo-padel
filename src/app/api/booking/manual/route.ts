@@ -37,9 +37,9 @@ export async function POST(request: NextRequest) {
 
     const { user } = tokenResult;
     const context = createServiceContext(
-      user.role,
+      user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
 
     const result = await manualBookingService.create(parsed.data, context);
@@ -75,4 +75,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

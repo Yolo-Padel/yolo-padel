@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
@@ -46,16 +47,10 @@ export type ManualBookingDefaults = {
   endTime?: string;
 };
 
-export type ManualBookingLocks = {
-  lockCourt?: boolean;
-  lockVenue?: boolean;
-};
-
 export type ManualBookingSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaults?: ManualBookingDefaults;
-  locks?: ManualBookingLocks;
   onSuccess?: () => void;
 };
 
@@ -66,6 +61,8 @@ function formatDateInput(value?: Date | string): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
+
+  console.log("FORMAT DATE INPUT", year, month, day);
   return `${year}-${month}-${day}`;
 }
 
@@ -73,7 +70,6 @@ export function ManualBookingSheet({
   open,
   onOpenChange,
   defaults,
-  locks,
   onSuccess,
 }: ManualBookingSheetProps) {
   const {
@@ -136,21 +132,29 @@ export function ManualBookingSheet({
     return `${String(hours).padStart(2, "0")}:${String(minutes || 0).padStart(2, "0")}`;
   };
 
-  // Set startTime when availableTimeSlotsData is ready and defaults are provided
+  // Set time slot when availableTimeSlotsData is ready and defaults are provided
   useEffect(() => {
     if (!open) return;
     const startTime = defaults?.startTime;
-    if (!startTime) return;
-    if (!availableTimeSlotsData?.startTimeOptions) return;
+    const endTime = defaults?.endTime;
+    if (!startTime || !endTime) return;
+    if (!availableTimeSlotsData?.availableSlotRanges) return;
 
     // Normalize time format to ensure it's in "HH:00" format
     const normalizedStartTime = normalizeTimeFormat(startTime);
+    const normalizedEndTime = normalizeTimeFormat(endTime);
 
-    // Only set if the value is valid in the options
-    if (availableTimeSlotsData.startTimeOptions.includes(normalizedStartTime)) {
+    // Convert to UI format to check if slot exists in availableSlotRanges
+    const startFormatted = normalizedStartTime.replace(":", ".");
+    const endFormatted = normalizedEndTime.replace(":", ".");
+    const slotValue = `${startFormatted}–${endFormatted}`;
+
+    // Check if this slot combination is valid in availableSlotRanges
+    if (availableTimeSlotsData.availableSlotRanges.includes(slotValue)) {
       // Use setTimeout to ensure this runs after reset() completes
       const timer = setTimeout(() => {
         setValue("startTime", normalizedStartTime, { shouldValidate: false });
+        setValue("endTime", normalizedEndTime, { shouldValidate: false });
       }, 0);
 
       return () => clearTimeout(timer);
@@ -158,70 +162,65 @@ export function ManualBookingSheet({
   }, [
     open,
     defaults?.startTime,
-    availableTimeSlotsData?.startTimeOptions,
-    setValue,
-  ]);
-
-  // Set endTime after startTime is set and endTimeOptionsMap is ready
-  useEffect(() => {
-    if (!open) return;
-    const endTime = defaults?.endTime;
-    if (!endTime) return;
-    if (!watchStartTime) return; // Wait for startTime to be set first
-    if (!availableTimeSlotsData?.endTimeOptionsMap) return;
-
-    // Normalize time format to ensure it's in "HH:00" format
-    const normalizedEndTime = normalizeTimeFormat(endTime);
-
-    // Get end options for the current startTime
-    const endOptions =
-      availableTimeSlotsData.endTimeOptionsMap?.[watchStartTime] || [];
-
-    if (endOptions.length > 0) {
-      const timer = setTimeout(() => {
-        if (endOptions.includes(normalizedEndTime)) {
-          setValue("endTime", normalizedEndTime, { shouldValidate: false });
-        } else {
-          // If default endTime is not valid, use first available option
-          setValue("endTime", endOptions[0], { shouldValidate: false });
-        }
-      }, 0);
-
-      return () => clearTimeout(timer);
-    }
-  }, [
-    open,
     defaults?.endTime,
-    watchStartTime,
-    availableTimeSlotsData?.endTimeOptionsMap,
+    availableTimeSlotsData?.availableSlotRanges,
     setValue,
   ]);
 
-  // Get start time options from available time slots
-  const startTimeOptions = useMemo(() => {
-    if (!availableTimeSlotsData?.startTimeOptions) return [];
-    return availableTimeSlotsData.startTimeOptions;
+  // Use availableSlotRanges directly from API (already in UI format)
+  // Format: ["06.00–07.00", "07.00–08.00", ...]
+  const timeSlotOptions = useMemo(() => {
+    if (!availableTimeSlotsData?.availableSlotRanges) {
+      return [];
+    }
+    return availableTimeSlotsData.availableSlotRanges;
   }, [availableTimeSlotsData]);
 
-  // Get end time options based on selected start time
-  const endTimeOptions = useMemo(() => {
-    if (!watchStartTime || !availableTimeSlotsData?.endTimeOptionsMap)
-      return [];
-    return availableTimeSlotsData.endTimeOptionsMap[watchStartTime] || [];
-  }, [availableTimeSlotsData, watchStartTime]);
+  // Get currently selected slots in UI format (array)
+  const selectedSlots = useMemo(() => {
+    if (!watchStartTime || !watchEndTime) return [];
 
-  useEffect(() => {
-    if (watchStartTime && !startTimeOptions.includes(watchStartTime)) {
+    // Convert startTime and endTime back to slot array
+    // This handles the case when defaults are provided
+    const slots: string[] = [];
+    const startHour = parseInt(watchStartTime.split(":")[0]);
+    const endHour = parseInt(watchEndTime.split(":")[0]);
+
+    for (let hour = startHour; hour < endHour; hour++) {
+      const startFormatted = `${String(hour).padStart(2, "0")}.00`;
+      const endFormatted = `${String(hour + 1).padStart(2, "0")}.00`;
+      slots.push(`${startFormatted}–${endFormatted}`);
+    }
+
+    return slots;
+  }, [watchStartTime, watchEndTime]);
+
+  // Handle slot selection from ToggleGroup (multiple selection)
+  const handleSlotChange = (val: string | string[]) => {
+    const values = val as string[];
+    if (!values || values.length === 0) {
       setValue("startTime", "");
       setValue("endTime", "");
+      return;
     }
-  }, [watchStartTime, startTimeOptions, setValue]);
 
-  useEffect(() => {
-    if (watchEndTime && !endTimeOptions.includes(watchEndTime)) {
-      setValue("endTime", "");
-    }
-  }, [watchEndTime, endTimeOptions, setValue]);
+    // Sort slots to ensure they're in order
+    const sortedSlots = [...values].sort();
+
+    // Extract first slot start and last slot end
+    const firstSlot = sortedSlots[0];
+    const lastSlot = sortedSlots[sortedSlots.length - 1];
+
+    const [firstStart] = firstSlot.split("–");
+    const [, lastEnd] = lastSlot.split("–");
+
+    // Convert "06.00" back to "06:00" format
+    const startTime = firstStart.replace(".", ":");
+    const endTime = lastEnd.replace(".", ":");
+
+    setValue("startTime", startTime);
+    setValue("endTime", endTime);
+  };
 
   const courts =
     (courtData?.data as Array<{ id: string; name: string }> | undefined) || [];
@@ -234,18 +233,6 @@ export function ManualBookingSheet({
   const handleCourtChange = (value: string) => {
     setValue("courtId", value);
   };
-
-  const handleStartTimeChange = (value: string) => {
-    setValue("startTime", value);
-    setValue("endTime", "");
-  };
-
-  const handleEndTimeChange = (value: string) => {
-    setValue("endTime", value);
-  };
-
-  const courtDisabled = Boolean(locks?.lockCourt);
-  const venueDisabled = Boolean(locks?.lockVenue);
 
   const onSubmit = (values: ManualBookingInput) => {
     manualBooking.mutate(values, {
@@ -270,9 +257,7 @@ export function ManualBookingSheet({
   const isLoadingInitialData =
     open &&
     Boolean(defaults?.startTime && defaults?.endTime) &&
-    (timeSlotsLoading ||
-      !availableTimeSlotsData?.startTimeOptions ||
-      !availableTimeSlotsData?.endTimeOptionsMap);
+    (timeSlotsLoading || !availableTimeSlotsData?.availableSlotRanges);
 
   return (
     <Sheet
@@ -323,12 +308,10 @@ export function ManualBookingSheet({
                 <Select
                   value={watchVenueId}
                   onValueChange={handleVenueChange}
-                  disabled={
-                    venueDisabled || venuesLoading || manualBooking.isPending
-                  }
+                  disabled={venuesLoading || manualBooking.isPending}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Pilih venue" />
+                    <SelectValue placeholder="Select venue" />
                   </SelectTrigger>
                   <SelectContent>
                     {venues.map((venue) => (
@@ -353,14 +336,11 @@ export function ManualBookingSheet({
                   value={watchCourtId}
                   onValueChange={handleCourtChange}
                   disabled={
-                    courtDisabled ||
-                    courtsLoading ||
-                    !watchVenueId ||
-                    manualBooking.isPending
+                    courtsLoading || !watchVenueId || manualBooking.isPending
                   }
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Pilih court" />
+                    <SelectValue placeholder="Select court" />
                   </SelectTrigger>
                   <SelectContent>
                     {courts.map((court) => (
@@ -391,7 +371,7 @@ export function ManualBookingSheet({
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {selectedDateObj
                         ? format(selectedDateObj, "PPP")
-                        : "Pilih tanggal"}
+                        : "Select date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -418,69 +398,40 @@ export function ManualBookingSheet({
                 )}
               </div>
 
-              <div className="flex w-full gap-4">
-                <div className="space-y-2 flex-1 w-full">
-                  <Label>
-                    Start Time <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={watchStartTime}
-                    onValueChange={handleStartTimeChange}
-                    disabled={manualBooking.isPending}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Pilih jam" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {startTimeOptions.length === 0 && (
-                        <div className="px-3 py-2 text-sm text-muted-foreground">
-                          Pilih court & tanggal untuk melihat jam tersedia
-                        </div>
-                      )}
-                      {startTimeOptions.map((time: string) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.startTime && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {errors.startTime.message}
-                    </p>
+              <div className="space-y-2">
+                <Label>
+                  Time Slot <span className="text-red-500">*</span>
+                </Label>
+                <ToggleGroup
+                  type="multiple"
+                  value={selectedSlots}
+                  onValueChange={handleSlotChange}
+                  disabled={manualBooking.isPending}
+                  className="grid grid-cols-2 gap-3"
+                >
+                  {timeSlotOptions.length === 0 ? (
+                    <div className="col-span-2 px-3 py-2 text-sm text-muted-foreground text-center">
+                      {!watchCourtId || !watchDate
+                        ? "Select court & date to see available time slots"
+                        : "No slots available for this date"}
+                    </div>
+                  ) : (
+                    timeSlotOptions.map((slot: string) => (
+                      <ToggleGroupItem
+                        key={slot}
+                        value={slot}
+                        className="justify-center border rounded-md data-[state=on]:bg-primary data-[state=on]:text-black"
+                      >
+                        {slot}
+                      </ToggleGroupItem>
+                    ))
                   )}
-                </div>
-                <div className="space-y-2 flex-1 w-full">
-                  <Label>
-                    End Time <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={watchEndTime}
-                    onValueChange={handleEndTimeChange}
-                    disabled={!watchStartTime || manualBooking.isPending}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Pilih jam" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {endTimeOptions.length === 0 && (
-                        <div className="px-3 py-2 text-sm text-muted-foreground">
-                          Pilih jam mulai terlebih dahulu
-                        </div>
-                      )}
-                      {endTimeOptions.map((time: string) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.endTime && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {errors.endTime.message}
-                    </p>
-                  )}
-                </div>
+                </ToggleGroup>
+                {(errors.startTime || errors.endTime) && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {errors.startTime?.message || errors.endTime?.message}
+                  </p>
+                )}
               </div>
             </div>
 

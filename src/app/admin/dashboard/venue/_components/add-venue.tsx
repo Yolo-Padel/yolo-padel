@@ -189,8 +189,8 @@ export function VenueFormSheet({
               <Input placeholder="e.g. Jakarta" {...register("city")} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
+            <div className="flex flex-row justify-between gap-4">
+              <div className="flex-1 w-full space-y-2">
                 <Label>
                   Opening Hour <span className="text-red-500">*</span>
                 </Label>
@@ -198,7 +198,7 @@ export function VenueFormSheet({
                   value={watch("openHour")}
                   onValueChange={(value) => setValue("openHour", value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select opening hour" />
                   </SelectTrigger>
                   <SelectContent>
@@ -214,7 +214,7 @@ export function VenueFormSheet({
                 </Select>
               </div>
 
-              <div className="grid gap-2">
+              <div className="flex-1 w-full space-y-2">
                 <Label>
                   Closing Hour <span className="text-red-500">*</span>
                 </Label>
@@ -222,7 +222,7 @@ export function VenueFormSheet({
                   value={watch("closeHour")}
                   onValueChange={(value) => setValue("closeHour", value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select closing hour" />
                   </SelectTrigger>
                   <SelectContent>

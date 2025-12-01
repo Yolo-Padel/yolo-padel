@@ -21,7 +21,11 @@ export async function GET(
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
+    const serviceContext = createServiceContext(
+      user.userType,
+      user.userId,
+      user.assignedVenueIds
+    );
     const result = await courtService.getById(id, serviceContext);
 
     if (!result.success) {
@@ -34,7 +38,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: result.data,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("GET /api/court/[id] error:", error);
@@ -62,18 +66,22 @@ export async function PUT(
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
-    
+    const serviceContext = createServiceContext(
+      user.userType,
+      user.userId,
+      user.assignedVenueIds
+    );
+
     // Validate request body
     console.log("Raw body received:", body);
     console.log("Body price:", body.price);
     console.log("Body price type:", typeof body.price);
-    
+
     const validatedData = courtCreateSchema.parse(body);
     console.log("validatedData", validatedData);
     console.log("Validated price:", validatedData.price);
     console.log("Validated price type:", typeof validatedData.price);
-    
+
     const result = await courtService.update(id, validatedData, serviceContext);
 
     if (!result.success) {
@@ -86,12 +94,12 @@ export async function PUT(
     return NextResponse.json({
       success: true,
       data: result.data,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("PUT /api/court/[id] error:", error);
-    
-    if (error instanceof Error && error.name === 'ZodError') {
+
+    if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
         { success: false, message: "Validation error", errors: error.message },
         { status: 400 }
@@ -121,7 +129,11 @@ export async function DELETE(
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
+    const serviceContext = createServiceContext(
+      user.userType,
+      user.userId,
+      user.assignedVenueIds
+    );
 
     const result = await courtService.delete(id, serviceContext);
 
@@ -135,7 +147,7 @@ export async function DELETE(
     return NextResponse.json({
       success: true,
       data: result.data,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("DELETE /api/court/[id] error:", error);

@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { UseFormReturn } from "react-hook-form";
 import Image from "next/image";
 import { formatTimeSlots } from "@/lib/time-slots-formatter";
 import { stringUtils } from "@/lib/format/string";
@@ -13,10 +14,11 @@ import { useAuth, useCreateGuestUser } from "@/hooks/use-auth";
 import { useCreateOrder } from "@/hooks/use-order";
 import { transformUISlotsToOrderFormat } from "@/lib/booking-slots-utils";
 import { toast } from "sonner";
+import { BookingFormValues } from "@/types/booking";
 
 const DEFAULT_PAYMENT_CHANNEL = "XENDIT_INVOICE";
 
-export type CartItem = {
+export type BookingItem = {
   courtId: string;
   courtName: string;
   courtImage: string | null;
@@ -28,20 +30,24 @@ export type CartItem = {
 };
 
 type OrderSummaryContainerProps = {
-  cartItems: CartItem[];
+  form: UseFormReturn<BookingFormValues>;
+  taxPercentage: number;
+  bookingFeePercentage: number;
   onBack: () => void;
-  guestEmail?: string;
-  guestFullName?: string;
-  onClearCart?: () => void;
+  onClearBookings?: () => void;
 };
 
 export function OrderSummaryContainer({
-  cartItems,
+  form,
+  taxPercentage,
+  bookingFeePercentage,
   onBack,
-  guestEmail = "",
-  guestFullName = "",
-  onClearCart,
+  onClearBookings,
 }: OrderSummaryContainerProps) {
+  // Get all values from RHF form
+  const bookingItems = form.watch("bookings");
+  const guestEmail = form.watch("guestEmail") || "";
+  const guestFullName = form.watch("guestFullName") || "";
   const [isProcessing, setIsProcessing] = useState(false);
 
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -49,15 +55,17 @@ export function OrderSummaryContainer({
   const { mutate: createOrder } = useCreateOrder();
 
   // Calculate totals
-  const courtFeesTotal = cartItems.reduce(
+  const courtFeesTotal = bookingItems.reduce(
     (sum, item) => sum + item.totalPrice,
     0
   );
-  const tax = "TBC"; // Per requirement
-  const bookingFee = "TBC"; // Per requirement
-  const grandTotal = courtFeesTotal; // For now, only court fees
+  const taxAmount = taxPercentage * courtFeesTotal; // Per requirement
+  const bookingFeeAmount = bookingFeePercentage * courtFeesTotal; // Per requirement
+  const grandTotal = courtFeesTotal + taxAmount + bookingFeeAmount; // For now, only court fees
 
   const handleSubmit = () => {
+    setIsProcessing(true);
+    console.log("isProcessing", isProcessing);
     // If guest, create user first, then create order
     if (!isAuthenticated) {
       // Validate guest info
@@ -65,8 +73,6 @@ export function OrderSummaryContainer({
         toast.error("Email dan nama lengkap wajib diisi");
         return;
       }
-
-      setIsProcessing(true);
 
       // Step 1: Create guest user
       createGuestUser(
@@ -85,9 +91,9 @@ export function OrderSummaryContainer({
           onError: (error: Error) => {
             setIsProcessing(false);
             toast.error(error.message || "Gagal membuat akun guest");
-            // Rollback: clear cart on error
-            if (onClearCart) {
-              onClearCart();
+            // Rollback: clear bookings on error
+            if (onClearBookings) {
+              onClearBookings();
             }
           },
         }
@@ -98,11 +104,18 @@ export function OrderSummaryContainer({
     }
   };
 
+  const formatDateToString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const createOrderInternal = async () => {
-    // Transform cart items to order format
-    const bookings = cartItems.map((item) => ({
+    // Transform booking items to order format
+    const bookings = bookingItems.map((item) => ({
       courtId: item.courtId,
-      date: item.date,
+      date: formatDateToString(item.date), // Format as YYYY-MM-DD string
       slots: transformUISlotsToOrderFormat(item.slots),
       price: item.pricePerSlot,
     }));
@@ -146,15 +159,14 @@ export function OrderSummaryContainer({
             const invoiceUrl =
               xenditData?.data?.xenditInvoice?.invoiceUrl || null;
 
-            setIsProcessing(false);
-            if (onClearCart) {
-              onClearCart();
-            }
-
             if (invoiceUrl) {
               window.location.href = invoiceUrl;
             } else {
               toast.info("Invoice URL tidak tersedia.");
+            }
+
+            if (onClearBookings) {
+              onClearBookings();
             }
           } catch (error) {
             console.error("Xendit payment creation error:", error);
@@ -164,18 +176,18 @@ export function OrderSummaryContainer({
                 ? error.message
                 : "Gagal membuat payment Xendit"
             );
-            // Rollback: clear cart on error
-            if (onClearCart) {
-              onClearCart();
+            // Rollback: clear bookings on error
+            if (onClearBookings) {
+              onClearBookings();
             }
           }
         },
         onError: (error) => {
           setIsProcessing(false);
           toast.error(error.message || "Gagal membuat order");
-          // Rollback: clear cart on error
-          if (onClearCart) {
-            onClearCart();
+          // Rollback: clear bookings on error
+          if (onClearBookings) {
+            onClearBookings();
           }
         },
       }
@@ -197,9 +209,9 @@ export function OrderSummaryContainer({
         <h2 className="text-2xl font-semibold">Order Summary</h2>
       </div>
 
-      {/* Cart Items */}
+      {/* Booking Items */}
       <div className="space-y-3">
-        {cartItems.map((item, index) => {
+        {bookingItems.map((item, index) => {
           const formattedDate = format(item.date, "d MMM yyyy", {
             locale: idLocale,
           });
@@ -270,12 +282,18 @@ export function OrderSummaryContainer({
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Tax (10%)</span>
-            <span className="font-medium">{tax}</span>
+            <span className="text-muted-foreground">
+              Tax ({taxPercentage * 100}%)
+            </span>
+            <span className="font-medium">
+              {stringUtils.formatRupiah(taxAmount)}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Booking Fee</span>
-            <span className="font-medium">{bookingFee}</span>
+            <span className="font-medium">
+              {stringUtils.formatRupiah(bookingFeeAmount)}
+            </span>
           </div>
         </div>
         <Separator />
@@ -294,7 +312,13 @@ export function OrderSummaryContainer({
         onClick={handleSubmit}
         disabled={isProcessing}
       >
-        {isProcessing ? "Processing..." : "Book Now"}
+        {isProcessing ? (
+          <>
+            Processing... <Loader2 className="h-4 w-4 animate-spin" />
+          </>
+        ) : (
+          "Book Now"
+        )}
       </Button>
     </div>
   );

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
-import { Role } from "./types/prisma";
+import { UserType } from "./types/prisma";
 
 const JWT_SECRET =
   process.env.JWT_SECRET ||
@@ -11,7 +11,6 @@ const PROTECTED_ROUTES = ["/admin", "/dashboard"];
 const PUBLIC_ROUTES = ["/auth"];
 
 export async function middleware(request: NextRequest) {
-  console.log("execute middleware");
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("auth-token")?.value;
 
@@ -29,9 +28,9 @@ export async function middleware(request: NextRequest) {
         try {
           const secret = new TextEncoder().encode(JWT_SECRET);
           const { payload } = await jwtVerify(token, secret);
-          const role = (payload as any).role as string | undefined;
+          const userType = (payload as any).userType as string | undefined;
           const redirectTo =
-            role === "USER" ? "/dashboard/booking" : "/admin/dashboard";
+            userType === "USER" ? "/dashboard/booking" : "/admin/dashboard";
           const url = new URL(redirectTo, request.url);
           return NextResponse.redirect(url);
         } catch (error) {
@@ -55,21 +54,21 @@ export async function middleware(request: NextRequest) {
       // Verify token with jose (Edge compatible)
       const secret = new TextEncoder().encode(JWT_SECRET);
       const { payload } = await jwtVerify(token, secret);
-      console.log("payload", payload);
-      const role = (payload as any).role as string | undefined;
 
-      // Role-based access control
+      const userType = (payload as any).userType as string | undefined;
+
+      // UserType-based access control
       const isAdminRoute = pathname.startsWith("/admin");
       const isUserRoute = pathname.startsWith("/dashboard");
 
-      // Redirect admin if trying to access user dashboard
-      if (role !== Role.USER && isUserRoute) {
+      // Redirect staff if trying to access user dashboard
+      if (userType !== UserType.USER && isUserRoute) {
         const adminUrl = new URL("/admin/dashboard", request.url);
         return NextResponse.redirect(adminUrl);
       }
 
       // Redirect user if trying to access admin dashboard
-      if (role === Role.USER && isAdminRoute) {
+      if (userType === UserType.USER && isAdminRoute) {
         const userUrl = new URL("/dashboard/booking", request.url);
         return NextResponse.redirect(userUrl);
       }

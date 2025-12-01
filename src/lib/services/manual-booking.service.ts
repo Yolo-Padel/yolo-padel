@@ -5,7 +5,7 @@ import { createBlocking } from "@/lib/services/blocking.service";
 import { resendService } from "@/lib/services/resend.service";
 import { calculateSlotsPrice } from "@/lib/booking-pricing-utils";
 import { ServiceContext, requirePermission } from "@/types/service-context";
-import { BookingStatus, Role, UserStatus } from "@/types/prisma";
+import { BookingStatus, UserType, UserStatus } from "@/types/prisma";
 import { customAlphabet } from "nanoid";
 
 type TimeSlot = { openHour: string; closeHour: string };
@@ -15,12 +15,18 @@ const bookingCodeGenerator = customAlphabet(
   5
 );
 
-function parseBookingDate(dateString: string): Date {
+function parseBookingDate(dateString: string | Date): Date {
+  // If already Date object, use it directly
+  if (dateString instanceof Date) {
+    return dateString;
+  }
+
   if (dateString.includes("T")) {
     return new Date(dateString);
   }
+  // Parse as local date (not UTC) to preserve exact date selected by user
   const [year, month, day] = dateString.split("-").map(Number);
-  return new Date(Date.UTC(year, (month || 1) - 1, day || 1, 0, 0, 0, 0));
+  return new Date(year, (month || 1) - 1, day || 1, 7, 0, 0, 0);
 }
 
 function timeToMinutes(time: string): number {
@@ -86,7 +92,7 @@ function getLoginUrl(): string {
 export const manualBookingService = {
   create: async (data: ManualBookingInput, context: ServiceContext) => {
     try {
-      const accessError = requirePermission(context, Role.ADMIN);
+      const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
       const slots = buildTimeSlots(data.startTime, data.endTime);
@@ -102,7 +108,14 @@ export const manualBookingService = {
         where: { id: data.courtId },
         include: {
           venue: true,
-          dynamicPrices: true,
+          dynamicPrices: {
+            where: {
+              isArchived: false,
+            },
+            include: {
+              court: true,
+            },
+          },
         },
       });
 
@@ -172,7 +185,7 @@ export const manualBookingService = {
             data: {
               email: data.email,
               password: "",
-              role: Role.USER,
+              userType: UserType.USER,
               userStatus: UserStatus.ACTIVE,
               assignedVenueIds: [],
             },

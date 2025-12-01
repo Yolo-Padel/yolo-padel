@@ -15,13 +15,12 @@ import { useUpdateProfile } from "@/hooks/use-profile";
 import { profileUpdateSchema } from "@/lib/validations/profile.validation";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
-import { Role, Profile } from "@/types/prisma";
+import { UserType, Profile } from "@/types/prisma";
 import { NextBookingInfo } from "@/types/profile";
-import { transformDbFormatToUISlots } from "@/lib/booking-slots-utils";
-import { stringUtils } from "@/lib/format/string";
 import { AvatarUploader } from "@/app/_components/avatar-uploader";
+import { Separator } from "@/components/ui/separator";
 
-type ProfileStatus = "active" | "membership" | "non-membership";
+type ProfileStatus = "active" | "member" | "non-member";
 type ExtendedProfile = Profile & { phoneNumber?: string | null };
 
 interface ProfileModalProps {
@@ -41,7 +40,8 @@ interface ProfileModalProps {
  * Menampilkan informasi profil pengguna serta form untuk memperbarui data.
  */
 export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
-  const { user, profile, nextBooking, isLoading } = useAuth();
+  const { user, profile, nextBooking, isLoading, membership, venues, roles } =
+    useAuth();
   const updateProfileMutation = useUpdateProfile();
 
   const formSchema = profileUpdateSchema;
@@ -52,7 +52,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
     return {
       fullName: extendedProfile?.fullName ?? "",
       phoneNumber: extendedProfile?.phoneNumber ?? "",
-      avatar: extendedProfile?.avatar ?? "",
+      avatar: extendedProfile?.avatar ?? undefined,
     };
   }, [profile]);
 
@@ -66,11 +66,16 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
     form.reset(defaultValues);
   }, [defaultValues, form]);
 
-  const derivedRole = user?.role && user.role !== Role.USER ? "staff" : "user";
+  const derivedUserType =
+    user?.userType && user.userType !== UserType.USER ? "staff" : "user";
   const profileStatus: ProfileStatus =
-    derivedRole === "staff" ? "active" : "non-membership";
+    derivedUserType === "staff"
+      ? "active"
+      : membership
+        ? "member"
+        : "non-member";
   const description =
-    derivedRole === "staff"
+    derivedUserType === "staff"
       ? "Manage your personal information."
       : "View all information related to your booking.";
 
@@ -81,28 +86,37 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
   const email = user?.email ?? "user@example.com";
   const assignedVenuesLabel =
     user && Array.isArray(user.assignedVenueIds) && user.assignedVenueIds.length
-      ? user.assignedVenueIds.join(", ")
+      ? venues?.map((venue) => venue.name).join(", ")
       : "-";
   const joinedDateLabel = formatDateLabel(user?.joinDate || null);
   const nextBookingLabel = formatNextBookingLabel(nextBooking);
 
   const infoItems =
-    derivedRole === "staff"
+    derivedUserType === "staff"
       ? [
           {
             label: "Role",
-            value: stringUtils.getRoleDisplay(user?.role ?? "-"),
+            value: roles?.name ?? "Staff",
           },
           { label: "Assign Venue", value: assignedVenuesLabel },
           { label: "Joined", value: joinedDateLabel },
         ]
-      : [
-          { label: "Next Booking", value: nextBookingLabel },
-          { label: "Joined", value: joinedDateLabel },
-        ];
+      : membership
+        ? [
+            { label: "Membership", value: membership.name },
+            { label: "Next Booking", value: nextBookingLabel },
+            { label: "Joined", value: joinedDateLabel },
+          ]
+        : [
+            { label: "Next Booking", value: nextBookingLabel },
+            { label: "Joined", value: joinedDateLabel },
+          ];
 
   const handleAvatarChange = (url: string) => {
-    form.setValue("avatar", url, { shouldDirty: true });
+    form.setValue("avatar", url || undefined, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
 
   const onSubmit = (data: FormData) => {
@@ -204,18 +218,26 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
               </div>
 
               {/* Info Section */}
-              <div className="flex flex-wrap items-start gap-4 w-full">
-                {infoItems.map((item) => (
-                  <div
-                    key={item.label}
-                    className="flex flex-col gap-2 min-w-[140px] border-r border-dashed border-[#d1d1d1] pr-4 last:border-0"
-                  >
-                    <p className="text-[14px] font-normal text-[#7b7b7b]">
-                      {item.label}
-                    </p>
-                    <p className="text-[14px] font-medium text-[#262626]">
-                      {item.value}
-                    </p>
+              <div className="flex items-start gap-4 w-full">
+                {infoItems.map((item, index) => (
+                  <div key={item.label} className="flex flex-row gap-3 h-full">
+                    <div key={item.label} className="flex flex-col gap-1">
+                      <p
+                        className="text-[14px] font-normal text-[#7b7b7b] truncate"
+                        title={item.label}
+                      >
+                        {item.label}
+                      </p>
+                      <p
+                        className="text-[14px] font-medium text-[#262626] overflow-wrap"
+                        title={item.value}
+                      >
+                        {item.value}
+                      </p>
+                    </div>
+                    {index < infoItems.length - 1 && (
+                      <Separator orientation="vertical" className="!h-auto" />
+                    )}
                   </div>
                 ))}
               </div>
@@ -223,10 +245,10 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
               {/* Form */}
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="flex flex-col gap-3 w-full"
+                className="flex flex-col w-full"
               >
-                <FieldGroup>
-                  <Field>
+                <FieldGroup className="gap-2">
+                  <Field className="gap-1">
                     <FieldLabel htmlFor="fullName">Full Name</FieldLabel>
                     <Input
                       id="fullName"
@@ -241,7 +263,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
                     )}
                   </Field>
 
-                  <Field>
+                  <Field className="gap-1">
                     <FieldLabel htmlFor="email">Email</FieldLabel>
                     <Input
                       id="email"
@@ -252,7 +274,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
                     />
                   </Field>
 
-                  <Field>
+                  <Field className="gap-1">
                     <FieldLabel htmlFor="phoneNumber">Phone number</FieldLabel>
                     <Input
                       id="phoneNumber"
@@ -313,15 +335,15 @@ function getBadgeConfig(status: ProfileStatus) {
         label: "Active",
         className: "bg-[#d0fbe9] text-[#1a7544] border-transparent",
       };
-    case "membership":
+    case "member":
       return {
-        label: "Membership",
+        label: "Member",
         className: "bg-[#d5f1ff] text-[#1f7ead] border-transparent",
       };
-    case "non-membership":
+    case "non-member":
     default:
       return {
-        label: "Non-membership",
+        label: "Non-member",
         className: "bg-[#f2f5f8] text-[#222530] border-transparent",
       };
   }
@@ -356,10 +378,7 @@ function formatNextBookingLabel(info?: NextBookingInfo | null) {
         month: "short",
       }).format(date);
 
-  const slots =
-    info.timeSlots && info.timeSlots.length
-      ? transformDbFormatToUISlots(info.timeSlots).join(", ")
-      : "";
+  const slots = info.timeSlots[0].openHour;
 
   const locationLabel = [info.courtName, info.venueName]
     .filter(Boolean)

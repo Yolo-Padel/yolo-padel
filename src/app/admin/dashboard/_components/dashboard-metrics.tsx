@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 import { MetricCard } from "./metric-card";
 import {
   DollarSign,
@@ -22,7 +22,7 @@ import type {
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardMetricsProps {
-  role: Role;
+  userType: UserType;
 }
 
 type MetricItem = {
@@ -117,9 +117,9 @@ function buildAdminMetrics(snapshot?: AdminDashboardSnapshot): MetricItem[] {
         ? `${formatCount(
             metrics.totalBookings.completed
           )} Completed • ${formatCount(
-            metrics.totalBookings.ongoing
-          )} Ongoing • ${formatCount(metrics.totalBookings.upcoming)} Upcoming`
-        : "Completed • Ongoing • Upcoming",
+            metrics.totalBookings.pending
+          )} Pending • ${formatCount(metrics.totalBookings.upcoming)} Upcoming`
+        : "Completed • Pending • Upcoming",
       value: `${formatCount(metrics?.totalBookings.total ?? 0)} Bookings`,
       icon: CalendarDays,
       iconBg: CARD_ICON_BG,
@@ -166,37 +166,37 @@ function MetricSkeletonRow() {
   );
 }
 
-export function DashboardMetrics({ role }: DashboardMetricsProps) {
-  const isSuperAdmin = role === "SUPER_ADMIN";
+export function DashboardMetrics({ userType }: DashboardMetricsProps) {
+  const isStaff = userType === "STAFF";
 
   const {
     data: superAdminData,
     isLoading: isSuperAdminLoading,
     error: superAdminError,
-  } = useSuperAdminBookingDashboard({ enabled: isSuperAdmin });
+  } = useSuperAdminBookingDashboard({ enabled: isStaff });
 
   const {
     data: adminData,
     isLoading: isAdminLoading,
     error: adminError,
-  } = useAdminBookingDashboard({ enabled: !isSuperAdmin });
+  } = useAdminBookingDashboard({ enabled: !isStaff });
 
   const snapshot:
     | SuperAdminDashboardSnapshot
     | AdminDashboardSnapshot
     | undefined =
-    (isSuperAdmin ? superAdminData?.data : adminData?.data) ?? undefined;
+    (isStaff ? superAdminData?.data : adminData?.data) ?? undefined;
 
   const metrics = useMemo(() => {
-    return isSuperAdmin
+    return isStaff
       ? buildSuperAdminMetrics(
           snapshot as SuperAdminDashboardSnapshot | undefined
         )
       : buildAdminMetrics(snapshot as AdminDashboardSnapshot | undefined);
-  }, [snapshot, isSuperAdmin]);
+  }, [snapshot, isStaff]);
 
-  const isLoading = isSuperAdmin ? isSuperAdminLoading : isAdminLoading;
-  const error = (isSuperAdmin ? superAdminError : adminError) as Error | null;
+  const isLoading = isStaff ? isSuperAdminLoading : isAdminLoading;
+  const error = (isStaff ? superAdminError : adminError) as Error | null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -204,7 +204,7 @@ export function DashboardMetrics({ role }: DashboardMetricsProps) {
         {isLoading && !snapshot ? (
           <MetricSkeletonRow />
         ) : (
-          <div className="flex gap-2 items-start w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 items-start w-full">
             {metrics.map((metric, index) => (
               <MetricCard key={index} {...metric} />
             ))}

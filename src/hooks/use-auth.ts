@@ -6,7 +6,7 @@ import {
   LoginFormInput,
 } from "@/lib/validations/auth.validation";
 
-import { User, Profile } from "@/types/prisma";
+import { User, Profile, Membership, Venue, Roles } from "@/types/prisma";
 import { NextBookingInfo } from "@/types/profile";
 
 // Types for API responses
@@ -16,6 +16,9 @@ interface AuthResponse {
     user: User;
     profile: Profile | null;
     nextBooking?: NextBookingInfo | null;
+    membership?: Membership | null;
+    venues?: Venue[] | null;
+    roles?: Roles | null;
   } | null;
   message: string;
   errors?: any[];
@@ -186,6 +189,9 @@ export const useAuth = () => {
     user: data?.data?.user || null,
     profile: data?.data?.profile || null,
     nextBooking: data?.data?.nextBooking || null,
+    membership: data?.data?.membership || null,
+    venues: data?.data?.venues || null,
+    roles: data?.data?.roles || null,
     isLoading,
     isAuthenticated: !!data?.success && !!data?.data?.user,
     error,

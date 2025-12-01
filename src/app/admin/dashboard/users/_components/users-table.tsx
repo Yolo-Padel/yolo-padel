@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,95 +13,76 @@ import {
 } from "@/components/ui/table";
 import {
   Pencil,
-  Plus,
   ChevronLeft,
   ChevronRight,
   MoreHorizontal,
   Trash,
+  Eye,
 } from "lucide-react";
-import { UsersEditSheet } from "@/app/admin/dashboard/users/_components/users-edit-sheet";
-import { UsersTableLoading } from "@/app/admin/dashboard/users/_components/users-table-loading";
-import { UserModal } from "@/app/admin/dashboard/users/_components/user-modal";
-import { DeleteUserModal } from "@/app/admin/dashboard/users/_components/delete-user-modal";
-import { useUsers } from "@/hooks/use-users";
-import { User, Profile, Role, UserStatus } from "@/types/prisma";
 import {
-  generatePageNumbers,
-  calculatePaginationInfo,
-  getPaginatedData,
-} from "@/lib/pagination-utils";
+  User,
+  Profile,
+  UserType,
+  UserStatus,
+  Membership,
+  Roles,
+} from "@/types/prisma";
+import { generatePageNumbers } from "@/lib/pagination-utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ResendInviteButton } from "@/app/admin/dashboard/users/_components/resend-invite-button";
-import { stringUtils } from "@/lib/format/string";
+import { cn } from "@/lib/utils";
 
-const PAGE_SIZE = 10;
+export interface PaginationInfo {
+  pageSafe: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+  total: number;
+}
 
-export function UsersTable() {
-  const [page, setPage] = useState(1);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [selected, setSelected] = useState<
-    (User & { profile?: Profile | null }) | null
-  >(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"add" | "edit">("add");
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<
-    (User & { profile?: Profile | null }) | null
-  >(null);
+export interface UsersTableProps {
+  users: (User & {
+    profile?: Profile | null;
+    membership?: Membership | null;
+    roles?: Roles | null;
+    invitation?: {
+      state: "valid" | "expired" | "used" | "none";
+      expiresAt?: string;
+    };
+  })[];
+  paginationInfo: PaginationInfo;
+  onPageChange: (page: number) => void;
+  onEditUser: (user: User & { profile?: Profile | null }) => void;
+  onDeleteUser: (user: User & { profile?: Profile | null }) => void;
+  canDeleteUser: boolean;
+  canEditUser: boolean;
+  isPermissionLoading: boolean;
+}
 
+export function UsersTable({
+  users,
+  paginationInfo,
+  onPageChange,
+  onEditUser,
+  onDeleteUser,
+  canDeleteUser,
+  canEditUser,
+  isPermissionLoading,
+}: UsersTableProps) {
   // Define table columns for colSpan
   const columns = [
-    "Name",
-    "Email",
-    "Role",
+    "Profile",
     "Status",
-    "Email Verified",
-    "Created",
+    "Assigned Role",
+    "Membership",
+    "Join Date",
     "Actions",
   ];
 
-  // Fetch users data
-  const { data, isLoading, error } = useUsers();
-
-  const allUsers = data?.data?.users || [];
-
-  // Frontend filtering and pagination
-  const filtered = useMemo(() => {
-    return allUsers;
-  }, [allUsers]);
-
-  const paginationInfo = useMemo(
-    () => calculatePaginationInfo(page, filtered.length, PAGE_SIZE),
-    [page, filtered.length]
-  );
-
-  const paginated = useMemo(
-    () => getPaginatedData(filtered, page, PAGE_SIZE),
-    [filtered, page]
-  );
-
-  async function handleSubmit() {
-    // Dummy submit: console log value
-    console.log("");
-  }
-
-  // Show loading state
-  if (isLoading) {
-    return <UsersTableLoading />;
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <div className="flex flex-col gap-4">
-        <div className="text-center py-8">
-          <p className="text-destructive">
-            Failed to load users: {error.message}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const paginationButtonBaseClass =
+    "w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]";
+  const paginationButtonActiveClass =
+    "bg-primary border-primary hover:bg-primary text-black";
 
   const getStatusBadge = (status: UserStatus) => {
     switch (status) {
@@ -164,64 +144,58 @@ export function UsersTable() {
     );
   };
 
-  const getRole = (role: Role) => stringUtils.getRoleDisplay(role);
+  const getAssignedRole = (user: User & { roles?: Roles | null }) => {
+    // Jika USER biasa, tidak ada assigned role
+    if (user.userType === UserType.USER) return "-";
+
+    // Jika ADMIN atau STAFF, tampilkan role name dari relasi roles
+    return user.roles?.name || "-";
+  };
 
   return (
-    <div className="flex flex-col space-y-6">
-      <div className="flex items-center gap-2 justify-between">
-        <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-semibold">User List</h2>
-          <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
-            {allUsers.length} users
-          </Badge>
-        </div>
-        <Button
-          onClick={() => {
-            setModalMode("add");
-            setModalOpen(true);
-          }}
-          className="text-black"
-        >
-          Add User
-          <Plus className="ml-0 size-4" />
-        </Button>
-      </div>
+    <>
       <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="h-11">Name</TableHead>
+              <TableHead className="h-11">Profile</TableHead>
               <TableHead className="h-11">Status</TableHead>
-              <TableHead className="h-11">Role</TableHead>
-              <TableHead className="h-11">Email address</TableHead>
+              <TableHead className="h-11">Assigned Role</TableHead>
+              <TableHead className="h-11">Membership</TableHead>
               <TableHead className="h-11">Join Date</TableHead>
               <TableHead className="h-11 text-right"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginated.map((u: User & { profile?: Profile | null }) => {
+            {users.map((u) => {
               return (
                 <TableRow key={u.id}>
-                  <TableCell className="flex items-center gap-2">
+                  <TableCell className="flex items-center gap-3">
                     <Avatar>
                       <AvatarImage src={u.profile?.avatar || ""} />
                       <AvatarFallback className="uppercase">
                         {u.profile?.fullName?.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    {u.profile?.fullName || "-"}
+                    <div className="flex flex-col">
+                      <span className="font-medium">{u.profile?.fullName}</span>
+                      <span className="text-muted-foreground">{u.email}</span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {renderStatusBadge(u as any)}
-                      <ResendInviteButton userId={u.id} status={u.userStatus} />
+                      {renderStatusBadge(u)}
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {getRole(u.role)}
+                    {getAssignedRole(u)}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {u.email}
+                    {u.userType !== UserType.USER
+                      ? "Staff"
+                      : u.membership
+                        ? `${u.membership.name} Member`
+                        : "Non-member"}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {u.joinDate
@@ -229,30 +203,30 @@ export function UsersTable() {
                       : "-"}
                   </TableCell>
                   <TableCell className="text-right">
-                    {/* Resend dipindah ke kolom Status */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setUserToDelete(u);
-                        setDeleteModalOpen(true);
-                      }}
-                      className="border-none shadow-none"
-                    >
-                      <Trash className="size-4 text-[#A4A7AE]" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelected(u);
-                        setModalMode("edit");
-                        setModalOpen(true);
-                      }}
-                      className="border-none shadow-none"
-                    >
-                      <Pencil className="size-4 text-[#A4A7AE]" />
-                    </Button>
+                    {canDeleteUser && !isPermissionLoading && (
+                      <Button
+                        variant="outline"
+                        onClick={() => onDeleteUser(u)}
+                        className="border-none shadow-none"
+                      >
+                        <Trash className="size-4 text-[#A4A7AE]" />
+                      </Button>
+                    )}
+                    {u.userStatus === UserStatus.INVITED ? (
+                      <ResendInviteButton userId={u.id} />
+                    ) : (
+                      <Button
+                        variant="outline"
+                        onClick={() => onEditUser(u)}
+                        className="border-none shadow-none"
+                      >
+                        {canEditUser ? (
+                          <Pencil className="size-4 text-[#A4A7AE]" />
+                        ) : (
+                          <Eye className="size-4 text-[#A4A7AE]" />
+                        )}
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               );
@@ -266,7 +240,7 @@ export function UsersTable() {
                     variant="outline"
                     size="sm"
                     disabled={!paginationInfo.hasPreviousPage}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    onClick={() => onPageChange(paginationInfo.pageSafe - 1)}
                     className="flex items-center gap-2"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -285,14 +259,14 @@ export function UsersTable() {
                           </div>
                         ) : (
                           <Button
-                            variant={
-                              pageNum === paginationInfo.pageSafe
-                                ? "default"
-                                : "outline"
-                            }
+                            variant="outline"
                             size="sm"
-                            onClick={() => setPage(pageNum as number)}
-                            className="w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]"
+                            onClick={() => onPageChange(pageNum as number)}
+                            className={cn(
+                              paginationButtonBaseClass,
+                              pageNum === paginationInfo.pageSafe &&
+                                paginationButtonActiveClass
+                            )}
                           >
                             {pageNum}
                           </Button>
@@ -305,9 +279,7 @@ export function UsersTable() {
                     variant="outline"
                     size="sm"
                     disabled={!paginationInfo.hasNextPage}
-                    onClick={() =>
-                      setPage((p) => Math.min(paginationInfo.totalPages, p + 1))
-                    }
+                    onClick={() => onPageChange(paginationInfo.pageSafe + 1)}
                     className="flex items-center gap-2"
                   >
                     Next
@@ -319,26 +291,6 @@ export function UsersTable() {
           </TableFooter>
         </Table>
       </div>
-
-      <UsersEditSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        user={selected as any}
-        onSubmit={handleSubmit}
-      />
-
-      <UserModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        mode={modalMode}
-        user={selected as User & { profile?: Profile | null }}
-      />
-
-      <DeleteUserModal
-        open={deleteModalOpen}
-        onOpenChange={setDeleteModalOpen}
-        user={userToDelete as User & { profile?: Profile | null }}
-      />
-    </div>
+    </>
   );
 }

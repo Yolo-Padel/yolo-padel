@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils";
 import { DYNAMIC_PRICE_COLORS } from "@/constants/timetable";
 import type { Court, DynamicPrice } from "@/components/timetable-types";
+import { isTimeSlotInOperatingHours } from "@/components/timetable-utils";
+import { stringUtils } from "@/lib/format/string";
 
 const currencyFormatter = new Intl.NumberFormat("id-ID", {
   style: "currency",
@@ -22,6 +24,9 @@ type DynamicPriceCellProps = {
   onMouseDown?: (court: Court, timeSlot: string) => void;
   onMouseEnter?: (court: Court, timeSlot: string) => void;
   isDragPreview?: boolean;
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  isPermissionLoading?: boolean;
 };
 
 export function DynamicPriceCell({
@@ -34,8 +39,17 @@ export function DynamicPriceCell({
   onMouseDown,
   onMouseEnter,
   isDragPreview = false,
+  canCreate = false,
+  canUpdate = false,
+  isPermissionLoading = false,
 }: DynamicPriceCellProps) {
   const hasPrice = dynamicPrice !== null;
+
+  const isCourtOpen = isTimeSlotInOperatingHours(
+    timeSlot,
+    court.operatingHours?.fullOperatingHours
+  );
+  const isDisabled = !isCourtOpen && !hasPrice;
 
   if (hasPrice && !isFirstSlot && span === 0) {
     return null;
@@ -43,13 +57,18 @@ export function DynamicPriceCell({
 
   const isInactive = dynamicPrice ? !dynamicPrice.isActive : false;
 
-  const isClickable = Boolean(onClick);
+  const isCreateLocked = !hasPrice && !canCreate;
+  const isUpdateLocked = hasPrice && !canUpdate;
+  const isInteractionDisabled =
+    isDisabled || isPermissionLoading || isCreateLocked;
+
+  const isClickable = Boolean(onClick) && !isInteractionDisabled;
 
   return (
     <td
       rowSpan={hasPrice && isFirstSlot ? span : 1}
       className={cn(
-        "border h-[80px] px-2",
+        "border h-[80px] p-2 align-top",
         hasPrice &&
           (isInactive
             ? "bg-muted text-muted-foreground"
@@ -59,24 +78,43 @@ export function DynamicPriceCell({
           "bg-primary/10 border-primary/60 ring-1 ring-primary/40",
         isClickable &&
           `cursor-pointer hover:bg-[${DYNAMIC_PRICE_COLORS.ACTIVE_HOVER}] transition-colors`,
-        hasPrice && `bg-[#ECF1BB] border-l-2 border-l-[#B1BF20] `
+        hasPrice && `bg-[#ECF1BB] border-l-2 border-l-[#B1BF20] `,
+        !isClickable && "cursor-not-allowed opacity-60"
       )}
-      onClick={() => onClick?.(dynamicPrice, court, timeSlot)}
+      onClick={() => {
+        if (!isClickable) {
+          return;
+        }
+
+        onClick?.(dynamicPrice, court, timeSlot);
+      }}
       onMouseDown={(event) => {
+        if (isDisabled || isPermissionLoading || !canCreate) {
+          return;
+        }
+
         event.preventDefault();
         onMouseDown?.(court, timeSlot);
       }}
       onMouseEnter={() => {
         if (hasPrice && !isFirstSlot && span === 0) return;
+        if (isDisabled || isPermissionLoading || !canCreate) {
+          return;
+        }
+
         onMouseEnter?.(court, timeSlot);
       }}
     >
       {hasPrice && dynamicPrice && isFirstSlot ? (
-        <div className="flex flex-col gap-1">
-          <span className="text-sm text-[#6B7413]">
-            {currencyFormatter.format(dynamicPrice.price)}
+        <div className="flex flex-col">
+          <span className="text-normal text-[#6B7413]">
+            {stringUtils.formatRupiah(dynamicPrice.price)}
           </span>
-          <span className="text-xs text-[#6B7413]">Custom Price</span>
+          <span className="text-[12px] text-[#6B7413]">Custom Price</span>
+
+          <span className="text-sm text-[#6B7413] pt-1">
+            Default Price: {stringUtils.formatRupiah(dynamicPrice.court.price)}
+          </span>
           {!dynamicPrice.isActive && (
             <span className="text-[10px] uppercase tracking-wide font-medium text-muted-foreground">
               Inactive
@@ -84,7 +122,9 @@ export function DynamicPriceCell({
           )}
         </div>
       ) : (
-        <span className="text-muted-foreground text-sm">-</span>
+        <span className="text-muted-foreground text-sm">
+          {isDisabled ? "Closed" : "-"}
+        </span>
       )}
     </td>
   );

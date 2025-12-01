@@ -4,6 +4,7 @@ import { magicLinkVerifySchema } from "@/lib/validations/magic-link.validation";
 import { validateRequest } from "@/lib/validate-request";
 import { prisma } from "@/lib/prisma";
 import { SignJWT } from "jose";
+import { bookingService } from "@/lib/services/booking.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,6 +31,8 @@ export async function POST(request: NextRequest) {
       where: { email: result.email },
       include: {
         profile: true,
+        membership: true,
+        roles: true,
       },
     });
 
@@ -40,6 +43,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const venues = await prisma.venue.findMany({
+      where: { id: { in: user.assignedVenueIds } },
+    });
+
+    const { password, ...userWithoutPassword } = user;
+    const nextBooking = await bookingService.getNextBookingForUser(user.id);
+
     // Generate JWT token using jose
     const secret = new TextEncoder().encode(
       process.env.JWT_SECRET || "your-super-secret-key"
@@ -47,8 +57,9 @@ export async function POST(request: NextRequest) {
     const jwtToken = await new SignJWT({
       userId: user.id,
       email: user.email,
-      role: user.role,
-      assignedVenueId: user.assignedVenueIds,
+      userType: user.userType,
+      assignedVenueIds: user.assignedVenueIds,
+      roles: user.roles,
     })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
@@ -59,13 +70,13 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       success: true,
       message: "Login berhasil",
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        userStatus: user.userStatus,
-        joinDate: user.joinDate,
-        profile: user.profile,
+      data: {
+        user: userWithoutPassword,
+        profile: userWithoutPassword.profile,
+        nextBooking,
+        membership: userWithoutPassword.membership,
+        venues,
+        roles: userWithoutPassword.roles,
       },
     });
 

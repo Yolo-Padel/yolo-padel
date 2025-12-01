@@ -15,9 +15,9 @@ export async function GET(request: NextRequest) {
 
     const { user } = tokenResult;
     const context = createServiceContext(
-      user.role,
+      user.userType,
       user.userId,
-      user.assignedVenueId
+      user.assignedVenueIds
     );
 
     const result = await bookingService.getAdminDashboardSnapshot(context);
@@ -36,4 +36,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

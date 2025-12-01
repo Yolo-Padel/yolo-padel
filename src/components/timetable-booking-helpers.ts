@@ -3,39 +3,26 @@ import type { Booking } from "./timetable-types";
 import type { BookingSlotInfo } from "./timetable-types";
 import { getNextHour } from "./timetable-utils";
 
+type BookingSegment = {
+  start: string;
+  end: string;
+};
+
 /**
- * Calculate how many hourly time slots a booking spans
- * 
- * @param booking - The booking to calculate span for
- * @param timeSlots - Array of all available time slots (e.g., ["06:00", "07:00", ...])
- * @returns Number of hourly time slots the booking spans
- * 
- * @example
- * // Booking from 06:00-08:00 spans 2 hourly slots
- * const booking = {
- *   timeSlots: [
- *     { openHour: "06:00", closeHour: "07:00" },
- *     { openHour: "07:00", closeHour: "08:00" }
- *   ]
- * };
- * calculateBookingSpan(booking, ["06:00", "07:00", "08:00"]); // Returns: 2
+ * Hitung berapa banyak slot jam yang ditempati oleh satu segmen booking kontinyu.
+ *
+ * @param segment - Segment booking kontinyu (contoh: 10:00-13:00)
+ * @param timeSlots - Semua slot waktu yang tersedia
  */
 export function calculateBookingSpan(
-  booking: Booking,
+  segment: BookingSegment,
   timeSlots: string[]
 ): number {
-  if (booking.timeSlots.length === 0) return 1;
+  if (!segment) return 1;
 
-  // Find the first and last time slot of the booking
-  const firstSlot = booking.timeSlots[0];
-  const lastSlot = booking.timeSlots[booking.timeSlots.length - 1];
+  const bookingStart = segment.start;
+  const bookingEnd = segment.end;
 
-  const bookingStart = firstSlot.openHour;
-  const bookingEnd = lastSlot.closeHour;
-
-  // Find which hourly time slots are covered
-  // We need to find the first time slot that starts at or before bookingStart
-  // and the last time slot that ends at or after bookingEnd
   let startIndex = -1;
   let endIndex = -1;
 
@@ -43,25 +30,19 @@ export function calculateBookingSpan(
     const slotStart = timeSlots[i];
     const slotEnd = getNextHour(slotStart);
 
-    // Find the first slot where the slot starts exactly at bookingStart
     if (startIndex === -1 && slotStart === bookingStart) {
       startIndex = i;
     }
 
-    // Find the last slot where the slot end is at or before bookingEnd
-    // But we want the slot that ends exactly at bookingEnd
     if (slotEnd === bookingEnd) {
       endIndex = i;
     }
   }
 
-  // If we found both indices, calculate span
   if (startIndex !== -1 && endIndex !== -1 && endIndex >= startIndex) {
     return endIndex - startIndex + 1;
   }
 
-  // Fallback: calculate based on duration
-  // If booking is 06:00-08:00, that's 2 hours = 2 slots
   const [startHour, startMin] = bookingStart.split(":").map(Number);
   const [endHour, endMin] = bookingEnd.split(":").map(Number);
   const startMinutes = startHour * 60 + startMin;
@@ -72,31 +53,59 @@ export function calculateBookingSpan(
   return Math.max(1, durationHours);
 }
 
+function groupContinuousBookingSlots(
+  timeSlots: Booking["timeSlots"]
+): BookingSegment[] {
+  if (timeSlots.length === 0) return [];
+
+  const sorted = [...timeSlots].sort((a, b) =>
+    a.openHour > b.openHour ? 1 : -1
+  );
+  const segments: BookingSegment[] = [];
+
+  let currentStart = sorted[0].openHour;
+  let currentEnd = sorted[0].closeHour;
+
+  for (let i = 1; i < sorted.length; i++) {
+    const slot = sorted[i];
+    if (slot.openHour === currentEnd) {
+      currentEnd = slot.closeHour;
+    } else {
+      segments.push({ start: currentStart, end: currentEnd });
+      currentStart = slot.openHour;
+      currentEnd = slot.closeHour;
+    }
+  }
+
+  segments.push({ start: currentStart, end: currentEnd });
+  return segments;
+}
+
 /**
  * Determines if a time slot contains a booking and calculates rendering information
- * 
+ *
  * This function checks if a given time slot overlaps with any booking and returns
  * information needed for rendering (span, whether it's the first cell, etc.)
- * 
+ *
  * @param timeSlot - Current time slot being checked (format: "HH:00", e.g., "10:00")
  * @param timeSlotIndex - Index of the time slot in the allTimeSlots array
  * @param courtId - ID of the court to check bookings for
  * @param bookings - Array of all bookings for the selected date
  * @param selectedDate - Date being displayed in the timetable
  * @param allTimeSlots - Complete array of time slots for span calculation
- * 
+ *
  * @returns BookingSlotInfo object if slot contains a booking, null otherwise
  *          - booking: The booking object
  *          - isFirstSlot: true if this is the first cell of a multi-hour booking
  *          - span: number of cells this booking should span (for colspan attribute)
  *                  - > 0 for first slot (actual span count)
  *                  - = 0 for continuation slots (should not render, merged via colspan)
- * 
+ *
  * @example
  * // Booking from 10:00-12:00 on Court 1, checking 10:00 slot
  * getTimeSlotBooking("10:00", 4, "court-1", bookings, date, slots)
  * // Returns: { booking: {...}, isFirstSlot: true, span: 2 }
- * 
+ *
  * @example
  * // Same booking, checking 11:00 slot (continuation)
  * getTimeSlotBooking("11:00", 5, "court-1", bookings, date, slots)
@@ -122,28 +131,21 @@ export function getTimeSlotBooking(
 
     if (booking.timeSlots.length === 0) continue;
 
-    // Get the first time slot's start time
-    const firstSlotStart = booking.timeSlots[0].openHour;
-    const lastSlot = booking.timeSlots[booking.timeSlots.length - 1];
-    const bookingEnd = lastSlot.closeHour;
+    const segments = groupContinuousBookingSlots(booking.timeSlots);
 
     // Check if this hourly time slot is within the booking range
     const [timeStart, timeEnd] = [timeSlot, getNextHour(timeSlot)];
 
-    // Check if this time slot overlaps with the booking
-    if (timeStart < bookingEnd && timeEnd > firstSlotStart) {
-      // Check if this is the first hourly slot of the booking
-      const isFirstSlot = timeStart === firstSlotStart;
+    for (const segment of segments) {
+      if (timeStart >= segment.end || timeEnd <= segment.start) continue;
+
+      const isFirstSlot = timeStart === segment.start;
 
       if (isFirstSlot) {
-        // Calculate span only for first slot
-        const span = calculateBookingSpan(booking, allTimeSlots);
+        const span = calculateBookingSpan(segment, allTimeSlots);
         return { booking, isFirstSlot: true, span };
-      } else {
-        // This is a continuation slot, return a marker so we can skip rendering
-        // We'll use a special marker to identify continuation slots
-        return { booking, isFirstSlot: false, span: 0 };
       }
+      return { booking, isFirstSlot: false, span: 0 };
     }
   }
 

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { BookingStatus, DayOfWeek } from "@/types/prisma";
 import type { BookingDetail } from "../app/admin/dashboard/timetable/_components/booking-detail-modal";
+import type { Court as PrismaCourt } from "@/types/prisma";
 
 // Types berdasarkan schema Prisma
 export type Court = {
@@ -32,6 +33,8 @@ export type Booking = {
     closeHour: string; // Format: "07:00"
   }>;
   status: BookingStatus;
+  bookingCode: string;
+  source: string;
 };
 
 export type Venue = {
@@ -55,6 +58,7 @@ export type TimetableProps = {
     courtName: string
   ) => BookingDetail;
   onMarkAsComplete?: (bookingId: string) => void;
+  onCancelBooking?: (bookingId: string) => void;
   // Loading states
   isLoadingTable?: boolean; // When only table is loading (date change)
 };
@@ -68,12 +72,14 @@ export type BookingSlotInfo = {
 export type DynamicPrice = {
   id: string;
   courtId: string;
+  court: PrismaCourt;
   dayOfWeek: DayOfWeek | null;
   date: Date | null;
   startHour: string;
   endHour: string;
   price: number;
   isActive: boolean;
+  isArchived: boolean;
   createdAt: Date;
   updatedAt: Date;
 };

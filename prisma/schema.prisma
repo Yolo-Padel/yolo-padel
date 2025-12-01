@@ -10,11 +10,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  SUPER_ADMIN
+enum UserType {
   ADMIN
+  STAFF
   USER
-  FINANCE
 }
 
 enum UserStatus {
@@ -50,7 +49,7 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String   @default("")
-  role      Role     @default(USER)
+  userType  UserType @default(USER)
   userStatus UserStatus @default(ACTIVE)
   isEmailVerified Boolean @default(false)
   joinDate  DateTime?
@@ -74,6 +73,17 @@ model User {
   // Relasi ke log
   activityLogs ActivityLog[] @relation("ActivityLogs")
 
+  // Membership relation
+  membershipId String?     // nullable so not all users must have membership
+  membership   Membership? @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+
+  // RBAC role relation
+  roleId String?
+  roles  Roles? @relation(fields: [roleId], references: [id])
+
+  @@index([userType])
+  @@index([userStatus])
+  @@index([assignedVenueIds])
   @@map("users")
 }
 
@@ -89,7 +99,20 @@ model Profile {
   // Relasi ke User
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([fullName])
   @@map("profiles")
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  name      String   @unique   // e.g. "Gold", "Silver", "Platinum"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation to users
+  users User[]
+
+  @@map("memberships")
 }
 
 enum OpeningHoursType {
@@ -190,11 +213,12 @@ model CourtDynamicPrice {
   id        String    @id @default(cuid())
   courtId   String
   dayOfWeek DayOfWeek?
-  date      DateTime?
+  date      DateTime?     @db.Date
   startHour String
   endHour   String
   price     Int
   isActive  Boolean   @default(true)
+  isArchived Boolean  @default(false)
 
   court Court @relation(fields: [courtId], references: [id], onDelete: Cascade)
 
@@ -222,7 +246,7 @@ model Booking {
   userId           String
   orderId          String?       // Nullable for backward compatibility
   source           String        // flag for booking created by YOLO / Courtside system
-  bookingDate      DateTime
+  bookingDate      DateTime          @db.Date
   bookingHour      String?       // Deprecated, keep for backward compatibility
   bookingCode      String        @unique
   duration         Int           // Total duration: jumlah slots
@@ -307,6 +331,7 @@ model Order {
   orderCode   String      @unique
   totalAmount Int
   status      OrderStatus @default(PENDING)
+  venueIds    String[]    @default([])  // Array of venue IDs from bookings
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -315,6 +340,7 @@ model Order {
   bookings Booking[]
   payment  Payment?
 
+  @@index([venueIds])
   @@map("orders")
 }
 
@@ -332,4 +358,58 @@ model ActivityLog {
   user User? @relation("ActivityLogs", fields: [userId], references: [id])
 
   @@map("activity_logs")
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  label       String
+  description String?
+  orderIndex  Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+
+  @@map("modules")
+}
+
+model Permission {
+  id      String @id @default(cuid())
+  action  String @unique
+  orderIndex Int?
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model Roles {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+  users           User[]
+
+  @@map("roles")
+}
+
+model RolePermission {
+  id           String  @id @default(cuid())
+  roleId       String
+  moduleId     String
+  permissionId String
+  allowed      Boolean @default(false)
+
+  role        Roles      @relation(fields: [roleId], references: [id])
+  module      Module     @relation(fields: [moduleId], references: [id])
+  permission  Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, moduleId, permissionId])
+  @@map("role_permissions")
 }

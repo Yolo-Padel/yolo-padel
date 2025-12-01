@@ -13,6 +13,8 @@ import type {
 } from "@/components/timetable-types";
 import { getTimeSlotBooking } from "@/components/timetable-booking-helpers";
 import { getNextHour } from "@/components/timetable-utils";
+import { CancelBookingModal } from "./booking-cancel";
+import { useCancelBooking } from "@/hooks/use-booking";
 
 // Re-export types untuk backward compatibility
 export type {
@@ -43,6 +45,8 @@ function defaultTransformBookingToDetail(
     paymentMethod: "QRIS",
     paymentStatus: "PAID",
     createdAt: booking.bookingDate,
+    bookingCode: booking.bookingCode,
+    source: booking.source,
   };
 }
 
@@ -68,9 +72,12 @@ export function TimetableContainer({
   onDateChange,
   transformBookingToDetail = defaultTransformBookingToDetail,
   onMarkAsComplete,
+  onCancelBooking,
   isLoadingTable = false,
   onAddBooking,
   onSelectEmptySlot,
+  canCreateBooking = false,
+  isLoadingPermission = false,
 }: TimetableProps & {
   onAddBooking?: () => void;
   onSelectEmptySlot?: (payload: {
@@ -78,6 +85,8 @@ export function TimetableContainer({
     startTime: string;
     endTime?: string;
   }) => void;
+  canCreateBooking: boolean;
+  isLoadingPermission: boolean;
 }) {
   const [selectedDate, setSelectedDate] = React.useState<Date>(
     initialDate || new Date()
@@ -85,11 +94,15 @@ export function TimetableContainer({
   const [selectedBooking, setSelectedBooking] =
     React.useState<BookingDetail | null>(null);
   const [modalOpen, setModalOpen] = React.useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = React.useState(false);
   const [dragState, setDragState] = React.useState<{
     court: Court;
     startSlot: string;
     lastSlot: string;
   } | null>(null);
+
+  // Cancel booking hook
+  const cancelBookingMutation = useCancelBooking();
 
   // Get selected venue name for modal display
   const selectedVenue = venues.find((v) => v.id === selectedVenueId);
@@ -107,6 +120,7 @@ export function TimetableContainer({
       );
       setSelectedBooking(bookingDetail);
       setModalOpen(true);
+      setCancelModalOpen(false);
     },
     [transformBookingToDetail, venueName]
   );
@@ -118,6 +132,31 @@ export function TimetableContainer({
       setModalOpen(false);
       setSelectedBooking(null);
     }
+  };
+
+  // Handle Cancel booking
+  const handleOpenCancelBookingModal = () => {
+    if (selectedBooking) {
+      setCancelModalOpen(true);
+    }
+  };
+
+  const handleCancelBooking = () => {
+    if (selectedBooking) {
+      cancelBookingMutation.mutate(selectedBooking.id, {
+        onSuccess: () => {
+          setCancelModalOpen(false);
+          setModalOpen(false);
+          setSelectedBooking(null);
+          onCancelBooking?.(selectedBooking.id);
+        },
+      });
+    }
+  };
+
+  const handleCloseCancelBookingModal = () => {
+    setCancelModalOpen(false);
+    setSelectedBooking(null);
   };
 
   // Handle date change from header
@@ -167,14 +206,13 @@ export function TimetableContainer({
 
       // Check if this cell is part of the drag preview
       const isDragPreview =
-        dragState !== null &&
-        dragState.court.id === court.id &&
-        !booking;
-      
+        dragState !== null && dragState.court.id === court.id && !booking;
+
       let isInDragRange = false;
       if (isDragPreview) {
         const sortedSlots = [dragState.startSlot, dragState.lastSlot].sort();
-        isInDragRange = timeSlot >= sortedSlots[0] && timeSlot <= sortedSlots[1];
+        isInDragRange =
+          timeSlot >= sortedSlots[0] && timeSlot <= sortedSlots[1];
       }
 
       return (
@@ -185,9 +223,16 @@ export function TimetableContainer({
           isFirstSlot={isFirstSlot}
           span={span}
           isDragPreview={isDragPreview && isInDragRange}
-          onClick={({ booking: selectedBooking, court: selectedCourt, timeSlot: slot }) => {
+          canCreateBooking={canCreateBooking}
+          isLoadingPermission={isLoadingPermission}
+          onClick={({
+            booking: selectedBooking,
+            court: selectedCourt,
+            timeSlot: slot,
+          }) => {
             // Don't trigger onClick if we're in drag mode
             if (!dragState) {
+              console.log("SELECTED BOOKING", selectedBooking);
               handleCellInteraction({
                 booking: selectedBooking,
                 court: selectedCourt,
@@ -263,6 +308,8 @@ export function TimetableContainer({
         onVenueChange={onVenueChange}
         onAddBooking={onAddBooking}
         isLoading={isLoadingTable}
+        canCreateBooking={canCreateBooking}
+        isLoadingPermission={isLoadingPermission}
       />
 
       {/* Table: Courts x Time Slots Grid */}
@@ -280,6 +327,15 @@ export function TimetableContainer({
         onOpenChange={setModalOpen}
         booking={selectedBooking}
         onMarkAsComplete={handleMarkAsComplete}
+        onCancelBooking={() => setCancelModalOpen(true)}
+      />
+
+      <CancelBookingModal
+        open={cancelModalOpen}
+        onOpenChange={handleCloseCancelBookingModal}
+        booking={selectedBooking}
+        onCancelBooking={handleCancelBooking}
+        isLoading={cancelBookingMutation.isPending}
       />
     </div>
   );

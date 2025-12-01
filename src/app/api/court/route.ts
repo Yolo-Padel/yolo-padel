@@ -9,7 +9,7 @@ import { verifyAuth } from "@/lib/auth-utils";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const venueId = searchParams.get('venueId');
+    const venueId = searchParams.get("venueId");
     const tokenResult = await verifyAuth(request);
 
     if (!tokenResult.isValid) {
@@ -19,8 +19,12 @@ export async function GET(request: NextRequest) {
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
-    
+    const serviceContext = createServiceContext(
+      user.userType,
+      user.userId,
+      user.assignedVenueIds
+    );
+
     let result;
     if (venueId) {
       result = await courtService.getByVenue(venueId, serviceContext);
@@ -38,7 +42,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: result.data,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("GET /api/court error:", error);
@@ -52,7 +56,7 @@ export async function GET(request: NextRequest) {
 // POST /api/court - Create new court
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();    
+    const body = await request.json();
     const validatedData = courtCreateSchema.parse(body);
     const tokenResult = await verifyAuth(request);
 
@@ -63,8 +67,12 @@ export async function POST(request: NextRequest) {
       );
     }
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
-    
+    const serviceContext = createServiceContext(
+      user.userType,
+      user.userId,
+      user.assignedVenueIds
+    );
+
     const result = await courtService.create(validatedData, serviceContext);
 
     if (!result.success) {
@@ -74,15 +82,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      data: result.data,
-      message: result.message
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        data: result.data,
+        message: result.message,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("POST /api/court error:", error);
-    
-    if (error instanceof Error && error.name === 'ZodError') {
+
+    if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
         { success: false, message: "Validation error", errors: error.message },
         { status: 400 }

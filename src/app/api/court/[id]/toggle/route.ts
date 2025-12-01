@@ -21,7 +21,11 @@ export async function PATCH(
     }
 
     const { user } = tokenResult;
-    const serviceContext = createServiceContext(user.role, user.userId, user.assignedVenueId);
+    const serviceContext = createServiceContext(
+      user.userType,
+      user.userId,
+      user.assignedVenueIds
+    );
 
     // Get current court status to toggle it
     const currentCourt = await courtService.getById(id, serviceContext);
@@ -34,7 +38,11 @@ export async function PATCH(
 
     // Toggle the isActive status
     const newIsActive = !currentCourt.data.isActive;
-    const result = await courtService.toggleAvailability(id, newIsActive, serviceContext);
+    const result = await courtService.toggleAvailability(
+      id,
+      newIsActive,
+      serviceContext
+    );
 
     if (!result.success) {
       return NextResponse.json(
@@ -46,7 +54,7 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       data: result.data,
-      message: result.message
+      message: result.message,
     });
   } catch (error) {
     console.error("PATCH /api/court/[id]/toggle error:", error);

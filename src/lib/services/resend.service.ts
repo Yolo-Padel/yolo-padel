@@ -29,7 +29,7 @@ export const resendService = {
           userName: data.userName,
           email: data.email,
           invitationUrl: data.invitationUrl,
-          role: data.role,
+          userType: data.userType,
         }),
       });
 
@@ -153,7 +153,7 @@ export const resendService = {
           court: data.court,
           date: new Date(data.date),
           time: data.time,
-          bookingId: data.bookingId,
+          bookingCode: data.bookingCode,
           location: data.location,
           status: data.status,
         }),
@@ -195,7 +195,7 @@ export const resendService = {
           court: data.court,
           date: new Date(data.date),
           time: data.time,
-          bookingId: data.bookingId,
+          bookingCode: data.bookingCode,
           location: data.location,
           status: data.status,
         }),
@@ -233,13 +233,13 @@ export const resendService = {
         to: data.email,
         subject: "Order Confirmation",
         react: OrderConfirmationEmail({
-          orderId: data.orderId,
+          orderCode: data.orderCode,
           customerName: data.customerName,
           bookings: data.bookings.map((booking) => ({
             court: booking.court,
             date: new Date(booking.date),
             time: booking.time,
-            bookingId: booking.bookingId,
+            bookingCode: booking.bookingCode,
             location: booking.location,
           })),
         }),
@@ -323,7 +323,7 @@ export const resendService = {
     try {
       const response = await resend.emails.send({
         from: EMAIL_CONFIG.FROM_EMAIL,
-        to: "thufails505@gmail.com",
+        to: data.email,
         subject: "Magic Link",
         react: LoginWithMagicLink({
           email: data.email,

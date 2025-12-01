@@ -1,6 +1,7 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
+import { useState } from "react";
 import {
   InputGroup,
   InputGroupAddon,
@@ -13,74 +14,120 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PaymentStatus } from "@prisma/client";
+import { Button } from "@/components/ui/button";
+import { PaymentStatus, Venue, UserType } from "@prisma/client";
+import { useVenue } from "@/hooks/use-venue";
 import { useAuth } from "@/hooks/use-auth";
 
 interface OrderFiltersProps {
   searchValue: string;
-  onSearchChange: (value: string) => void;
+  onSearchSubmit: (value: string) => void;
   venueFilter: string;
   onVenueFilterChange: (value: string) => void;
   paymentStatusFilter: string;
-  onPaymentStatusFilterChange: (value: PaymentStatus) => void;
+  onPaymentStatusFilterChange: (value: string) => void;
+  hasActiveFilters: boolean;
+  onReset: () => void;
 }
 
 export function OrderFilters({
   searchValue,
-  onSearchChange,
+  onSearchSubmit,
   venueFilter,
   onVenueFilterChange,
   paymentStatusFilter,
   onPaymentStatusFilterChange,
+  hasActiveFilters,
+  onReset,
 }: OrderFiltersProps) {
+  const { data: venuesData } = useVenue();
   const { user } = useAuth();
+  const [localSearchValue, setLocalSearchValue] = useState(searchValue);
+
+  // API returns { success, data: Venue[], message }
+  const allVenues: Venue[] = venuesData?.data || [];
+
+  // Filter venues based on user type and assigned venues
+  let venues: Venue[] = [];
+
+  if (user) {
+    // Admin can see all venues
+    if (user.userType === UserType.ADMIN) {
+      venues = allVenues;
+    }
+    // Staff can only see assigned venues
+    else if (user.userType === UserType.STAFF) {
+      if (user.assignedVenueIds && user.assignedVenueIds.length > 0) {
+        venues = allVenues.filter((venue) =>
+          user.assignedVenueIds.includes(venue.id)
+        );
+      }
+    }
+  }
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      onSearchSubmit(localSearchValue);
+    }
+  };
+
   return (
-    <div className="flex items-center gap-4 py-4">
-      <InputGroup>
+    <div className="flex items-center gap-4">
+      <InputGroup className="flex-1">
         <InputGroupInput
-          placeholder="Search by order number or customer name..."
+          placeholder="Search by order code or customer name..."
           className="w-full"
-          value={searchValue}
-          onChange={(event) => onSearchChange(event.target.value)}
+          value={localSearchValue}
+          onChange={(event) => setLocalSearchValue(event.target.value)}
+          onKeyDown={handleKeyDown}
         />
         <InputGroupAddon>
           <Search />
         </InputGroupAddon>
       </InputGroup>
-      <Select value={venueFilter} onValueChange={onVenueFilterChange}>
-        <SelectTrigger className="w-full max-w-[240px]">
-          <SelectValue placeholder="Filter by venue" />
+
+      <Select value={venueFilter || "all"} onValueChange={onVenueFilterChange}>
+        <SelectTrigger className="w-[200px]">
+          <SelectValue placeholder="All venues" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All venues</SelectItem>
-          {user && user.assignedVenueIds.length > 0 && (
-            <>
-              {user.assignedVenueIds.map((venueId) => (
-                <SelectItem key={venueId} value={venueId}>
-                  {venueId}
-                </SelectItem>
-              ))}
-            </>
-          )}
-        </SelectContent>
-      </Select>
-
-      <Select
-        value={paymentStatusFilter}
-        onValueChange={onPaymentStatusFilterChange}
-      >
-        <SelectTrigger className="w-full max-w-[240px]">
-          <SelectValue placeholder="Filter by status" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Semua status</SelectItem>
-          {Object.values(PaymentStatus).map((status) => (
-            <SelectItem key={status} value={status}>
-              {status}
+          {venues.map((venue) => (
+            <SelectItem key={venue.id} value={venue.id}>
+              {venue.name}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
+
+      <Select
+        value={paymentStatusFilter || "all"}
+        onValueChange={onPaymentStatusFilterChange}
+      >
+        <SelectTrigger className="w-[200px]">
+          <SelectValue placeholder="All status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All status</SelectItem>
+          {Object.values(PaymentStatus).map((status) => (
+            <SelectItem key={status} value={status}>
+              {status.charAt(0) + status.slice(1).toLowerCase()}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {hasActiveFilters && (
+        <Button
+          variant="outline"
+          size="default"
+          onClick={onReset}
+          aria-label="Reset filters"
+        >
+          <X />
+          Reset
+        </Button>
+      )}
     </div>
   );
 }

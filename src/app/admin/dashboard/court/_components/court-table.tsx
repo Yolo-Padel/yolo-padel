@@ -15,6 +15,7 @@ import {
   TableFooter,
 } from "@/components/ui/table";
 import { stringUtils } from "@/lib/format/string";
+import { cn } from "@/lib/utils";
 import {
   Pencil,
   Plus,
@@ -22,6 +23,7 @@ import {
   ChevronRight,
   MoreHorizontal,
   Trash,
+  Eye,
 } from "lucide-react";
 import { CourtModal } from "./court-modal";
 import { CourtDeleteModal } from "./court-delete-modal";
@@ -37,6 +39,7 @@ import { CourtTableSkeleton } from "@/app/admin/dashboard/court/_components/cour
 import { CourtEmptyState } from "@/app/admin/dashboard/court/_components/court-empty-state";
 import { CourtBreadcrumb } from "@/app/admin/dashboard/court/_components/court-breadcrumb";
 import { formatOperatingHours } from "@/lib/operating-hours-utils";
+import { usePermissionGuard } from "@/hooks/use-permission-guard";
 
 // Types
 type Court = {
@@ -66,7 +69,7 @@ export function CourtTable() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Court | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"add" | "edit">("add");
+  const [modalMode, setModalMode] = useState<"add" | "edit" | "view">("add");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [courtToDelete, setCourtToDelete] = useState<Court | null>(null);
   const searchParams = useSearchParams();
@@ -83,6 +86,24 @@ export function CourtTable() {
 
   // Toggle court availability hook
   const toggleCourtAvailability = useToggleCourtAvailability();
+
+  const { canAccess: canCreateCourt, isLoading: isCreateCourtLoading } =
+    usePermissionGuard({
+      moduleKey: "courts",
+      action: "create",
+    });
+
+  const { canAccess: canUpdateCourt, isLoading: isUpdateCourtLoading } =
+    usePermissionGuard({
+      moduleKey: "courts",
+      action: "update",
+    });
+
+  const { canAccess: canDeleteCourt, isLoading: isDeleteCourtLoading } =
+    usePermissionGuard({
+      moduleKey: "courts",
+      action: "delete",
+    });
 
   // Transform Prisma Court data to match our Court type
   const courts: Court[] = useMemo(() => {
@@ -159,6 +180,11 @@ export function CourtTable() {
     [filtered, page]
   );
 
+  const paginationButtonBaseClass =
+    "w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]";
+  const paginationButtonActiveClass =
+    "bg-primary border-primary hover:bg-primary text-black";
+
   // Reset page to 1 when search changes
   useEffect(() => {
     setPage(1);
@@ -230,17 +256,19 @@ export function CourtTable() {
       <div className="flex items-center gap-2 justify-between">
         <CourtBreadcrumb venueName={venueData?.data?.name} />
         <div className="flex items-center gap-2">
-          <Button
-            onClick={() => {
-              setModalMode("add");
-              setSelected(null);
-              setSheetOpen(true);
-            }}
-            className="text-black"
-          >
-            Add Court
-            <Plus className="ml-2 size-4" />
-          </Button>
+          {canCreateCourt && (
+            <Button
+              onClick={() => {
+                setModalMode("add");
+                setSelected(null);
+                setSheetOpen(true);
+              }}
+              className="text-black"
+            >
+              Add Court
+              <Plus className="ml-2 size-4" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -309,22 +337,28 @@ export function CourtTable() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            setModalMode("edit");
+                            setModalMode(canUpdateCourt ? "edit" : "view");
                             setSelected(court);
                             setSheetOpen(true);
                           }}
                           className="border-none shadow-none"
                         >
-                          <Pencil className="size-4 text-[#A4A7AE]" />
+                          {canUpdateCourt ? (
+                            <Pencil className="size-4 text-[#A4A7AE]" />
+                          ) : (
+                            <Eye className="size-4 text-[#A4A7AE]" />
+                          )}
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteCourt(court)}
-                          className="border-none shadow-none"
-                        >
-                          <Trash className="size-4 text-[#A4A7AE]" />
-                        </Button>
+                        {canDeleteCourt && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteCourt(court)}
+                            className="border-none shadow-none"
+                          >
+                            <Trash className="size-4 text-[#A4A7AE]" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -353,19 +387,19 @@ export function CourtTable() {
                       ).map((pageNum, index) => (
                         <div key={index}>
                           {pageNum === "..." ? (
-                            <div className="flex items-center justify-center w-8 h-8 text-muted-foreground">
+                            <div className="flex items-center justify-center w-8 h-8 bg-background border border-[#E9EAEB] text-[#A4A7AE]">
                               <MoreHorizontal className="w-4 h-4" />
                             </div>
                           ) : (
                             <Button
-                              variant={
-                                pageNum === paginationInfo.pageSafe
-                                  ? "default"
-                                  : "outline"
-                              }
+                              variant="outline"
                               size="sm"
                               onClick={() => setPage(pageNum as number)}
-                              className="w-8 h-8 p-0"
+                              className={cn(
+                                paginationButtonBaseClass,
+                                pageNum === paginationInfo.pageSafe &&
+                                  paginationButtonActiveClass
+                              )}
                             >
                               {pageNum}
                             </Button>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bookingService } from "@/lib/services/booking.service";
 import { verifyAuth } from "@/lib/auth-utils";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +13,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (tokenResult.user.role !== Role.SUPER_ADMIN) {
+    if (
+      tokenResult.user.userType !== UserType.ADMIN &&
+      tokenResult.user.userType !== UserType.STAFF
+    ) {
       return NextResponse.json(
         { success: false, data: null, message: "Forbidden" },
         { status: 403 }
@@ -36,4 +39,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

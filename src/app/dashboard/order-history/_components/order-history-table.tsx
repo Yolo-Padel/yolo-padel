@@ -6,10 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { LandPlot, Dot } from "lucide-react";
 import { useState } from "react";
 import { Card, CardFooter } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrderHistoryModal } from "./order-history-modal";
 import { OrderHistorySkeleton } from "./order-history-skeleton";
 import { useOrders, type Order } from "@/hooks/use-order";
-import { PaymentStatus } from "@/types/prisma";
+import { PaymentStatus, OrderStatus } from "@/types/prisma";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import Image from "next/image";
@@ -22,6 +23,7 @@ export default function OrderHistoryTable() {
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderModal, setOrderModal] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
   const [modeModal, setModeModal] = useState<
     | "order-details"
     | "payment-instruction"
@@ -38,6 +40,7 @@ export default function OrderHistoryTable() {
   } = useOrders({
     page,
     limit: PAGE_SIZE,
+    status: statusFilter === "ALL" ? undefined : statusFilter,
   });
 
   // Map PaymentStatus enum to display styles
@@ -52,22 +55,6 @@ export default function OrderHistoryTable() {
         return "bg-[#FFD5D5] text-[#AD1F1F]";
       default:
         return "bg-gray-500 text-white";
-    }
-  };
-
-  // Get display label for payment status
-  const getPaymentStatusLabel = (status: PaymentStatus) => {
-    switch (status) {
-      case PaymentStatus.PAID:
-        return "Paid";
-      case PaymentStatus.UNPAID:
-        return "Unpaid";
-      case PaymentStatus.FAILED:
-        return "Failed";
-      case PaymentStatus.EXPIRED:
-        return "Expired";
-      default:
-        return status;
     }
   };
 
@@ -104,11 +91,29 @@ export default function OrderHistoryTable() {
     return format(date, "d MMM yyyy", { locale: idLocale });
   };
 
+  // Handle status filter change - reset to page 1
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value as OrderStatus | "ALL");
+    setPage(1);
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-foreground text-2xl">My Order</h3>
+        <h3 className="text-xl font-semibold">My Order</h3>
       </div>
+
+      {/* Status Filter Tabs */}
+      <Tabs value={statusFilter} onValueChange={handleStatusChange}>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="ALL">All</TabsTrigger>
+          <TabsTrigger value="PENDING">Pending</TabsTrigger>
+          <TabsTrigger value="PAID">Paid</TabsTrigger>
+          <TabsTrigger value="COMPLETED">Completed</TabsTrigger>
+          <TabsTrigger value="FAILED">Failed</TabsTrigger>
+          <TabsTrigger value="EXPIRED">Expired</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Loading State */}
       {isLoading && <OrderHistorySkeleton count={4} />}
@@ -146,10 +151,12 @@ export default function OrderHistoryTable() {
                   />
                 </div>
                 <div className="flex flex-col text-md gap-1 px-2">
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-xs items-center">
                     #{order.orderCode}
-                    <Badge className={getPaymentStatus(paymentStatus)}>
-                      {getPaymentStatusLabel(paymentStatus)}
+                    <Badge
+                      className={`rounded-md px-3 py-1 text-xs font-medium ${getPaymentStatus(paymentStatus)}`}
+                    >
+                      {stringUtils.toTitleCase(paymentStatus)}
                     </Badge>
                   </div>
                   <div className="text-foreground text-xs">
@@ -208,10 +215,9 @@ export default function OrderHistoryTable() {
                   {/* Payment Failed/Expired Button */}
                   {(paymentStatus === "FAILED" ||
                     paymentStatus === "EXPIRED") && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
+                    <div className="grid w-full gap-2">
                       <Button
                         className="w-full border-primary"
-                        variant="outline"
                         onClick={() => {
                           setSelectedOrder(order);
                           setOrderModal(true);
@@ -220,16 +226,6 @@ export default function OrderHistoryTable() {
                       >
                         See Details
                       </Button>
-                      {/* <Button
-                        className="w-full"
-                        variant="default"
-                        onClick={() => {
-                          // TODO: Implement re-book logic
-                          // setBookCourtModalOpen(true);
-                        }}
-                      >
-                        Re-Book
-                      </Button> */}
                     </div>
                   )}
                 </CardFooter>

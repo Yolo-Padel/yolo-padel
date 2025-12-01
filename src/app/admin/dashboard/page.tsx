@@ -2,12 +2,12 @@
 
 import { DashboardContent } from "./_components/dashboard-content";
 import { useAuth } from "@/hooks/use-auth";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 import { Loader2 } from "lucide-react";
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();
-  const userRole = (user?.role as Role) || Role.ADMIN;
+  const userType = (user?.userType as UserType) || UserType.STAFF;
 
   if (isLoading) {
     return (
@@ -17,5 +17,5 @@ export default function DashboardPage() {
     );
   }
 
-  return <DashboardContent role={userRole} />;
+  return <DashboardContent userType={userType} />;
 }

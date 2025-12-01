@@ -77,7 +77,9 @@ const courtApi = {
     });
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to toggle court availability");
+      throw new Error(
+        errorData.message || "Failed to toggle court availability"
+      );
     }
     return response.json();
   },
@@ -138,6 +140,7 @@ export const usePublicCourtByVenue = (venueId: string) => {
     queryKey: ["public-court", "venue", venueId],
     queryFn: () => courtPublicApi.getByVenue(venueId),
     enabled: Boolean(venueId),
+    refetchInterval: 1000,
     staleTime: 1000 * 60 * 2,
   });
 };
@@ -170,7 +173,11 @@ export const useUpdateCourt = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: courtApi.update,
-    onSuccess: (data: { success: boolean; message: string; data?: { id: string } }) => {
+    onSuccess: (data: {
+      success: boolean;
+      message: string;
+      data?: { id: string };
+    }) => {
       toast.success(data.message || "Court updated successfully!");
       queryClient.invalidateQueries({ queryKey: ["court"] });
       if (data?.data?.id) {
@@ -209,12 +216,18 @@ export const useToggleCourtAvailability = () => {
     },
     onError: (error: Error) => {
       console.error("Toggle court availability error:", error);
-      toast.error(error.message || "Failed to update court availability. Please try again.");
+      toast.error(
+        error.message ||
+          "Failed to update court availability. Please try again."
+      );
     },
   });
 };
 
-export const useAvailableTimeSlots = (courtId: string, date: Date | undefined) => {
+export const useAvailableTimeSlots = (
+  courtId: string,
+  date: Date | undefined
+) => {
   return useQuery({
     queryKey: ["court", "available-slots", courtId, date?.toISOString()],
     queryFn: () => courtApi.getAvailableTimeSlots(courtId, date!),

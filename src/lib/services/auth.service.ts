@@ -1,64 +1,17 @@
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
 import { Prisma, BookingStatus } from "@prisma/client";
-import { Role } from "@/types/prisma";
+import { UserType } from "@/types/prisma";
 import {
   RegisterFormData,
   LoginFormData,
 } from "../validations/auth.validation";
 import bcrypt from "bcryptjs";
-import { NextBookingInfo } from "@/types/profile";
+import { bookingService } from "./booking.service";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";
 const JWT_EXPIRES_IN = "7d";
 const secretKey = new TextEncoder().encode(JWT_SECRET);
-
-async function getNextBookingForUser(userId: string): Promise<NextBookingInfo | null> {
-  const nextBooking = await prisma.booking.findFirst({
-    where: {
-      userId,
-      status: {
-        in: [BookingStatus.PENDING, BookingStatus.UPCOMING],
-      },
-      bookingDate: {
-        gte: new Date(new Date().setHours(0, 0, 0, 0)),
-      },
-    },
-    orderBy: [
-      { bookingDate: "asc" },
-      { createdAt: "asc" },
-    ],
-    include: {
-      timeSlots: true,
-      court: {
-        select: {
-          id: true,
-          name: true,
-          venue: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!nextBooking) return null;
-
-  return {
-    bookingId: nextBooking.id,
-    bookingCode: nextBooking.bookingCode,
-    bookingDate: nextBooking.bookingDate.toISOString(),
-    status: nextBooking.status,
-    courtId: nextBooking.court.id,
-    courtName: nextBooking.court.name,
-    venueId: nextBooking.court.venue.id,
-    venueName: nextBooking.court.venue.name,
-    timeSlots: nextBooking.timeSlots ?? [],
-  };
-}
 
 export const authService = {
   register: async (data: RegisterFormData) => {
@@ -77,7 +30,10 @@ export const authService = {
       }
 
       // 2. Hash password
-      const hashedPassword = await bcrypt.hash(process.env.DUMMY_PASSWORD || "", 12);
+      const hashedPassword = await bcrypt.hash(
+        process.env.DUMMY_PASSWORD || "",
+        12
+      );
 
       // 3. Create user and profile in transaction
       const result = await prisma.$transaction(
@@ -87,7 +43,7 @@ export const authService = {
             data: {
               email: data.email,
               password: hashedPassword,
-              role: data.role || Role.USER,
+              userType: data.userType || UserType.USER,
             },
           });
 
@@ -106,7 +62,8 @@ export const authService = {
       const token = await new SignJWT({
         userId: result.user.id,
         email: result.user.email,
-        role: result.user.role,
+        userType: result.user.userType,
+        assignedVenueIds: result.user.assignedVenueIds,
       })
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
@@ -115,7 +72,9 @@ export const authService = {
 
       const { password, ...userWithoutPassword } = result.user;
 
-      const nextBooking = await getNextBookingForUser(result.user.id);
+      const nextBooking = await bookingService.getNextBookingForUser(
+        result.user.id
+      );
 
       return {
         success: true,
@@ -157,7 +116,10 @@ export const authService = {
       }
 
       // 2. Verify password
-      const isPasswordValid = await bcrypt.compare(data.password, user.password);
+      const isPasswordValid = await bcrypt.compare(
+        data.password,
+        user.password
+      );
 
       if (!isPasswordValid) {
         return {
@@ -170,7 +132,8 @@ export const authService = {
       const token = await new SignJWT({
         userId: user.id,
         email: user.email,
-        role: user.role,
+        userType: user.userType,
+        assignedVenueIds: user.assignedVenueIds,
       })
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
@@ -178,7 +141,7 @@ export const authService = {
         .sign(secretKey);
 
       const { password, ...userWithoutPassword } = user;
-      const nextBooking = await getNextBookingForUser(user.id);
+      const nextBooking = await bookingService.getNextBookingForUser(user.id);
 
       return {
         success: true,
@@ -209,15 +172,19 @@ export const authService = {
       // Get fresh user data
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
-        include: { profile: true },
+        include: { profile: true, membership: true, roles: true },
       });
 
       if (!user) {
         return { success: false, data: null };
       }
 
+      const venues = await prisma.venue.findMany({
+        where: { id: { in: user.assignedVenueIds } },
+      });
+
       const { password, ...userWithoutPassword } = user;
-      const nextBooking = await getNextBookingForUser(user.id);
+      const nextBooking = await bookingService.getNextBookingForUser(user.id);
 
       return {
         success: true,
@@ -225,11 +192,13 @@ export const authService = {
           user: userWithoutPassword,
           profile: user.profile,
           nextBooking,
+          membership: user.membership,
+          venues,
+          roles: user.roles,
         },
       };
     } catch (error) {
       return { success: false, data: null };
     }
   },
-
 };
