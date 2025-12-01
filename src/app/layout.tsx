@@ -20,8 +20,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Yolo-paddle - Book Padel Courts Quickly & Easily",
-  description: "Find, check schedules, and book your favorite padel courts. Manage your bookings and become a member for exclusive perks at Yolo-paddle!",
+  title: "Yolo Padel - Book Padel Courts Quickly & Easily",
+  description:
+    "Find, check schedules, and book your favorite padel courts. Manage your bookings and become a member for exclusive perks at Yolo Padel!",
   keywords: [
     "book padel court",
     "rent padel court",
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
     "padel court schedule",
     "padel venue",
     "padel membership",
-    "Yolo-paddle",
+    "Yolo Padel",
     "play padel",
     "padel court slipi",
     "padel court booking",
@@ -38,42 +39,44 @@ export const metadata: Metadata = {
     "padel court jakarta",
   ],
   // This part can be our default
-  authors: [{ name: "Yolo-paddle" }],
-  creator: "Yolo-paddle",
-  publisher: "Yolo-paddle",
+  authors: [{ name: "Yolo Padel" }],
+  creator: "Yolo Padel",
+  publisher: "Yolo Padel",
   robots: {
     index: true,
     follow: true,
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
   //Add Open Graph (OG) tags for social media sharing
   openGraph: {
-    title: "Yolo-paddle - Book Padel Courts Quickly & Easily",
-    description: "Find, check schedules, and book your favorite padel courts on Yolo-paddle!",
+    title: "Yolo Padel - Book Padel Courts Quickly & Easily",
+    description:
+      "Find, check schedules, and book your favorite padel courts on Yolo Padel!",
     images: [
       {
-        url: 'https://www.yolo-padel.com/opengraph-image.webp',
+        url: "/opengraph-image.webp",
         width: 1200,
         height: 630,
-        alt: 'Booking a Padel Court on Yolo-paddle',
+        alt: "Booking a Padel Court on Yolo Padel",
       },
     ],
-    siteName: 'Yolo-paddle',
-    type: 'website',
-    locale: 'en_US', // Change as needed
+    siteName: "Yolo Padel",
+    type: "website",
+    locale: "en_US", // Change as needed
   },
   // Add Twitter card
   twitter: {
-    card: 'summary_large_image',
-    title: "Yolo-paddle - Book Padel Courts Quickly & Easily",
-    description: "Find, check schedules, and book your favorite padel courts on Yolo-paddle!",
-    images: ['https://www.yolo-padel.com/twitter-image.webp'],
+    card: "summary_large_image",
+    title: "Yolo Padel - Book Padel Courts Quickly & Easily",
+    description:
+      "Find, check schedules, and book your favorite padel courts on Yolo Padel!",
+    images: ["/twitter-image.webp"],
   },
 };
 
