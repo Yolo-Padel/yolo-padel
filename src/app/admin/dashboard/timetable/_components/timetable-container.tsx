@@ -222,6 +222,7 @@ export function TimetableContainer({
           booking={booking}
           isFirstSlot={isFirstSlot}
           span={span}
+          selectedDate={selectedDate}
           isDragPreview={isDragPreview && isInDragRange}
           canCreateBooking={canCreateBooking}
           isLoadingPermission={isLoadingPermission}
@@ -232,7 +233,6 @@ export function TimetableContainer({
           }) => {
             // Don't trigger onClick if we're in drag mode
             if (!dragState) {
-              console.log("SELECTED BOOKING", selectedBooking);
               handleCellInteraction({
                 booking: selectedBooking,
                 court: selectedCourt,

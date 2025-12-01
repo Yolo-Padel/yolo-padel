@@ -13,6 +13,7 @@ type TimetableBookingCellProps = {
   booking: Booking | null;
   isFirstSlot: boolean;
   span: number;
+  selectedDate: Date;
   onClick?: (params: {
     booking: Booking | null;
     court: Court;
@@ -35,6 +36,7 @@ export function TimetableBookingCell({
   booking,
   isFirstSlot,
   span,
+  selectedDate,
   onClick,
   onMouseDown,
   onMouseEnter,
@@ -50,12 +52,46 @@ export function TimetableBookingCell({
     court.operatingHours?.fullOperatingHours
   );
 
+  // Check if the selected date/time slot is in the past
+  const now = new Date();
+  const today = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  ).getTime();
+  const selectedDay = new Date(
+    selectedDate.getFullYear(),
+    selectedDate.getMonth(),
+    selectedDate.getDate()
+  ).getTime();
+
+  const isPastDate = selectedDay < today;
+
+  let isPastTimeSlot = false;
+  const isToday = selectedDay === today;
+
+  if (isToday) {
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+
+    // Jika waktu sekarang 17:30, cutoff menjadi 18:00
+    const cutoffHour = currentMinute > 0 ? currentHour + 1 : currentHour;
+    const cutoffTime = `${String(cutoffHour).padStart(2, "0")}:00`;
+
+    // Contoh: timeSlot "17:00" < cutoff "18:00" -> dianggap sudah lewat
+    isPastTimeSlot = timeSlot < cutoffTime;
+  }
+
+  const isPast = isPastDate || isPastTimeSlot;
+
   if (isBooked && !isFirstSlot && span === 0) {
     return null;
   }
 
-  // Disable cell if court is not open
-  const isDisabled = !isCourtOpen;
+  // Disable cell if court is not open or if it's past (for styling purposes)
+  // But allow clicking on past bookings to view details
+  const isDisabledForStyling = !isCourtOpen || (isPast && !isBooked);
+  const canClickBooking = isBooked; // Allow clicking on any booking, even if past
 
   return (
     <td
@@ -66,20 +102,28 @@ export function TimetableBookingCell({
           `bg-[${BOOKING_COLORS.BOOKED_BG}] border-l-2 border-l-[#B1BF20]`,
         isBooked &&
           `cursor-pointer hover:bg-[${BOOKING_COLORS.BOOKED_HOVER}] transition-colors`,
-        isDisabled && !isBooked && "bg-muted/30 opacity-50 cursor-not-allowed",
+        isDisabledForStyling &&
+          !isBooked &&
+          "bg-muted/30 opacity-50 cursor-not-allowed",
         isDragPreview &&
           !isBooked &&
-          !isDisabled &&
+          !isDisabledForStyling &&
           "bg-primary/10 border-primary/60 ring-1 ring-primary/40"
       )}
       onClick={() => {
-        if (!isDisabled && canCreateBooking) {
+        // Allow clicking on bookings even if they're in the past
+        if (canClickBooking && canCreateBooking) {
           onClick?.({ booking, court, timeSlot });
         }
       }}
       onMouseDown={(event) => {
-        // Only allow dragging on empty, enabled cells
-        if (!isBooked && !isDisabled && onMouseDown && canCreateBooking) {
+        // Only allow dragging on empty, enabled cells (not past slots)
+        if (
+          !isBooked &&
+          !isDisabledForStyling &&
+          onMouseDown &&
+          canCreateBooking
+        ) {
           event.preventDefault();
           onMouseDown(court, timeSlot);
         }
@@ -87,12 +131,19 @@ export function TimetableBookingCell({
       onMouseEnter={() => {
         // Only trigger onMouseEnter for valid cells (not booked continuation slots)
         if (isBooked && !isFirstSlot && span === 0) return;
-        if (!isBooked && !isDisabled && onMouseEnter && canCreateBooking) {
+        if (
+          !isBooked &&
+          !isDisabledForStyling &&
+          onMouseEnter &&
+          canCreateBooking
+        ) {
           onMouseEnter(court, timeSlot);
         }
       }}
       title={
-        isDisabled && !isBooked ? "Court belum buka pada waktu ini" : undefined
+        isDisabledForStyling && !isBooked
+          ? "Court is closed at this time"
+          : undefined
       }
     >
       {isBooked && isFirstSlot && booking ? (
@@ -119,10 +170,12 @@ export function TimetableBookingCell({
         <span
           className={cn(
             "p-2",
-            isDisabled ? "text-muted-foreground/50" : "text-muted-foreground"
+            isDisabledForStyling
+              ? "text-muted-foreground/50"
+              : "text-muted-foreground"
           )}
         >
-          {isDisabled ? "Closed" : "-"}
+          {isDisabledForStyling ? "Closed" : "-"}
         </span>
       )}
     </td>
