@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function GlobalHeader() {
-  const { user, profile, isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated } = useAuth();
   return (
     <header className="relative z-30 w-full">
-      <div className="container mx-auto p-6 lg:p-2">
+      <div className="lg:max-w-[1200px] mx-auto p-6 lg:p-0 lg:pt-6">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Image
