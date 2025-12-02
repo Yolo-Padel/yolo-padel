@@ -211,39 +211,15 @@ export function useBookingSelections(
       return;
     }
 
-    // CRITICAL: Validate that watchSlots BELONG to THIS court selection
-    // This prevents Court B from being added with Court A's slots during transition
     // Get current courtSelections from form (not from watch to avoid infinite loops)
     const currentCourtSelections = form.getValues("courtSelections");
 
     if (watchSlots.length > 0) {
-      // FIRST CHECK: Does this court already have a selection?
-      const existingSelection = currentCourtSelections.get(selectionKey);
-
-      if (!existingSelection) {
-        // No selection for THIS court yet. Check if slots exist on ANOTHER court
-        let slotsFromAnotherCourt = false;
-
-        for (const [key, value] of currentCourtSelections.entries()) {
-          if (key !== selectionKey) {
-            // Check if any of watchSlots exist in this other court's selection
-            const hasMatchingSlots = value.slots.some((s) =>
-              watchSlots.includes(s)
-            );
-            if (hasMatchingSlots) {
-              slotsFromAnotherCourt = true;
-              break;
-            }
-          }
-        }
-
-        if (slotsFromAnotherCourt) {
-          // Slots exist on another court → cross-court contamination → BLOCK
-          return;
-        }
-      }
-
-      // FINAL CHECK: Are the slots valid for this court's operating hours?
+      // Validate that slots are valid for this court's operating hours
+      // This check is sufficient to prevent cross-court contamination:
+      // - If slots are valid for this court, user intentionally selected them for this court
+      // - If slots are invalid, they will be blocked (preventing contamination)
+      // - Multiple courts can have the same slots (business rule allows this)
       const currentAvailableSlots = getAvailableSlots(selectedCourt, watchDate);
       const allSlotsValid = watchSlots.every((slot) =>
         currentAvailableSlots.includes(slot)
@@ -322,6 +298,8 @@ export function useBookingSelections(
       );
       form.setValue("bookings", filteredBookings);
     }
+
+    console.log("bookings", form.getValues("bookings"));
   }, [
     form,
     watchSlots,
