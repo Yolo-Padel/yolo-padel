@@ -169,6 +169,8 @@ export function LoginForm({
         <Button
           type="button"
           className="w-full mt-1"
+          data-cy="bypass-auth-button"
+          data-testid="bypass-auth-button"
           onClick={() => {
             bypassAuthMutation.mutate(form.getValues("email"));
           }}
