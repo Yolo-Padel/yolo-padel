@@ -222,6 +222,7 @@ export function TimetableContainer({
           booking={booking}
           isFirstSlot={isFirstSlot}
           span={span}
+          selectedDate={selectedDate}
           isDragPreview={isDragPreview && isInDragRange}
           canCreateBooking={canCreateBooking}
           isLoadingPermission={isLoadingPermission}
