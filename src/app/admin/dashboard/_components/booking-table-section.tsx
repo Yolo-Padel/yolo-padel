@@ -10,6 +10,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import type { BookingWithRelations } from "@/app/admin/dashboard/booking/_components/booking-table";
+import { BookingDetailsModal } from "@/app/admin/dashboard/booking/_components/booking-details-modal";
 
 const numberFormatter = new Intl.NumberFormat("id-ID");
 
@@ -41,6 +42,9 @@ function SummarySkeleton() {
 
 export function BookingTableSection() {
   const [page, setPage] = useState(1);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedDetail, setSelectedDetail] = useState<BookingWithRelations | null>(null);
+  
 
   // Fetch summary data for the sidebar
   const { data: summaryData } = useSuperAdminBookingDashboard();
@@ -81,7 +85,8 @@ export function BookingTableSection() {
 
   const handleViewBooking = (booking: BookingWithRelations) => {
     // TODO: Open modal or navigate to detail page
-    console.log("View booking:", booking.bookingCode);
+    setSelectedDetail(booking);
+    setDetailOpen(true);
   };
 
   return (
@@ -151,6 +156,13 @@ export function BookingTableSection() {
           </div>
         </div>
       </div>
+      <BookingDetailsModal
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
+          booking={
+            selectedDetail
+          }
+        />
     </div>
   );
 }
