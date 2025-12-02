@@ -233,6 +233,7 @@ export function TimetableContainer({
           }) => {
             // Don't trigger onClick if we're in drag mode
             if (!dragState) {
+              console.log("SELECTED BOOKING", selectedBooking);
               handleCellInteraction({
                 booking: selectedBooking,
                 court: selectedCourt,

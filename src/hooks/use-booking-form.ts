@@ -298,8 +298,6 @@ export function useBookingSelections(
       );
       form.setValue("bookings", filteredBookings);
     }
-
-    console.log("bookings", form.getValues("bookings"));
   }, [
     form,
     watchSlots,
