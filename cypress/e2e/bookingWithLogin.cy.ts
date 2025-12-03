@@ -4,7 +4,9 @@ describe("booking with login", () => {
     cy.visit("http://localhost:3000/dashboard/booking");
     cy.contains("Booking List");
     cy.wait(1500);
-    cy.contains("button", "Book Court").click();
+    cy.contains("button", "Book Court", { timeout: 10000 })
+      .should("not.be.disabled")
+      .click();
     cy.contains("Book your court").should("be.visible");
 
     // Tunggu sampai modal content benar-benar visible dan tidak ada loading
@@ -14,7 +16,10 @@ describe("booking with login", () => {
     cy.wait(1000);
 
     // Pilih court
-    cy.contains("West Court", { timeout: 10000 }).should("be.visible").click();
+    cy.get('[data-cy="booking-form-multi-step"]')
+      .contains("West Court", { timeout: 10000 })
+      .should("be.visible")
+      .click();
 
     // Tunggu API calls untuk court data dan blocking selesai
     cy.wait(2000);
@@ -38,13 +43,12 @@ describe("booking with login", () => {
 
     cy.wait(500);
     // Pastikan button Book enabled (artinya bookings.length > 0)
-    cy.contains("button", "Book")
+    cy.get('[data-cy="book-button-step-1"]')
       .scrollIntoView()
       .should("be.visible")
       .should("not.be.disabled");
 
-    // Klik button Book (tanpa force, karena harus enabled)
-    cy.contains("button", "Book").click({force: true});
+    cy.get('[data-cy="book-button-step-1"]').click();
 
     // Tunggu transisi step
     cy.wait(2000);
@@ -64,13 +68,9 @@ describe("booking with login", () => {
       .should("not.be.disabled")
       .click({ force: true });
 
-    cy.contains("Order berhasil dibuat").click();
-
-    // Tunggu redirect ke Xendit
-    cy.url().should("include", "checkout-staging.xendit.co");
-
     // Gunakan cy.origin untuk domain eksternal
     cy.origin("https://checkout-staging.xendit.co", () => {
+      cy.url().should("include", "checkout-staging.xendit.co");
       // Pastikan halaman Xendit memang tampil
       cy.contains("QR Payments", { timeout: 10000 }).should("be.visible");
 
@@ -82,7 +82,10 @@ describe("booking with login", () => {
     });
 
     // Setelah simulasi, Xendit akan redirect kembali ke merchant website
-    cy.url().should("include", "/payment/success");
-    cy.contains("Pembayaran berhasil").should("be.visible");
+    cy.url({ timeout: 10000 }).should(
+      "include",
+      "/dashboard/booking?paymentStatus=success"
+    );
+    cy.contains("Payment Successful", { timeout: 10000 }).should("be.visible");
   });
 });

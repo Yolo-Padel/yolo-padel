@@ -484,6 +484,7 @@ export function CourtSelectionContainer({
 
       {/* Action Button */}
       <Button
+        data-cy="book-button-step-1"
         className="w-full h-11"
         onClick={onProceedToSummary}
         disabled={

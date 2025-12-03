@@ -62,7 +62,7 @@ export function BookingFormMultiStep({
   };
 
   return (
-    <div>
+    <div data-cy="booking-form-multi-step">
       {currentStep === 1 && (
         <CourtSelectionContainer
           form={form}

@@ -14,7 +14,7 @@ describe("user login", () => {
 describe("user logout", () => {
   it("User can logout", () => {
     cy.login("m+1@etalas.com");
-    cy.visit("http://localhost:3000/dashboard");
+    cy.visit("http://localhost:3000/dashboard/booking");
     cy.get('[data-slot="dropdown-menu-trigger"]').click();
     cy.contains("Log out").click();
     cy.url().should("include", "http://localhost:3000/auth");
