@@ -43,8 +43,8 @@ function SummarySkeleton() {
 export function BookingTableSection() {
   const [page, setPage] = useState(1);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [selectedDetail, setSelectedDetail] = useState<BookingWithRelations | null>(null);
-  
+  const [selectedDetail, setSelectedDetail] =
+    useState<BookingWithRelations | null>(null);
 
   // Fetch summary data for the sidebar
   const { data: summaryData } = useSuperAdminBookingDashboard();
@@ -115,7 +115,7 @@ export function BookingTableSection() {
                   Summary Booking
                 </h3>
                 <p className="text-sm font-normal text-muted-foreground overflow-ellipsis overflow-hidden whitespace-nowrap">
-                  Semua venue
+                  All venues
                 </p>
               </div>
             </div>
@@ -149,7 +149,7 @@ export function BookingTableSection() {
             )}
             {error && !summary && (
               <p className="text-sm text-destructive px-4 py-4 border-t border-border">
-                Gagal memuat ringkasan booking:{" "}
+                Failed to load booking summary:{" "}
                 {error instanceof Error ? error.message : "Unknown error"}
               </p>
             )}
@@ -157,12 +157,10 @@ export function BookingTableSection() {
         </div>
       </div>
       <BookingDetailsModal
-          open={detailOpen}
-          onOpenChange={setDetailOpen}
-          booking={
-            selectedDetail
-          }
-        />
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        booking={selectedDetail}
+      />
     </div>
   );
 }

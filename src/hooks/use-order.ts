@@ -220,12 +220,12 @@ export function useCreateOrder() {
       // Invalidate bookings list (since new bookings were created)
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
 
-      toast.success("Order berhasil dibuat!", {
+      toast.success("Order created successfully!", {
         description: `Order code: ${data.orderCode}`,
       });
     },
     onError: (error: Error) => {
-      toast.error("Gagal membuat order", {
+      toast.error("Failed to create order", {
         description: error.message,
       });
     },
@@ -293,12 +293,12 @@ export function useUpdateOrderStatus() {
       // Invalidate bookings (since booking statuses may have changed)
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
 
-      toast.success("Status order berhasil diupdate", {
+      toast.success("Status order updated successfully", {
         description: `Order ${data.orderCode} sekarang ${data.status}`,
       });
     },
     onError: (error: Error) => {
-      toast.error("Gagal update status order", {
+      toast.error("Failed to update order status", {
         description: error.message,
       });
     },

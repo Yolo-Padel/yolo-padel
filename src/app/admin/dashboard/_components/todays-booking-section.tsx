@@ -141,7 +141,7 @@ export function TodaysBookingSection() {
           <TodaysBookingSkeleton />
         ) : showEmptyState ? (
           <div className="px-6 py-12 text-center text-muted-foreground">
-            Tidak ada booking untuk hari ini.
+            No bookings for today.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-6 py-3">
@@ -200,7 +200,7 @@ export function TodaysBookingSection() {
 
         {error && (
           <p className="px-6 pb-6 text-sm text-destructive">
-            Gagal memuat booking hari ini:{" "}
+            Failed to load today's bookings:{" "}
             {error instanceof Error ? error.message : "Unknown error"}
           </p>
         )}

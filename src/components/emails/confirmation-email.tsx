@@ -5,7 +5,6 @@ import {
   Container,
   Section,
   Text,
-  Link,
   Hr,
   Button,
 } from "@react-email/components";
@@ -22,7 +21,7 @@ export default function ConfirmationEmail({
   return (
     <Html>
       <Head>
-        <title>Konfirmasi Email Anda</title>
+        <title>Confirm Your Email</title>
       </Head>
       <Body className="bg-slate-100 font-sans">
         <Container className="bg-white mx-auto py-5 pb-12 mb-16 max-w-2xl">
@@ -36,13 +35,13 @@ export default function ConfirmationEmail({
           {/* Content */}
           <Section className="px-6 py-8">
             <Text className="text-2xl font-bold text-gray-900 mb-5">
-              Halo {userName}!
+              Hello {userName}!
             </Text>
 
             <Text className="text-base leading-6 text-gray-700 mb-4">
-              Terima kasih telah mendaftar di Yolo Padel. Untuk menyelesaikan
-              pendaftaran Anda, silakan konfirmasi alamat email Anda dengan
-              mengklik tombol di bawah ini.
+              Thank you for registering at Yolo Padel. To complete your
+              registration, please confirm your email address by clicking the
+              button below.
             </Text>
 
             <Section className="text-center my-8">
@@ -50,12 +49,12 @@ export default function ConfirmationEmail({
                 className="bg-emerald-500 rounded-lg text-white text-base font-bold no-underline text-center inline-block px-6 py-3 border-0"
                 href={confirmationUrl}
               >
-                Konfirmasi Email
+                Confirm Email
               </Button>
             </Section>
 
             <Text className="text-base leading-6 text-gray-700 mb-4">
-              Atau salin dan tempel link berikut ke browser Anda:
+              Or copy and paste the following link into your browser:
             </Text>
 
             <Text className="text-sm text-gray-500 break-all mb-4">
@@ -63,18 +62,18 @@ export default function ConfirmationEmail({
             </Text>
 
             <Text className="text-base leading-6 text-gray-700 mb-4">
-              Link konfirmasi ini akan kedaluwarsa dalam 24 jam.
+              This confirmation link will expire in 24 hours.
             </Text>
 
             <Text className="text-base leading-6 text-gray-700 mb-4">
-              Jika Anda tidak mendaftar untuk akun ini, Anda dapat mengabaikan
-              email ini.
+              If you did not register for this account, you can ignore this
+              email.
             </Text>
 
             <Text className="text-base text-gray-700 mt-8">
-              Salam,
+              Best regards,
               <br />
-              Tim Yolo Padel
+              Yolo Padel Team
             </Text>
           </Section>
 
@@ -82,13 +81,7 @@ export default function ConfirmationEmail({
           <Hr className="border-gray-200 my-5" />
           <Section className="px-6 text-center">
             <Text className="text-gray-500 text-xs leading-4 my-1">
-              © 2024 Yolo Padel. All rights reserved.
-            </Text>
-            <Text className="text-gray-500 text-xs leading-4 my-1">
-              Jika Anda tidak ingin menerima email ini lagi,{" "}
-              <Link href="#" className="text-blue-600 underline">
-                unsubscribe di sini
-              </Link>
+              © 2025 Yolo Padel. All rights reserved.
             </Text>
           </Section>
         </Container>

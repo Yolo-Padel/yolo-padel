@@ -11,11 +11,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Eye } from "lucide-react";
-import {
-  User,
-  Profile,
-  ActivityLog,
-} from "@/types/prisma";
+import { User, Profile, ActivityLog } from "@/types/prisma";
 import { useActivityLogsAdmin } from "@/hooks/use-activity-log";
 import { LogDetails } from "./log-modal";
 import { ActionType } from "@/types/action";
@@ -36,7 +32,7 @@ export function ActivityLogTable() {
   if (error)
     return (
       <div className="rounded-2xl border border-[#E9EAEB] p-8 text-center text-red-600">
-        Error saat memuat log: {error.message}
+        Error loading logs: {error.message}
       </div>
     );
   if (!data || allLogs.length === 0) {

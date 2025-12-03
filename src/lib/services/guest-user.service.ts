@@ -27,7 +27,7 @@ export const guestUserService = {
         return {
           success: false,
           data: null,
-          message: "Email sudah terdaftar. Silakan login terlebih dahulu.",
+          message: "Email already registered. Please login first.",
         };
       }
 

@@ -212,7 +212,7 @@ export function DashboardMetrics({ userType }: DashboardMetricsProps) {
         )}
         {error && !snapshot && (
           <p className="text-sm text-destructive">
-            Gagal memuat metrik dashboard: {error.message}
+            Failed to load dashboard metrics: {error.message}
           </p>
         )}
       </div>
