@@ -10,17 +10,19 @@ function isValidDate(value: string): boolean {
 
 export const manualBookingSchema = z
   .object({
-    venueId: z.string().min(1, "Venue wajib diisi"),
-    courtId: z.string().min(1, "Court wajib diisi"),
-    email: z.string().email("Format email tidak valid"),
+    venueId: z.string().min(1, "Venue is required"),
+    courtId: z.string().min(1, "Court is required"),
+    email: z.string().email("Invalid email format"),
     date: z
       .string()
-      .min(1, "Tanggal wajib diisi")
-      .refine(isValidDate, "Format tanggal tidak valid"),
-    startTime: z.string().regex(timePattern, "Format waktu mulai harus HH:mm"),
+      .min(1, "Date is required")
+      .refine(isValidDate, "Invalid date format"),
+    startTime: z
+      .string()
+      .regex(timePattern, "Start time must be in HH:mm format"),
     endTime: z
       .string()
-      .regex(endTimePattern, "Format waktu selesai harus HH:mm"),
+      .regex(endTimePattern, "End time must be in HH:mm format"),
   })
   .refine(
     (data) => {
@@ -30,7 +32,7 @@ export const manualBookingSchema = z
     },
     {
       path: ["endTime"],
-      message: "Waktu selesai harus lebih besar dari waktu mulai",
+      message: "End time must be greater than start time",
     }
   )
   .refine(
@@ -41,7 +43,7 @@ export const manualBookingSchema = z
     },
     {
       path: ["startTime"],
-      message: "Waktu harus menggunakan kelipatan 1 jam (menit = 00)",
+      message: "Time must be in multiples of 1 hour (minutes = 00)",
     }
   );
 

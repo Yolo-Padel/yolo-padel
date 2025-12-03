@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     if (!parsed.success) {
       const message =
-        parsed.error.issues[0]?.message || "Validasi input tidak valid";
+        parsed.error.issues[0]?.message || "Invalid input validation";
       return NextResponse.json(
         {
           success: false,

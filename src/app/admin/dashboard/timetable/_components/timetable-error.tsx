@@ -17,8 +17,7 @@ export function TimetableError({
   onGoHome,
 }: TimetableErrorProps) {
   const errorMessage =
-    error?.message ||
-    "Gagal memuat data timetable. Silakan coba lagi.";
+    error?.message || "Failed to load timetable data. Please try again.";
 
   const isNetworkError =
     error?.message?.toLowerCase().includes("network") ||
@@ -27,40 +26,30 @@ export function TimetableError({
   return (
     <div className="flex flex-col items-center justify-center p-12 space-y-6 border rounded-lg bg-red-50/50 dark:bg-red-950/10 min-h-[400px]">
       <AlertCircle className="h-16 w-16 text-red-600 dark:text-red-400" />
-      
+
       <div className="text-center space-y-2 max-w-md">
         <h3 className="text-xl font-semibold text-red-900 dark:text-red-100">
-          Terjadi Kesalahan
+          Error Occurred
         </h3>
-        <p className="text-sm text-red-700 dark:text-red-300">
-          {errorMessage}
-        </p>
+        <p className="text-sm text-red-700 dark:text-red-300">{errorMessage}</p>
         {isNetworkError && (
           <p className="text-xs text-muted-foreground mt-2">
-            Pastikan koneksi internet Anda stabil dan coba lagi.
+            Please check your internet connection and try again.
           </p>
         )}
       </div>
 
       <div className="flex gap-3">
         {onRetry && (
-          <Button
-            onClick={onRetry}
-            variant="default"
-            className="gap-2"
-          >
+          <Button onClick={onRetry} variant="default" className="gap-2">
             <RefreshCcw className="h-4 w-4" />
             Coba Lagi
           </Button>
         )}
         {onGoHome && (
-          <Button
-            onClick={onGoHome}
-            variant="outline"
-            className="gap-2"
-          >
+          <Button onClick={onGoHome} variant="outline" className="gap-2">
             <Home className="h-4 w-4" />
-            Kembali ke Dashboard
+            Back to Dashboard
           </Button>
         )}
       </div>
@@ -68,7 +57,7 @@ export function TimetableError({
       {process.env.NODE_ENV === "development" && error && (
         <details className="mt-4 p-4 bg-red-100 dark:bg-red-900/20 rounded text-xs max-w-2xl overflow-auto">
           <summary className="cursor-pointer font-semibold mb-2">
-            Error Details (Development Only)
+            Error Details (For Development Only)
           </summary>
           <pre className="whitespace-pre-wrap break-words">
             {error.stack || error.message}
@@ -78,4 +67,3 @@ export function TimetableError({
     </div>
   );
 }
-

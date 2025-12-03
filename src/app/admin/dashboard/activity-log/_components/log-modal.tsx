@@ -168,7 +168,7 @@ export function LogDetails({
               return (
                 <div className="rounded-lg border border-muted bg-background p-4">
                   <span className="text-sm text-muted-foreground">
-                    Tidak ada data yang berubah untuk aktivitas ini.
+                    No data changed for this activity.
                   </span>
                 </div>
               );
