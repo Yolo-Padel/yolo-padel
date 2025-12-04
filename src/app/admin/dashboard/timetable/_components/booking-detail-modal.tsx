@@ -160,7 +160,7 @@ export function BookingDetailModal({
             <h3 className="font-semibold text-lg">Booking Info</h3>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Booking Code</span>
-              <span className="font-medium">#{booking.bookingCode}</span>
+              <span className="font-medium">{booking.bookingCode}</span>
             </div>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
