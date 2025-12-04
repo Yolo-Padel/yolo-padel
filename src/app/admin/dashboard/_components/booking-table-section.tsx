@@ -2,7 +2,6 @@
 
 import { cn } from "@/lib/utils";
 import { BookingTable } from "@/app/admin/dashboard/booking/_components/booking-table";
-import { BookingTableLoading } from "@/app/admin/dashboard/booking/_components/booking-table-loading";
 import {
   useSuperAdminBookingDashboard,
   useAdminBookings,
@@ -11,8 +10,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import type { BookingWithRelations } from "@/app/admin/dashboard/booking/_components/booking-table";
 import { BookingDetailsModal } from "@/app/admin/dashboard/booking/_components/booking-details-modal";
+import { useBookingFilters } from "@/hooks/use-booking-filters";
+import { AdminDashboardFilters } from "./admin-dashboard-filters";
+import { Badge } from "@/components/ui/badge";
+import { BookingTableDashboardLoading } from "@/app/admin/dashboard/_components/booking-table-dashboard-loading";
 
 const numberFormatter = new Intl.NumberFormat("id-ID");
+const PAGE_SIZE = 10;
 
 function formatCount(value?: number | null) {
   if (value === undefined || value === null) return "-";
@@ -41,10 +45,21 @@ function SummarySkeleton() {
 }
 
 export function BookingTableSection() {
-  const [page, setPage] = useState(1);
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedDetail, setSelectedDetail] =
     useState<BookingWithRelations | null>(null);
+
+  const {
+    filters,
+    setSearch,
+    setVenue,
+    setStatus,
+    setStartDate,
+    setEndDate,
+    setPage,
+    resetFilters,
+    hasActiveFilters,
+  } = useBookingFilters();
 
   // Fetch summary data for the sidebar
   const { data: summaryData } = useSuperAdminBookingDashboard();
@@ -55,8 +70,9 @@ export function BookingTableSection() {
     isLoading,
     error,
   } = useAdminBookings({
-    page,
-    limit: 5, // Show 5 recent bookings on dashboard
+    page: filters.page,
+    limit: PAGE_SIZE,
+    venueId: filters.venue,
   });
 
   const summary = summaryData?.data?.bookingSummary;
@@ -92,18 +108,35 @@ export function BookingTableSection() {
   return (
     <div className="flex flex-row gap-6 w-full">
       {isLoading ? (
-        <BookingTableLoading />
+        <BookingTableDashboardLoading />
       ) : bookings.length === 0 ? (
         <div className="flex-1 rounded-2xl border border-[#E9EAEB] p-8 text-center">
           <p className="text-muted-foreground">No bookings found</p>
         </div>
       ) : (
-        <BookingTable
-          bookings={bookings}
-          paginationInfo={paginationInfo}
-          onPageChange={handlePageChange}
-          onViewBooking={handleViewBooking}
-        />
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-row justify-between items-center">
+            <div className="flex flex-row gap-2 items-center">
+              <h3 className="text-2xl font-medium text-foreground">
+                Booking List
+              </h3>
+              <Badge className="text-[#6941C6] bg-[#F9F5FF] border-[#E9D7FE] shadow-none rounded-4xl">
+                {pagination?.total}{" "}
+                {pagination?.total === 1 ? "booking" : "bookings"}
+              </Badge>
+            </div>
+            <AdminDashboardFilters
+              venueFilter={filters.venue}
+              onVenueChange={setVenue}
+            />
+          </div>
+          <BookingTable
+            bookings={bookings}
+            paginationInfo={paginationInfo}
+            onPageChange={handlePageChange}
+            onViewBooking={handleViewBooking}
+          />
+        </div>
       )}
 
       <div className="bg-card border-[1.5px] border-border/50 rounded-xl w-full md:max-w-full h-fit flex-1">

@@ -19,7 +19,7 @@ export function DashboardContent({ userType }: DashboardContentProps) {
 
       <DashboardMetrics userType={userType} />
 
-      {isStaff ? <BookingTableSection /> : <TodaysBookingSection />}
+      {!isStaff ? <TodaysBookingSection /> : <BookingTableSection />}
     </div>
   );
 }
