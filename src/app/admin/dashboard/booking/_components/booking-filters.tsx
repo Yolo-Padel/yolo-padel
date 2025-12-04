@@ -274,7 +274,10 @@ export function BookingFilters({
         <Button
           variant="outline"
           size="default"
-          onClick={onReset}
+          onClick={() => {
+            onReset();
+            setLocalSearchValue("");
+          }}
           aria-label="Reset all filters"
           className="ml-auto"
         >
