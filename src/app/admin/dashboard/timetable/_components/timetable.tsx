@@ -74,7 +74,7 @@ export function Timetable({
   };
 
   // Format tanggal untuk display: "Mon, 14 Okt"
-  const formattedDate = format(selectedDate, "EEE, d MMM", { locale: id });
+  const formattedDate = format(selectedDate, "EEE, d MMM");
 
   // Show skeleton when loading
   if (isLoading) {
@@ -90,13 +90,13 @@ export function Timetable({
         >
           <thead>
             {/* Row 1: Time Slot + Date Navigation */}
-            <tr className="bg-muted/50">
-              <th className="border p-3 text-left font-semibold sticky left-0 top-0 bg-muted/50 z-30 min-w-[120px]">
+            <tr>
+              <th className="border p-3 text-left font-semibold sticky left-0 top-0 z-30 min-w-[120px]">
                 Time
               </th>
               <th
                 colSpan={courts.length}
-                className="border p-3 text-left font-semibold sticky top-0 bg-muted/50 z-20"
+                className="border p-3 text-left font-semibold sticky top-0 z-20"
                 style={{ padding: 0 }}
               >
                 <div className="p-3" style={{ width: "fit-content" }}>
@@ -116,7 +116,7 @@ export function Timetable({
                         <Button
                           variant="outline"
                           size="sm"
-                          className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}] gap-2`}
+                          className={`gap-2`}
                           disabled={isLoading}
                         >
                           <CalendarIcon className="h-4 w-4" />
@@ -134,7 +134,6 @@ export function Timetable({
                               setCalendarOpen(false);
                             }
                           }}
-                          locale={id}
                           disabled={isLoading}
                         />
                       </PopoverContent>
@@ -176,7 +175,8 @@ export function Timetable({
 
                     {primaryAction && (
                       <Button
-                        variant="default"
+                        variant="outline"
+                        className="border-primary"
                         size="sm"
                         onClick={primaryAction.onClick}
                         disabled={primaryAction.disabled}
@@ -189,8 +189,8 @@ export function Timetable({
               </th>
             </tr>
             {/* Row 2: Court Names */}
-            <tr className="bg-muted/50">
-              <th className="border p-3 text-left font-semibold sticky left-0 top-[57px] bg-muted/50 z-30 min-w-[120px]">
+            <tr>
+              <th className="border p-3 text-left font-semibold sticky left-0 top-[57px] z-30 min-w-[120px]">
                 {/* Empty cell for Time Slot column */}
               </th>
               {courts.map((court) => {
@@ -202,7 +202,7 @@ export function Timetable({
                 return (
                   <th
                     key={court.id}
-                    className="border p-3 text-center font-semibold min-w-[150px] sticky top-[57px] bg-muted/50 z-20"
+                    className="border p-3 text-center font-semibold min-w-[150px] sticky top-[57px] z-20"
                   >
                     <div className="flex flex-col gap-1">
                       <div className="text-left">
