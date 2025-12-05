@@ -4,12 +4,18 @@ import { LucideIcon, ArrowUp, ArrowDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
+interface ComparisonData {
+  percentageChange: number;
+  isPositive: boolean;
+}
+
 interface MetricCardProps {
   title: string;
   description: string;
   value: string;
   icon: LucideIcon;
   iconBg: string;
+  comparison?: ComparisonData;
 }
 
 export function MetricCard({
@@ -18,10 +24,15 @@ export function MetricCard({
   value,
   icon: Icon,
   iconBg,
+  comparison,
 }: MetricCardProps) {
+  const hasComparison = comparison !== undefined;
+  const isPositive = comparison?.isPositive ?? false;
+  const percentageChange = comparison?.percentageChange ?? 0;
+
   return (
     <Card className="flex-1 border-[1.5px] border-border/50 rounded-xl p-5">
-      <CardContent className="flex flex-col gap-4 p-0">
+      <CardContent className="flex flex-col gap-3 p-0">
         <div
           className={cn(
             "rounded-xl size-12 flex items-center justify-center",
@@ -45,6 +56,26 @@ export function MetricCard({
             </p>
           </div>
         </div>
+        {hasComparison && (
+          <div
+            className={cn(
+              "flex items-center gap-1 rounded-md font-medium",
+              isPositive ? "text-[#079455]" : "text-[#D92D20]"
+            )}
+          >
+            {isPositive ? (
+              <ArrowUp className="size-3" />
+            ) : (
+              <ArrowDown className="size-3" />
+            )}
+            <span>
+              {Math.abs(percentageChange).toFixed(1)}%{" "}
+              <span className="text-sm font-normal text-muted-foreground">
+                vs last month
+              </span>
+            </span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

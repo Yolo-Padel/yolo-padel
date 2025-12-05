@@ -7,12 +7,19 @@ export interface BookingSummaryStats {
   upcoming: number;
   cancelled: number;
   expiredPayment: number;
+  comparison?: ComparisonData;
+}
+
+export interface ComparisonData {
+  percentageChange: number;
+  isPositive: boolean;
 }
 
 export interface BookingDashboardMetrics {
   totalRevenue: {
     amount: number;
     transactionCount: number;
+    comparison?: ComparisonData;
   };
   totalBookings: {
     total: number;
@@ -20,21 +27,25 @@ export interface BookingDashboardMetrics {
     upcoming: number;
     pending: number;
     cancelled: number;
+    comparison?: ComparisonData;
   };
   paidRate: {
     percentage: number;
     paidCount: number;
     totalCount: number;
+    comparison?: ComparisonData;
   };
   cancellation: {
     total: number;
     cancelled: number;
     expiredPayment: number;
+    comparison?: ComparisonData;
   };
   courtUtilization?: {
     percentage: number;
     utilizedCourts: number;
     totalActiveCourts: number;
+    comparison?: ComparisonData;
   };
 }
 
@@ -48,6 +59,7 @@ export interface TodaysBookingCard {
   timeSlots: Array<{ openHour: string; closeHour: string }>;
   customerName: string;
   courtName: string;
+  venueName: string;
 }
 
 export interface TodaysBookingCollection {

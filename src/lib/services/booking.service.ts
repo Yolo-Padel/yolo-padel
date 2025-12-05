@@ -185,6 +185,41 @@ function getUtcRangeForPastDays(days: number) {
   return { start, end: today.end };
 }
 
+function getUtcMonthRange(date: Date = new Date()) {
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+
+  const start = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
+  const end = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
+
+  return { start, end };
+}
+
+function getUtcLastMonthRange() {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth();
+
+  // Get last month
+  const lastMonth = month === 0 ? 11 : month - 1;
+  const lastMonthYear = month === 0 ? year - 1 : year;
+
+  const start = new Date(Date.UTC(lastMonthYear, lastMonth, 1, 0, 0, 0, 0));
+  const end = new Date(
+    Date.UTC(lastMonthYear, lastMonth + 1, 0, 23, 59, 59, 999)
+  );
+
+  return { start, end };
+}
+
+function calculatePercentageChange(current: number, previous: number): number {
+  if (previous === 0) {
+    return current > 0 ? 100 : 0;
+  }
+  const change = ((current - previous) / previous) * 100;
+  return Number(change.toFixed(2));
+}
+
 export const bookingService = {
   // Get all bookings with related data
   getAll: async () => {
@@ -436,25 +471,86 @@ export const bookingService = {
 
   getSuperAdminDashboardSnapshot: async () => {
     try {
-      const [statusGroups, paidAggregate, expiredPaymentCount] =
-        await Promise.all([
-          prisma.booking.groupBy({
-            by: ["status"],
-            _count: { _all: true },
-          }),
-          prisma.payment.aggregate({
-            where: { status: PaymentStatus.PAID },
-            _sum: { amount: true },
-            _count: { _all: true },
-          }),
-          prisma.payment.count({
-            where: { status: PaymentStatus.EXPIRED },
-          }),
-        ]);
+      const currentMonthRange = getUtcMonthRange();
+      const lastMonthRange = getUtcLastMonthRange();
+
+      const [
+        statusGroups,
+        paidAggregate,
+        expiredPaymentCount,
+        lastMonthStatusGroups,
+        lastMonthPaidAggregate,
+        lastMonthExpiredPaymentCount,
+      ] = await Promise.all([
+        prisma.booking.groupBy({
+          by: ["status"],
+          _count: { _all: true },
+          where: {
+            bookingDate: {
+              gte: currentMonthRange.start,
+              lte: currentMonthRange.end,
+            },
+          },
+        }),
+        prisma.payment.aggregate({
+          where: {
+            status: PaymentStatus.PAID,
+            paymentDate: {
+              gte: currentMonthRange.start,
+              lte: currentMonthRange.end,
+            },
+          },
+          _sum: { amount: true },
+          _count: { _all: true },
+        }),
+        prisma.payment.count({
+          where: {
+            status: PaymentStatus.EXPIRED,
+            createdAt: {
+              gte: currentMonthRange.start,
+              lte: currentMonthRange.end,
+            },
+          },
+        }),
+        prisma.booking.groupBy({
+          by: ["status"],
+          _count: { _all: true },
+          where: {
+            bookingDate: {
+              gte: lastMonthRange.start,
+              lte: lastMonthRange.end,
+            },
+          },
+        }),
+        prisma.payment.aggregate({
+          where: {
+            status: PaymentStatus.PAID,
+            paymentDate: {
+              gte: lastMonthRange.start,
+              lte: lastMonthRange.end,
+            },
+          },
+          _sum: { amount: true },
+          _count: { _all: true },
+        }),
+        prisma.payment.count({
+          where: {
+            status: PaymentStatus.EXPIRED,
+            createdAt: {
+              gte: lastMonthRange.start,
+              lte: lastMonthRange.end,
+            },
+          },
+        }),
+      ]);
 
       const statusCounts = getStatusCountMap(statusGroups);
+      const lastMonthStatusCounts = getStatusCountMap(lastMonthStatusGroups);
       const revenueAmount = paidAggregate._sum?.amount ?? 0;
       const revenueTransactions = paidAggregate._count?._all ?? 0;
+      const lastMonthRevenueAmount = lastMonthPaidAggregate._sum?.amount ?? 0;
+      const lastMonthRevenueTransactions =
+        lastMonthPaidAggregate._count?._all ?? 0;
 
       const { metrics, summary } = buildMetrics(
         statusCounts,
@@ -462,6 +558,66 @@ export const bookingService = {
         revenueAmount,
         revenueTransactions
       );
+
+      // Calculate comparisons
+      const revenueComparison = calculatePercentageChange(
+        revenueAmount,
+        lastMonthRevenueAmount
+      );
+      const bookingsComparison = calculatePercentageChange(
+        summary.total,
+        lastMonthStatusCounts[BookingStatus.PENDING] +
+          lastMonthStatusCounts[BookingStatus.UPCOMING] +
+          lastMonthStatusCounts[BookingStatus.COMPLETED] +
+          lastMonthStatusCounts[BookingStatus.CANCELLED] +
+          lastMonthStatusCounts[BookingStatus.NO_SHOW]
+      );
+      const paidRateComparison = calculatePercentageChange(
+        metrics.paidRate.percentage,
+        lastMonthRevenueTransactions === 0
+          ? 0
+          : parseFloat(
+              (
+                (lastMonthRevenueTransactions /
+                  (lastMonthStatusCounts[BookingStatus.PENDING] +
+                    lastMonthStatusCounts[BookingStatus.UPCOMING] +
+                    lastMonthStatusCounts[BookingStatus.COMPLETED] +
+                    lastMonthStatusCounts[BookingStatus.CANCELLED] +
+                    lastMonthStatusCounts[BookingStatus.NO_SHOW])) *
+                100
+              ).toFixed(2)
+            )
+      );
+      const lastMonthCancellationTotal =
+        lastMonthStatusCounts[BookingStatus.CANCELLED] +
+        lastMonthStatusCounts[BookingStatus.NO_SHOW] +
+        lastMonthExpiredPaymentCount;
+      const cancellationComparison = calculatePercentageChange(
+        metrics.cancellation.total,
+        lastMonthCancellationTotal
+      );
+
+      // Add comparisons to metrics
+      metrics.totalRevenue.comparison = {
+        percentageChange: revenueComparison,
+        isPositive: revenueComparison >= 0,
+      };
+      metrics.totalBookings.comparison = {
+        percentageChange: bookingsComparison,
+        isPositive: bookingsComparison >= 0,
+      };
+      metrics.paidRate.comparison = {
+        percentageChange: paidRateComparison,
+        isPositive: paidRateComparison >= 0,
+      };
+      metrics.cancellation.comparison = {
+        percentageChange: cancellationComparison,
+        isPositive: cancellationComparison < 0, // Negative is positive for cancellation (less is better)
+      };
+      summary.comparison = {
+        percentageChange: bookingsComparison,
+        isPositive: bookingsComparison >= 0,
+      };
 
       const payload: SuperAdminDashboardSnapshot = {
         metrics,
@@ -520,6 +676,8 @@ export const bookingService = {
       // ADMIN: all venues (no filter)
 
       const todayRange = getUtcDayRange(new Date());
+      const currentMonthRange = getUtcMonthRange();
+      const lastMonthRange = getUtcLastMonthRange();
       const utilizationRange = getUtcRangeForPastDays(7);
 
       const [
@@ -529,17 +687,29 @@ export const bookingService = {
         todaysBookingsRaw,
         totalActiveCourts,
         utilizedCourtGroups,
+        lastMonthStatusGroups,
+        lastMonthPaidAggregate,
+        lastMonthExpiredPaymentCount,
+        lastMonthUtilizedCourtGroups,
       ] = await Promise.all([
         prisma.booking.groupBy({
           by: ["status"],
           _count: { _all: true },
           where: {
             ...courtVenueWhere,
+            createdAt: {
+              gte: currentMonthRange.start,
+              lte: currentMonthRange.end,
+            },
           },
         }),
         prisma.payment.aggregate({
           where: {
             status: PaymentStatus.PAID,
+            paymentDate: {
+              gte: currentMonthRange.start,
+              lte: currentMonthRange.end,
+            },
             order: {
               bookings: {
                 some: {
@@ -554,6 +724,10 @@ export const bookingService = {
         prisma.payment.count({
           where: {
             status: PaymentStatus.EXPIRED,
+            createdAt: {
+              gte: currentMonthRange.start,
+              lte: currentMonthRange.end,
+            },
             order: {
               bookings: {
                 some: {
@@ -607,6 +781,11 @@ export const bookingService = {
             court: {
               select: {
                 name: true,
+                venue: {
+                  select: {
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -637,12 +816,81 @@ export const bookingService = {
             },
           },
         }),
+        prisma.booking.groupBy({
+          by: ["status"],
+          _count: { _all: true },
+          where: {
+            ...courtVenueWhere,
+            createdAt: {
+              gte: lastMonthRange.start,
+              lte: lastMonthRange.end,
+            },
+          },
+        }),
+        prisma.payment.aggregate({
+          where: {
+            status: PaymentStatus.PAID,
+            paymentDate: {
+              gte: lastMonthRange.start,
+              lte: lastMonthRange.end,
+            },
+            order: {
+              bookings: {
+                some: {
+                  ...courtVenueWhere,
+                },
+              },
+            },
+          },
+          _sum: { amount: true },
+          _count: { _all: true },
+        }),
+        prisma.payment.count({
+          where: {
+            status: PaymentStatus.EXPIRED,
+            createdAt: {
+              gte: lastMonthRange.start,
+              lte: lastMonthRange.end,
+            },
+            order: {
+              bookings: {
+                some: {
+                  ...courtVenueWhere,
+                },
+              },
+            },
+          },
+        }),
+        prisma.booking.groupBy({
+          by: ["courtId"],
+          where: {
+            ...courtVenueWhere,
+            bookingDate: {
+              gte: new Date(
+                lastMonthRange.start.getTime() - 7 * 24 * 60 * 60 * 1000
+              ),
+              lte: lastMonthRange.end,
+            },
+            status: {
+              in: [
+                BookingStatus.PENDING,
+                BookingStatus.UPCOMING,
+                BookingStatus.COMPLETED,
+              ],
+            },
+          },
+        }),
       ]);
 
       const statusCounts = getStatusCountMap(statusGroups);
+      const lastMonthStatusCounts = getStatusCountMap(lastMonthStatusGroups);
       const revenueAmount = paidAggregate._sum?.amount ?? 0;
       const revenueTransactions = paidAggregate._count?._all ?? 0;
+      const lastMonthRevenueAmount = lastMonthPaidAggregate._sum?.amount ?? 0;
+      const lastMonthRevenueTransactions =
+        lastMonthPaidAggregate._count?._all ?? 0;
       const utilizedCourts = utilizedCourtGroups.length;
+      const lastMonthUtilizedCourts = lastMonthUtilizedCourtGroups.length;
 
       const todaysBookings: TodaysBookingCollection = {
         total: todaysBookingsRaw.length,
@@ -659,6 +907,7 @@ export const bookingService = {
           })),
           customerName: booking.user.profile?.fullName || booking.user.email,
           courtName: booking.court.name,
+          venueName: booking.court.venue.name,
         })),
       };
 
@@ -672,6 +921,81 @@ export const bookingService = {
           totalActiveCourts,
         }
       );
+
+      // Calculate comparisons
+      const revenueComparison = calculatePercentageChange(
+        revenueAmount,
+        lastMonthRevenueAmount
+      );
+      const bookingsComparison = calculatePercentageChange(
+        metrics.totalBookings.total,
+        lastMonthStatusCounts[BookingStatus.PENDING] +
+          lastMonthStatusCounts[BookingStatus.UPCOMING] +
+          lastMonthStatusCounts[BookingStatus.COMPLETED] +
+          lastMonthStatusCounts[BookingStatus.CANCELLED] +
+          lastMonthStatusCounts[BookingStatus.NO_SHOW]
+      );
+      const lastMonthPaidRate =
+        lastMonthRevenueTransactions === 0
+          ? 0
+          : parseFloat(
+              (
+                (lastMonthRevenueTransactions /
+                  (lastMonthStatusCounts[BookingStatus.PENDING] +
+                    lastMonthStatusCounts[BookingStatus.UPCOMING] +
+                    lastMonthStatusCounts[BookingStatus.COMPLETED] +
+                    lastMonthStatusCounts[BookingStatus.CANCELLED] +
+                    lastMonthStatusCounts[BookingStatus.NO_SHOW])) *
+                100
+              ).toFixed(2)
+            );
+      const paidRateComparison = calculatePercentageChange(
+        metrics.paidRate.percentage,
+        lastMonthPaidRate
+      );
+      const lastMonthCancellationTotal =
+        lastMonthStatusCounts[BookingStatus.CANCELLED] +
+        lastMonthStatusCounts[BookingStatus.NO_SHOW] +
+        lastMonthExpiredPaymentCount;
+      const cancellationComparison = calculatePercentageChange(
+        metrics.cancellation.total,
+        lastMonthCancellationTotal
+      );
+      const utilizationComparison = calculatePercentageChange(
+        metrics.courtUtilization?.percentage ?? 0,
+        totalActiveCourts === 0
+          ? 0
+          : Math.min(
+              100,
+              parseFloat(
+                ((lastMonthUtilizedCourts / totalActiveCourts) * 100).toFixed(2)
+              )
+            )
+      );
+
+      // Add comparisons to metrics
+      metrics.totalRevenue.comparison = {
+        percentageChange: revenueComparison,
+        isPositive: revenueComparison >= 0,
+      };
+      metrics.totalBookings.comparison = {
+        percentageChange: bookingsComparison,
+        isPositive: bookingsComparison >= 0,
+      };
+      metrics.paidRate.comparison = {
+        percentageChange: paidRateComparison,
+        isPositive: paidRateComparison >= 0,
+      };
+      metrics.cancellation.comparison = {
+        percentageChange: cancellationComparison,
+        isPositive: cancellationComparison < 0, // Negative is positive for cancellation (less is better)
+      };
+      if (metrics.courtUtilization) {
+        metrics.courtUtilization.comparison = {
+          percentageChange: utilizationComparison,
+          isPositive: utilizationComparison >= 0,
+        };
+      }
 
       const payload: AdminDashboardSnapshot = {
         metrics,
