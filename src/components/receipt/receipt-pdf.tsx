@@ -288,15 +288,11 @@ const getImageUrl = (imageName: string) => {
 
 export function ReceiptPDF({ order }: ReceiptPDFProps) {
   const orderDate = order.createdAt
-    ? format(new Date(order.createdAt), "d MMMM yyyy, HH:mm", {
-        locale: idLocale,
-      })
+    ? format(new Date(order.createdAt), "d MMM yyyy, HH:mm")
     : "N/A";
 
   const paymentDate = order.payment?.paymentDate
-    ? format(new Date(order.payment.paymentDate), "d MMMM yyyy, HH:mm", {
-        locale: idLocale,
-      })
+    ? format(new Date(order.payment.paymentDate), "d MMM yyyy, HH:mm")
     : null;
 
   const customerName = order.user?.profile?.fullName || "Customer";
@@ -440,7 +436,7 @@ export function ReceiptPDF({ order }: ReceiptPDFProps) {
           </Text>
           <Text style={styles.footerAddress}>
             Generated on{" "}
-            {format(new Date(), "d MMMM yyyy, HH:mm", { locale: idLocale })}
+            {format(new Date(), "d MMM yyyy, HH:mm", { locale: idLocale })}
           </Text>
         </View>
       </Page>
