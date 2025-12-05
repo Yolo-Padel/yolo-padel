@@ -30,9 +30,6 @@ export function BookingTableSection({
     hasActiveFilters,
   } = useBookingFilters();
 
-  // Fetch summary data for the sidebar
-  const { data: summaryData } = useSuperAdminBookingDashboard();
-
   // Fetch bookings data with pagination
   const {
     data: bookingsData,
@@ -42,20 +39,12 @@ export function BookingTableSection({
     page: filters.page,
     limit: PAGE_SIZE,
     venueId: filters.venue,
+    startDate: filters.startDate,
+    endDate: filters.endDate,
   });
 
-  const summary = summaryData?.data?.bookingSummary;
   const bookings = bookingsData?.data || [];
   const pagination = bookingsData?.pagination;
-
-  const summaryItems = [
-    { label: "Total Bookings", value: summary?.total },
-    { label: "Completed", value: summary?.completed },
-    { label: "Pending", value: summary?.pending },
-    { label: "Upcoming", value: summary?.upcoming },
-    { label: "Cancelled", value: summary?.cancelled },
-    { label: "Expired Payment", value: summary?.expiredPayment },
-  ];
 
   const paginationInfo = {
     pageSafe: pagination?.page || 1,
@@ -87,6 +76,12 @@ export function BookingTableSection({
             <AdminDashboardFilters
               venueFilter={filters.venue}
               onVenueChange={setVenue}
+              startDate={filters.startDate}
+              endDate={filters.endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              hasActiveFilters={hasActiveFilters}
+              onReset={resetFilters}
             />
           </div>
           {bookings.length === 0 ? (
