@@ -186,7 +186,7 @@ export const manualBookingService = {
               email: data.email,
               password: "",
               userType: UserType.USER,
-              userStatus: UserStatus.ACTIVE,
+              userStatus: UserStatus.JOINED,
               assignedVenueIds: [],
             },
           });

@@ -86,19 +86,11 @@ export function UsersTable({
 
   const getStatusBadge = (status: UserStatus) => {
     switch (status) {
-      case UserStatus.ACTIVE:
+      case UserStatus.JOINED:
         return (
           <Badge variant="outline">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500" /> Active
-            </div>
-          </Badge>
-        );
-      case UserStatus.INACTIVE:
-        return (
-          <Badge variant="outline">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-red-500" /> Inactive
+              <div className="w-2 h-2 rounded-full bg-green-500" /> Joined
             </div>
           </Badge>
         );

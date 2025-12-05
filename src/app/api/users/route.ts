@@ -62,8 +62,7 @@ function parseQueryParameters(request: NextRequest) {
   let statusFilter: UserStatus | undefined = undefined;
   if (statusParam) {
     const validStatuses: UserStatus[] = [
-      UserStatus.ACTIVE,
-      UserStatus.INACTIVE,
+      UserStatus.JOINED,
       UserStatus.INVITED,
     ];
     if (validStatuses.includes(statusParam as UserStatus)) {
