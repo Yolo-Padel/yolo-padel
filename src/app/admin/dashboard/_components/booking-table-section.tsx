@@ -72,10 +72,6 @@ export function BookingTableSection({
     <div className="flex flex-col gap-6 w-full">
       {isLoading ? (
         <BookingTableDashboardLoading />
-      ) : bookings.length === 0 ? (
-        <div className="flex-1 rounded-2xl border border-[#E9EAEB] p-8 text-center">
-          <p className="text-muted-foreground">No bookings found</p>
-        </div>
       ) : (
         <div className="flex flex-col gap-4">
           <div className="flex flex-row justify-between items-center">
@@ -93,12 +89,18 @@ export function BookingTableSection({
               onVenueChange={setVenue}
             />
           </div>
-          <BookingTable
-            bookings={bookings}
-            paginationInfo={paginationInfo}
-            onPageChange={handlePageChange}
-            onViewBooking={onViewBooking}
-          />
+          {bookings.length === 0 ? (
+            <div className="flex-1 rounded-2xl border border-[#E9EAEB] p-8 text-center">
+              <p className="text-muted-foreground">No bookings found</p>
+            </div>
+          ) : (
+            <BookingTable
+              bookings={bookings}
+              paginationInfo={paginationInfo}
+              onPageChange={handlePageChange}
+              onViewBooking={onViewBooking}
+            />
+          )}
         </div>
       )}
     </div>
