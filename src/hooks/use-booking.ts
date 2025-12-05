@@ -180,6 +180,32 @@ const bookingApi = {
 
     return data;
   },
+  updateStatus: async (id: string, status: BookingStatus) => {
+    const response = await fetch(`/api/booking/${id}/status`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Failed to update booking status");
+    }
+    return data;
+  },
+};
+
+export const useUpdateBookingStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: BookingStatus }) =>
+      bookingApi.updateStatus(id, status),
+    onSuccess: (data: { message?: string }) => {
+      toast.success(data.message || "Booking status updated successfully!");
+      queryClient.invalidateQueries({ queryKey: ["blockings"] });
+    },
+  });
 };
 
 export const useBooking = () => {

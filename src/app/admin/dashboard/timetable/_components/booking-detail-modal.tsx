@@ -15,13 +15,13 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { stringUtils } from "@/lib/format/string";
-import { PaymentStatus } from "@/types/prisma";
-import { CancelBookingModal } from "./booking-cancel";
+import { BookingStatus, PaymentStatus } from "@/types/prisma";
 import { formatTimeRange } from "@/components/timetable-utils";
 
 // Extended booking type dengan payment info
 export type BookingDetail = {
   id: string;
+  status: BookingStatus;
   bookingCode: string;
   source: string;
   userName: string;
@@ -44,7 +44,7 @@ type BookingDetailModalProps = {
   onOpenChange: (open: boolean) => void;
   booking: BookingDetail | null;
   onMarkAsComplete?: () => void;
-  onCancelBooking?: () => void;
+  onMarkAsNoShow?: () => void;
 };
 
 // Format waktu: "06:00" -> "06.00"
@@ -100,12 +100,26 @@ function getPaymentStatusBadgeClass(status: PaymentStatus): string {
   }
 }
 
+function getBookingStatusBadgeClass(status: BookingStatus): string {
+  switch (status) {
+    case BookingStatus.UPCOMING:
+      return "bg-[#D0FBE9] text-[#1A7544]";
+    case BookingStatus.PENDING:
+      return "bg-[#FFF4D5] text-[#8B6F00]";
+    case BookingStatus.NO_SHOW:
+      return "bg-[#FFD5D5] text-[#AD1F1F]";
+    case BookingStatus.COMPLETED:
+      return "bg-blue-200 text-blue-800";
+  }
+  return "bg-gray-200 text-gray-700";
+}
+
 export function BookingDetailModal({
   open,
   onOpenChange,
   booking,
   onMarkAsComplete,
-  onCancelBooking,
+  onMarkAsNoShow,
 }: BookingDetailModalProps) {
   if (!booking) return null;
 
@@ -124,8 +138,16 @@ export function BookingDetailModal({
         </Button>
 
         <DialogHeader className="pr-12">
-          <DialogTitle className="text-2xl font-bold">
-            Booking Detail
+          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+            Booking Detail{" "}
+            <Badge
+              className={cn(
+                "rounded-sm px-3 text-xs font-medium",
+                getBookingStatusBadgeClass(booking.status)
+              )}
+            >
+              {stringUtils.toTitleCase(booking.status)}
+            </Badge>
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             Court booking for this timeslot.
@@ -210,36 +232,36 @@ export function BookingDetailModal({
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              variant="outline"
-              className="flex-1 border-[#C3D223] text-foreground"
-              onClick={() => {
-                onOpenChange(false);
-                onCancelBooking?.();
-              }}
-            >
-              Cancel Booking
-            </Button>
-            {onMarkAsComplete &&
-              booking.paymentStatus === PaymentStatus.PAID && (
-                <Button
-                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920]"
-                  onClick={onMarkAsComplete}
-                >
-                  Mark as Complete
-                </Button>
-              )}
-            {onMarkAsComplete &&
-              booking.paymentStatus === PaymentStatus.UNPAID && (
-                <Button
-                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920]"
-                  onClick={() => onOpenChange(true)}
-                >
-                  Mark as Complete
-                </Button>
-              )}
-          </div>
+          {booking.status === BookingStatus.UPCOMING && (
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1 border-[#C3D223] text-foreground"
+                onClick={onMarkAsNoShow}
+              >
+                No Show
+              </Button>
+
+              <Button
+                className="flex-1 bg-[#C3D223] hover:bg-[#A9B920]"
+                onClick={onMarkAsComplete}
+              >
+                Mark as Complete
+              </Button>
+            </div>
+          )}
+
+          {booking.status !== BookingStatus.UPCOMING && (
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1 border-[#C3D223] text-foreground"
+                onClick={() => onOpenChange(false)}
+              >
+                Close
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

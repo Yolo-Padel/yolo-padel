@@ -5,7 +5,7 @@ import type {
 } from "@/components/timetable-types";
 import type { BookingDetail } from "@/app/admin/dashboard/timetable/_components/booking-detail-modal";
 import type { VenueBlockingData } from "@/hooks/use-blocking";
-import { PaymentStatus } from "@/types/prisma";
+import { BookingStatus, PaymentStatus } from "@/types/prisma";
 
 // Type untuk Prisma booking result dari API
 type PrismaBooking = {
@@ -182,6 +182,7 @@ export function transformPrismaBookingToDetail(
   return {
     id: booking.id,
     source: booking.source,
+    status: booking.status as BookingStatus,
     userName: booking.user.profile?.fullName || "Unknown User",
     venueName,
     courtName,
@@ -246,6 +247,7 @@ export function transformPrismaBlockingToDetail(
   return {
     id: blocking.booking.id,
     source: blocking.booking.source,
+    status: blocking.booking.status as BookingStatus,
     userName: blocking.booking.user.profile?.fullName || "Unknown User",
     venueName,
     courtName: blocking.booking.court.name,

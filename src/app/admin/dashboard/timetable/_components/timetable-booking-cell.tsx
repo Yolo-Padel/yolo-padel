@@ -6,6 +6,7 @@ import {
 } from "@/components/timetable-utils";
 import { BOOKING_COLORS } from "@/constants/timetable";
 import type { Booking, Court } from "@/components/timetable-types";
+import { BookingStatus } from "@/types/prisma";
 
 type TimetableBookingCellProps = {
   court: Court;
@@ -93,13 +94,26 @@ export function TimetableBookingCell({
   const isDisabledForStyling = !isCourtOpen || (isPast && !isBooked);
   const canClickBooking = isBooked; // Allow clicking on any booking, even if past
 
+  // Determine background and border colors based on booking status
+  const getBookingStyles = () => {
+    if (!isBooked || !booking) return null;
+
+    if (booking.status === BookingStatus.NO_SHOW) {
+      return "bg-[#F3BFB2] border-l-2 border-l-[#C52E05]";
+    }
+    if (booking.status === BookingStatus.COMPLETED) {
+      return "bg-[#EBEBEB] border-l-2 border-l-[#5C5C5C]";
+    }
+    // Default colors for other statuses
+    return `bg-[${BOOKING_COLORS.BOOKED_BG}] border-l-2 border-l-[#B1BF20]`;
+  };
+
   return (
     <td
       rowSpan={isBooked && isFirstSlot ? span : 1}
       className={cn(
         "border h-[80px] p-2 align-top",
-        isBooked &&
-          `bg-[${BOOKING_COLORS.BOOKED_BG}] border-l-2 border-l-[#B1BF20]`,
+        getBookingStyles(),
         isBooked &&
           `cursor-pointer hover:bg-[${BOOKING_COLORS.BOOKED_HOVER}] transition-colors`,
         isDisabledForStyling &&

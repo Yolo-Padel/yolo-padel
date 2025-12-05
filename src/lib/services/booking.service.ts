@@ -22,6 +22,7 @@ import type {
 } from "@/types/booking-dashboard";
 import { Prisma } from "@prisma/client";
 import { NextBookingInfo } from "@/types/profile";
+import { syncBookingStatusToOrder } from "@/lib/services/status-sync.service";
 
 /**
  * Parse date string (YYYY-MM-DD) and return Date object representing start of day in local timezone
@@ -1158,6 +1159,44 @@ export const bookingService = {
         data: null,
         message:
           error instanceof Error ? error.message : "Cancel booking failed",
+      };
+    }
+  },
+
+  updateStatus: async (
+    id: string,
+    status: BookingStatus,
+    context: ServiceContext
+  ) => {
+    try {
+      const accessError = requirePermission(context, UserType.STAFF);
+      if (accessError) return accessError;
+
+      const booking = await prisma.$transaction(async (tx) => {
+        const updatedBooking = await tx.booking.update({
+          where: { id },
+          data: { status },
+        });
+
+        await syncBookingStatusToOrder(id, status);
+
+        return updatedBooking;
+      });
+
+      return {
+        success: true,
+        data: booking,
+        message: "Update booking status successful",
+      };
+    } catch (error) {
+      console.error("Update booking status error:", error);
+      return {
+        success: false,
+        data: null,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Update booking status failed",
       };
     }
   },
