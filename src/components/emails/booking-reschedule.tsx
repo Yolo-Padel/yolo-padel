@@ -62,7 +62,7 @@ export default function BookingRescheduleEmail({
               <li> Court : {court}</li>
               <li> Date : {date.toLocaleDateString()}</li>
               <li> Time : {time}</li>
-              <li> Booking Code: #{bookingCode}</li>
+              <li> Booking Code: {bookingCode}</li>
               <li> Location : {location}</li>
               <li> Status : {status}</li>
             </ul>

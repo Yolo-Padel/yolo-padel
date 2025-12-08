@@ -66,7 +66,7 @@ export default function BookingCancelationEmail({
                 {date.toLocaleDateString()}
               </li>
               <li>Time&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {time}</li>
-              <li>Booking Code:&nbsp; #{bookingCode}</li>
+              <li>Booking Code:&nbsp; {bookingCode}</li>
               <li>Location&nbsp;: {location}</li>
               <li>Status&nbsp;&nbsp;&nbsp;&nbsp;: {status || "Expired"}</li>
             </ul>

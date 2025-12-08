@@ -92,7 +92,7 @@ export function CancelBookingModal({
               <span>Duration</span>
             </div>
             <div className="flex flex-col mt-2 space-y-2 font-medium">
-              <span>#{booking?.bookingCode || ""}</span>
+              <span>{booking?.bookingCode || ""}</span>
               <span>{booking?.venueName || ""}</span>
               <span>{booking?.courtName || ""}</span>
               <span>
