@@ -138,7 +138,7 @@ export function UsersTable({
 
   const getAssignedRole = (user: User & { roles?: Roles | null }) => {
     // Jika USER biasa, tidak ada assigned role
-    if (user.userType === UserType.USER) return "-";
+    if (user.userType === UserType.USER) return "User";
 
     // Jika ADMIN atau STAFF, tampilkan role name dari relasi roles
     return user.roles?.name || "-";

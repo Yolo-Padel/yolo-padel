@@ -58,7 +58,7 @@ export default function OrderConfirmationEmail({
                 marginBottom: "10px",
               }}
             >
-              Order Code : #{orderCode}
+              Order Code : {orderCode}
             </Text>
 
             {bookings.map((booking, index) => (
@@ -82,7 +82,7 @@ export default function OrderConfirmationEmail({
                   <li> Court : {booking.court}</li>
                   <li> Date : {booking.date.toLocaleDateString()}</li>
                   <li> Time : {booking.time}</li>
-                  <li> Booking Code: #{booking.bookingCode}</li>
+                  <li> Booking Code: {booking.bookingCode}</li>
                   <li> Location : {booking.location}</li>
                 </ul>
               </div>

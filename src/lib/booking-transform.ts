@@ -244,6 +244,8 @@ export function transformPrismaBlockingToDetail(
   blocking: VenueBlockingData,
   venueName: string
 ): BookingDetail {
+  const payment = blocking.booking.order?.payment;
+
   return {
     id: blocking.booking.id,
     source: blocking.booking.source,
@@ -254,10 +256,15 @@ export function transformPrismaBlockingToDetail(
     bookingDate: new Date(blocking.booking.bookingDate),
     timeSlots: blocking.booking.timeSlots,
     duration: blocking.booking.timeSlots.length,
-    totalAmount: 0, // Will be fetched separately if needed
-    paymentMethod: "N/A",
-    paymentStatus: PaymentStatus.UNPAID,
-    createdAt: new Date(blocking.booking.bookingDate),
+    totalAmount:
+      blocking.booking.order?.totalAmount ||
+      blocking.booking.totalPrice ||
+      0,
+    paymentMethod: payment?.channelName || "N/A",
+    paymentStatus: (payment?.status as PaymentStatus) || PaymentStatus.UNPAID,
+    createdAt: payment?.createdAt
+      ? new Date(payment.createdAt)
+      : new Date(blocking.booking.createdAt),
     bookingCode: blocking.booking.bookingCode,
   };
 }

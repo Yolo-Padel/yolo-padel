@@ -207,7 +207,7 @@ export function TodaysBookingSection({
 
                   <div className="flex flex-col gap-2">
                     <p className="text-sm font-medium text-muted-foreground">
-                      #{booking.bookingCode}
+                      {booking.bookingCode}
                     </p>
                     <p className="text-base font-semibold text-foreground">
                       {booking.customerName} • {booking.venueName} •{" "}

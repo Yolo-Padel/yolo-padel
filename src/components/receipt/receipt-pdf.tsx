@@ -321,7 +321,7 @@ export function ReceiptPDF({ order }: ReceiptPDFProps) {
           </View>
           <View style={styles.receiptIdSection}>
             <Text style={styles.receiptIdLabel}>Receipt ID</Text>
-            <Text style={styles.receiptIdValue}>#{order.orderCode}</Text>
+            <Text style={styles.receiptIdValue}>{order.orderCode}</Text>
           </View>
         </View>
 

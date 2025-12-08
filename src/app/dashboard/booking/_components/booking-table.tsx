@@ -250,7 +250,7 @@ export function BookingCourt() {
                 <div className="flex flex-col text-md gap-1 px-2">
                   <CardTitle className="text-xs truncate font-normal">
                     <span className="justify-between flex items-center gap-1">
-                      ID: #{bookingCourt.id}{" "}
+                      ID: {bookingCourt.id}{" "}
                       <Badge
                         className={`rounded-md px-3 py-1 text-xs font-medium ${getStatusBadge(bookingCourt.status)}`}
                       >
