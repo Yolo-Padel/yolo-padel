@@ -338,6 +338,7 @@ export function TimetableContent() {
             onDateChange={handleDateChange}
             transformBookingToDetail={transformBooking}
             onMarkAsComplete={handleMarkAsComplete}
+            onMarkAsNoShow={handleMarkAsNoShow}
             isLoadingTable={isDateChangeLoading}
             onAddBooking={handleAddBooking}
             onSelectEmptySlot={handleAddBookingFromCell}
