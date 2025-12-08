@@ -205,10 +205,6 @@ export function BookingDetailModal({
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Payment Method</span>
-                  <span className="font-medium">{booking.paymentMethod}</span>
-                </div>
-                <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Status</span>
                   <Badge
                     className={cn(
