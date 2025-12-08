@@ -9,51 +9,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatTimeDisplay } from "@/components/timetable-utils";
 
-type ConfirmBookingModalProps = {
-  id: string;
-  venueName: string;
-  bookingCode: string;
-  courtName: string;
-  timeSlots: Array<{
-    openHour: string;
-    closeHour: string;
-  }>;
-  bookingDate: Date;
-  duration: number;
-};
-
-// Format tanggal: "14 Oktober 2025"
-function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(date);
-}
-
-// Format time range: ["06:00", "07:00"] -> "06.00-07.00"
-function formatTimeRange(
-  timeSlots: Array<{ openHour: string; closeHour: string }>
-): string {
-  if (timeSlots.length === 0) return "";
-  const first = timeSlots[0];
-  const last = timeSlots[timeSlots.length - 1];
-  // Format seperti "06.00-07.00" (tanpa AM/PM)
-  return `${formatTimeDisplay(first.openHour)}-${formatTimeDisplay(last.closeHour)}`;
-}
-export function ConfirmBookingModal({
+export function ConfirmCompleteBookingModal({
   open,
   onOpenChange,
-  booking,
   onCompleteBooking,
   isLoading = false,
 }: {
   open: boolean;
-  onOpenChange: (v: boolean) => void;
-  booking: ConfirmBookingModalProps | null;
+  onOpenChange:() => void;
   onCompleteBooking: () => void;
   isLoading?: boolean;
 }) {
@@ -65,7 +29,7 @@ export function ConfirmBookingModal({
           variant="ghost"
           size="icon"
           className="absolute top-4 right-4 size-8 rounded-full bg-[#C3D223] hover:bg-[#A9B920]"
-          onClick={() => onOpenChange(false)}
+          onClick={onOpenChange}
         >
           <X className="h-5 w-5" />
           <span className="sr-only">Close</span>
@@ -85,7 +49,7 @@ export function ConfirmBookingModal({
           <div className="flex gap-3 pt-4">
             <Button
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={onOpenChange}
               className="flex-1 p-4 rounded-sm text-foreground border-[#C3D223]"
               disabled={isLoading}
             >
@@ -93,7 +57,7 @@ export function ConfirmBookingModal({
             </Button>
             <Button
               onClick={onCompleteBooking}
-              className="flex-1 p-4 rounded-sm text-white bg-[#C3D223] hover:bg-[#A9B920]"
+              className="flex-1 p-4 rounded-sm bg-[#C3D223] hover:bg-[#A9B920]"
               disabled={isLoading}
             >
               {isLoading ? "Completing..." : "Complete Booking"}

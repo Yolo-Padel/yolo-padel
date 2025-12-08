@@ -17,7 +17,6 @@ import { cn } from "@/lib/utils";
 import { stringUtils } from "@/lib/format/string";
 import { BookingStatus, PaymentStatus } from "@/types/prisma";
 import { formatTimeRange } from "@/components/timetable-utils";
-import { ConfirmBookingModal } from "./confirmation-modal";
 
 // Extended booking type dengan payment info
 export type BookingDetail = {
@@ -44,10 +43,8 @@ type BookingDetailModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   booking: BookingDetail | null;
-  onMarkAsComplete?: () => void;
-  onMarkAsNoShow?: () => void;
-  onCancelBooking?: () => void;
-  onCompleteBooking: () => void;
+  onConfirmMarkAsCompleteBooking: () => void;
+  onConfirmMarkAsNoShowBooking: () => void;
 };
 
 // Format waktu: "06:00" -> "06.00"
@@ -121,10 +118,8 @@ export function BookingDetailModal({
   open,
   onOpenChange,
   booking,
-  onMarkAsComplete,
-  onMarkAsNoShow,
-  onCancelBooking,
-  onCompleteBooking,
+  onConfirmMarkAsCompleteBooking,
+  onConfirmMarkAsNoShowBooking,
 }: BookingDetailModalProps) {
   if (!booking) return null;
 
@@ -151,7 +146,7 @@ export function BookingDetailModal({
                 getBookingStatusBadgeClass(booking.status)
               )}
             >
-              {stringUtils.toTitleCase(booking.status)}
+              {stringUtils.getRoleDisplay(booking.status)}
             </Badge>
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
@@ -237,27 +232,34 @@ export function BookingDetailModal({
           )}
 
           {/* Action Buttons */}
+          {booking.status !== BookingStatus.COMPLETED && booking.status !== BookingStatus.NO_SHOW && (
           <div className="flex gap-3 pt-4">
             <Button
               variant="outline"
               className="flex-1 border-[#C3D223] text-foreground"
-              onClick={() => {
-                onOpenChange(false);
-                onCancelBooking?.();
-              }}
+              onClick={onConfirmMarkAsNoShowBooking}
             >
               No Show
             </Button>
-                <Button
-                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920]"
-                  onClick={() => {
-                    onOpenChange(false);
-                    onCompleteBooking?.();
-                  }}
-                >
-                  Mark as Complete
-                </Button>
+            <Button
+              className="flex-1 bg-[#C3D223] hover:bg-[#A9B920]"
+              onClick={onConfirmMarkAsCompleteBooking}
+            >
+              Mark as Complete
+            </Button>
           </div>
+          )}
+          {booking.status === BookingStatus.COMPLETED || booking.status === BookingStatus.NO_SHOW && (
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant={"outline"}
+                className="flex-1 border-primary"
+                onClick={() => onOpenChange(false)}
+              >
+                Close
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
