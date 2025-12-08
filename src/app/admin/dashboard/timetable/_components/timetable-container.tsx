@@ -15,6 +15,7 @@ import { getTimeSlotBooking } from "@/components/timetable-booking-helpers";
 import { getNextHour } from "@/components/timetable-utils";
 import { CancelBookingModal } from "./booking-cancel";
 import { useCancelBooking } from "@/hooks/use-booking";
+import { ConfirmBookingModal } from "./confirmation-modal";
 
 // Re-export types untuk backward compatibility
 export type {
@@ -97,6 +98,7 @@ export function TimetableContainer({
     React.useState<BookingDetail | null>(null);
   const [modalOpen, setModalOpen] = React.useState(false);
   const [cancelModalOpen, setCancelModalOpen] = React.useState(false);
+  const [confirmModalOpen, setConfirmModalOpen] = React.useState(false);
   const [dragState, setDragState] = React.useState<{
     court: Court;
     startSlot: string;
@@ -131,7 +133,7 @@ export function TimetableContainer({
   const handleMarkAsComplete = () => {
     if (selectedBooking) {
       onMarkAsComplete?.(selectedBooking.id);
-      setModalOpen(false);
+      setConfirmModalOpen(false);
       setSelectedBooking(null);
     }
   };
@@ -139,7 +141,7 @@ export function TimetableContainer({
   const handleMarkAsNoShow = () => {
     if (selectedBooking) {
       onMarkAsNoShow?.(selectedBooking.id);
-      setModalOpen(false);
+      setConfirmModalOpen(false);
       setSelectedBooking(null);
     }
   };
@@ -148,6 +150,13 @@ export function TimetableContainer({
   const handleOpenCancelBookingModal = () => {
     if (selectedBooking) {
       setCancelModalOpen(true);
+    }
+  };
+
+  // Handle Confirm booking
+  const handleOpenConfirmBookingModal = () => {
+    if (selectedBooking) {
+      setConfirmModalOpen(true);
     }
   };
 
@@ -339,6 +348,7 @@ export function TimetableContainer({
         booking={selectedBooking}
         onMarkAsComplete={handleMarkAsComplete}
         onMarkAsNoShow={handleMarkAsNoShow}
+        onCompleteBooking={handleOpenConfirmBookingModal}
       />
 
       <CancelBookingModal
@@ -347,6 +357,13 @@ export function TimetableContainer({
         booking={selectedBooking}
         onCancelBooking={handleCancelBooking}
         isLoading={cancelBookingMutation.isPending}
+      />
+
+      <ConfirmBookingModal
+        open={confirmModalOpen}
+        onOpenChange={setConfirmModalOpen}
+        booking={selectedBooking}
+        onCompleteBooking={handleMarkAsComplete}
       />
     </div>
   );

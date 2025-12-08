@@ -47,7 +47,7 @@ type BookingDetailModalProps = {
   onMarkAsComplete?: () => void;
   onMarkAsNoShow?: () => void;
   onCancelBooking?: () => void;
-  onCompleteBooking?: () => void;
+  onCompleteBooking: () => void;
 };
 
 // Format waktu: "06:00" -> "06.00"
@@ -246,26 +246,17 @@ export function BookingDetailModal({
                 onCancelBooking?.();
               }}
             >
-              Cancel Booking
+              No Show
             </Button>
-            {onMarkAsComplete &&
-              booking.paymentStatus === PaymentStatus.PAID && (
                 <Button
                   className="flex-1 bg-[#C3D223] hover:bg-[#A9B920]"
-                  onClick={onMarkAsComplete}
+                  onClick={() => {
+                    onOpenChange(false);
+                    onCompleteBooking?.();
+                  }}
                 >
                   Mark as Complete
                 </Button>
-              )}
-            {onMarkAsComplete &&
-              booking.paymentStatus === PaymentStatus.UNPAID && (
-                <Button
-                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920]"
-                  onClick={onCompleteBooking}
-                >
-                  Mark as Complete
-                </Button>
-              )}
           </div>
         </div>
       </DialogContent>

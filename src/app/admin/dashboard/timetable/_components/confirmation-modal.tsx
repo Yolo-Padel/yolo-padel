@@ -89,11 +89,11 @@ export function ConfirmBookingModal({
               className="flex-1 p-4 rounded-sm text-foreground border-[#C3D223]"
               disabled={isLoading}
             >
-              Keep this Booking
+              Cancel
             </Button>
             <Button
               onClick={onCompleteBooking}
-              className="flex-1 p-4 rounded-sm text-white bg-destructive hover:bg-destructive/90"
+              className="flex-1 p-4 rounded-sm text-white bg-[#C3D223] hover:bg-[#A9B920]"
               disabled={isLoading}
             >
               {isLoading ? "Completing..." : "Complete Booking"}
