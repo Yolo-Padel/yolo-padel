@@ -101,6 +101,8 @@ export async function GET(
             id: orderData.payment.id,
             channelName: orderData.payment.channelName,
             amount: orderData.payment.amount,
+            taxAmount: orderData.payment.taxAmount ?? 0,     // Fee breakdown field (Requirements 1.3)
+            bookingFee: orderData.payment.bookingFee ?? 0,   // Fee breakdown field (Requirements 2.3)
             status: orderData.payment.status,
             paymentDate: orderData.payment.paymentDate
               ? orderData.payment.paymentDate.toISOString()

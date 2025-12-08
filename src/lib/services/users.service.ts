@@ -163,8 +163,7 @@ function validateUserStatus(value?: string): UserStatus | undefined {
 
   // Check if value is a valid UserStatus enum value
   const validStatuses: UserStatus[] = [
-    UserStatus.ACTIVE,
-    UserStatus.INACTIVE,
+    UserStatus.JOINED,
     UserStatus.INVITED,
   ];
 

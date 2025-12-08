@@ -143,7 +143,7 @@ class MagicLinkService {
       // Only set joinDate if it's the first time user verifies magic link
       if (!user?.joinDate) {
         updateData.joinDate = new Date();
-        updateData.userStatus = UserStatus.ACTIVE;
+        updateData.userStatus = UserStatus.JOINED;
         updateData.isEmailVerified = true;
       }
 

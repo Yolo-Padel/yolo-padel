@@ -14,6 +14,9 @@ export type CreateOrderInput = {
     price: number;
   }>;
   channelName: string;
+  // Fee breakdown fields (Requirements 4.1)
+  taxAmount?: number;   // Tax portion in smallest currency unit (e.g., Rupiah)
+  bookingFee?: number;  // Service/platform fee in smallest currency unit
 };
 
 export type Order = {
@@ -59,6 +62,8 @@ export type Order = {
     id: string;
     channelName: string;
     amount: number;
+    taxAmount: number;    // Fee breakdown field (Requirements 1.3, 2.3)
+    bookingFee: number;   // Fee breakdown field (Requirements 1.3, 2.3)
     status: PaymentStatus;
     paymentDate: string | null;
     invoiceUrl: string;

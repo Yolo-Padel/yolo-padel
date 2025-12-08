@@ -288,15 +288,11 @@ const getImageUrl = (imageName: string) => {
 
 export function ReceiptPDF({ order }: ReceiptPDFProps) {
   const orderDate = order.createdAt
-    ? format(new Date(order.createdAt), "d MMMM yyyy, HH:mm", {
-        locale: idLocale,
-      })
+    ? format(new Date(order.createdAt), "d MMM yyyy, HH:mm")
     : "N/A";
 
   const paymentDate = order.payment?.paymentDate
-    ? format(new Date(order.payment.paymentDate), "d MMMM yyyy, HH:mm", {
-        locale: idLocale,
-      })
+    ? format(new Date(order.payment.paymentDate), "d MMM yyyy, HH:mm")
     : null;
 
   const customerName = order.user?.profile?.fullName || "Customer";
@@ -413,12 +409,31 @@ export function ReceiptPDF({ order }: ReceiptPDFProps) {
         {/* Totals */}
         <View style={styles.totalsSection}>
           <View style={styles.totalsContainer}>
+            {/* Court Fees (base amount) */}
             <View style={styles.totalRow}>
               <Text style={styles.totalRowLabel}>Subtotal</Text>
               <Text style={styles.totalRowValue}>
-                {stringUtils.formatRupiah(order.totalAmount)}
+                {stringUtils.formatRupiah(order.payment?.amount ?? order.totalAmount)}
               </Text>
             </View>
+            {/* Tax Amount */}
+            {order.payment?.taxAmount && order.payment.taxAmount > 0 && (
+              <View style={styles.totalRow}>
+                <Text style={styles.totalRowLabel}>Tax</Text>
+                <Text style={styles.totalRowValue}>
+                  {stringUtils.formatRupiah(order.payment.taxAmount)}
+                </Text>
+              </View>
+            )}
+            {/* Booking Fee */}
+            {order.payment?.bookingFee && order.payment.bookingFee > 0 && (
+              <View style={styles.totalRow}>
+                <Text style={styles.totalRowLabel}>Booking Fee</Text>
+                <Text style={styles.totalRowValue}>
+                  {stringUtils.formatRupiah(order.payment.bookingFee)}
+                </Text>
+              </View>
+            )}
             <View style={styles.totalDivider} />
             <View style={styles.totalFinal}>
               <Text style={styles.totalFinalLabel}>Total Paid</Text>
@@ -440,7 +455,7 @@ export function ReceiptPDF({ order }: ReceiptPDFProps) {
           </Text>
           <Text style={styles.footerAddress}>
             Generated on{" "}
-            {format(new Date(), "d MMMM yyyy, HH:mm", { locale: idLocale })}
+            {format(new Date(), "d MMM yyyy, HH:mm", { locale: idLocale })}
           </Text>
         </View>
       </Page>

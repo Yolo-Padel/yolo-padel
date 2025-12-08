@@ -35,6 +35,7 @@ function defaultTransformBookingToDetail(
 ): BookingDetail {
   return {
     id: booking.id,
+    status: booking.status,
     userName: booking.userName,
     venueName,
     courtName,
@@ -72,6 +73,7 @@ export function TimetableContainer({
   onDateChange,
   transformBookingToDetail = defaultTransformBookingToDetail,
   onMarkAsComplete,
+  onMarkAsNoShow,
   onCancelBooking,
   isLoadingTable = false,
   onAddBooking,
@@ -129,6 +131,14 @@ export function TimetableContainer({
   const handleMarkAsComplete = () => {
     if (selectedBooking) {
       onMarkAsComplete?.(selectedBooking.id);
+      setModalOpen(false);
+      setSelectedBooking(null);
+    }
+  };
+
+  const handleMarkAsNoShow = () => {
+    if (selectedBooking) {
+      onMarkAsNoShow?.(selectedBooking.id);
       setModalOpen(false);
       setSelectedBooking(null);
     }
@@ -328,7 +338,7 @@ export function TimetableContainer({
         onOpenChange={setModalOpen}
         booking={selectedBooking}
         onMarkAsComplete={handleMarkAsComplete}
-        onCancelBooking={() => setCancelModalOpen(true)}
+        onMarkAsNoShow={handleMarkAsNoShow}
       />
 
       <CancelBookingModal

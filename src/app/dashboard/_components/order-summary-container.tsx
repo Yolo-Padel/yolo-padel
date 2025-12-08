@@ -120,11 +120,14 @@ export function OrderSummaryContainer({
       price: item.pricePerSlot,
     }));
 
-    // Create order
+    // Create order with fee breakdown (Requirements 4.1, 4.2, 4.3)
+    // Use Math.round() to ensure integer values for database storage
     createOrder(
       {
         bookings,
         channelName: DEFAULT_PAYMENT_CHANNEL,
+        taxAmount: Math.round(taxAmount),
+        bookingFee: Math.round(bookingFeeAmount),
       },
       {
         onSuccess: async (order) => {
@@ -134,7 +137,7 @@ export function OrderSummaryContainer({
 
             const requestBody = {
               externalId: order.payment?.id || order.id,
-              amount: order.totalAmount,
+              amount: courtFeesTotal,
               description: `Order ${order.orderCode}`,
               payerEmail: guestEmail || undefined,
             };
@@ -290,7 +293,7 @@ export function OrderSummaryContainer({
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Booking Fee</span>
+            <span className="text-muted-foreground">Booking Fee ({bookingFeePercentage * 100}%)</span>
             <span className="font-medium">
               {stringUtils.formatRupiah(bookingFeeAmount)}
             </span>

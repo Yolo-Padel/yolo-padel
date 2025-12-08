@@ -125,8 +125,7 @@ export function UserFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All statuses</SelectItem>
-          <SelectItem value={UserStatus.ACTIVE}>Active</SelectItem>
-          <SelectItem value={UserStatus.INACTIVE}>Inactive</SelectItem>
+          <SelectItem value={UserStatus.JOINED}>Joined</SelectItem>
           <SelectItem value={UserStatus.INVITED}>Invited</SelectItem>
         </SelectContent>
       </Select>

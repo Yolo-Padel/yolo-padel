@@ -15,7 +15,7 @@ export function BookingCourtModal({
       <DialogTitle className="sr-only">Book your court</DialogTitle>
       <DialogContent
         showCloseButton={false}
-        className="p-8 lg:max-w-[600px] max-h-[85vh] overflow-y-auto"
+        className="lg:max-w-[600px] max-h-[85vh] overflow-y-auto"
       >
         <BookingForm onClose={onClose} isModal={true} />
       </DialogContent>

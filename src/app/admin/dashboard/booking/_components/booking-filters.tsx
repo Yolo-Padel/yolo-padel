@@ -130,14 +130,14 @@ export function BookingFilters({
     } else {
       // Update start date
       if (tempDateRange.from) {
-        onStartDateChange(tempDateRange.from.toISOString());
+        onStartDateChange(format(tempDateRange.from, "yyyy-MM-dd"));
       } else {
         onStartDateChange("");
       }
 
       // Update end date
       if (tempDateRange.to) {
-        onEndDateChange(tempDateRange.to.toISOString());
+        onEndDateChange(format(tempDateRange.to, "yyyy-MM-dd"));
       } else {
         onEndDateChange("");
       }
@@ -274,7 +274,10 @@ export function BookingFilters({
         <Button
           variant="outline"
           size="default"
-          onClick={onReset}
+          onClick={() => {
+            onReset();
+            setLocalSearchValue("");
+          }}
           aria-label="Reset all filters"
           className="ml-auto"
         >

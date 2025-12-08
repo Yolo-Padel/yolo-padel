@@ -68,6 +68,8 @@ export async function POST(request: NextRequest) {
     console.log("PAYLOADDD ORDER", data);
 
     // Create order with bookings
+    // Pass fee breakdown fields (taxAmount, bookingFee) to service
+    // Requirements: 1.1, 2.1, 3.1
     const order = await createOrder({
       userId: data.userId,
       bookings: data.bookings.map((booking) => ({
@@ -77,8 +79,12 @@ export async function POST(request: NextRequest) {
         price: booking.price,
       })),
       channelName: data.channelName,
+      // Fee breakdown fields (default to 0 if not provided)
+      taxAmount: data.taxAmount,
+      bookingFee: data.bookingFee,
     });
 
+    // Response includes fee breakdown per Requirements 1.3, 2.3, 3.3
     return NextResponse.json(
       {
         success: true,

@@ -38,8 +38,8 @@ import {
 } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { generateTimeSlots, getNextHour } from "@/components/timetable-utils";
-import { stringUtils } from "@/lib/format/string";
 import { z } from "zod";
+import { currencyUtils } from "@/lib/format/currency";
 
 type CourtOption = {
   id: string;
@@ -91,7 +91,8 @@ export function DynamicPriceModal({
   const timeOptions = React.useMemo(() => generateTimeSlots(), []);
 
   const [datePickerOpen, setDatePickerOpen] = React.useState(false);
-  const [priceInputFocused, setPriceInputFocused] = React.useState(false);
+  const [priceDisplay, setPriceDisplay] = React.useState<string>("");
+  const isUserTypingRef = React.useRef(false);
 
   const createMutation = useCreateCourtDynamicPrice();
   const deleteMutation = useDeleteCourtDynamicPrice();
@@ -119,6 +120,7 @@ export function DynamicPriceModal({
 
   const selectedStartHour = watch("startHour");
   const selectedCourtId = watch("courtId");
+  const priceValue = watch("price");
   const isEditingExisting = Boolean(initialDynamicPriceId);
   const canSubmit = isEditingExisting ? canUpdate : canCreate;
   const isReadOnly =
@@ -133,6 +135,23 @@ export function DynamicPriceModal({
     return timeOptions.filter((time) => time > selectedStartHour);
   }, [selectedStartHour, timeOptions]);
 
+  // Sync priceDisplay with form value when it changes externally (not from user typing)
+  React.useEffect(() => {
+    if (
+      !isUserTypingRef.current &&
+      priceValue !== undefined &&
+      priceValue !== null
+    ) {
+      setPriceDisplay(
+        priceValue > 0
+          ? currencyUtils.formatCurrencyInput(priceValue.toString())
+          : ""
+      );
+    }
+    // Reset the flag after sync
+    isUserTypingRef.current = false;
+  }, [priceValue]);
+
   React.useEffect(() => {
     if (!open) {
       reset({
@@ -145,13 +164,23 @@ export function DynamicPriceModal({
         isActive: true,
       });
       setDatePickerOpen(false);
-      setPriceInputFocused(false);
+      setPriceDisplay(
+        initialPrice
+          ? currencyUtils.formatCurrencyInput(initialPrice.toString())
+          : ""
+      );
     } else {
       setValue("courtId", initialCourtId ?? courts[0]?.id ?? "");
       setValue("date", initialDate);
       setValue("startHour", initialStartHour);
       setValue("endHour", initialEndHour);
-      setValue("price", initialPrice ?? 0);
+      const priceValue = initialPrice ?? 0;
+      setValue("price", priceValue);
+      setPriceDisplay(
+        priceValue
+          ? currencyUtils.formatCurrencyInput(priceValue.toString())
+          : ""
+      );
     }
   }, [
     open,
@@ -422,31 +451,21 @@ export function DynamicPriceModal({
                   control={control}
                   name="price"
                   render={({ field }) => {
-                    const displayValue = priceInputFocused
-                      ? field.value && field.value > 0
-                        ? field.value.toString()
-                        : ""
-                      : field.value && field.value > 0
-                        ? stringUtils.formatRupiah(field.value)
-                        : "";
-
                     return (
                       <Input
                         type="text"
                         placeholder="Enter price"
-                        value={displayValue}
+                        value={priceDisplay}
                         onChange={(e) => {
-                          const rawValue = e.target.value.replace(/\D/g, "");
-                          const numValue = rawValue
-                            ? parseInt(rawValue, 10)
-                            : 0;
-                          field.onChange(numValue);
-                        }}
-                        onFocus={() => {
-                          setPriceInputFocused(true);
-                        }}
-                        onBlur={() => {
-                          setPriceInputFocused(false);
+                          isUserTypingRef.current = true;
+                          const inputValue = e.target.value;
+                          const formattedValue =
+                            currencyUtils.formatCurrencyInput(inputValue);
+                          const numericValue =
+                            currencyUtils.parseCurrencyInput(inputValue);
+
+                          setPriceDisplay(formattedValue);
+                          field.onChange(numericValue);
                         }}
                         disabled={isReadOnly}
                       />
