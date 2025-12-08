@@ -163,13 +163,13 @@ export function DashboardMetrics({ userType }: DashboardMetricsProps) {
     data: superAdminData,
     isLoading: isSuperAdminLoading,
     error: superAdminError,
-  } = useSuperAdminBookingDashboard({ enabled: isStaff });
+  } = useSuperAdminBookingDashboard({ enabled: !isStaff });
 
   const {
     data: adminData,
     isLoading: isAdminLoading,
     error: adminError,
-  } = useAdminBookingDashboard({ enabled: !isStaff });
+  } = useAdminBookingDashboard({ enabled: isStaff });
 
   const snapshot:
     | SuperAdminDashboardSnapshot
