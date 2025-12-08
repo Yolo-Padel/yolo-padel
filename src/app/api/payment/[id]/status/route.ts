@@ -46,22 +46,43 @@ export async function GET(
       );
     }
 
+    // Response includes fee breakdown per Requirements 1.3, 2.3
+    // Also includes booking details for payment feedback dialog
     return NextResponse.json({
       success: true,
       data: {
         id: payment.id,
         status: payment.status,
         amount: payment.amount,
+        taxAmount: payment.taxAmount,     // Fee breakdown field (Requirements 1.3)
+        bookingFee: payment.bookingFee,   // Fee breakdown field (Requirements 2.3)
         paymentDate: payment.paymentDate,
         expiredAt: payment.expiredAt,
         xenditInvoiceId: payment.xenditInvoiceId,
         paymentUrl: payment.paymentUrl,
-        // Order info
+        // Order info with bookings
         order: payment.order
           ? {
               id: payment.order.id,
               orderCode: payment.order.orderCode,
               status: payment.order.status,
+              bookings: payment.order.bookings.map((booking) => ({
+                id: booking.id,
+                bookingCode: booking.bookingCode,
+                bookingDate: booking.bookingDate,
+                duration: booking.duration,
+                totalPrice: booking.totalPrice,
+                court: {
+                  name: booking.court.name,
+                  venue: {
+                    name: booking.court.venue.name,
+                  },
+                },
+                timeSlots: booking.timeSlots.map((slot) => ({
+                  openHour: slot.openHour,
+                  closeHour: slot.closeHour,
+                })),
+              })),
             }
           : null,
       },

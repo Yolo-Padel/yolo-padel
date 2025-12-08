@@ -81,6 +81,8 @@ export interface GetOrdersForAdminResult {
         id: string;
         channelName: string;
         amount: number;
+        taxAmount: number;    // Fee breakdown field (Requirements 1.3, 2.3)
+        bookingFee: number;   // Fee breakdown field (Requirements 1.3, 2.3)
         status: PaymentStatus;
         paymentDate: Date | null;
         paymentUrl: string | null;
@@ -160,6 +162,9 @@ export async function createOrder(data: {
     price: number;
   }>;
   channelName: string;
+  // Fee breakdown fields (optional, default to 0)
+  taxAmount?: number;
+  bookingFee?: number;
 }): Promise<
   Order & {
     bookings: Array<{
@@ -171,16 +176,20 @@ export async function createOrder(data: {
     payment: { id: string; status: string } | null;
   }
 > {
-  const { userId, bookings: bookingData, channelName } = data;
+  const { userId, bookings: bookingData, channelName, taxAmount = 0, bookingFee = 0 } = data;
 
   // Generate order code (orchestration responsibility)
   const orderCode = generateOrderCode();
 
-  // Calculate total amount (orchestration responsibility)
-  const totalAmount = bookingData.reduce(
+  // Calculate base amount from bookings (court rental cost)
+  const baseAmount = bookingData.reduce(
     (sum, booking) => sum + booking.price * booking.slots.length,
     0
   );
+
+  // Calculate total amount including fees: baseAmount + taxAmount + bookingFee
+  // Requirements 3.1: totalAmount = base booking amount + taxAmount + bookingFee
+  const totalAmount = baseAmount + taxAmount + bookingFee;
 
   // All operations in a single transaction (all-or-nothing)
   const order = await prisma.$transaction(async (tx) => {
@@ -266,12 +275,17 @@ export async function createOrder(data: {
     );
 
     // 3. Create Payment (using extracted service)
+    // Pass fee breakdown to payment for financial tracking
+    // Note: Payment.amount stores the base booking amount (court rental only)
+    // taxAmount and bookingFee are stored separately for reporting
     const payment = await createPayment(
       {
         orderId: newOrder.id,
         userId,
         channelName,
-        amount: totalAmount,
+        amount: baseAmount, // Base booking amount (court rental cost)
+        taxAmount, // Tax portion
+        bookingFee, // Service/platform fee
       },
       tx // Pass transaction client
     );
@@ -367,6 +381,8 @@ export async function getOrderById(orderId: string) {
           id: true,
           channelName: true,
           amount: true,
+          taxAmount: true,    // Fee breakdown field (Requirements 1.3, 2.3)
+          bookingFee: true,   // Fee breakdown field (Requirements 1.3, 2.3)
           status: true,
           paymentDate: true,
           expiredAt: true,
@@ -442,6 +458,8 @@ export async function getOrdersByUserId(
             id: true,
             status: true,
             amount: true,
+            taxAmount: true,    // Fee breakdown field (Requirements 1.3, 2.3)
+            bookingFee: true,   // Fee breakdown field (Requirements 1.3, 2.3)
             paymentDate: true,
             channelName: true,
           },
@@ -516,6 +534,8 @@ export async function getAllOrdersForAdmin() {
           id: true,
           channelName: true,
           amount: true,
+          taxAmount: true,    // Fee breakdown field (Requirements 1.3, 2.3)
+          bookingFee: true,   // Fee breakdown field (Requirements 1.3, 2.3)
           status: true,
           paymentDate: true,
           paymentUrl: true,
@@ -928,6 +948,8 @@ export async function getOrdersForAdmin(
             id: true,
             channelName: true,
             amount: true,
+            taxAmount: true,    // Fee breakdown field (Requirements 1.3, 2.3)
+            bookingFee: true,   // Fee breakdown field (Requirements 1.3, 2.3)
             status: true,
             paymentDate: true,
             paymentUrl: true,

@@ -409,12 +409,31 @@ export function ReceiptPDF({ order }: ReceiptPDFProps) {
         {/* Totals */}
         <View style={styles.totalsSection}>
           <View style={styles.totalsContainer}>
+            {/* Court Fees (base amount) */}
             <View style={styles.totalRow}>
               <Text style={styles.totalRowLabel}>Subtotal</Text>
               <Text style={styles.totalRowValue}>
-                {stringUtils.formatRupiah(order.totalAmount)}
+                {stringUtils.formatRupiah(order.payment?.amount ?? order.totalAmount)}
               </Text>
             </View>
+            {/* Tax Amount */}
+            {order.payment?.taxAmount && order.payment.taxAmount > 0 && (
+              <View style={styles.totalRow}>
+                <Text style={styles.totalRowLabel}>Tax</Text>
+                <Text style={styles.totalRowValue}>
+                  {stringUtils.formatRupiah(order.payment.taxAmount)}
+                </Text>
+              </View>
+            )}
+            {/* Booking Fee */}
+            {order.payment?.bookingFee && order.payment.bookingFee > 0 && (
+              <View style={styles.totalRow}>
+                <Text style={styles.totalRowLabel}>Booking Fee</Text>
+                <Text style={styles.totalRowValue}>
+                  {stringUtils.formatRupiah(order.payment.bookingFee)}
+                </Text>
+              </View>
+            )}
             <View style={styles.totalDivider} />
             <View style={styles.totalFinal}>
               <Text style={styles.totalFinalLabel}>Total Paid</Text>

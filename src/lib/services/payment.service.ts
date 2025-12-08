@@ -33,6 +33,9 @@ export async function createPayment(
     userId: string;
     channelName: string;
     amount: number;
+    // Fee breakdown fields (optional, default to 0)
+    taxAmount?: number;
+    bookingFee?: number;
     // Xendit fields (optional)
     xenditInvoiceId?: string | null;
     xenditReferenceId?: string | null;
@@ -50,6 +53,8 @@ export async function createPayment(
       userId: data.userId,
       channelName: data.channelName,
       amount: data.amount,
+      taxAmount: data.taxAmount ?? 0,
+      bookingFee: data.bookingFee ?? 0,
       status: PaymentStatus.UNPAID,
       expiredAt: data.expiredAt || new Date(Date.now() + 15 * 60 * 1000), // 15 minutes from now or custom
       // Xendit fields (only include if they have values to avoid undefined)

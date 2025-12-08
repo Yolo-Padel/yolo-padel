@@ -303,6 +303,8 @@ model Payment {
   channelName  String
   userId       String
   amount       Int
+  taxAmount    Int           @default(0)  // Tax portion of the payment
+  bookingFee   Int           @default(0)  // Service/platform fee
   paymentDate  DateTime?
   status       PaymentStatus
   expiredAt    DateTime?
