@@ -34,6 +34,8 @@ export type VenueBlockingData = {
     userId: string;
     bookingDate: string | Date;
     status: string;
+    totalPrice: number;
+    createdAt: string | Date;
     timeSlots: Array<{
       openHour: string;
       closeHour: string;
@@ -48,6 +50,17 @@ export type VenueBlockingData = {
       id: string;
       name: string;
     };
+    order: {
+      id: string;
+      totalAmount: number;
+      payment: {
+        id: string;
+        status: string;
+        channelName: string;
+        amount: number;
+        createdAt: string | Date;
+      } | null;
+    } | null;
   };
 };
 
