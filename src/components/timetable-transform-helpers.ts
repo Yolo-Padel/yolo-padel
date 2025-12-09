@@ -31,6 +31,7 @@ export function createBookingDetailTransform(
       id: booking.id,
       bookingCode: booking.bookingCode,
       source: booking.source,
+      status: booking.status,
       userName: booking.userName,
       venueName,
       courtName,

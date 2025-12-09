@@ -17,8 +17,7 @@ enum UserType {
 }
 
 enum UserStatus {
-  ACTIVE
-  INACTIVE
+  JOINED
   INVITED
 }
 
@@ -50,7 +49,7 @@ model User {
   email     String   @unique
   password  String   @default("")
   userType  UserType @default(USER)
-  userStatus UserStatus @default(ACTIVE)
+  userStatus UserStatus @default(JOINED)
   isEmailVerified Boolean @default(false)
   joinDate  DateTime?
   createdAt DateTime @default(now())
@@ -304,6 +303,8 @@ model Payment {
   channelName  String
   userId       String
   amount       Int
+  taxAmount    Int           @default(0)  // Tax portion of the payment
+  bookingFee   Int           @default(0)  // Service/platform fee
   paymentDate  DateTime?
   status       PaymentStatus
   expiredAt    DateTime?

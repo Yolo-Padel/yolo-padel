@@ -70,7 +70,7 @@ export function OrderSummaryContainer({
     if (!isAuthenticated) {
       // Validate guest info
       if (!guestEmail || !guestFullName) {
-        toast.error("Email dan nama lengkap wajib diisi");
+        toast.error("Email and full name are required");
         return;
       }
 
@@ -90,7 +90,7 @@ export function OrderSummaryContainer({
           },
           onError: (error: Error) => {
             setIsProcessing(false);
-            toast.error(error.message || "Gagal membuat akun guest");
+            toast.error(error.message || "Failed to create account");
             // Rollback: clear bookings on error
             if (onClearBookings) {
               onClearBookings();
@@ -120,11 +120,14 @@ export function OrderSummaryContainer({
       price: item.pricePerSlot,
     }));
 
-    // Create order
+    // Create order with fee breakdown (Requirements 4.1, 4.2, 4.3)
+    // Use Math.round() to ensure integer values for database storage
     createOrder(
       {
         bookings,
         channelName: DEFAULT_PAYMENT_CHANNEL,
+        taxAmount: Math.round(taxAmount),
+        bookingFee: Math.round(bookingFeeAmount),
       },
       {
         onSuccess: async (order) => {
@@ -134,7 +137,7 @@ export function OrderSummaryContainer({
 
             const requestBody = {
               externalId: order.payment?.id || order.id,
-              amount: order.totalAmount,
+              amount: courtFeesTotal,
               description: `Order ${order.orderCode}`,
               payerEmail: guestEmail || undefined,
             };
@@ -151,7 +154,7 @@ export function OrderSummaryContainer({
             if (!xenditResponse.ok) {
               const errorData = await xenditResponse.json();
               throw new Error(
-                errorData.message || "Gagal membuat payment Xendit"
+                errorData.message || "Failed to create Xendit payment"
               );
             }
 
@@ -162,7 +165,7 @@ export function OrderSummaryContainer({
             if (invoiceUrl) {
               window.location.href = invoiceUrl;
             } else {
-              toast.info("Invoice URL tidak tersedia.");
+              toast.info("Invoice URL not available.");
             }
 
             if (onClearBookings) {
@@ -174,7 +177,7 @@ export function OrderSummaryContainer({
             toast.error(
               error instanceof Error
                 ? error.message
-                : "Gagal membuat payment Xendit"
+                : "Failed to create Xendit payment"
             );
             // Rollback: clear bookings on error
             if (onClearBookings) {
@@ -184,7 +187,7 @@ export function OrderSummaryContainer({
         },
         onError: (error) => {
           setIsProcessing(false);
-          toast.error(error.message || "Gagal membuat order");
+          toast.error(error.message || "Failed to create order");
           // Rollback: clear bookings on error
           if (onClearBookings) {
             onClearBookings();
@@ -290,7 +293,7 @@ export function OrderSummaryContainer({
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Booking Fee</span>
+            <span className="text-muted-foreground">Booking Fee ({bookingFeePercentage * 100}%)</span>
             <span className="font-medium">
               {stringUtils.formatRupiah(bookingFeeAmount)}
             </span>

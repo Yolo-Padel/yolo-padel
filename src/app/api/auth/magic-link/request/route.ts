@@ -24,17 +24,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // return NextResponse.json({
-    //   success: true,
-    //   message: result.message,
-    //   // Note: In production, you might want to send this via email instead of returning it
-    //   token: result.token,
-    // });
-
-    const magicLinkUrl = process.env.NEXT_PUBLIC_APP_URL + "/auth/verify?token=" + result.token!;
+    const magicLinkUrl =
+      process.env.NEXT_PUBLIC_APP_URL + "/auth/verify?token=" + result.token!;
 
     // send email with magic link token and redirect to verification page
-    const emailResponse = await resendService.sendMagicLinkEmail({ email: email }, magicLinkUrl);
+    const emailResponse = await resendService.sendMagicLinkEmail(
+      { email: email },
+      magicLinkUrl
+    );
 
     if (!emailResponse.success) {
       return NextResponse.json(emailResponse, { status: 500 });
@@ -44,7 +41,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Magic link request error:", error);
     return NextResponse.json(
-      { success: false, message: "Terjadi kesalahan server" },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

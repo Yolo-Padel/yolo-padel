@@ -60,7 +60,7 @@ const menuConfig: MenuItem[] = [
     moduleKey: "bookings",
   },
   {
-    name: "Price Configuration",
+    name: "Custom Price",
     url: "/admin/dashboard/price",
     icon: DollarSign,
     userTypes: [UserType.ADMIN, UserType.STAFF],

@@ -204,7 +204,7 @@ export async function getBlockingByBookingId(
 
 /**
  * Get active blockings for ALL courts in a venue for specific date
- * With full booking details including user profile and court info
+ * With full booking details including user profile, court info, and payment data
  * Used for timetable display in admin dashboard
  */
 export async function getActiveBlockingsByVenueAndDate(
@@ -223,6 +223,8 @@ export async function getActiveBlockingsByVenueAndDate(
       userId: string;
       bookingDate: Date;
       status: string;
+      totalPrice: number;
+      createdAt: Date;
       timeSlots: Array<{
         openHour: string;
         closeHour: string;
@@ -237,6 +239,17 @@ export async function getActiveBlockingsByVenueAndDate(
         id: string;
         name: string;
       };
+      order: {
+        id: string;
+        totalAmount: number;
+        payment: {
+          id: string;
+          status: string;
+          channelName: string;
+          amount: number;
+          createdAt: Date;
+        } | null;
+      } | null;
     };
   }>
 > {
@@ -272,6 +285,8 @@ export async function getActiveBlockingsByVenueAndDate(
           bookingDate: true,
           source: true,
           status: true,
+          totalPrice: true,
+          createdAt: true,
           timeSlots: {
             select: {
               openHour: true,
@@ -295,6 +310,21 @@ export async function getActiveBlockingsByVenueAndDate(
             select: {
               id: true,
               name: true,
+            },
+          },
+          order: {
+            select: {
+              id: true,
+              totalAmount: true,
+              payment: {
+                select: {
+                  id: true,
+                  status: true,
+                  channelName: true,
+                  amount: true,
+                  createdAt: true,
+                },
+              },
             },
           },
         },

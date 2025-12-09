@@ -100,7 +100,7 @@ export const manualBookingService = {
         return {
           success: false,
           data: null,
-          message: "Rentang waktu yang dipilih tidak valid",
+          message: "Invalid time range selected",
         };
       }
 
@@ -123,7 +123,7 @@ export const manualBookingService = {
         return {
           success: false,
           data: null,
-          message: "Court tidak ditemukan atau sudah tidak aktif",
+          message: "Court not found or already inactive",
         };
       }
 
@@ -131,7 +131,7 @@ export const manualBookingService = {
         return {
           success: false,
           data: null,
-          message: "Venue tidak sesuai dengan court yang dipilih",
+          message: "Venue does not match the selected court",
         };
       }
 
@@ -154,7 +154,7 @@ export const manualBookingService = {
         return {
           success: false,
           data: availability.data,
-          message: "Slot waktu sudah terisi, pilih jam lainnya",
+          message: "Time slot is already occupied, please select another time",
         };
       }
 
@@ -176,7 +176,7 @@ export const manualBookingService = {
 
         if (user?.isArchived) {
           throw new Error(
-            "Email tersebut terarsip dan tidak bisa digunakan untuk booking manual"
+            "Email is archived and cannot be used for manual booking"
           );
         }
 
@@ -186,7 +186,7 @@ export const manualBookingService = {
               email: data.email,
               password: "",
               userType: UserType.USER,
-              userStatus: UserStatus.ACTIVE,
+              userStatus: UserStatus.JOINED,
               assignedVenueIds: [],
             },
           });
@@ -214,7 +214,7 @@ export const manualBookingService = {
         }
 
         if (!user) {
-          throw new Error("Gagal membuat atau mengambil data user");
+          throw new Error("Failed to create or retrieve user data");
         }
 
         const bookingCode = `BK-${bookingCodeGenerator()}`;
@@ -275,7 +275,7 @@ export const manualBookingService = {
           totalPrice,
           timeSlots: slots,
         },
-        message: "Manual booking berhasil dibuat",
+        message: "Manual booking created successfully",
       };
     } catch (error) {
       console.error("Manual booking service error:", error);
@@ -285,7 +285,7 @@ export const manualBookingService = {
         message:
           error instanceof Error
             ? error.message
-            : "Gagal membuat manual booking",
+            : "Failed to create manual booking",
       };
     }
   },

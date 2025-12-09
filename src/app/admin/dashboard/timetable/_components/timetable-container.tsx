@@ -15,6 +15,8 @@ import { getTimeSlotBooking } from "@/components/timetable-booking-helpers";
 import { getNextHour } from "@/components/timetable-utils";
 import { CancelBookingModal } from "./booking-cancel";
 import { useCancelBooking } from "@/hooks/use-booking";
+import { ConfirmCompleteBookingModal } from "./confirm-complete-booking-modal";
+import { ConfirmNoShowBookingModal } from "./confirm-no-show-booking-modal";
 
 // Re-export types untuk backward compatibility
 export type {
@@ -35,6 +37,7 @@ function defaultTransformBookingToDetail(
 ): BookingDetail {
   return {
     id: booking.id,
+    status: booking.status,
     userName: booking.userName,
     venueName,
     courtName,
@@ -72,6 +75,7 @@ export function TimetableContainer({
   onDateChange,
   transformBookingToDetail = defaultTransformBookingToDetail,
   onMarkAsComplete,
+  onMarkAsNoShow,
   onCancelBooking,
   isLoadingTable = false,
   onAddBooking,
@@ -95,6 +99,8 @@ export function TimetableContainer({
     React.useState<BookingDetail | null>(null);
   const [modalOpen, setModalOpen] = React.useState(false);
   const [cancelModalOpen, setCancelModalOpen] = React.useState(false);
+  const [confirmModalOpen, setConfirmModalOpen] = React.useState(false);
+  const [confirmNoShowModalOpen, setConfirmNoShowModalOpen] = React.useState(false);
   const [dragState, setDragState] = React.useState<{
     court: Court;
     startSlot: string;
@@ -129,7 +135,15 @@ export function TimetableContainer({
   const handleMarkAsComplete = () => {
     if (selectedBooking) {
       onMarkAsComplete?.(selectedBooking.id);
-      setModalOpen(false);
+      setConfirmModalOpen(false);
+      setSelectedBooking(null);
+    }
+  };
+
+  const handleMarkAsNoShow = () => {
+    if (selectedBooking) {
+      onMarkAsNoShow?.(selectedBooking.id);
+      setConfirmNoShowModalOpen(false);
       setSelectedBooking(null);
     }
   };
@@ -138,6 +152,35 @@ export function TimetableContainer({
   const handleOpenCancelBookingModal = () => {
     if (selectedBooking) {
       setCancelModalOpen(true);
+    }
+  };
+
+  // Handle Confirm booking
+  const handleOpenConfirmBookingModal = () => {
+    if (selectedBooking) {
+      setModalOpen(false);
+      setConfirmModalOpen(true);
+    }
+  };
+
+  const handleCloseConfirmBookingModal = () => {
+    if (selectedBooking) {
+      setConfirmModalOpen(false);
+      setModalOpen(true)
+    }
+  };
+
+   const handleOpenConfirmNoShowBookingModal = () => {
+    if (selectedBooking) {
+      setModalOpen(false);
+      setConfirmNoShowModalOpen(true);
+    }
+  };
+
+  const handleCloseConfirmNoShowBookingModal = () => {
+    if (selectedBooking) {
+      setConfirmNoShowModalOpen(false);
+      setModalOpen(true)
     }
   };
 
@@ -327,8 +370,8 @@ export function TimetableContainer({
         open={modalOpen}
         onOpenChange={setModalOpen}
         booking={selectedBooking}
-        onMarkAsComplete={handleMarkAsComplete}
-        onCancelBooking={() => setCancelModalOpen(true)}
+        onConfirmMarkAsCompleteBooking={handleOpenConfirmBookingModal}
+        onConfirmMarkAsNoShowBooking={handleOpenConfirmNoShowBookingModal}
       />
 
       <CancelBookingModal
@@ -338,6 +381,18 @@ export function TimetableContainer({
         onCancelBooking={handleCancelBooking}
         isLoading={cancelBookingMutation.isPending}
       />
+
+      <ConfirmCompleteBookingModal
+        open={confirmModalOpen}
+        onOpenChange={handleCloseConfirmBookingModal}        
+        onCompleteBooking={handleMarkAsComplete}
+      />
+
+      <ConfirmNoShowBookingModal
+        open={confirmNoShowModalOpen}
+        onOpenChange={handleCloseConfirmNoShowBookingModal}        
+        onMarkBookingAsNoShow={handleMarkAsNoShow}
+        />
     </div>
   );
 }

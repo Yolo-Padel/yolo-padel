@@ -62,7 +62,7 @@ export function BookingFormMultiStep({
   };
 
   return (
-    <div>
+    <div className="w-full min-w-0">
       {currentStep === 1 && (
         <CourtSelectionContainer
           form={form}

@@ -1,3 +1,4 @@
+import { BookingStatus } from "@/types/prisma";
 import { z } from "zod";
 
 // Time slot schema for booking
@@ -67,6 +68,10 @@ export const bookingUpdateSchema = z
       path: ["duration"],
     }
   );
+
+export const bookingStatusUpdateSchema = z.object({
+  status: z.enum(BookingStatus),
+});
 
 export type BookingCreateData = z.infer<typeof bookingCreateSchema>;
 export type BookingUpdateData = z.infer<typeof bookingUpdateSchema>;

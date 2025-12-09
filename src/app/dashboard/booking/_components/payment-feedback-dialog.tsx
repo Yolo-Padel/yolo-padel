@@ -2,19 +2,42 @@
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, XCircle, XIcon } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, XIcon, Calendar, Clock, MapPin } from "lucide-react";
 import { stringUtils } from "@/lib/format/string";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+
+export type BookingDetail = {
+  id: string;
+  bookingCode: string;
+  bookingDate: string;
+  duration: number;
+  totalPrice: number;
+  court: {
+    name: string;
+    venue: {
+      name: string;
+    };
+  };
+  timeSlots: Array<{
+    openHour: string;
+    closeHour: string;
+  }>;
+};
 
 export type PaymentStatusResponse = {
   id: string;
   status: string;
   amount: number;
+  taxAmount: number;    // Fee breakdown field (Requirements 1.3)
+  bookingFee: number;   // Fee breakdown field (Requirements 2.3)
   paymentDate: string | null;
   expiredAt: string | null;
   order: {
     id: string;
     orderCode: string;
     status: string;
+    bookings: BookingDetail[];
   } | null;
 };
 
@@ -122,7 +145,8 @@ export function PaymentFeedbackDialog({
             </div>
 
             {payment && (
-              <div className="border rounded-lg p-4 space-y-2 bg-muted/50">
+              <div className="border rounded-lg p-4 space-y-3 bg-muted/50">
+                {/* Order Info */}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Order Code</span>
                   <span className="font-mono font-semibold">
@@ -135,20 +159,90 @@ export function PaymentFeedbackDialog({
                     {payment.status.toLowerCase()}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm border-t pt-2 mt-2">
-                  <span className="text-muted-foreground">Total Payment</span>
-                  <span className="font-semibold">
-                    {stringUtils.formatRupiah(payment.amount)}
-                  </span>
-                </div>
                 {payment.paymentDate && isSuccess && (
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Paid At</span>
-                    <span>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Paid At</span>
+                    <span className="text-sm">
                       {new Date(payment.paymentDate).toLocaleString("id-ID")}
                     </span>
                   </div>
                 )}
+
+                {/* Booking Details */}
+                {/* {payment.order?.bookings && payment.order.bookings.length > 0 && (
+                  <div className="border-t pt-3 mt-3 space-y-2">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Booking Details
+                    </span>
+                    {payment.order.bookings.map((booking) => (
+                      <div
+                        key={booking.id}
+                        className="bg-background rounded-md p-3 space-y-2"
+                      >
+                        <div className="flex justify-between items-start">
+                          <span className="font-mono text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                            {booking.bookingCode}
+                          </span>
+                          <span className="text-sm font-medium">
+                            {stringUtils.formatRupiah(booking.totalPrice)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <MapPin className="size-3" />
+                          <span>
+                            {booking.court.venue.name} • {booking.court.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="size-3" />
+                            <span>
+                              {format(new Date(booking.bookingDate), "d MMM yyyy", {
+                                locale: idLocale,
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="size-3" />
+                            <span>
+                              {booking.timeSlots
+                                .map((slot) => `${slot.openHour}-${slot.closeHour}`)
+                                .join(", ")}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )} */}
+
+                {/* Payment Breakdown */}
+                <div className="border-t pt-3 mt-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Court Fees</span>
+                    <span>{stringUtils.formatRupiah(payment.amount)}</span>
+                  </div>
+                  {payment.taxAmount > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Tax</span>
+                      <span>{stringUtils.formatRupiah(payment.taxAmount)}</span>
+                    </div>
+                  )}
+                  {payment.bookingFee > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Booking Fee</span>
+                      <span>{stringUtils.formatRupiah(payment.bookingFee)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm font-semibold border-t pt-2">
+                    <span>Total Payment</span>
+                    <span>
+                      {stringUtils.formatRupiah(
+                        payment.amount + payment.taxAmount + payment.bookingFee
+                      )}
+                    </span>
+                  </div>
+                </div>
               </div>
             )}
 

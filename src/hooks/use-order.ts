@@ -14,6 +14,9 @@ export type CreateOrderInput = {
     price: number;
   }>;
   channelName: string;
+  // Fee breakdown fields (Requirements 4.1)
+  taxAmount?: number;   // Tax portion in smallest currency unit (e.g., Rupiah)
+  bookingFee?: number;  // Service/platform fee in smallest currency unit
 };
 
 export type Order = {
@@ -59,6 +62,8 @@ export type Order = {
     id: string;
     channelName: string;
     amount: number;
+    taxAmount: number;    // Fee breakdown field (Requirements 1.3, 2.3)
+    bookingFee: number;   // Fee breakdown field (Requirements 1.3, 2.3)
     status: PaymentStatus;
     paymentDate: string | null;
     invoiceUrl: string;
@@ -220,12 +225,12 @@ export function useCreateOrder() {
       // Invalidate bookings list (since new bookings were created)
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
 
-      toast.success("Order berhasil dibuat!", {
+      toast.success("Order created successfully!", {
         description: `Order code: ${data.orderCode}`,
       });
     },
     onError: (error: Error) => {
-      toast.error("Gagal membuat order", {
+      toast.error("Failed to create order", {
         description: error.message,
       });
     },
@@ -293,12 +298,12 @@ export function useUpdateOrderStatus() {
       // Invalidate bookings (since booking statuses may have changed)
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
 
-      toast.success("Status order berhasil diupdate", {
+      toast.success("Status order updated successfully", {
         description: `Order ${data.orderCode} sekarang ${data.status}`,
       });
     },
     onError: (error: Error) => {
-      toast.error("Gagal update status order", {
+      toast.error("Failed to update order status", {
         description: error.message,
       });
     },

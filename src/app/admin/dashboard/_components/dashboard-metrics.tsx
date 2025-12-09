@@ -31,6 +31,10 @@ type MetricItem = {
   value: string;
   icon: typeof DollarSign;
   iconBg: string;
+  comparison?: {
+    percentageChange: number;
+    isPositive: boolean;
+  };
 };
 
 const CARD_ICON_BG = "bg-[#ecf1bb]";
@@ -64,17 +68,19 @@ function buildSuperAdminMetrics(
       value: formatCurrency(metrics?.totalRevenue.amount ?? 0),
       icon: DollarSign,
       iconBg: CARD_ICON_BG,
+      comparison: metrics?.totalRevenue.comparison,
     },
     {
       title: "Total Bookings",
       description: summary
         ? `${formatCount(summary.completed)} completed • ${formatCount(
-            summary.cancelled
-          )} cancelled • ${formatCount(summary.upcoming)} upcoming`
-        : "Completed • Cancelled • Upcoming",
+            summary.total - summary.completed
+          )} Others`
+        : "Completed • Others",
       value: `${formatCount(summary?.total ?? 0)} Bookings`,
       icon: CalendarDays,
       iconBg: CARD_ICON_BG,
+      comparison: metrics?.totalBookings.comparison,
     },
     {
       title: "Paid Rate",
@@ -82,17 +88,7 @@ function buildSuperAdminMetrics(
       value: formatPercentage(metrics?.paidRate.percentage ?? 0),
       icon: TrendingUp,
       iconBg: CARD_ICON_BG,
-    },
-    {
-      title: "Cancellation",
-      description: summary
-        ? `${formatCount(summary.cancelled)} cancelled • ${formatCount(
-            summary.expiredPayment
-          )} expired payment`
-        : "No cancellation data",
-      value: `${formatCount(metrics?.cancellation.total ?? 0)} Cases`,
-      icon: CalendarX2,
-      iconBg: CARD_ICON_BG,
+      comparison: metrics?.paidRate.comparison,
     },
   ];
 }
@@ -110,19 +106,23 @@ function buildAdminMetrics(snapshot?: AdminDashboardSnapshot): MetricItem[] {
       value: formatCurrency(metrics?.totalRevenue.amount ?? 0),
       icon: DollarSign,
       iconBg: CARD_ICON_BG,
+      comparison: metrics?.totalRevenue.comparison,
     },
     {
       title: "Total Bookings",
       description: metrics
         ? `${formatCount(
             metrics.totalBookings.completed
-          )} Completed • ${formatCount(
-            metrics.totalBookings.pending
-          )} Pending • ${formatCount(metrics.totalBookings.upcoming)} Upcoming`
-        : "Completed • Pending • Upcoming",
+          )} Completed • ${formatCount(metrics.totalBookings.upcoming)} Upcoming  • ${formatCount(
+            metrics.totalBookings.total -
+              metrics.totalBookings.completed -
+              metrics.totalBookings.upcoming
+          )} Others`
+        : "0 Completed • 0 Upcoming • 0 Others",
       value: `${formatCount(metrics?.totalBookings.total ?? 0)} Bookings`,
       icon: CalendarDays,
       iconBg: CARD_ICON_BG,
+      comparison: metrics?.totalBookings.comparison,
     },
     {
       title: "Court Utilization",
@@ -134,17 +134,7 @@ function buildAdminMetrics(snapshot?: AdminDashboardSnapshot): MetricItem[] {
       value: utilization ? formatPercentage(utilization.percentage) : "-",
       icon: LandPlot,
       iconBg: CARD_ICON_BG,
-    },
-    {
-      title: "Cancellation",
-      description: metrics
-        ? `${formatCount(metrics.cancellation.cancelled)} cancelled • ${formatCount(
-            metrics.cancellation.expiredPayment
-          )} expired payment`
-        : "No cancellation data",
-      value: `${formatCount(metrics?.cancellation.total ?? 0)} Cases`,
-      icon: CalendarX2,
-      iconBg: CARD_ICON_BG,
+      comparison: utilization?.comparison,
     },
   ];
 }
@@ -173,26 +163,26 @@ export function DashboardMetrics({ userType }: DashboardMetricsProps) {
     data: superAdminData,
     isLoading: isSuperAdminLoading,
     error: superAdminError,
-  } = useSuperAdminBookingDashboard({ enabled: isStaff });
+  } = useSuperAdminBookingDashboard({ enabled: !isStaff });
 
   const {
     data: adminData,
     isLoading: isAdminLoading,
     error: adminError,
-  } = useAdminBookingDashboard({ enabled: !isStaff });
+  } = useAdminBookingDashboard({ enabled: isStaff });
 
   const snapshot:
     | SuperAdminDashboardSnapshot
     | AdminDashboardSnapshot
     | undefined =
-    (isStaff ? superAdminData?.data : adminData?.data) ?? undefined;
+    (isStaff ? adminData?.data : superAdminData?.data) ?? undefined;
 
   const metrics = useMemo(() => {
     return isStaff
-      ? buildSuperAdminMetrics(
+      ? buildAdminMetrics(snapshot as AdminDashboardSnapshot | undefined)
+      : buildSuperAdminMetrics(
           snapshot as SuperAdminDashboardSnapshot | undefined
-        )
-      : buildAdminMetrics(snapshot as AdminDashboardSnapshot | undefined);
+        );
   }, [snapshot, isStaff]);
 
   const isLoading = isStaff ? isSuperAdminLoading : isAdminLoading;
@@ -200,11 +190,11 @@ export function DashboardMetrics({ userType }: DashboardMetricsProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 items-start max-w-[1280px] w-full">
+      <div className="flex flex-col gap-4 items-start w-full">
         {isLoading && !snapshot ? (
           <MetricSkeletonRow />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 items-start w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 items-start w-full">
             {metrics.map((metric, index) => (
               <MetricCard key={index} {...metric} />
             ))}
@@ -212,7 +202,7 @@ export function DashboardMetrics({ userType }: DashboardMetricsProps) {
         )}
         {error && !snapshot && (
           <p className="text-sm text-destructive">
-            Gagal memuat metrik dashboard: {error.message}
+            Failed to load dashboard metrics: {error.message}
           </p>
         )}
       </div>

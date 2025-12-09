@@ -13,6 +13,7 @@ import { BookingEmptyState } from "./_components/booking-empty-state";
 import { BookingStatus } from "@/types/prisma";
 import { ManualBookingSheet } from "../_components/booking-sheet";
 import { usePermissionGuard } from "@/hooks/use-permission-guard";
+import { useQueryClient } from "@tanstack/react-query";
 
 const PAGE_SIZE = 10;
 
@@ -57,6 +58,8 @@ export default function BookingPage() {
   // Pass filter options to useAdminBookings hook to trigger API call
   const { data, isLoading, isFetching, error } =
     useAdminBookings(filterOptions);
+
+  const queryClient = useQueryClient();
 
   // Use pagination metadata from API response
   const bookings = data?.data ?? [];
@@ -109,6 +112,11 @@ export default function BookingPage() {
 
   const handleCloseAddBooking = () => {
     setManualBookingSheetOpen(false);
+  };
+
+  const handleOnSuccessAddManualBooking = () => {
+    setManualBookingSheetOpen(false);
+    queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
   };
 
   // Display error message on failure
@@ -224,7 +232,7 @@ export default function BookingPage() {
       <ManualBookingSheet
         open={manualBookingSheetOpen}
         onOpenChange={handleCloseAddBooking}
-        onSuccess={handleCloseAddBooking}
+        onSuccess={handleOnSuccessAddManualBooking}
       />
     </div>
   );

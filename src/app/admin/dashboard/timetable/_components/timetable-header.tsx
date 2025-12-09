@@ -43,7 +43,10 @@ export function TimetableHeader({
           onValueChange={onVenueChange}
           disabled={isLoading}
         >
-          <SelectTrigger className="w-[280px]">
+          <SelectTrigger
+            className="w-[280px] border-none shadow-none text-2xl font-semibold p-0"
+            chevronOpacity={100}
+          >
             <SelectValue placeholder="Pilih Venue" />
           </SelectTrigger>
           <SelectContent>

@@ -181,7 +181,7 @@ export function CourtSelectionContainer({
   return isLoadingVenues ? (
     <BookingFormSkeleton isModal={isModal} />
   ) : (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 w-full min-w-0">
       {/* Header */}
       <div className="relative">
         <div className={cn(isModal ? "pr-8 gap-0" : "")}>
@@ -245,63 +245,66 @@ export function CourtSelectionContainer({
       {isLoadingCourts ? (
         <CourtSkeleton />
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 w-full min-w-0">
           <p className="text-sm">Available Court</p>
           {courtsData.length === 0 ? (
             <div className="text-sm text-muted-foreground">
               No court available
             </div>
           ) : (
-            <div
-              className="flex flex-row gap-3 overflow-x-auto py-2 px-1 scrollbar-hide"
-              style={{
-                scrollbarWidth: "none" /* Firefox */,
-                msOverflowStyle: "none" /* IE and Edge */,
-              }}
-            >
-              {courtsData.map((court: Court) => {
-                const isActive = watchCourtId === court.id;
-                // Check both courtId AND date untuk accurate bookings status
-                const isInBookings = watchBookings.some(
-                  (item) =>
-                    item.courtId === court.id &&
-                    item.date.toDateString() === watchDate?.toDateString()
-                );
+            <div className="w-full min-w-0 overflow-hidden">
+              <div
+                className="flex flex-row gap-3 overflow-x-auto py-2 px-1 scrollbar-hide min-w-0"
+                style={{
+                  scrollbarWidth: "none" /* Firefox */,
+                  msOverflowStyle: "none" /* IE and Edge */,
+                  WebkitOverflowScrolling: "touch" /* iOS smooth scrolling */,
+                }}
+              >
+                {courtsData.map((court: Court) => {
+                  const isActive = watchCourtId === court.id;
+                  // Check both courtId AND date untuk accurate bookings status
+                  const isInBookings = watchBookings.some(
+                    (item) =>
+                      item.courtId === court.id &&
+                      item.date.toDateString() === watchDate?.toDateString()
+                  );
 
-                return (
-                  <div
-                    key={court.id}
-                    className={cn(
-                      "relative rounded-lg overflow-hidden group cursor-pointer border transition-all flex-shrink-0",
-                      isActive
-                        ? "ring-2 ring-primary border-primary shadow-lg"
-                        : ""
-                    )}
-                    style={{ width: "140px", height: "90px" }}
-                    onClick={() => {
-                      form.setValue("courtId", court.id);
-                      // Don't reset slots here - will be loaded by useEffect
-                    }}
-                  >
-                    <Image
-                      src={court.image || "/paddle-court1.svg"}
-                      alt={court.name}
-                      width={100}
-                      height={70}
-                      className="h-28 w-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10" />
-                    <div className="absolute bottom-2 left-2 right-2 text-white text-sm font-medium truncate text-center">
-                      {court.name}
-                    </div>
-                    {isInBookings && (
-                      <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1.5 shadow-md">
-                        <Check className="h-3 w-3 text-black" />
+                  return (
+                    <div
+                      key={court.id}
+                      className={cn(
+                        "relative rounded-lg overflow-hidden group cursor-pointer border transition-all flex-shrink-0",
+                        isActive
+                          ? "ring-2 ring-primary border-primary shadow-lg"
+                          : ""
+                      )}
+                      style={{ width: "140px", height: "90px" }}
+                      onClick={() => {
+                        form.setValue("courtId", court.id);
+                        // Don't reset slots here - will be loaded by useEffect
+                      }}
+                    >
+                      <Image
+                        src={court.image || "/paddle-court1.svg"}
+                        alt={court.name}
+                        width={100}
+                        height={70}
+                        className="h-28 w-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10" />
+                      <div className="absolute bottom-2 left-2 right-2 text-white text-sm font-medium truncate text-center">
+                        {court.name}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                      {isInBookings && (
+                        <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1.5 shadow-md">
+                          <Check className="h-3 w-3 text-black" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

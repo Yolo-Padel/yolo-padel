@@ -1,7 +1,7 @@
 import { SignJWT } from "jose";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
-import { UserType } from "@/types/prisma";
+import { UserType, UserStatus  } from "@/types/prisma";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key";
 const JWT_EXPIRES_IN = "7d";
@@ -27,7 +27,7 @@ export const guestUserService = {
         return {
           success: false,
           data: null,
-          message: "Email sudah terdaftar. Silakan login terlebih dahulu.",
+          message: "Email already registered. Please login first.",
         };
       }
 
@@ -40,7 +40,7 @@ export const guestUserService = {
               email,
               password: "", // Password deprecated, using magic link only
               userType: UserType.USER,
-              userStatus: "ACTIVE",
+              userStatus: UserStatus.JOINED,
               joinDate: new Date(),
             },
           });

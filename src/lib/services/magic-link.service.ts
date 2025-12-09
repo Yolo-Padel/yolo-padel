@@ -50,7 +50,7 @@ class MagicLinkService {
       if (!user) {
         return {
           success: false,
-          message: "User dengan email tersebut tidak ditemukan",
+          message: "User not found",
         };
       }
 
@@ -75,14 +75,14 @@ class MagicLinkService {
 
       return {
         success: true,
-        message: "Magic link berhasil dibuat",
+        message: "Magic link created successfully",
         token,
       };
     } catch (error) {
       console.error("Error generating magic link:", error);
       return {
         success: false,
-        message: "Terjadi kesalahan saat membuat magic link",
+        message: "Error creating magic link",
       };
     }
   }
@@ -106,7 +106,7 @@ class MagicLinkService {
 
         return {
           success: false,
-          message: "Magic link tidak valid",
+          message: "Magic link is invalid",
         };
       }
 
@@ -114,7 +114,7 @@ class MagicLinkService {
       if (magicLink.used) {
         return {
           success: false,
-          message: "Magic link sudah pernah digunakan",
+          message: "Magic link has already been used",
         };
       }
 
@@ -122,7 +122,7 @@ class MagicLinkService {
       if (magicLink.expiresAt < new Date()) {
         return {
           success: false,
-          message: "Magic link sudah expired",
+          message: "Magic link has expired",
         };
       }
 
@@ -143,7 +143,7 @@ class MagicLinkService {
       // Only set joinDate if it's the first time user verifies magic link
       if (!user?.joinDate) {
         updateData.joinDate = new Date();
-        updateData.userStatus = UserStatus.ACTIVE;
+        updateData.userStatus = UserStatus.JOINED;
         updateData.isEmailVerified = true;
       }
 
@@ -154,14 +154,14 @@ class MagicLinkService {
 
       return {
         success: true,
-        message: "Magic link berhasil diverifikasi",
+        message: "Magic link verified successfully",
         email: magicLink.email,
       };
     } catch (error) {
       console.error("Error verifying magic link:", error);
       return {
         success: false,
-        message: "Terjadi kesalahan saat memverifikasi magic link",
+        message: "Error verifying magic link",
       };
     }
   }

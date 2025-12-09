@@ -3,6 +3,8 @@ import { OrderStatus } from "@/types/prisma";
 
 /**
  * Schema untuk create order dengan multiple bookings
+ * Supports optional fee breakdown fields (taxAmount, bookingFee)
+ * Requirements: 1.1, 1.2, 2.1, 2.2, 3.1
  */
 export const createOrderSchema = z.object({
   userId: z.string().cuid("Invalid user ID format"),
@@ -34,6 +36,9 @@ export const createOrderSchema = z.object({
     )
     .min(1, "At least one booking is required"),
   channelName: z.string().min(1, "Payment channel is required"),
+  // Fee breakdown fields (optional, default to 0 per Requirements 1.2, 2.2)
+  taxAmount: z.number().int().nonnegative("Tax amount must be non-negative").optional().default(0),
+  bookingFee: z.number().int().nonnegative("Booking fee must be non-negative").optional().default(0),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

@@ -10,6 +10,8 @@ import { formatCurrency } from "@/lib/order-utils";
 import { formatTimeRange } from "@/lib/time-slots-formatter";
 import { BookingStatus } from "@/types/prisma";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BookingWithRelations } from "../booking/_components/booking-table";
+import { TodaysBookingCard } from "@/types/booking-dashboard";
 
 const totalFormatter = new Intl.NumberFormat("id-ID");
 
@@ -99,13 +101,48 @@ function TodaysBookingSkeleton() {
   );
 }
 
-export function TodaysBookingSection() {
+export function TodaysBookingSection({
+  onViewBooking,
+}: {
+  onViewBooking: (booking: BookingWithRelations) => void;
+}) {
   const { data, isLoading, error } = useAdminBookingDashboard();
 
   const todaysBookings = data?.data?.todaysBookings.items ?? [];
   const totalToday = data?.data?.todaysBookings.total ?? 0;
 
   const showEmptyState = !isLoading && todaysBookings.length === 0;
+
+  const handleViewBooking = (booking: TodaysBookingCard) => {
+    const bookingWithRelations = {
+      ...booking,
+      user: {
+        id: booking.id,
+        email: "",
+        profile: {
+          fullName: booking.customerName,
+          avatar: "",
+        },
+      },
+      court: {
+        id: "",
+        name: booking.courtName,
+        venue: {
+          id: "",
+          name: booking.venueName,
+          city: "",
+        },
+      },
+      timeSlots: booking.timeSlots.map((timeSlot) => ({
+        id: "",
+        openHour: timeSlot.openHour,
+        closeHour: timeSlot.closeHour,
+      })) as Array<{ id: string; openHour: string; closeHour: string }>,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as BookingWithRelations;
+    onViewBooking(bookingWithRelations);
+  };
 
   return (
     <div className="bg-card border-[1.5px] border-border/50 rounded-xl w-full">
@@ -141,7 +178,7 @@ export function TodaysBookingSection() {
           <TodaysBookingSkeleton />
         ) : showEmptyState ? (
           <div className="px-6 py-12 text-center text-muted-foreground">
-            Tidak ada booking untuk hari ini.
+            No bookings for today.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-6 py-3">
@@ -170,10 +207,11 @@ export function TodaysBookingSection() {
 
                   <div className="flex flex-col gap-2">
                     <p className="text-sm font-medium text-muted-foreground">
-                      #{booking.bookingCode}
+                      {booking.bookingCode}
                     </p>
                     <p className="text-base font-semibold text-foreground">
-                      {booking.customerName} • {booking.courtName}
+                      {booking.customerName} • {booking.venueName} •{" "}
+                      {booking.courtName}
                     </p>
                     <p className="text-sm font-medium text-foreground">
                       {formatTimeRange(booking.timeSlots)}
@@ -189,7 +227,10 @@ export function TodaysBookingSection() {
                     </p>
                   </div>
 
-                  <Button className="bg-[#ecf1bb] text-[#6b7413] hover:bg-[#ecf1bb]/90 shadow-sm h-9">
+                  <Button
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm h-9"
+                    onClick={() => handleViewBooking(booking)}
+                  >
                     View Booking
                   </Button>
                 </div>
@@ -200,7 +241,7 @@ export function TodaysBookingSection() {
 
         {error && (
           <p className="px-6 pb-6 text-sm text-destructive">
-            Gagal memuat booking hari ini:{" "}
+            Failed to load today's bookings:{" "}
             {error instanceof Error ? error.message : "Unknown error"}
           </p>
         )}

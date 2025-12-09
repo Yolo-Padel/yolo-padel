@@ -16,7 +16,7 @@ import {
   transformPrismaBlockingToDetail,
 } from "@/lib/booking-transform";
 import type { Venue } from "@/components/timetable-types";
-import { PaymentStatus } from "@/types/prisma";
+import { BookingStatus, PaymentStatus } from "@/types/prisma";
 import { TimetableHeader } from "./timetable-header";
 import { getNextHour } from "@/components/timetable-utils";
 import {
@@ -24,6 +24,7 @@ import {
   ManualBookingSheet,
 } from "@/app/admin/dashboard/_components/booking-sheet";
 import { usePermissionGuard } from "@/hooks/use-permission-guard";
+import { useUpdateBookingStatus } from "@/hooks/use-booking";
 
 export function TimetableContent() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -85,6 +86,8 @@ export function TimetableContent() {
     refetch: refetchBlockings,
   } = useBlockingByVenueAndDate(selectedVenueId, normalizedDate);
 
+  const { mutate: updateBookingStatusMutation } = useUpdateBookingStatus();
+
   // Transform venues data
   const venues: Venue[] = useMemo(() => {
     if (!venuesData?.data) return [];
@@ -131,6 +134,7 @@ export function TimetableContent() {
       return {
         id: booking.id,
         bookingCode: booking.bookingCode,
+        status: booking.status,
         source: booking.source,
         userName: booking.userName,
         venueName,
@@ -186,8 +190,17 @@ export function TimetableContent() {
 
   // Handle mark as complete
   const handleMarkAsComplete = (bookingId: string) => {
-    // TODO: Implement mark as complete functionality
-    console.log("Mark as complete:", bookingId);
+    updateBookingStatusMutation({
+      id: bookingId,
+      status: BookingStatus.COMPLETED,
+    });
+  };
+
+  const handleMarkAsNoShow = (bookingId: string) => {
+    updateBookingStatusMutation({
+      id: bookingId,
+      status: BookingStatus.NO_SHOW,
+    });
   };
 
   // Detect what changed to determine loading UI
@@ -325,6 +338,7 @@ export function TimetableContent() {
             onDateChange={handleDateChange}
             transformBookingToDetail={transformBooking}
             onMarkAsComplete={handleMarkAsComplete}
+            onMarkAsNoShow={handleMarkAsNoShow}
             isLoadingTable={isDateChangeLoading}
             onAddBooking={handleAddBooking}
             onSelectEmptySlot={handleAddBookingFromCell}

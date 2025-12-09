@@ -82,7 +82,7 @@ export function SeeBookingDetails({
         <div className="mt-2 grid grid-cols-2 gap-y-2 text-sm">
           <div>Booking ID</div>
           <div className="font-medium text-foreground min-w-0">
-            #{bookingDetails?.id || "-"}
+            {bookingDetails?.id || "-"}
           </div>
 
           <div>Court Name</div>

@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Invite user error:", error);
     return NextResponse.json(
-      { success: false, message: "Terjadi kesalahan server" },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

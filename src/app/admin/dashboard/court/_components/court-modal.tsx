@@ -29,6 +29,7 @@ import { useCreateCourt, useUpdateCourt } from "@/hooks/use-court";
 import { FileUploader } from "@/components/file-uploader";
 import { useVenueById } from "@/hooks/use-venue";
 import Image from "next/image";
+import { currencyUtils } from "@/lib/format/currency";
 
 interface CourtModalProps {
   open: boolean;
@@ -75,6 +76,9 @@ export function CourtModal({
   const [timeSlots, setTimeSlots] = useState<{
     [key: string]: Array<{ openHour: string; closeHour: string }>;
   }>({});
+
+  // State for formatted price display
+  const [priceDisplay, setPriceDisplay] = useState<string>("");
 
   // Add mutation hooks
   const createCourtMutation = useCreateCourt();
@@ -125,7 +129,13 @@ export function CourtModal({
 
         setValue("courtName", court.name || "");
         setValue("venueId", venueId);
-        setValue("price", court.price || 200000);
+        const priceValue = court.price || 200000;
+        setValue("price", priceValue);
+        setPriceDisplay(
+          priceValue
+            ? currencyUtils.formatCurrencyInput(priceValue.toString())
+            : ""
+        );
         setValue("image", court.image || "");
         setValue(
           "openingHours",
@@ -205,6 +215,7 @@ export function CourtModal({
           openingHours: OpeningHoursType.REGULAR,
           schedule,
         });
+        setPriceDisplay(currencyUtils.formatCurrencyInput("200000"));
         setTimeSlots(slots);
       }
     }
@@ -501,10 +512,18 @@ export function CourtModal({
                     </InputGroupAddon>
                     <InputGroupInput
                       placeholder="200.000"
-                      {...register("price", { valueAsNumber: true })}
+                      value={priceDisplay}
                       onChange={(e) => {
-                        console.log("Price input changed:", e.target.value);
-                        console.log("Price input type:", typeof e.target.value);
+                        const inputValue = e.target.value;
+                        const formattedValue =
+                          currencyUtils.formatCurrencyInput(inputValue);
+                        const numericValue =
+                          currencyUtils.parseCurrencyInput(inputValue);
+
+                        setPriceDisplay(formattedValue);
+                        setValue("price", numericValue, {
+                          shouldValidate: true,
+                        });
                       }}
                       disabled={isViewMode}
                     />

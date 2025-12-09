@@ -332,7 +332,7 @@ function getBadgeConfig(status: ProfileStatus) {
   switch (status) {
     case "active":
       return {
-        label: "Active",
+        label: "Joined",
         className: "bg-[#d0fbe9] text-[#1a7544] border-transparent",
       };
     case "member":
