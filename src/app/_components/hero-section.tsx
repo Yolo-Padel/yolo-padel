@@ -1,7 +1,6 @@
 "use client";
 
 import { BookingForm } from "@/app/dashboard/_components/booking-form";
-import { Card } from "@/components/ui/card";
 
 export function HeroSection() {
   return (
