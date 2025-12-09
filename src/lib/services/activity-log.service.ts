@@ -2,7 +2,374 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission, ServiceContext } from "@/types/service-context";
 import { ActionType } from "@/types/action";
 import { EntityType } from "@/types/entity";
-import { UserType } from "@prisma/client";
+import { UserType, Prisma } from "@prisma/client";
+
+// ============================================================================
+// Types & Interfaces for Admin Activity Log Filtering
+// ============================================================================
+
+/**
+ * Options for filtering activity logs in admin dashboard
+ */
+export interface GetActivityLogsForAdminOptions {
+  // Filter options
+  search?: string;
+  entityType?: EntityType;
+  actionType?: string; // "CREATE" | "UPDATE" | "DELETE"
+  startDate?: Date;
+  endDate?: Date;
+
+  // Pagination options
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * Pagination metadata for activity log results
+ */
+export interface ActivityLogPaginationMetadata {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+/**
+ * Result type for getActivityLogsForAdmin function
+ */
+export interface GetActivityLogsForAdminResult {
+  data: Array<{
+    id: string;
+    userId: string | null;
+    action: string;
+    entityType: string;
+    entityId: string | null;
+    changes: Prisma.JsonValue;
+    description: string | null;
+    createdAt: Date;
+    user: {
+      id: string;
+      email: string;
+      userType: UserType;
+      profile: {
+        fullName: string | null;
+      } | null;
+    } | null;
+  }>;
+  pagination: ActivityLogPaginationMetadata;
+}
+
+// ============================================================================
+// Filter Builder Functions
+// ============================================================================
+
+/**
+ * Sanitize search input to prevent issues
+ * Prisma handles parameterization, but we still trim and validate
+ *
+ * @param search - Raw search string from user input
+ * @returns Sanitized search string or undefined if empty
+ */
+function sanitizeSearchInput(search?: string): string | undefined {
+  if (!search) return undefined;
+
+  // Trim whitespace
+  const trimmed = search.trim();
+
+  // Return undefined if empty after trimming
+  if (trimmed.length === 0) return undefined;
+
+  return trimmed;
+}
+
+/**
+ * Build search filter for description, user name, and email
+ * Searches across multiple fields using OR logic (case-insensitive)
+ *
+ * @param search - Search query string
+ * @returns Prisma OR clause for searching multiple fields
+ */
+export function buildSearchFilter(
+  search?: string
+): Prisma.ActivityLogWhereInput["OR"] {
+  const sanitizedSearch = sanitizeSearchInput(search);
+
+  if (!sanitizedSearch) {
+    return undefined;
+  }
+
+  // Build OR clause to search across multiple fields (case-insensitive)
+  return [
+    {
+      description: {
+        contains: sanitizedSearch,
+        mode: "insensitive",
+      },
+    },
+    {
+      user: {
+        profile: {
+          fullName: {
+            contains: sanitizedSearch,
+            mode: "insensitive",
+          },
+        },
+      },
+    },
+    {
+      user: {
+        email: {
+          contains: sanitizedSearch,
+          mode: "insensitive",
+        },
+      },
+    },
+  ];
+}
+
+/**
+ * Build entity type filter for exact matching
+ *
+ * @param entityType - Entity type to filter by (Venue, Court, Booking, etc.)
+ * @returns Prisma where clause for entity type filtering
+ */
+export function buildEntityTypeFilter(
+  entityType?: EntityType
+): Prisma.ActivityLogWhereInput["entityType"] {
+  // If no entity type specified, return undefined (no filter)
+  if (!entityType) {
+    return undefined;
+  }
+
+  // Return exact match filter
+  return entityType;
+}
+
+/**
+ * Build action type filter for category matching (CREATE, UPDATE, DELETE)
+ * Matches actions that start with the specified category
+ *
+ * @param actionType - Action category to filter by (CREATE, UPDATE, DELETE)
+ * @returns Prisma where clause for action type filtering
+ */
+export function buildActionTypeFilter(
+  actionType?: string
+): Prisma.ActivityLogWhereInput["action"] {
+  // If no action type specified, return undefined (no filter)
+  if (!actionType) {
+    return undefined;
+  }
+
+  // Validate action type is one of the allowed categories
+  const validActionTypes = ["CREATE", "UPDATE", "DELETE", "INVITE"];
+  if (!validActionTypes.includes(actionType.toUpperCase())) {
+    return undefined;
+  }
+
+  // Return startsWith filter to match action categories
+  // e.g., "CREATE" matches "CREATE_USER", "CREATE_VENUE", etc.
+  return {
+    startsWith: actionType.toUpperCase(),
+  };
+}
+
+/**
+ * Build date range filter for createdAt field
+ * Supports start date only, end date only, or both (inclusive)
+ *
+ * @param startDate - Start of date range (inclusive)
+ * @param endDate - End of date range (inclusive)
+ * @returns Prisma where clause for date range filtering
+ */
+export function buildDateRangeFilter(
+  startDate?: Date,
+  endDate?: Date
+): Prisma.ActivityLogWhereInput["createdAt"] {
+  // If no dates specified, return undefined (no filter)
+  if (!startDate && !endDate) {
+    return undefined;
+  }
+
+  // Build date range filter
+  const dateFilter: Prisma.DateTimeFilter = {};
+
+  if (startDate) {
+    // Set to start of day for inclusive start
+    const startOfDay = new Date(startDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    dateFilter.gte = startOfDay;
+  }
+
+  if (endDate) {
+    // Set to end of day for inclusive end
+    const endOfDay = new Date(endDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    dateFilter.lte = endOfDay;
+  }
+
+  return dateFilter;
+}
+
+/**
+ * Build pagination parameters and calculate metadata
+ *
+ * @param page - Page number (1-indexed)
+ * @param limit - Items per page
+ * @returns Pagination parameters and metadata builder function
+ */
+export function buildPaginationParams(
+  page?: number,
+  limit?: number
+): {
+  skip: number;
+  take: number;
+  metadata: (total: number) => ActivityLogPaginationMetadata;
+} {
+  // Default values with validation
+  const validPage = Math.max(1, page || 1);
+  const validLimit = Math.max(1, Math.min(100, limit || 10)); // Cap at 100
+
+  // Calculate skip for Prisma query
+  const skip = (validPage - 1) * validLimit;
+
+  // Return skip, take, and a function to build metadata
+  return {
+    skip,
+    take: validLimit,
+    metadata: (total: number) => ({
+      page: validPage,
+      limit: validLimit,
+      total,
+      totalPages: Math.ceil(total / validLimit),
+    }),
+  };
+}
+
+/**
+ * Build complete Prisma where clause combining all filters
+ *
+ * @param options - Filter options from GetActivityLogsForAdminOptions
+ * @returns Complete Prisma where clause
+ */
+export function buildWhereClause(
+  options: GetActivityLogsForAdminOptions
+): Prisma.ActivityLogWhereInput {
+  const { search, entityType, actionType, startDate, endDate } = options;
+
+  // Build individual filter components
+  const searchFilter = buildSearchFilter(search);
+  const entityTypeFilter = buildEntityTypeFilter(entityType);
+  const actionTypeFilter = buildActionTypeFilter(actionType);
+  const dateRangeFilter = buildDateRangeFilter(startDate, endDate);
+
+  // Combine all filters with AND logic
+  const where: Prisma.ActivityLogWhereInput = {};
+
+  // Search filter (OR clause for multiple fields)
+  if (searchFilter) {
+    where.OR = searchFilter;
+  }
+
+  // Entity type filter (exact match)
+  if (entityTypeFilter) {
+    where.entityType = entityTypeFilter;
+  }
+
+  // Action type filter (startsWith for category matching)
+  if (actionTypeFilter) {
+    where.action = actionTypeFilter;
+  }
+
+  // Date range filter
+  if (dateRangeFilter) {
+    where.createdAt = dateRangeFilter;
+  }
+
+  return where;
+}
+
+// ============================================================================
+// Main Query Function
+// ============================================================================
+
+/**
+ * Get activity logs for admin dashboard with server-side filtering and pagination
+ *
+ * This function implements comprehensive filtering based on:
+ * - Search query (description, user name, email)
+ * - Entity type (Venue, Court, Booking, Order, User, Invoice)
+ * - Action type category (CREATE, UPDATE, DELETE)
+ * - Date range (start date, end date)
+ * - Pagination
+ *
+ * All filters are applied at the database level for optimal performance.
+ *
+ * @param options - Filter and pagination options
+ * @returns Filtered activity logs with pagination metadata
+ *
+ * @example
+ * // Search for activity logs
+ * const result = await getActivityLogsForAdmin({
+ *   search: "venue",
+ *   page: 1,
+ *   limit: 10
+ * });
+ *
+ * @example
+ * // Filter by entity type and date range
+ * const result = await getActivityLogsForAdmin({
+ *   entityType: "Venue",
+ *   startDate: new Date("2024-01-01"),
+ *   endDate: new Date("2024-12-31"),
+ *   page: 1,
+ *   limit: 10
+ * });
+ */
+export async function getActivityLogsForAdmin(
+  options: GetActivityLogsForAdminOptions
+): Promise<GetActivityLogsForAdminResult> {
+  // Build where clause combining all filters
+  const where = buildWhereClause(options);
+
+  // Build pagination parameters
+  const { skip, take, metadata } = buildPaginationParams(
+    options.page,
+    options.limit
+  );
+
+  // Execute query with filters and pagination
+  const [logs, total] = await Promise.all([
+    prisma.activityLog.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            userType: true,
+            profile: {
+              select: {
+                fullName: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take,
+    }),
+    prisma.activityLog.count({ where }),
+  ]);
+
+  // Return data with pagination metadata
+  return {
+    data: logs,
+    pagination: metadata(total),
+  };
+}
 
 type RecordActivityParams = {
   context: ServiceContext;

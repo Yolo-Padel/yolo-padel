@@ -9,112 +9,223 @@ import {
   TableHead,
   TableBody,
   TableCell,
+  TableFooter,
 } from "@/components/ui/table";
-import { Eye } from "lucide-react";
-import { User, Profile, ActivityLog } from "@/types/prisma";
-import { useActivityLogsAdmin } from "@/hooks/use-activity-log";
+import { Eye, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { LogDetails } from "./log-modal";
 import { ActionType } from "@/types/action";
 import { EntityType } from "@/types/entity";
 import { stringUtils } from "@/lib/format/string";
-import { ActivityLogTableSkeleton } from "./log-table-skeleton";
-import { ActivityLogEmptyState } from "./log-empty-state";
+import { generatePageNumbers } from "@/lib/pagination-utils";
+import { cn } from "@/lib/utils";
+import { type ActivityLogWithUser } from "@/hooks/use-activity-log";
 
-export function ActivityLogTable() {
+// ════════════════════════════════════════════════════════
+// Types
+// ════════════════════════════════════════════════════════
+
+/**
+ * Pagination information for the table
+ * Requirements: 5.2, 5.4, 5.5
+ */
+export interface ActivityLogPaginationInfo {
+  pageSafe: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
+
+/**
+ * Props for the ActivityLogTable component
+ * Requirements: 5.2, 5.4, 5.5, 8.5
+ */
+export interface ActivityLogTableProps {
+  /** Array of activity logs to display */
+  logs: ActivityLogWithUser[];
+  /** Pagination information */
+  paginationInfo: ActivityLogPaginationInfo;
+  /** Callback when page changes */
+  onPageChange: (page: number) => void;
+  /** Callback when viewing a log's details */
+  onViewLog: (log: ActivityLogWithUser) => void;
+}
+
+// ════════════════════════════════════════════════════════
+// Component
+// ════════════════════════════════════════════════════════
+
+/**
+ * Pure presentation component for displaying activity logs in a table
+ *
+ * This component:
+ * - Receives logs data as props (no internal data fetching)
+ * - Receives pagination info as props
+ * - Emits events via callbacks (onPageChange, onViewLog)
+ * - Includes pagination controls in table footer
+ *
+ * Requirements: 5.2, 5.4, 5.5, 8.5
+ */
+export function ActivityLogTable({
+  logs,
+  paginationInfo,
+  onPageChange,
+  onViewLog,
+}: ActivityLogTableProps) {
+  // Local UI state for modal
   const [modalOpen, setModalOpen] = useState(false);
-  const { data, isLoading, error } = useActivityLogsAdmin();
-  const allLogs = data?.data || [];
-  const [selectedLog, setSelectedLog] = useState<
-    (ActivityLog & { user: User & { profile: Profile } }) | null
-  >(null);
+  const [selectedLog, setSelectedLog] = useState<ActivityLogWithUser | null>(
+    null
+  );
 
-  if (isLoading) return <ActivityLogTableSkeleton />;
-  if (error)
-    return (
-      <div className="rounded-2xl border border-[#E9EAEB] p-8 text-center text-red-600">
-        Error loading logs: {error.message}
-      </div>
-    );
-  if (!data || allLogs.length === 0) {
-    return <ActivityLogEmptyState />;
-  }
+  // Pagination button styles (consistent with OrderTable)
+  const paginationButtonBaseClass =
+    "w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]";
+  const paginationButtonActiveClass =
+    "bg-primary text-black border-primary hover:bg-primary";
+
+  /**
+   * Handle view button click
+   * Opens modal and notifies parent
+   */
+  const handleViewClick = (log: ActivityLogWithUser) => {
+    setSelectedLog(log);
+    setModalOpen(true);
+    onViewLog(log);
+  };
 
   return (
     <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Date&Time</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Modul</TableHead>
-            <TableHead>Action</TableHead>
-            {/* <TableHead>Detail</TableHead> */}
-            <TableHead>Actions</TableHead>
+            <TableHead className="h-11">Date&Time</TableHead>
+            <TableHead className="h-11">Name</TableHead>
+            <TableHead className="h-11">Role</TableHead>
+            <TableHead className="h-11">Modul</TableHead>
+            <TableHead className="h-11">Action</TableHead>
+            <TableHead className="h-11">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {allLogs.map(
-            (log: ActivityLog & { user: User & { profile: Profile } }) => (
-              <TableRow key={log.id}>
-                <TableCell>
-                  {new Date(log.createdAt).toLocaleDateString("id-ID", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm font-medium">
-                    {log.user?.profile?.fullName}
-                  </span>{" "}
-                  <br />{" "}
-                  <span className="text-xs text-muted-foreground">
-                    {log.user?.email}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  {stringUtils.toTitleCase(log.user?.userType)}
-                </TableCell>
-                <TableCell>{log.entityType}</TableCell>
-                <TableCell>
-                  {stringUtils.toTitleCase(log.action.split("_")[0])}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-none shadow-none"
-                    onClick={() => {
-                      setSelectedLog(log);
-                      setModalOpen(true);
-                    }}
-                  >
-                    <Eye className="size-4 text-[#A4A7AE]" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            )
-          )}
+          {logs.map((log) => (
+            <TableRow key={log.id}>
+              <TableCell>
+                {new Date(log.createdAt).toLocaleDateString("id-ID", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </TableCell>
+              <TableCell>
+                <span className="text-sm font-medium">
+                  {log.user?.profile?.fullName || "-"}
+                </span>
+                <br />
+                <span className="text-xs text-muted-foreground">
+                  {log.user?.email || "-"}
+                </span>
+              </TableCell>
+              <TableCell>
+                {stringUtils.toTitleCase(log.user?.userType || "-")}
+              </TableCell>
+              <TableCell>{log.entityType}</TableCell>
+              <TableCell>
+                {stringUtils.toTitleCase(log.action.split("_")[0])}
+              </TableCell>
+              <TableCell>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-none shadow-none"
+                  onClick={() => handleViewClick(log)}
+                >
+                  <Eye className="size-4 text-[#A4A7AE]" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
-        {/*Log Details Modal*/}
-        <LogDetails
-          open={modalOpen}
-          onOpenChange={setModalOpen}
-          logDetailsProps={{
-            date: new Date(selectedLog?.createdAt || ""),
-            performedBy: selectedLog?.user?.profile?.fullName || "",
-            role: selectedLog?.user?.userType || "",
-            module: selectedLog?.entityType as EntityType,
-            action: selectedLog?.action as ActionType,
-            reference: selectedLog?.entityId || "",
-            description: selectedLog?.description || "",
-            changes: selectedLog?.changes || null,
-          }}
-        />
+
+        {/* Pagination Footer - Requirements: 5.2, 5.4, 5.5 */}
+        <TableFooter className="bg-transparent">
+          <TableRow>
+            <TableCell colSpan={6} className="p-4">
+              <div className="flex items-center justify-between">
+                {/* Previous Button - Requirement 5.4 */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!paginationInfo.hasPreviousPage}
+                  onClick={() => onPageChange(paginationInfo.pageSafe - 1)}
+                  className="flex items-center gap-2"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </Button>
+
+                {/* Page Numbers */}
+                <div className="flex items-center gap-1">
+                  {generatePageNumbers(
+                    paginationInfo.pageSafe,
+                    paginationInfo.totalPages
+                  ).map((pageNum, index) => (
+                    <div key={index}>
+                      {pageNum === "..." ? (
+                        <div className="flex items-center justify-center w-8 h-8 bg-background border border-[#E9EAEB] text-[#A4A7AE]">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onPageChange(pageNum as number)}
+                          className={cn(
+                            paginationButtonBaseClass,
+                            pageNum === paginationInfo.pageSafe &&
+                              paginationButtonActiveClass
+                          )}
+                        >
+                          {pageNum}
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Next Button - Requirement 5.5 */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!paginationInfo.hasNextPage}
+                  onClick={() => onPageChange(paginationInfo.pageSafe + 1)}
+                  className="flex items-center gap-2"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        </TableFooter>
       </Table>
+
+      {/* Log Details Modal */}
+      <LogDetails
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        logDetailsProps={{
+          date: new Date(selectedLog?.createdAt || ""),
+          performedBy: selectedLog?.user?.profile?.fullName || "",
+          role: selectedLog?.user?.userType || "",
+          module: selectedLog?.entityType as EntityType,
+          action: selectedLog?.action as ActionType,
+          reference: selectedLog?.entityId || "",
+          description: selectedLog?.description || "",
+          changes: selectedLog?.changes || null,
+        }}
+      />
     </div>
   );
 }
