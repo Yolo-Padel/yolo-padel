@@ -5,15 +5,21 @@
 
 */
 
--- Convert existing values before enum change
-UPDATE "users" SET "userStatus" = 'JOINED' WHERE "userStatus" = 'ACTIVE';
-UPDATE "users" SET "userStatus" = 'INVITED' WHERE "userStatus" = 'INACTIVE';
-
 -- AlterEnum
 BEGIN;
 CREATE TYPE "UserStatus_new" AS ENUM ('JOINED', 'INVITED');
 ALTER TABLE "public"."users" ALTER COLUMN "userStatus" DROP DEFAULT;
-ALTER TABLE "users" ALTER COLUMN "userStatus" TYPE "UserStatus_new" USING ("userStatus"::text::"UserStatus_new");
+
+-- Convert to text first, then map old values to new values, then cast to new enum
+ALTER TABLE "users" ALTER COLUMN "userStatus" TYPE "UserStatus_new" 
+  USING (
+    CASE "userStatus"::text
+      WHEN 'ACTIVE' THEN 'JOINED'
+      WHEN 'INACTIVE' THEN 'INVITED'
+      ELSE "userStatus"::text
+    END
+  )::"UserStatus_new";
+
 ALTER TYPE "UserStatus" RENAME TO "UserStatus_old";
 ALTER TYPE "UserStatus_new" RENAME TO "UserStatus";
 DROP TYPE "public"."UserStatus_old";
