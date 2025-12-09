@@ -4,6 +4,11 @@
   - The values [ACTIVE,INACTIVE] on the enum `UserStatus` will be removed. If these variants are still used in the database, this will fail.
 
 */
+
+-- Convert existing values before enum change
+UPDATE "users" SET "userStatus" = 'JOINED' WHERE "userStatus" = 'ACTIVE';
+UPDATE "users" SET "userStatus" = 'INVITED' WHERE "userStatus" = 'INACTIVE';
+
 -- AlterEnum
 BEGIN;
 CREATE TYPE "UserStatus_new" AS ENUM ('JOINED', 'INVITED');
