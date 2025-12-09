@@ -6,6 +6,7 @@ import {
   updateRolePermissions,
   type RolePermissionUpdate,
 } from "@/lib/services/rbac.service";
+import { ServiceContext } from "@/types/service-context";
 
 // Admin roles that can access RBAC endpoints
 const ALLOWED_ADMIN_ROLES: UserType[] = [UserType.ADMIN, UserType.STAFF];
@@ -156,8 +157,15 @@ export async function PATCH(
       }
     }
 
+    // Build ServiceContext for activity logging (Requirements 7.3)
+    const context: ServiceContext = {
+      userRole: user.userType,
+      actorUserId: user.userId,
+      assignedVenueId: user.assignedVenueIds,
+    };
+
     // Update role permissions using service
-    await updateRolePermissions(roleId, body.updates);
+    await updateRolePermissions(roleId, body.updates, context);
 
     return NextResponse.json(
       {

@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import type { Roles, Module, Permission, RolePermission } from "@/types/prisma";
+import { activityLogService, buildChangesDiff } from "./activity-log.service";
+import { ACTION_TYPES } from "@/types/action";
+import { ENTITY_TYPES } from "@/types/entity";
+import { ServiceContext } from "@/types/service-context";
 
 /**
  * RBAC Service
@@ -83,10 +87,14 @@ export type RolePermissionUpdate = {
  * Create a new role
  *
  * @param data - Role creation data (name, description, isActive)
+ * @param context - Service context for activity logging (Requirements 7.3)
  * @returns The created role with ID
  * @throws Error if role name already exists
  */
-export async function createRole(data: CreateRoleInput): Promise<Roles> {
+export async function createRole(
+  data: CreateRoleInput,
+  context: ServiceContext
+): Promise<Roles> {
   // Check if role name already exists
   const existingRole = await prisma.roles.findUnique({
     where: { name: data.name },
@@ -102,6 +110,23 @@ export async function createRole(data: CreateRoleInput): Promise<Roles> {
       name: data.name,
       description: data.description,
       isActive: data.isActive ?? true,
+    },
+  });
+
+  // Log role creation activity
+  // Requirements 3.1: Record CREATE_ROLE action with name, description, isActive
+  activityLogService.record({
+    context,
+    action: ACTION_TYPES.CREATE_ROLE,
+    entityType: ENTITY_TYPES.ROLE,
+    entityId: role.id,
+    changes: {
+      before: {},
+      after: {
+        name: role.name,
+        description: role.description,
+        isActive: role.isActive,
+      },
     },
   });
 
@@ -186,14 +211,16 @@ export async function getRoleById(
  *
  * @param roleId - The role ID to update
  * @param data - Update data (name, description, isActive)
+ * @param context - Service context for activity logging (Requirements 7.3)
  * @returns The updated role
  * @throws Error if role not found or name already exists
  */
 export async function updateRole(
   roleId: string,
-  data: UpdateRoleInput
+  data: UpdateRoleInput,
+  context: ServiceContext
 ): Promise<Roles> {
-  // Check if role exists
+  // Check if role exists and fetch current data for diff (Requirements 3.2)
   const existingRole = await prisma.roles.findUnique({
     where: { id: roleId },
   });
@@ -223,6 +250,33 @@ export async function updateRole(
     },
   });
 
+  // Build changes diff for logging (Requirements 3.2)
+  const changesDiff = buildChangesDiff(
+    {
+      name: existingRole.name,
+      description: existingRole.description,
+      isActive: existingRole.isActive,
+    },
+    {
+      name: updatedRole.name,
+      description: updatedRole.description,
+      isActive: updatedRole.isActive,
+    },
+    ["name", "description", "isActive"]
+  );
+
+  // Log role update activity
+  // Requirements 3.2: Record UPDATE_ROLE action with before/after values
+  if (changesDiff) {
+    activityLogService.record({
+      context,
+      action: ACTION_TYPES.UPDATE_ROLE,
+      entityType: ENTITY_TYPES.ROLE,
+      entityId: updatedRole.id,
+      changes: changesDiff,
+    });
+  }
+
   return updatedRole;
 }
 
@@ -230,9 +284,13 @@ export async function updateRole(
  * Delete a role
  *
  * @param roleId - The role ID to delete
+ * @param context - Service context for activity logging (Requirements 7.3)
  * @throws Error if role not found or is assigned to users
  */
-export async function deleteRole(roleId: string): Promise<void> {
+export async function deleteRole(
+  roleId: string,
+  context: ServiceContext
+): Promise<void> {
   // Check if role exists
   const role = await prisma.roles.findUnique({
     where: { id: roleId },
@@ -259,6 +317,25 @@ export async function deleteRole(roleId: string): Promise<void> {
       where: { id: roleId },
     }),
   ]);
+
+  // Log role deletion activity
+  // Requirements 3.3: Record DELETE_ROLE action with role name in changes.before
+  activityLogService.record({
+    context,
+    action: ACTION_TYPES.DELETE_ROLE,
+    entityType: ENTITY_TYPES.ROLE,
+    entityId: roleId,
+    changes: {
+      before: {
+        name: role.name,
+        description: role.description,
+        isActive: role.isActive,
+      },
+      after: {
+        isArchived: true,
+      },
+    },
+  });
 }
 
 // ============================================================================
@@ -336,11 +413,13 @@ export async function getRolePermissions(
  *
  * @param roleId - The role ID
  * @param updates - Array of permission updates
+ * @param context - Service context for activity logging (Requirements 7.3)
  * @throws Error if role not found or transaction fails
  */
 export async function updateRolePermissions(
   roleId: string,
-  updates: RolePermissionUpdate[]
+  updates: RolePermissionUpdate[],
+  context: ServiceContext
 ): Promise<void> {
   const permissions = await prisma.permission.findMany({
     select: {
@@ -373,6 +452,21 @@ export async function updateRolePermissions(
   if (!role) {
     throw new Error(`Role with ID "${roleId}" not found`);
   }
+
+  // Fetch current permissions before update for diff (Requirements 3.4)
+  const currentPermissions = await prisma.rolePermission.findMany({
+    where: { roleId },
+    select: {
+      moduleId: true,
+      permissionId: true,
+      allowed: true,
+    },
+  });
+
+  // Create a map of current permissions for easy lookup
+  const currentPermissionMap = new Map(
+    currentPermissions.map((p) => [`${p.moduleId}-${p.permissionId}`, p.allowed])
+  );
 
   // Perform all updates in a transaction
   await prisma.$transaction(async (tx) => {
@@ -440,4 +534,49 @@ export async function updateRolePermissions(
       }
     }
   });
+
+  // Build permission changes for logging
+  // Track which permissions actually changed
+  const permissionChanges = updates
+    .map((update) => {
+      const key = `${update.moduleId}-${update.permissionId}`;
+      const previousAllowed = currentPermissionMap.get(key) ?? false;
+      if (previousAllowed !== update.allowed) {
+        return {
+          moduleId: update.moduleId,
+          permissionId: update.permissionId,
+          previousAllowed,
+          newAllowed: update.allowed,
+        };
+      }
+      return null;
+    })
+    .filter((change) => change !== null);
+
+  // Log role permission update activity
+  // Requirements 3.4: Record UPDATE_ROLE_PERMISSION action with permission changes
+  if (permissionChanges.length > 0) {
+    activityLogService.record({
+      context,
+      action: ACTION_TYPES.UPDATE_ROLE_PERMISSION,
+      entityType: ENTITY_TYPES.ROLE,
+      entityId: roleId,
+      changes: {
+        before: {
+          permissions: permissionChanges.map((c) => ({
+            moduleId: c!.moduleId,
+            permissionId: c!.permissionId,
+            allowed: c!.previousAllowed,
+          })),
+        },
+        after: {
+          permissions: permissionChanges.map((c) => ({
+            moduleId: c!.moduleId,
+            permissionId: c!.permissionId,
+            allowed: c!.newAllowed,
+          })),
+        },
+      },
+    });
+  }
 }

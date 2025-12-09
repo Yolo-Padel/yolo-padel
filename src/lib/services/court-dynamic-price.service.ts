@@ -5,6 +5,9 @@ import {
   CourtDynamicPriceCreateData,
   CourtDynamicPriceUpdateData,
 } from "@/lib/validations/court-dynamic-price.validation";
+import { activityLogService, buildChangesDiff } from "./activity-log.service";
+import { ACTION_TYPES } from "@/types/action";
+import { ENTITY_TYPES } from "@/types/entity";
 
 const buildSuccess = <T>(data: T, message: string) => ({
   success: true,
@@ -172,6 +175,25 @@ export const courtDynamicPriceService = {
         },
       });
 
+      // Log activity for dynamic price creation
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.CREATE_DYNAMIC_PRICE,
+        entityType: ENTITY_TYPES.DYNAMIC_PRICE,
+        entityId: dynamicPrice.id,
+        changes: {
+          before: {},
+          after: {
+            courtId: dynamicPrice.courtId,
+            price: dynamicPrice.price,
+            dayOfWeek: dynamicPrice.dayOfWeek,
+            date: dynamicPrice.date,
+            startHour: dynamicPrice.startHour,
+            endHour: dynamicPrice.endHour,
+          },
+        },
+      });
+
       return buildSuccess(dynamicPrice, "Dynamic price created successfully");
     } catch (err) {
       console.error("create dynamic price error:", err);
@@ -198,6 +220,14 @@ export const courtDynamicPriceService = {
         return buildError("Updating startHour/endHour is not allowed");
       }
 
+      // Capture before state for diff
+      const beforeState = {
+        dayOfWeek: dynamicPrice.dayOfWeek,
+        date: dynamicPrice.date,
+        price: dynamicPrice.price,
+        isActive: dynamicPrice.isActive,
+      };
+
       const resolvedDayOfWeek =
         data.dayOfWeek !== undefined
           ? (data.dayOfWeek ?? null)
@@ -217,6 +247,26 @@ export const courtDynamicPriceService = {
           isActive: resolvedIsActive,
         },
       });
+
+      // Capture after state for diff
+      const afterState = {
+        dayOfWeek: updatedDynamicPrice.dayOfWeek,
+        date: updatedDynamicPrice.date,
+        price: updatedDynamicPrice.price,
+        isActive: updatedDynamicPrice.isActive,
+      };
+
+      // Build changes diff and log activity
+      const changesDiff = buildChangesDiff(beforeState, afterState);
+      if (changesDiff) {
+        activityLogService.record({
+          context,
+          action: ACTION_TYPES.UPDATE_DYNAMIC_PRICE,
+          entityType: ENTITY_TYPES.DYNAMIC_PRICE,
+          entityId: updatedDynamicPrice.id,
+          changes: changesDiff,
+        });
+      }
 
       return buildSuccess(
         updatedDynamicPrice,
@@ -252,6 +302,28 @@ export const courtDynamicPriceService = {
         data: {
           isArchived: true,
         } as any,
+      });
+
+      // Log activity for dynamic price deletion (archive)
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.DELETE_DYNAMIC_PRICE,
+        entityType: ENTITY_TYPES.DYNAMIC_PRICE,
+        entityId: dynamicPrice.id,
+        changes: {
+          before: {
+            courtId: dynamicPrice.courtId,
+            price: dynamicPrice.price,
+            dayOfWeek: dynamicPrice.dayOfWeek,
+            date: dynamicPrice.date,
+            startHour: dynamicPrice.startHour,
+            endHour: dynamicPrice.endHour,
+            isActive: dynamicPrice.isActive,
+          },
+          after: {
+            isArchived: true,
+          },
+        },
       });
 
       return buildSuccess(null, "Dynamic price deleted successfully");
