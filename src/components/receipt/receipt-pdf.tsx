@@ -8,9 +8,10 @@ import {
   Image,
 } from "@react-pdf/renderer";
 import { Order } from "@/hooks/use-order";
-import { format } from "date-fns";
-import { id as idLocale } from "date-fns/locale";
+import { formatInTimeZone } from "date-fns-tz";
 import { stringUtils } from "@/lib/format/string";
+
+const TIMEZONE = "Asia/Jakarta";
 
 const styles = StyleSheet.create({
   page: {
@@ -288,11 +289,11 @@ const getImageUrl = (imageName: string) => {
 
 export function ReceiptPDF({ order }: ReceiptPDFProps) {
   const orderDate = order.createdAt
-    ? format(new Date(order.createdAt), "d MMM yyyy, HH:mm")
+    ? formatInTimeZone(new Date(order.createdAt), TIMEZONE, "d MMM yyyy, HH:mm")
     : "N/A";
 
   const paymentDate = order.payment?.paymentDate
-    ? format(new Date(order.payment.paymentDate), "d MMM yyyy, HH:mm")
+    ? formatInTimeZone(new Date(order.payment.paymentDate), TIMEZONE, "d MMM yyyy, HH:mm")
     : null;
 
   const customerName = order.user?.profile?.fullName || "Customer";
@@ -371,10 +372,10 @@ export function ReceiptPDF({ order }: ReceiptPDFProps) {
 
           {/* Table Rows */}
           {order.bookings?.map((booking, index) => {
-            const bookingDate = format(
+            const bookingDate = formatInTimeZone(
               new Date(booking.bookingDate),
+              TIMEZONE,
               "d MMM yyyy",
-              { locale: idLocale }
             );
 
             const timeSlots = booking.timeSlots
@@ -455,7 +456,7 @@ export function ReceiptPDF({ order }: ReceiptPDFProps) {
           </Text>
           <Text style={styles.footerAddress}>
             Generated on{" "}
-            {format(new Date(), "d MMM yyyy, HH:mm", { locale: idLocale })}
+            {formatInTimeZone(new Date(), TIMEZONE, "d MMM yyyy, HH:mm")}
           </Text>
         </View>
       </Page>

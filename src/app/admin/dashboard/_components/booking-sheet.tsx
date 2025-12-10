@@ -169,12 +169,41 @@ export function ManualBookingSheet({
 
   // Use availableSlotRanges directly from API (already in UI format)
   // Format: ["06.00–07.00", "07.00–08.00", ...]
+  // Filter out past time slots on the client side for better UX
   const timeSlotOptions = useMemo(() => {
     if (!availableTimeSlotsData?.availableSlotRanges) {
       return [];
     }
-    return availableTimeSlotsData.availableSlotRanges;
-  }, [availableTimeSlotsData]);
+
+    const slots = availableTimeSlotsData.availableSlotRanges;
+
+    // Check if selected date is today
+    if (!selectedDate) return slots;
+
+    const now = new Date();
+    const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const selectedDateOnly = new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      selectedDate.getDate()
+    );
+    const isToday = todayOnly.getTime() === selectedDateOnly.getTime();
+
+    if (!isToday) return slots;
+
+    // Filter out slots that have already started
+    const currentHour = String(now.getHours()).padStart(2, "0");
+    const currentMinute = String(now.getMinutes()).padStart(2, "0");
+    const currentTime = `${currentHour}:${currentMinute}`;
+
+    return slots.filter((slot: string) => {
+      const [slotStart] = slot.split("–");
+      // Convert UI format "06.00" to DB format "06:00" for comparison
+      const slotStartDB = slotStart.replace(".", ":");
+      // Only show slots where start time is after current time
+      return slotStartDB > currentTime;
+    });
+  }, [availableTimeSlotsData, selectedDate]);
 
   // Get currently selected slots in UI format (array)
   const selectedSlots = useMemo(() => {
