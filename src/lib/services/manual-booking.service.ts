@@ -3,7 +3,10 @@ import { ManualBookingInput } from "@/lib/validations/manual-booking.validation"
 import { bookingService, createBooking } from "@/lib/services/booking.service";
 import { createBlocking } from "@/lib/services/blocking.service";
 import { resendService } from "@/lib/services/resend.service";
-import { activityLogService } from "@/lib/services/activity-log.service";
+import {
+  activityLogService,
+  entityReferenceHelpers,
+} from "@/lib/services/activity-log.service";
 import { calculateSlotsPrice } from "@/lib/booking-pricing-utils";
 import { ServiceContext, requirePermission } from "@/types/service-context";
 import { BookingStatus, UserType, UserStatus } from "@/types/prisma";
@@ -276,6 +279,9 @@ export const manualBookingService = {
         action: ACTION_TYPES.CREATE_MANUAL_BOOKING,
         entityType: ENTITY_TYPES.BOOKING,
         entityId: result.booking.id,
+        entityReference: entityReferenceHelpers.booking({
+          code: result.booking.bookingCode,
+        }),
         changes: {
           before: {},
           after: {

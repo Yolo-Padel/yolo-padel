@@ -8,7 +8,10 @@ import type {
   OrderConfirmationEmailData,
 } from "@/lib/validations/send-email.validation";
 import { ServiceContext } from "@/types/service-context";
-import { activityLogService } from "./activity-log.service";
+import {
+  activityLogService,
+  entityReferenceHelpers,
+} from "./activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 
@@ -338,12 +341,13 @@ export async function syncOrderStatusToBookings(
   newOrderStatus: OrderStatus,
   context?: ServiceContext
 ): Promise<void> {
-  // Store old status for logging before transaction
+  // Store old status and orderCode for logging before transaction
   const currentOrder = await prisma.order.findUnique({
     where: { id: orderId },
-    select: { status: true },
+    select: { status: true, orderCode: true },
   });
   const oldStatus = currentOrder?.status;
+  const orderCode = currentOrder?.orderCode;
 
   await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({
@@ -410,6 +414,9 @@ export async function syncOrderStatusToBookings(
     action: ACTION_TYPES.UPDATE_ORDER,
     entityType: ENTITY_TYPES.ORDER,
     entityId: orderId,
+    entityReference: orderCode
+      ? entityReferenceHelpers.order({ orderCode })
+      : undefined,
     changes: {
       before: { status: oldStatus },
       after: { status: newOrderStatus },

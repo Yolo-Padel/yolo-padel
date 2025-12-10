@@ -346,14 +346,15 @@ model Order {
 }
 
 model ActivityLog {
-  id          String     @id @default(cuid())
-  userId      String?
-  action      String
-  entityType  String
-  entityId    String?
-  changes     Json?
-  description String?
-  createdAt   DateTime   @default(now())
+  id              String     @id @default(cuid())
+  userId          String?
+  action          String
+  entityType      String
+  entityId        String?
+  entityReference String?    // Human-readable reference (e.g., "Main Court", "john@example.com")
+  changes         Json?
+  description     String?
+  createdAt       DateTime   @default(now())
 
   // Optional relation ke User yang melakukan aksi
   user User? @relation("ActivityLogs", fields: [userId], references: [id])

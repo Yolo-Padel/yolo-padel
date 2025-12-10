@@ -21,7 +21,10 @@ type LogDetailsProps = {
   role: string;
   module: EntityType;
   action: ActionType;
-  reference: string;
+  /** Human-readable entity reference (e.g., venue name, user email) */
+  entityReference: string | null;
+  /** Technical entity ID (fallback if entityReference is not available) */
+  entityId: string | null;
   description: string | null;
   changes?: JsonValue;
 };
@@ -34,19 +37,164 @@ type ChangePayload = {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-const formatValue = (value: unknown) => {
+/**
+ * Check if a value looks like a permission object
+ */
+const isPermissionObject = (value: unknown): value is { module?: string; permission?: string; allowed?: boolean; moduleId?: string; permissionId?: string } => {
+  if (!isRecord(value)) return false;
+  return ('module' in value || 'moduleId' in value) && ('permission' in value || 'permissionId' in value);
+};
+
+/**
+ * Format a permission object to human-readable string
+ */
+const formatPermission = (perm: { module?: string; permission?: string; allowed?: boolean; moduleId?: string; permissionId?: string }): string => {
+  const moduleName = perm.module || perm.moduleId || "Unknown Module";
+  const permissionName = perm.permission || perm.permissionId || "Unknown Permission";
+  const status = perm.allowed !== undefined ? (perm.allowed ? "enabled" : "disabled") : "";
+  
+  if (status) {
+    return `${moduleName}: ${permissionName} (${status})`;
+  }
+  return `${moduleName}: ${permissionName}`;
+};
+
+/**
+ * Format an array of permissions to a readable list
+ */
+const formatPermissionArray = (permissions: unknown[]): string => {
+  if (permissions.length === 0) return "-";
+  
+  // Check if all items are permission objects
+  const allPermissions = permissions.every(isPermissionObject);
+  
+  if (allPermissions) {
+    // Group by module for cleaner display
+    const byModule = new Map<string, string[]>();
+    
+    for (const perm of permissions as Array<{ module?: string; permission?: string; allowed?: boolean; moduleId?: string; permissionId?: string }>) {
+      const moduleName = perm.module || perm.moduleId || "Unknown";
+      const permName = perm.permission || perm.permissionId || "Unknown";
+      const status = perm.allowed !== undefined ? (perm.allowed ? "✓" : "✗") : "";
+      const displayPerm = status ? `${permName} ${status}` : permName;
+      
+      if (!byModule.has(moduleName)) {
+        byModule.set(moduleName, []);
+      }
+      byModule.get(moduleName)!.push(displayPerm);
+    }
+    
+    // Format as "Module: perm1, perm2; Module2: perm3"
+    const parts: string[] = [];
+    for (const [module, perms] of byModule) {
+      parts.push(`${module}: ${perms.join(", ")}`);
+    }
+    
+    return parts.join("; ");
+  }
+  
+  // Fall back to default array formatting
+  return permissions.map(item => formatValue(item)).join(", ");
+};
+
+/**
+ * Format a date value to human-readable string
+ */
+const formatDate = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const date = new Date(value);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    }
+  }
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return value.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }
+  return null;
+};
+
+/**
+ * Format any value to a human-readable string
+ * Enhanced to handle complex objects, permission changes, and arrays better
+ */
+const formatValue = (value: unknown): string => {
+  // Handle null/undefined
   if (value === null || value === undefined) {
     return "-";
   }
-  if (Array.isArray(value)) {
-    return value.length ? value.join(", ") : "-";
-  }
+  
+  // Handle boolean values
   if (typeof value === "boolean") {
-    return value ? "true" : "false";
+    return value ? "Yes" : "No";
   }
+  
+  // Handle string values
+  if (typeof value === "string") {
+    if (value.length === 0) return "-";
+    
+    // Check if it's a date string
+    const dateFormatted = formatDate(value);
+    if (dateFormatted) return dateFormatted;
+    
+    return value;
+  }
+  
+  // Handle number values
+  if (typeof value === "number") {
+    return String(value);
+  }
+  
+  // Handle arrays
+  if (Array.isArray(value)) {
+    if (value.length === 0) return "-";
+    
+    // Check if it's an array of permissions
+    if (value.some(isPermissionObject)) {
+      return formatPermissionArray(value);
+    }
+    
+    // For short arrays, show all items
+    if (value.length <= 3) {
+      return value.map(item => formatValue(item)).join(", ");
+    }
+    
+    // For longer arrays, show count
+    return `${value.length} items`;
+  }
+  
+  // Handle permission objects
+  if (isPermissionObject(value)) {
+    return formatPermission(value);
+  }
+  
+  // Handle other objects
   if (typeof value === "object") {
-    return JSON.stringify(value);
+    // Check if it's a date
+    const dateFormatted = formatDate(value);
+    if (dateFormatted) return dateFormatted;
+    
+    // For objects with few keys, show key-value pairs
+    const keys = Object.keys(value);
+    if (keys.length === 0) return "-";
+    
+    if (keys.length <= 2) {
+      return keys
+        .map(k => `${stringUtils.toTitleCase(k)}: ${formatValue((value as Record<string, unknown>)[k])}`)
+        .join(", ");
+    }
+    
+    // For larger objects, show summary
+    return `${keys.length} properties`;
   }
+  
   return String(value);
 };
 
@@ -99,7 +247,7 @@ export function LogDetails({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      key={logDetailsProps?.reference}
+      key={logDetailsProps?.entityId || logDetailsProps?.entityReference}
     >
       <DialogContent className="max-h-[90vh] flex flex-col overflow-hidden sm:max-w-lg" showCloseButton={false}>
         <DialogHeader>
@@ -145,6 +293,11 @@ export function LogDetails({
                 {stringUtils.toTitleCase(logDetailsProps?.role ?? "")}
               </span>
 
+              <span className="text-muted-foreground">Module</span>
+              <span className="truncate">
+                {logDetailsProps?.module}
+              </span>
+
               <span className="text-muted-foreground">Action</span>
               <span className="truncate">
                 {stringUtils.toTitleCase(
@@ -153,7 +306,9 @@ export function LogDetails({
               </span>
 
               <span className="text-muted-foreground">Reference</span>
-              <span className="truncate">{logDetailsProps?.reference}</span>
+              <span className="truncate">
+                {logDetailsProps?.entityReference || logDetailsProps?.entityId || "-"}
+              </span>
             </div>
           </div>
 

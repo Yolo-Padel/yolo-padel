@@ -5,6 +5,237 @@ import { EntityType } from "@/types/entity";
 import { UserType, Prisma } from "@prisma/client";
 
 // ============================================================================
+// Entity Reference Helper Functions
+// ============================================================================
+
+/**
+ * Format a date range for display (e.g., "Jan 1, 2024 - Jan 31, 2024")
+ * @param startDate - Start date of the range
+ * @param endDate - End date of the range
+ * @returns Formatted date range string
+ */
+export function formatDateRange(startDate: Date, endDate: Date): string {
+  const options: Intl.DateTimeFormatOptions = {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  };
+
+  const startFormatted = startDate.toLocaleDateString("en-US", options);
+  const endFormatted = endDate.toLocaleDateString("en-US", options);
+
+  // If same date, return single date
+  if (startFormatted === endFormatted) {
+    return startFormatted;
+  }
+
+  return `${startFormatted} - ${endFormatted}`;
+}
+
+/**
+ * Entity reference resolver type definitions
+ */
+type VenueData = { name: string };
+type CourtData = { name: string };
+type UserData = {
+  email: string;
+  profile?: { fullName?: string | null } | null;
+};
+type BookingData = { code: string };
+type OrderData = { orderCode: string };
+type RoleData = { name: string };
+type DynamicPriceData = {
+  courtName: string;
+  startDate: Date;
+  endDate: Date;
+};
+
+/**
+ * Entity reference helper functions for resolving human-readable references
+ * for each entity type. These helpers are used by services when recording
+ * activity logs to provide meaningful context instead of technical IDs.
+ */
+export const entityReferenceHelpers = {
+  /**
+   * Get entity reference for a Venue
+   * @param venue - Venue data with name
+   * @returns Venue name as the reference
+   */
+  venue: (venue: VenueData): string => venue.name,
+
+  /**
+   * Get entity reference for a Court
+   * @param court - Court data with name
+   * @returns Court name as the reference
+   */
+  court: (court: CourtData): string => court.name,
+
+  /**
+   * Get entity reference for a User
+   * @param user - User data with email and optional profile
+   * @returns User's full name if available, otherwise email
+   */
+  user: (user: UserData): string => user.profile?.fullName || user.email,
+
+  /**
+   * Get entity reference for a Booking
+   * @param booking - Booking data with code
+   * @returns Booking code as the reference
+   */
+  booking: (booking: BookingData): string => booking.code,
+
+  /**
+   * Get entity reference for an Order
+   * @param order - Order data with orderCode
+   * @returns Order code as the reference
+   */
+  order: (order: OrderData): string => order.orderCode,
+
+  /**
+   * Get entity reference for a Role
+   * @param role - Role data with name
+   * @returns Role name as the reference
+   */
+  role: (role: RoleData): string => role.name,
+
+  /**
+   * Get entity reference for a Dynamic Price
+   * @param data - Dynamic price data with court name and date range
+   * @returns Court name with date range (e.g., "Main Court (Jan 1, 2024 - Jan 31, 2024)")
+   */
+  dynamicPrice: (data: DynamicPriceData): string =>
+    `${data.courtName} (${formatDateRange(data.startDate, data.endDate)})`,
+};
+
+// ============================================================================
+// Permission Change Description Generator
+// ============================================================================
+
+/**
+ * Input type for a single permission change
+ */
+export interface PermissionChangeInput {
+  moduleId: string;
+  permissionId: string;
+  previousAllowed: boolean;
+  newAllowed: boolean;
+}
+
+/**
+ * Module information for lookup
+ */
+export interface ModuleInfo {
+  id: string;
+  label: string;
+}
+
+/**
+ * Permission information for lookup
+ */
+export interface PermissionInfo {
+  id: string;
+  action: string; // "create", "read", "update", "delete"
+}
+
+/**
+ * Map permission action to human-readable name
+ */
+function formatPermissionName(action: string): string {
+  const actionMap: Record<string, string> = {
+    create: "Create",
+    read: "Read",
+    update: "Update",
+    delete: "Delete",
+  };
+  return actionMap[action.toLowerCase()] || action;
+}
+
+/**
+ * Generate a human-readable description for permission changes
+ * Groups changes by module and lists enabled/disabled permissions
+ *
+ * @param changes - Array of permission changes
+ * @param modules - Array of module information for ID to label lookup
+ * @param permissions - Array of permission information for ID to action lookup
+ * @returns Human-readable description of permission changes
+ *
+ * @example
+ * // Returns: "Venue Management: enabled Create, disabled Delete; User Management: enabled Read"
+ * generatePermissionChangeDescription(
+ *   [
+ *     { moduleId: "mod1", permissionId: "perm1", previousAllowed: false, newAllowed: true },
+ *     { moduleId: "mod1", permissionId: "perm2", previousAllowed: true, newAllowed: false },
+ *     { moduleId: "mod2", permissionId: "perm3", previousAllowed: false, newAllowed: true },
+ *   ],
+ *   [{ id: "mod1", label: "Venue Management" }, { id: "mod2", label: "User Management" }],
+ *   [{ id: "perm1", action: "create" }, { id: "perm2", action: "delete" }, { id: "perm3", action: "read" }]
+ * );
+ */
+export function generatePermissionChangeDescription(
+  changes: PermissionChangeInput[],
+  modules: ModuleInfo[],
+  permissions: PermissionInfo[]
+): string {
+  if (!changes || changes.length === 0) {
+    return "";
+  }
+
+  // Create lookup maps for modules and permissions
+  const moduleMap = new Map(modules.map((m) => [m.id, m.label]));
+  const permissionMap = new Map(permissions.map((p) => [p.id, p.action]));
+
+  // Group changes by module
+  const changesByModule = new Map<
+    string,
+    { enabled: string[]; disabled: string[] }
+  >();
+
+  for (const change of changes) {
+    // Skip if no actual change
+    if (change.previousAllowed === change.newAllowed) {
+      continue;
+    }
+
+    const moduleLabel = moduleMap.get(change.moduleId) || change.moduleId;
+    const permissionAction = permissionMap.get(change.permissionId) || change.permissionId;
+    const permissionName = formatPermissionName(permissionAction);
+
+    if (!changesByModule.has(moduleLabel)) {
+      changesByModule.set(moduleLabel, { enabled: [], disabled: [] });
+    }
+
+    const moduleChanges = changesByModule.get(moduleLabel)!;
+
+    if (change.newAllowed) {
+      moduleChanges.enabled.push(permissionName);
+    } else {
+      moduleChanges.disabled.push(permissionName);
+    }
+  }
+
+  // Build description string
+  const descriptions: string[] = [];
+
+  for (const [moduleLabel, moduleChanges] of changesByModule) {
+    const parts: string[] = [];
+
+    if (moduleChanges.enabled.length > 0) {
+      parts.push(`enabled ${moduleChanges.enabled.join(", ")}`);
+    }
+
+    if (moduleChanges.disabled.length > 0) {
+      parts.push(`disabled ${moduleChanges.disabled.join(", ")}`);
+    }
+
+    if (parts.length > 0) {
+      descriptions.push(`${moduleLabel}: ${parts.join(", ")}`);
+    }
+  }
+
+  return descriptions.join("; ");
+}
+
+// ============================================================================
 // Types & Interfaces for Admin Activity Log Filtering
 // ============================================================================
 
@@ -44,6 +275,7 @@ export interface GetActivityLogsForAdminResult {
     action: string;
     entityType: string;
     entityId: string | null;
+    entityReference: string | null;
     changes: Prisma.JsonValue;
     description: string | null;
     createdAt: Date;
@@ -371,11 +603,16 @@ export async function getActivityLogsForAdmin(
   };
 }
 
+/**
+ * Parameters for recording an activity log entry
+ */
 type RecordActivityParams = {
   context: ServiceContext;
   action: ActionType;
   entityType: EntityType;
   entityId?: string | null;
+  /** Human-readable reference for the entity (e.g., venue name, user email) */
+  entityReference?: string | null;
   changes?: Record<string, unknown> | null;
   description?: string | null;
 };
@@ -422,12 +659,118 @@ export function buildChangesDiff<T extends Record<string, unknown>>(
 }
 
 /**
+ * Format a field name to be more human-readable
+ * Converts camelCase to Title Case with spaces
+ */
+function formatFieldName(fieldName: string): string {
+  // Handle common abbreviations
+  const abbreviations: Record<string, string> = {
+    id: "ID",
+    url: "URL",
+    api: "API",
+  };
+
+  // Check if it's a known abbreviation
+  if (abbreviations[fieldName.toLowerCase()]) {
+    return abbreviations[fieldName.toLowerCase()];
+  }
+
+  // Convert camelCase to Title Case with spaces
+  return fieldName
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (str) => str.toUpperCase())
+    .trim();
+}
+
+/**
+ * Format value for display in description
+ * Handles complex objects, arrays, and special values in a human-readable way
+ */
+export function formatValue(value: unknown): string {
+  if (value === null) return "empty";
+  if (value === undefined) return "empty";
+
+  // Handle boolean values
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+
+  // Handle string values
+  if (typeof value === "string") {
+    // Don't wrap short strings in quotes for readability
+    if (value.length === 0) return "empty";
+    return value;
+  }
+
+  // Handle number values
+  if (typeof value === "number") {
+    return String(value);
+  }
+
+  // Handle Date objects
+  if (value instanceof Date) {
+    return value.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  // Handle arrays
+  if (Array.isArray(value)) {
+    if (value.length === 0) return "empty list";
+    if (value.length <= 3) {
+      return value.map((item) => formatValue(item)).join(", ");
+    }
+    return `${value.length} items`;
+  }
+
+  // Handle objects
+  if (typeof value === "object") {
+    try {
+      // Check if it's a date string
+      const dateStr = (value as any)?.toString?.();
+      if (dateStr && !isNaN(Date.parse(dateStr))) {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+      }
+
+      // For other objects, show a summary
+      const keys = Object.keys(value);
+      if (keys.length === 0) return "empty";
+      if (keys.length <= 2) {
+        return keys
+          .map((k) => `${formatFieldName(k)}: ${formatValue((value as any)[k])}`)
+          .join(", ");
+      }
+      return `${keys.length} properties`;
+    } catch {
+      return String(value);
+    }
+  }
+
+  return String(value);
+}
+
+/**
  * Generate human-readable description from changes diff
+ * Enhanced to provide clear, informative descriptions for all action types
+ *
+ * @param action - The action type (CREATE, UPDATE, DELETE, etc.)
+ * @param entityType - The type of entity being modified
+ * @param changes - The changes payload with before/after values
+ * @param entityReference - Optional human-readable reference for the entity
+ * @returns Human-readable description or null if cannot generate
  */
 export function generateDescriptionFromChanges(
   action: ActionType,
   entityType: EntityType,
-  changes?: Record<string, unknown> | null
+  changes?: Record<string, unknown> | null,
+  entityReference?: string | null
 ): string | null {
   if (!changes) return null;
 
@@ -446,27 +789,41 @@ export function generateDescriptionFromChanges(
   const afterKeys = Object.keys(after || {});
   const allKeys = Array.from(new Set([...beforeKeys, ...afterKeys]));
 
+  const entityName = entityType.toLowerCase();
+  const entityRef = entityReference ? ` "${entityReference}"` : "";
+
   // Handle CREATE action (before is empty)
   if (action.includes("CREATE") || action.includes("INVITE")) {
     if (beforeKeys.length === 0 && afterKeys.length > 0) {
-      const fieldList = allKeys
-        .map((key) => {
-          const value = after[key];
-          return `${key}: ${formatValue(value)}`;
-        })
+      // For CREATE, show key identifying information
+      const keyFields = ["name", "email", "code", "orderCode", "bookingCode"];
+      const identifyingField = keyFields.find((f) => after[f] !== undefined);
+
+      if (identifyingField && after[identifyingField]) {
+        return `Created ${entityName}${entityRef} with ${formatFieldName(identifyingField)}: ${formatValue(after[identifyingField])}`;
+      }
+
+      // Fallback: show first few fields
+      const displayFields = allKeys.slice(0, 3);
+      const fieldList = displayFields
+        .map((key) => `${formatFieldName(key)}: ${formatValue(after[key])}`)
         .join(", ");
-      return `Created ${entityType.toLowerCase()} with ${fieldList}`;
+
+      const suffix = allKeys.length > 3 ? ` and ${allKeys.length - 3} more fields` : "";
+      return `Created ${entityName}${entityRef} with ${fieldList}${suffix}`;
     }
   }
 
   // Handle DELETE action
   if (action.includes("DELETE")) {
-    if (
-      after.isArchived === true ||
-      (beforeKeys.length > 0 && afterKeys.length === 0)
-    ) {
-      return `Deleted ${entityType.toLowerCase()}`;
+    if (after.isArchived === true) {
+      return `Deleted ${entityName}${entityRef}`;
     }
+    if (beforeKeys.length > 0 && afterKeys.length === 0) {
+      return `Deleted ${entityName}${entityRef}`;
+    }
+    // Soft delete case
+    return `Deleted ${entityName}${entityRef}`;
   }
 
   // Handle UPDATE action
@@ -482,12 +839,22 @@ export function generateDescriptionFromChanges(
         continue;
       }
 
+      const fieldName = formatFieldName(key);
+
+      // Handle status changes with clear "from X to Y" format
+      if (key === "status" || key.toLowerCase().includes("status")) {
+        const fromStatus = formatValue(beforeVal);
+        const toStatus = formatValue(afterVal);
+        changeDescriptions.push(`Status changed from ${fromStatus} to ${toStatus}`);
+        continue;
+      }
+
       // Handle isArchived change
       if (key === "isArchived") {
         if (afterVal === true) {
-          changeDescriptions.push(`${entityType.toLowerCase()} archived`);
+          changeDescriptions.push(`${entityName} archived`);
         } else if (afterVal === false) {
-          changeDescriptions.push(`${entityType.toLowerCase()} restored`);
+          changeDescriptions.push(`${entityName} restored`);
         }
         continue;
       }
@@ -495,51 +862,35 @@ export function generateDescriptionFromChanges(
       // Handle isActive change
       if (key === "isActive") {
         if (afterVal === true) {
-          changeDescriptions.push(`${entityType.toLowerCase()} activated`);
+          changeDescriptions.push(`${entityName} activated`);
         } else if (afterVal === false) {
-          changeDescriptions.push(`${entityType.toLowerCase()} deactivated`);
+          changeDescriptions.push(`${entityName} deactivated`);
         }
         continue;
       }
 
-      // Generic field change
+      // Generic field change with clear formatting
       const beforeFormatted = formatValue(beforeVal);
       const afterFormatted = formatValue(afterVal);
 
       if (beforeVal === null || beforeVal === undefined) {
-        changeDescriptions.push(`added ${key}: ${afterFormatted}`);
+        changeDescriptions.push(`${fieldName} set to ${afterFormatted}`);
       } else if (afterVal === null || afterVal === undefined) {
-        changeDescriptions.push(`removed ${key}: ${beforeFormatted}`);
+        changeDescriptions.push(`${fieldName} cleared (was ${beforeFormatted})`);
       } else {
         changeDescriptions.push(
-          `${key} changed from ${beforeFormatted} to ${afterFormatted}`
+          `${fieldName} changed from ${beforeFormatted} to ${afterFormatted}`
         );
       }
     }
 
     if (changeDescriptions.length > 0) {
-      return changeDescriptions.join(", ");
+      const prefix = entityRef ? `Updated ${entityName}${entityRef}: ` : "";
+      return `${prefix}${changeDescriptions.join(", ")}`;
     }
   }
 
   return null;
-}
-
-/**
- * Format value for display in description
- */
-function formatValue(value: unknown): string {
-  if (value === null) return "null";
-  if (value === undefined) return "undefined";
-  if (typeof value === "string") return `"${value}"`;
-  if (typeof value === "object") {
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
-  }
-  return String(value);
 }
 
 export const activityLogService = {
@@ -548,6 +899,7 @@ export const activityLogService = {
     action,
     entityType,
     entityId,
+    entityReference,
     changes,
   }: RecordActivityParams) => {
     try {
@@ -555,12 +907,16 @@ export const activityLogService = {
       const finalDescription =
         generateDescriptionFromChanges(action, entityType, changes) || null;
 
+      // Use entityReference if provided, otherwise fall back to entityId
+      const finalEntityReference = entityReference ?? entityId ?? null;
+
       await prisma.activityLog.create({
         data: {
           userId: context.actorUserId || null,
           action,
           entityType,
           entityId: entityId ?? null,
+          entityReference: finalEntityReference,
           // Prisma expects Json type; ensure undefined -> null for consistency
           changes: (changes as any) ?? null,
           description: finalDescription,

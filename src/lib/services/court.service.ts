@@ -15,6 +15,7 @@ import {
 import {
   activityLogService,
   buildChangesDiff,
+  entityReferenceHelpers,
 } from "@/lib/services/activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
@@ -368,6 +369,7 @@ export const courtService = {
         action: ACTION_TYPES.CREATE_COURT,
         entityType: ENTITY_TYPES.COURT,
         entityId: court.id,
+        entityReference: entityReferenceHelpers.court(court),
         changes: {
           before: {},
           after: {
@@ -558,6 +560,7 @@ export const courtService = {
         action: ACTION_TYPES.UPDATE_COURT,
         entityType: ENTITY_TYPES.COURT,
         entityId: court.id,
+        entityReference: entityReferenceHelpers.court(court),
         changes: (courtDiff as any) ?? null,
       });
 
@@ -634,6 +637,7 @@ export const courtService = {
         action: ACTION_TYPES.DELETE_COURT,
         entityType: ENTITY_TYPES.COURT,
         entityId: id,
+        entityReference: entityReferenceHelpers.court(court),
         changes: {
           before: { isArchived: false },
           after: { isArchived: true },
@@ -693,6 +697,7 @@ export const courtService = {
         action: ACTION_TYPES.UPDATE_COURT,
         entityType: ENTITY_TYPES.COURT,
         entityId: id,
+        entityReference: entityReferenceHelpers.court(result),
         changes: toggleDiff,
       });
 

@@ -221,7 +221,8 @@ export function ActivityLogTable({
           role: selectedLog?.user?.userType || "",
           module: selectedLog?.entityType as EntityType,
           action: selectedLog?.action as ActionType,
-          reference: selectedLog?.entityId || "",
+          entityReference: selectedLog?.entityReference || null,
+          entityId: selectedLog?.entityId || null,
           description: selectedLog?.description || "",
           changes: selectedLog?.changes || null,
         }}

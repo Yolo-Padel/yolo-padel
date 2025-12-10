@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import type { Roles, Module, Permission, RolePermission } from "@/types/prisma";
-import { activityLogService, buildChangesDiff } from "./activity-log.service";
+import {
+  activityLogService,
+  buildChangesDiff,
+  entityReferenceHelpers,
+  generatePermissionChangeDescription,
+} from "./activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 import { ServiceContext } from "@/types/service-context";
@@ -120,6 +125,7 @@ export async function createRole(
     action: ACTION_TYPES.CREATE_ROLE,
     entityType: ENTITY_TYPES.ROLE,
     entityId: role.id,
+    entityReference: entityReferenceHelpers.role(role),
     changes: {
       before: {},
       after: {
@@ -273,6 +279,7 @@ export async function updateRole(
       action: ACTION_TYPES.UPDATE_ROLE,
       entityType: ENTITY_TYPES.ROLE,
       entityId: updatedRole.id,
+      entityReference: entityReferenceHelpers.role(updatedRole),
       changes: changesDiff,
     });
   }
@@ -325,6 +332,7 @@ export async function deleteRole(
     action: ACTION_TYPES.DELETE_ROLE,
     entityType: ENTITY_TYPES.ROLE,
     entityId: roleId,
+    entityReference: entityReferenceHelpers.role(role),
     changes: {
       before: {
         name: role.name,
@@ -556,25 +564,54 @@ export async function updateRolePermissions(
   // Log role permission update activity
   // Requirements 3.4: Record UPDATE_ROLE_PERMISSION action with permission changes
   if (permissionChanges.length > 0) {
+    // Fetch module labels for human-readable description
+    const moduleIds = [...new Set(permissionChanges.map((c) => c!.moduleId))];
+    const modules = await prisma.module.findMany({
+      where: { id: { in: moduleIds } },
+      select: { id: true, label: true },
+    });
+
+    // Generate human-readable description using module labels and permission names
+    const description = generatePermissionChangeDescription(
+      permissionChanges.map((c) => ({
+        moduleId: c!.moduleId,
+        permissionId: c!.permissionId,
+        previousAllowed: c!.previousAllowed,
+        newAllowed: c!.newAllowed,
+      })),
+      modules.map((m) => ({ id: m.id, label: m.label })),
+      permissions.map((p) => ({ id: p.id, action: p.action }))
+    );
+
     activityLogService.record({
       context,
       action: ACTION_TYPES.UPDATE_ROLE_PERMISSION,
       entityType: ENTITY_TYPES.ROLE,
       entityId: roleId,
+      entityReference: entityReferenceHelpers.role(role),
+      description: description || undefined,
       changes: {
         before: {
-          permissions: permissionChanges.map((c) => ({
-            moduleId: c!.moduleId,
-            permissionId: c!.permissionId,
-            allowed: c!.previousAllowed,
-          })),
+          permissions: permissionChanges.map((c) => {
+            const moduleLabel = modules.find((m) => m.id === c!.moduleId)?.label || c!.moduleId;
+            const permissionAction = permissionActionMap[c!.permissionId] || c!.permissionId;
+            return {
+              module: moduleLabel,
+              permission: permissionAction.charAt(0).toUpperCase() + permissionAction.slice(1),
+              allowed: c!.previousAllowed,
+            };
+          }),
         },
         after: {
-          permissions: permissionChanges.map((c) => ({
-            moduleId: c!.moduleId,
-            permissionId: c!.permissionId,
-            allowed: c!.newAllowed,
-          })),
+          permissions: permissionChanges.map((c) => {
+            const moduleLabel = modules.find((m) => m.id === c!.moduleId)?.label || c!.moduleId;
+            const permissionAction = permissionActionMap[c!.permissionId] || c!.permissionId;
+            return {
+              module: moduleLabel,
+              permission: permissionAction.charAt(0).toUpperCase() + permissionAction.slice(1),
+              allowed: c!.newAllowed,
+            };
+          }),
         },
       },
     });

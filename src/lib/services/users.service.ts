@@ -8,7 +8,10 @@ import { Prisma } from "@prisma/client";
 import { UserStatus } from "@/types/prisma";
 import { ServiceContext, requirePermission } from "@/types/service-context";
 import { UserType } from "@/types/prisma";
-import { activityLogService } from "@/lib/services/activity-log.service";
+import {
+  activityLogService,
+  entityReferenceHelpers,
+} from "@/lib/services/activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 
@@ -671,6 +674,7 @@ export const usersService = {
         action: ACTION_TYPES.CREATE_USER,
         entityType: ENTITY_TYPES.USER,
         entityId: user.id,
+        entityReference: entityReferenceHelpers.user(user),
         changes: {
           before: {},
           after: {
@@ -751,6 +755,10 @@ export const usersService = {
         action: ACTION_TYPES.UPDATE_USER,
         entityType: ENTITY_TYPES.USER,
         entityId: data.userId,
+        entityReference: entityReferenceHelpers.user({
+          email: updated.email,
+          profile: updated.profile,
+        }),
         changes: {
           before: {
             email: existing.email,
@@ -792,7 +800,20 @@ export const usersService = {
       const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
-      const updated = await prisma.user.update({
+      // Fetch user before deleting to get their email/name for the activity log
+      const user = await prisma.user.findUnique({
+        where: { id: data.userId },
+        include: { profile: true },
+      });
+
+      if (!user) {
+        return {
+          success: false,
+          message: "User not found",
+        };
+      }
+
+      await prisma.user.update({
         where: { id: data.userId },
         data: { isArchived: true },
       });
@@ -802,6 +823,7 @@ export const usersService = {
         action: ACTION_TYPES.DELETE_USER,
         entityType: ENTITY_TYPES.USER,
         entityId: data.userId,
+        entityReference: entityReferenceHelpers.user(user),
         changes: {
           before: { isArchived: false },
           after: { isArchived: true },

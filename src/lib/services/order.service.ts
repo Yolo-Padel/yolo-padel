@@ -11,7 +11,11 @@ import { createBooking } from "./booking.service";
 import { createPayment } from "./payment.service";
 import { createBlocking } from "./blocking.service";
 import { Prisma } from "@prisma/client";
-import { activityLogService, buildChangesDiff } from "./activity-log.service";
+import {
+  activityLogService,
+  buildChangesDiff,
+  entityReferenceHelpers,
+} from "./activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 import { ServiceContext } from "@/types/service-context";
@@ -338,6 +342,7 @@ export async function createOrder(
     action: ACTION_TYPES.CREATE_ORDER,
     entityType: ENTITY_TYPES.ORDER,
     entityId: order.id,
+    entityReference: entityReferenceHelpers.order(order),
     changes: {
       before: {},
       after: {
@@ -603,6 +608,7 @@ export async function updateOrderStatus(
     action: ACTION_TYPES.UPDATE_ORDER,
     entityType: ENTITY_TYPES.ORDER,
     entityId: order.id,
+    entityReference: entityReferenceHelpers.order(order),
     changes: {
       before: { status: oldStatus },
       after: { status: newStatus },
@@ -676,6 +682,7 @@ export async function cancelOrder(
     action: ACTION_TYPES.CANCEL_ORDER,
     entityType: ENTITY_TYPES.ORDER,
     entityId: order.id,
+    entityReference: entityReferenceHelpers.order(order),
     changes: {
       before: { status: (order as any).oldStatus },
       after: { status: OrderStatus.FAILED },
