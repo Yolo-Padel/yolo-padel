@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { TIMETABLE_CACHE } from "@/constants/timetable";
+import { format } from "date-fns";
 
 // ════════════════════════════════════════════════════════
 // Types
@@ -77,8 +78,7 @@ async function getActiveBlockingsApi(
   params: GetBlockingsParams
 ): Promise<ActiveBlocking[]> {
   const { courtId, date } = params;
-  const dateStr = date.toISOString();
-
+  const dateStr = format(date, "yyyy-MM-dd")
   const url = `/api/blocking?courtId=${encodeURIComponent(courtId)}&date=${encodeURIComponent(dateStr)}`;
 
   const response = await fetch(url, {
