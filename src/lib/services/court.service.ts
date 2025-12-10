@@ -847,37 +847,7 @@ export const courtService = {
         });
       };
 
-      // 8. Filter out past time slots if the date is today
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const selectedDateOnly = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate()
-      );
-      const isToday = today.getTime() === selectedDateOnly.getTime();
-
-      let filteredSlots = allPossibleSlots;
-
-      if (isToday) {
-        // Get current time in "HH:MM" format
-        const currentHour = String(now.getHours()).padStart(2, "0");
-        const currentMinute = String(now.getMinutes()).padStart(2, "0");
-        const currentTime = `${currentHour}:${currentMinute}`;
-
-        // Filter out slots that have already started
-        // We check start time because you can't book a slot that has already begun
-        filteredSlots = allPossibleSlots.filter((slot) => {
-          const [slotStart] = slot.split("–");
-          // Convert UI format "06.00" to DB format "06:00" for comparison
-          const slotStartDB = slotStart.replace(".", ":");
-          // Only show slots where start time is after current time
-          return slotStartDB > currentTime;
-        });
-      }
-
-      // 9. Filter available slots (only hourly slots that don't overlap with bookings)
-      const availableSlotRanges = filteredSlots.filter((slot) => {
+      const availableSlotRanges = allPossibleSlots.filter((slot) => {
         const [slotStart, slotEnd] = slot.split("–");
         return !isSlotOverlapping(slotStart, slotEnd);
       });
