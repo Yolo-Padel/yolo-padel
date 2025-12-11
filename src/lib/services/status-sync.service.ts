@@ -7,6 +7,13 @@ import type {
   BookingCancelationEmailData,
   OrderConfirmationEmailData,
 } from "@/lib/validations/send-email.validation";
+import { ServiceContext } from "@/types/service-context";
+import {
+  activityLogService,
+  entityReferenceHelpers,
+} from "./activity-log.service";
+import { ACTION_TYPES } from "@/types/action";
+import { ENTITY_TYPES } from "@/types/entity";
 
 type EmailJob =
   | { type: "order_confirmation"; payload: OrderConfirmationEmailData }
@@ -324,11 +331,24 @@ export async function syncBookingStatusToOrder(
 /**
  * Handle order status change and cascade to bookings and payment
  * This is called when admin manually changes order status
+ * 
+ * @param orderId - The order ID to update
+ * @param newOrderStatus - The new status to set
+ * @param context - Optional ServiceContext for activity logging (Requirements 7.1)
  */
 export async function syncOrderStatusToBookings(
   orderId: string,
-  newOrderStatus: OrderStatus
+  newOrderStatus: OrderStatus,
+  context?: ServiceContext
 ): Promise<void> {
+  // Store old status and orderCode for logging before transaction
+  const currentOrder = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { status: true, orderCode: true },
+  });
+  const oldStatus = currentOrder?.status;
+  const orderCode = currentOrder?.orderCode;
+
   await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
@@ -385,6 +405,22 @@ export async function syncOrderStatusToBookings(
         // No cascading action for other statuses
         break;
     }
+  });
+
+  // Log order status update activity
+  // Requirements 1.2: Record UPDATE_ORDER action with before/after status
+  activityLogService.record({
+    context: context ?? { userRole: "USER", actorUserId: undefined },
+    action: ACTION_TYPES.UPDATE_ORDER,
+    entityType: ENTITY_TYPES.ORDER,
+    entityId: orderId,
+    entityReference: orderCode
+      ? entityReferenceHelpers.order({ orderCode })
+      : undefined,
+    changes: {
+      before: { status: oldStatus },
+      after: { status: newOrderStatus },
+    },
   });
 }
 

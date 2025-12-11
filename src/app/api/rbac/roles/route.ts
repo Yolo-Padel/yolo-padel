@@ -6,6 +6,7 @@ import {
   createRole,
   type CreateRoleInput,
 } from "@/lib/services/rbac.service";
+import { ServiceContext } from "@/types/service-context";
 
 // Admin roles that can access RBAC endpoints
 const ALLOWED_ADMIN_ROLES: UserType[] = [UserType.ADMIN, UserType.STAFF];
@@ -114,12 +115,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Build ServiceContext for activity logging (Requirements 7.3)
+    const context: ServiceContext = {
+      userRole: user.userType,
+      actorUserId: user.userId,
+      assignedVenueId: user.assignedVenueIds,
+    };
+
     // Create role using service
-    const role = await createRole({
-      name: body.name.trim(),
-      description: body.description,
-      isActive: body.isActive,
-    });
+    const role = await createRole(
+      {
+        name: body.name.trim(),
+        description: body.description,
+        isActive: body.isActive,
+      },
+      context
+    );
 
     return NextResponse.json(
       {

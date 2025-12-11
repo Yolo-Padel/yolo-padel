@@ -6,7 +6,10 @@ import { resendService } from "./resend.service";
 import { prisma } from "@/lib/prisma";
 import { requirePermission, ServiceContext } from "@/types/service-context";
 import { UserType } from "@/types/prisma";
-import { activityLogService } from "@/lib/services/activity-log.service";
+import {
+  activityLogService,
+  entityReferenceHelpers,
+} from "@/lib/services/activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 
@@ -102,6 +105,10 @@ export const inviteUserService = {
         action: ACTION_TYPES.INVITE_USER,
         entityType: ENTITY_TYPES.USER,
         entityId: inviteResult.data!.user.id,
+        entityReference: entityReferenceHelpers.user({
+          email: inviteResult.data!.user.email,
+          profile: { fullName: data.fullName },
+        }),
         changes: {
           before: {},
           after: {
@@ -177,6 +184,10 @@ export const inviteUserService = {
         action: ACTION_TYPES.INVITE_USER,
         entityType: ENTITY_TYPES.USER,
         entityId: user.id,
+        entityReference: entityReferenceHelpers.user({
+          email: user.email,
+          profile: user.profile,
+        }),
         changes: {
           before: {},
           after: { resend: true, email: user.email },

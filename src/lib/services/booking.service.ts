@@ -8,7 +8,10 @@ import {
   UserType,
   PaymentStatus,
 } from "@/types/prisma";
-import { activityLogService } from "@/lib/services/activity-log.service";
+import {
+  activityLogService,
+  entityReferenceHelpers,
+} from "@/lib/services/activity-log.service";
 import { requirePermission, ServiceContext } from "@/types/service-context";
 import { BookingCreateData } from "../validations/booking.validation";
 import { customAlphabet } from "nanoid";
@@ -1222,6 +1225,9 @@ export const bookingService = {
         action: ACTION_TYPES.CREATE_BOOKING,
         entityType: ENTITY_TYPES.BOOKING,
         entityId: newBooking.id,
+        entityReference: entityReferenceHelpers.booking({
+          code: newBooking.bookingCode,
+        }),
         changes: { before: {}, after: newBooking } as any,
       });
 
@@ -1465,6 +1471,9 @@ export const bookingService = {
         action: ACTION_TYPES.UPDATE_BOOKING,
         entityType: ENTITY_TYPES.BOOKING,
         entityId: booking.id,
+        entityReference: entityReferenceHelpers.booking({
+          code: booking.bookingCode,
+        }),
         changes: {
           before: { status: bookingBefore.status },
           after: { status: booking.status },

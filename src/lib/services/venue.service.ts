@@ -9,6 +9,7 @@ import { UserType } from "@/types/prisma";
 import {
   activityLogService,
   buildChangesDiff,
+  entityReferenceHelpers,
 } from "@/lib/services/activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
@@ -201,6 +202,7 @@ export const venueService = {
         action: ACTION_TYPES.CREATE_VENUE,
         entityType: ENTITY_TYPES.VENUE,
         entityId: result.id,
+        entityReference: entityReferenceHelpers.venue(result),
         changes: { before: {}, after: createData } as any,
       });
       return {
@@ -296,6 +298,7 @@ export const venueService = {
         action: ACTION_TYPES.UPDATE_VENUE,
         entityType: ENTITY_TYPES.VENUE,
         entityId: venueId,
+        entityReference: entityReferenceHelpers.venue(result),
         changes: (diff as any) ?? null,
       });
 
@@ -318,6 +321,19 @@ export const venueService = {
       const accessError = requirePermission(context, UserType.STAFF);
       if (accessError) return accessError;
 
+      // Fetch venue before deleting to get its name for the activity log
+      const venue = await prisma.venue.findUnique({
+        where: { id: data.venueId },
+        select: { id: true, name: true },
+      });
+
+      if (!venue) {
+        return {
+          success: false,
+          message: "Venue not found",
+        };
+      }
+
       await prisma.venue.update({
         where: { id: data.venueId },
         data: { isArchived: true },
@@ -327,6 +343,7 @@ export const venueService = {
         action: ACTION_TYPES.DELETE_VENUE,
         entityType: ENTITY_TYPES.VENUE,
         entityId: data.venueId,
+        entityReference: entityReferenceHelpers.venue(venue),
         changes: {
           before: { isArchived: false },
           after: { isArchived: true },

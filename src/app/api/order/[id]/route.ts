@@ -3,6 +3,7 @@ import { getOrderById, updateOrderStatus } from "@/lib/services/order.service";
 import { updateOrderStatusSchema } from "@/lib/validations/order.validation";
 import { syncOrderStatusToBookings } from "@/lib/services/status-sync.service";
 import { verifyAuth } from "@/lib/auth-utils";
+import { createServiceContext } from "@/types/service-context";
 
 /**
  * GET /api/order/[id]
@@ -116,8 +117,16 @@ export async function PATCH(request: NextRequest) {
 
     const data = validation.data;
 
+    // Create ServiceContext for activity logging
+    // Requirements 7.1: Order service functions accept optional ServiceContext
+    const serviceContext = createServiceContext(
+      user.userType,
+      user.userId,
+      user.assignedVenueIds
+    );
+
     // Update order status with cascading updates
-    await syncOrderStatusToBookings(data.orderId, data.status);
+    await syncOrderStatusToBookings(data.orderId, data.status, serviceContext);
 
     // Get updated order
     const updatedOrder = await getOrderById(data.orderId);

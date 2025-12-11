@@ -5,6 +5,13 @@ import {
   CourtDynamicPriceCreateData,
   CourtDynamicPriceUpdateData,
 } from "@/lib/validations/court-dynamic-price.validation";
+import {
+  activityLogService,
+  buildChangesDiff,
+  entityReferenceHelpers,
+} from "./activity-log.service";
+import { ACTION_TYPES } from "@/types/action";
+import { ENTITY_TYPES } from "@/types/entity";
 
 const buildSuccess = <T>(data: T, message: string) => ({
   success: true,
@@ -170,6 +177,40 @@ export const courtDynamicPriceService = {
           startHour: data.startHour,
           endHour: data.endHour,
         },
+        include: {
+          court: {
+            select: { name: true },
+          },
+        },
+      });
+
+      // Build entity reference with court name and date/time range
+      const startDate = dynamicPrice.date || new Date();
+      const endDate = dynamicPrice.date || new Date();
+      const entityReference = entityReferenceHelpers.dynamicPrice({
+        courtName: dynamicPrice.court.name,
+        startDate,
+        endDate,
+      });
+
+      // Log activity for dynamic price creation
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.CREATE_DYNAMIC_PRICE,
+        entityType: ENTITY_TYPES.DYNAMIC_PRICE,
+        entityId: dynamicPrice.id,
+        entityReference,
+        changes: {
+          before: {},
+          after: {
+            courtId: dynamicPrice.courtId,
+            price: dynamicPrice.price,
+            dayOfWeek: dynamicPrice.dayOfWeek,
+            date: dynamicPrice.date,
+            startHour: dynamicPrice.startHour,
+            endHour: dynamicPrice.endHour,
+          },
+        },
       });
 
       return buildSuccess(dynamicPrice, "Dynamic price created successfully");
@@ -198,6 +239,14 @@ export const courtDynamicPriceService = {
         return buildError("Updating startHour/endHour is not allowed");
       }
 
+      // Capture before state for diff
+      const beforeState = {
+        dayOfWeek: dynamicPrice.dayOfWeek,
+        date: dynamicPrice.date,
+        price: dynamicPrice.price,
+        isActive: dynamicPrice.isActive,
+      };
+
       const resolvedDayOfWeek =
         data.dayOfWeek !== undefined
           ? (data.dayOfWeek ?? null)
@@ -217,6 +266,41 @@ export const courtDynamicPriceService = {
           isActive: resolvedIsActive,
         },
       });
+
+      // Capture after state for diff
+      const afterState = {
+        dayOfWeek: updatedDynamicPrice.dayOfWeek,
+        date: updatedDynamicPrice.date,
+        price: updatedDynamicPrice.price,
+        isActive: updatedDynamicPrice.isActive,
+      };
+
+      // Build changes diff and log activity
+      const changesDiff = buildChangesDiff(beforeState, afterState);
+      if (changesDiff) {
+        // Fetch court name for entity reference
+        const court = await prisma.court.findUnique({
+          where: { id: dynamicPrice.courtId },
+          select: { name: true },
+        });
+
+        const startDate = updatedDynamicPrice.date || new Date();
+        const endDate = updatedDynamicPrice.date || new Date();
+        const entityReference = entityReferenceHelpers.dynamicPrice({
+          courtName: court?.name || "Unknown Court",
+          startDate,
+          endDate,
+        });
+
+        activityLogService.record({
+          context,
+          action: ACTION_TYPES.UPDATE_DYNAMIC_PRICE,
+          entityType: ENTITY_TYPES.DYNAMIC_PRICE,
+          entityId: updatedDynamicPrice.id,
+          entityReference,
+          changes: changesDiff,
+        });
+      }
 
       return buildSuccess(
         updatedDynamicPrice,
@@ -252,6 +336,43 @@ export const courtDynamicPriceService = {
         data: {
           isArchived: true,
         } as any,
+      });
+
+      // Fetch court name for entity reference
+      const court = await prisma.court.findUnique({
+        where: { id: dynamicPrice.courtId },
+        select: { name: true },
+      });
+
+      const startDate = dynamicPrice.date || new Date();
+      const endDate = dynamicPrice.date || new Date();
+      const entityReference = entityReferenceHelpers.dynamicPrice({
+        courtName: court?.name || "Unknown Court",
+        startDate,
+        endDate,
+      });
+
+      // Log activity for dynamic price deletion (archive)
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.DELETE_DYNAMIC_PRICE,
+        entityType: ENTITY_TYPES.DYNAMIC_PRICE,
+        entityId: dynamicPrice.id,
+        entityReference,
+        changes: {
+          before: {
+            courtId: dynamicPrice.courtId,
+            price: dynamicPrice.price,
+            dayOfWeek: dynamicPrice.dayOfWeek,
+            date: dynamicPrice.date,
+            startHour: dynamicPrice.startHour,
+            endHour: dynamicPrice.endHour,
+            isActive: dynamicPrice.isActive,
+          },
+          after: {
+            isArchived: true,
+          },
+        },
       });
 
       return buildSuccess(null, "Dynamic price deleted successfully");
