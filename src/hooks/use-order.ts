@@ -66,7 +66,7 @@ export type Order = {
     bookingFee: number;   // Fee breakdown field (Requirements 1.3, 2.3)
     status: PaymentStatus;
     paymentDate: string | null;
-    invoiceUrl: string;
+    paymentUrl: string;
   } | null;
 };
 

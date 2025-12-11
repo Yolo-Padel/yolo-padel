@@ -491,6 +491,7 @@ export async function getOrdersByUserId(
             bookingFee: true,   // Fee breakdown field (Requirements 1.3, 2.3)
             paymentDate: true,
             channelName: true,
+            paymentUrl: true,
           },
         },
       },
