@@ -107,7 +107,7 @@ export async function GET(
             paymentDate: orderData.payment.paymentDate
               ? orderData.payment.paymentDate.toISOString()
               : null,
-            invoiceUrl: "",
+            paymentUrl: "",
           }
         : null,
     };

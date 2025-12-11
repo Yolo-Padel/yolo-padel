@@ -2,6 +2,13 @@ import { prisma } from "@/lib/prisma";
 import { Payment, PaymentStatus } from "@/types/prisma";
 import { syncPaymentStatusToOrder } from "./status-sync.service";
 import type { PrismaTransaction } from "@/types/prisma-transaction";
+import {
+  activityLogService,
+  entityReferenceHelpers,
+} from "./activity-log.service";
+import { ACTION_TYPES } from "@/types/action";
+import { ENTITY_TYPES } from "@/types/entity";
+import { ServiceContext } from "@/types/service-context";
 
 /**
  * Create payment for an order
@@ -132,11 +139,27 @@ export async function getPaymentByOrderId(orderId: string) {
 /**
  * Update payment status
  * This will trigger cascading updates to order, bookings, and blockings
+ *
+ * @param paymentId - The ID of the payment to update
+ * @param newStatus - The new payment status (PAID, EXPIRED, FAILED)
+ * @param context - Optional ServiceContext for logging. If null/undefined, indicates system-initiated action (webhook/cron)
+ * @returns Updated payment
+ *
+ * Requirements: 2.1, 2.2, 2.3, 2.4, 7.2
  */
 export async function updatePaymentStatus(
   paymentId: string,
-  newStatus: PaymentStatus
+  newStatus: PaymentStatus,
+  context?: ServiceContext
 ): Promise<Payment> {
+  // Fetch current status before update for diff (Requirements 2.1, 2.2, 2.3)
+  const currentPayment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    select: { status: true },
+  });
+
+  const oldStatus = currentPayment?.status;
+
   // Update payment status in database
   const payment = await prisma.payment.update({
     where: { id: paymentId },
@@ -150,6 +173,29 @@ export async function updatePaymentStatus(
 
   // Trigger cascade updates to order, bookings, and blockings
   await syncPaymentStatusToOrder(paymentId, newStatus);
+
+  // Fetch order code for entity reference
+  const order = await prisma.order.findUnique({
+    where: { id: payment.orderId },
+    select: { orderCode: true },
+  });
+
+  // Log payment status update activity
+  // Requirements 2.1, 2.2, 2.3: Record UPDATE_PAYMENT action with before/after status
+  // Requirements 2.4: Handle null context for system-initiated actions (webhooks/cron)
+  activityLogService.record({
+    context: context ?? { userRole: "USER", actorUserId: undefined },
+    action: ACTION_TYPES.UPDATE_PAYMENT,
+    entityType: ENTITY_TYPES.PAYMENT,
+    entityId: payment.id,
+    entityReference: order
+      ? entityReferenceHelpers.order({ orderCode: order.orderCode })
+      : undefined,
+    changes: {
+      before: { status: oldStatus },
+      after: { status: newStatus },
+    },
+  });
 
   return payment;
 }

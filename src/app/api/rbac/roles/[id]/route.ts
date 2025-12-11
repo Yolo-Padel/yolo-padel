@@ -7,6 +7,7 @@ import {
   deleteRole,
   type UpdateRoleInput,
 } from "@/lib/services/rbac.service";
+import { ServiceContext } from "@/types/service-context";
 
 // Admin roles that can access RBAC endpoints
 const ALLOWED_ADMIN_ROLES: UserType[] = [UserType.ADMIN, UserType.STAFF];
@@ -154,12 +155,23 @@ export async function PATCH(
       );
     }
 
+    // Build ServiceContext for activity logging (Requirements 7.3)
+    const context: ServiceContext = {
+      userRole: user.userType,
+      actorUserId: user.userId,
+      assignedVenueId: user.assignedVenueIds,
+    };
+
     // Update role using service
-    const updatedRole = await updateRole(roleId, {
-      name: body.name ? body.name.trim() : undefined,
-      description: body.description,
-      isActive: body.isActive,
-    });
+    const updatedRole = await updateRole(
+      roleId,
+      {
+        name: body.name ? body.name.trim() : undefined,
+        description: body.description,
+        isActive: body.isActive,
+      },
+      context
+    );
 
     return NextResponse.json(
       {
@@ -237,8 +249,15 @@ export async function DELETE(
     // Extract role ID from params
     const { id: roleId } = await params;
 
+    // Build ServiceContext for activity logging (Requirements 7.3)
+    const context: ServiceContext = {
+      userRole: user.userType,
+      actorUserId: user.userId,
+      assignedVenueId: user.assignedVenueIds,
+    };
+
     // Delete role using service
-    await deleteRole(roleId);
+    await deleteRole(roleId, context);
 
     // Return 204 No Content for successful deletion
     return new NextResponse(null, { status: 204 });

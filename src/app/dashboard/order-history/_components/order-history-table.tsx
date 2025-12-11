@@ -204,7 +204,7 @@ export default function OrderHistoryTable() {
                         className="w-full"
                         variant="default"
                         onClick={() => {
-                          window.open(order.payment?.invoiceUrl, "_blank");
+                          window.open(order.payment?.paymentUrl, "_blank");
                         }}
                       >
                         Pay Now

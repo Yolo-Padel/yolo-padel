@@ -3,9 +3,15 @@ import { ManualBookingInput } from "@/lib/validations/manual-booking.validation"
 import { bookingService, createBooking } from "@/lib/services/booking.service";
 import { createBlocking } from "@/lib/services/blocking.service";
 import { resendService } from "@/lib/services/resend.service";
+import {
+  activityLogService,
+  entityReferenceHelpers,
+} from "@/lib/services/activity-log.service";
 import { calculateSlotsPrice } from "@/lib/booking-pricing-utils";
 import { ServiceContext, requirePermission } from "@/types/service-context";
 import { BookingStatus, UserType, UserStatus } from "@/types/prisma";
+import { ACTION_TYPES } from "@/types/action";
+import { ENTITY_TYPES } from "@/types/entity";
 import { customAlphabet } from "nanoid";
 
 type TimeSlot = { openHour: string; closeHour: string };
@@ -265,6 +271,29 @@ export const manualBookingService = {
           emailResult.message
         );
       }
+
+      // Log activity for manual booking creation
+      // Staff userId from context is recorded via context.actorUserId
+      activityLogService.record({
+        context,
+        action: ACTION_TYPES.CREATE_MANUAL_BOOKING,
+        entityType: ENTITY_TYPES.BOOKING,
+        entityId: result.booking.id,
+        entityReference: entityReferenceHelpers.booking({
+          code: result.booking.bookingCode,
+        }),
+        changes: {
+          before: {},
+          after: {
+            courtId: data.courtId,
+            bookingDate: bookingDate.toISOString(),
+            timeSlots: slots,
+            customerEmail: data.email,
+            bookingCode: result.booking.bookingCode,
+            totalPrice,
+          },
+        },
+      });
 
       return {
         success: true,

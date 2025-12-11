@@ -11,6 +11,14 @@ import { createBooking } from "./booking.service";
 import { createPayment } from "./payment.service";
 import { createBlocking } from "./blocking.service";
 import { Prisma } from "@prisma/client";
+import {
+  activityLogService,
+  buildChangesDiff,
+  entityReferenceHelpers,
+} from "./activity-log.service";
+import { ACTION_TYPES } from "@/types/action";
+import { ENTITY_TYPES } from "@/types/entity";
+import { ServiceContext } from "@/types/service-context";
 
 /**
  * Options for filtering orders in admin dashboard
@@ -153,19 +161,22 @@ function parseDateToLocal(date: string | Date): Date {
   return new Date(date);
 }
 
-export async function createOrder(data: {
-  userId: string;
-  bookings: Array<{
-    courtId: string;
-    date: string | Date; // Accept string (YYYY-MM-DD) or Date
-    slots: string[]; // Format: ["07:00-08:00", "08:00-09:00"]
-    price: number;
-  }>;
-  channelName: string;
-  // Fee breakdown fields (optional, default to 0)
-  taxAmount?: number;
-  bookingFee?: number;
-}): Promise<
+export async function createOrder(
+  data: {
+    userId: string;
+    bookings: Array<{
+      courtId: string;
+      date: string | Date; // Accept string (YYYY-MM-DD) or Date
+      slots: string[]; // Format: ["07:00-08:00", "08:00-09:00"]
+      price: number;
+    }>;
+    channelName: string;
+    // Fee breakdown fields (optional, default to 0)
+    taxAmount?: number;
+    bookingFee?: number;
+  },
+  context?: ServiceContext
+): Promise<
   Order & {
     bookings: Array<{
       id: string;
@@ -324,6 +335,24 @@ export async function createOrder(data: {
     };
   });
 
+  // Log order creation activity
+  // Requirements 1.1: Record CREATE_ORDER action with orderCode, totalAmount, status
+  activityLogService.record({
+    context: context ?? { userRole: "USER", actorUserId: undefined },
+    action: ACTION_TYPES.CREATE_ORDER,
+    entityType: ENTITY_TYPES.ORDER,
+    entityId: order.id,
+    entityReference: entityReferenceHelpers.order(order),
+    changes: {
+      before: {},
+      after: {
+        orderCode: order.orderCode,
+        totalAmount: order.totalAmount,
+        status: order.status,
+      },
+    },
+  });
+
   return order;
 }
 
@@ -462,6 +491,7 @@ export async function getOrdersByUserId(
             bookingFee: true,   // Fee breakdown field (Requirements 1.3, 2.3)
             paymentDate: true,
             channelName: true,
+            paymentUrl: true,
           },
         },
       },
@@ -556,11 +586,34 @@ export async function getAllOrdersForAdmin() {
  */
 export async function updateOrderStatus(
   orderId: string,
-  newStatus: OrderStatus
+  newStatus: OrderStatus,
+  context?: ServiceContext
 ): Promise<Order> {
+  // Fetch current status before update for diff (Requirements 1.2)
+  const currentOrder = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { status: true },
+  });
+
+  const oldStatus = currentOrder?.status;
+
   const order = await prisma.order.update({
     where: { id: orderId },
     data: { status: newStatus },
+  });
+
+  // Log order status update activity
+  // Requirements 1.2: Record UPDATE_ORDER action with before/after status
+  activityLogService.record({
+    context: context ?? { userRole: "USER", actorUserId: undefined },
+    action: ACTION_TYPES.UPDATE_ORDER,
+    entityType: ENTITY_TYPES.ORDER,
+    entityId: order.id,
+    entityReference: entityReferenceHelpers.order(order),
+    changes: {
+      before: { status: oldStatus },
+      after: { status: newStatus },
+    },
   });
 
   return order;
@@ -570,7 +623,10 @@ export async function updateOrderStatus(
  * Cancel order
  * This will cancel all bookings, release blockings, and update payment status
  */
-export async function cancelOrder(orderId: string): Promise<Order> {
+export async function cancelOrder(
+  orderId: string,
+  context?: ServiceContext
+): Promise<Order> {
   const order = await prisma.$transaction(async (tx) => {
     // Get order with bookings
     const orderData = await tx.order.findUnique({
@@ -584,6 +640,9 @@ export async function cancelOrder(orderId: string): Promise<Order> {
     if (!orderData) {
       throw new Error("Order not found");
     }
+
+    // Store old status for logging (Requirements 1.3)
+    const oldStatus = orderData.status;
 
     // Update order status
     const updatedOrder = await tx.order.update({
@@ -614,7 +673,21 @@ export async function cancelOrder(orderId: string): Promise<Order> {
       });
     }
 
-    return updatedOrder;
+    return { ...updatedOrder, oldStatus };
+  });
+
+  // Log order cancellation activity
+  // Requirements 1.3: Record CANCEL_ORDER action with status transition to FAILED
+  activityLogService.record({
+    context: context ?? { userRole: "USER", actorUserId: undefined },
+    action: ACTION_TYPES.CANCEL_ORDER,
+    entityType: ENTITY_TYPES.ORDER,
+    entityId: order.id,
+    entityReference: entityReferenceHelpers.order(order),
+    changes: {
+      before: { status: (order as any).oldStatus },
+      after: { status: OrderStatus.FAILED },
+    },
   });
 
   return order;
