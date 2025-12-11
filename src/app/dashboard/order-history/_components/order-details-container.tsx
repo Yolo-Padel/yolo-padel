@@ -257,7 +257,7 @@ export function OrderDetailsContainer({
                 className="w-full rounded-sm"
                 variant="default"
                 onClick={() => {
-                  window.open(orderDetails?.payment?.invoiceUrl, "_blank");
+                  window.open(orderDetails?.payment?.paymentUrl, "_blank");
                 }}
               >
                 Pay Now
