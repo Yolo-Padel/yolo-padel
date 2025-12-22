@@ -282,6 +282,7 @@ export const courtService = {
           image: data.image, // Now mandatory from validation
           openingType: data.openingHours,
           venueId: data.venueId,
+          courtsideCourtId: data.courtsideCourtId ?? null,
         },
       });
 
@@ -377,6 +378,7 @@ export const courtService = {
             price: data.price,
             openingType: data.openingHours,
             venueId: data.venueId,
+            courtsideCourtId: data.courtsideCourtId ?? null,
           },
         } as any,
       });
@@ -400,7 +402,7 @@ export const courtService = {
   update: async (
     id: string,
     data: CourtCreateData,
-    context: ServiceContext
+    context: ServiceContext,
   ) => {
     try {
       const accessError = requirePermission(context, UserType.STAFF);
@@ -422,12 +424,12 @@ export const courtService = {
       // 2. Delete old image if it's being replaced
       if (existingCourt.image && existingCourt.image !== data.image) {
         const deleteResult = await vercelBlobService.deleteFile(
-          existingCourt.image
+          existingCourt.image,
         );
         if (!deleteResult.success) {
           console.warn(
             "Failed to delete old court image:",
-            deleteResult.message
+            deleteResult.message,
           );
           // Continue with update even if delete fails (non-blocking)
         }
@@ -456,6 +458,7 @@ export const courtService = {
           image: data.image, // Now mandatory from validation
           openingType: data.openingHours,
           venueId: data.venueId,
+          courtsideCourtId: data.courtsideCourtId ?? null,
         },
       });
 
@@ -551,8 +554,9 @@ export const courtService = {
           price: data.price,
           openingType: data.openingHours,
           venueId: data.venueId,
+          courtsideCourtId: data.courtsideCourtId ?? null,
         } as any,
-        ["name", "price", "openingType", "venueId"] as any
+        ["name", "price", "openingType", "venueId", "courtsideCourtId"] as any,
       );
 
       activityLogService.record({
@@ -663,7 +667,7 @@ export const courtService = {
   toggleAvailability: async (
     id: string,
     isActive: boolean,
-    context: ServiceContext
+    context: ServiceContext,
   ) => {
     try {
       const accessError = requirePermission(context, UserType.STAFF);
@@ -755,7 +759,7 @@ export const courtService = {
 
       // 3. Get operating hour for the day
       const operatingHour = court.operatingHours.find(
-        (oh) => oh.dayOfWeek === dayOfWeek
+        (oh) => oh.dayOfWeek === dayOfWeek,
       );
 
       if (!operatingHour || operatingHour.closed) {
@@ -837,7 +841,7 @@ export const courtService = {
       // 7. Helper function to check if a slot overlaps with booked ranges
       const isSlotOverlapping = (
         slotStart: string,
-        slotEnd: string
+        slotEnd: string,
       ): boolean => {
         // Convert UI format "06.00" to DB format "06:00"
         const dbStart = slotStart.replace(".", ":");

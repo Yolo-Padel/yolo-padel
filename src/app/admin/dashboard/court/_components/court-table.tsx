@@ -61,6 +61,7 @@ type Court = {
       closeHour: string;
     }>;
   }>;
+  courtsideCourtId?: string | null;
 };
 
 const PAGE_SIZE = 10;
@@ -126,11 +127,12 @@ export function CourtTable() {
         availability: court.isActive,
         availabilityTime: formatOperatingHours(
           operatingHours,
-          venueDefaultHours
+          venueDefaultHours,
         ),
         image: (court as any).image,
         openingHours: court.openingType,
         operatingHours: operatingHours,
+        courtsideCourtId: court.courtsideCourtId,
       };
     });
   }, [courtData, venueData]);
@@ -172,12 +174,12 @@ export function CourtTable() {
 
   const paginationInfo = useMemo(
     () => calculatePaginationInfo(page, filtered.length, PAGE_SIZE),
-    [page, filtered.length]
+    [page, filtered.length],
   );
 
   const paginated = useMemo(
     () => getPaginatedData(filtered, page, PAGE_SIZE),
-    [filtered, page]
+    [filtered, page],
   );
 
   const paginationButtonBaseClass =
@@ -383,7 +385,7 @@ export function CourtTable() {
                     <div className="flex items-center gap-1">
                       {generatePageNumbers(
                         paginationInfo.pageSafe,
-                        paginationInfo.totalPages
+                        paginationInfo.totalPages,
                       ).map((pageNum, index) => (
                         <div key={index}>
                           {pageNum === "..." ? (
@@ -398,7 +400,7 @@ export function CourtTable() {
                               className={cn(
                                 paginationButtonBaseClass,
                                 pageNum === paginationInfo.pageSafe &&
-                                  paginationButtonActiveClass
+                                  paginationButtonActiveClass,
                               )}
                             >
                               {pageNum}
@@ -414,7 +416,7 @@ export function CourtTable() {
                       disabled={!paginationInfo.hasNextPage}
                       onClick={() =>
                         setPage((p) =>
-                          Math.min(paginationInfo.totalPages, p + 1)
+                          Math.min(paginationInfo.totalPages, p + 1),
                         )
                       }
                       className="flex items-center gap-2"
@@ -438,13 +440,6 @@ export function CourtTable() {
         court={
           selected
             ? (() => {
-                console.log("Selected court for modal:", selected);
-                console.log("Selected pricePerHour:", selected.pricePerHour);
-                console.log("Selected openingHours:", selected.openingHours);
-                console.log(
-                  "Selected operatingHours:",
-                  selected.operatingHours
-                );
                 return {
                   id: selected.id,
                   name: selected.courtName,
@@ -453,6 +448,7 @@ export function CourtTable() {
                   openingHours:
                     selected.openingHours || OpeningHoursType.REGULAR,
                   operatingHours: selected.operatingHours || [],
+                  courtsideCourtId: selected.courtsideCourtId || null,
                 };
               })()
             : undefined

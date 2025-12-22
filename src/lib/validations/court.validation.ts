@@ -38,6 +38,7 @@ export const courtCreateSchema = z
         sunday: dayScheduleSchema,
       })
       .optional(),
+    courtsideCourtId: z.string().optional().nullable(),
   })
   .refine(
     (data) => {
@@ -66,7 +67,7 @@ export const courtCreateSchema = z
       message:
         "When using custom hours, each day must either be closed or have at least one time slot",
       path: ["schedule"],
-    }
+    },
   );
 
 export const courtDeleteSchema = z.object({
