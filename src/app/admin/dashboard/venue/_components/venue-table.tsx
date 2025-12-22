@@ -41,6 +41,8 @@ type VenueRow = {
   isActive?: boolean;
   courtsCount?: number;
   bookingsToday?: number;
+  courtsideApiKey?: string | null;
+  hasCourtsideApiKey?: boolean;
 };
 
 const PAGE_SIZE = 10;
@@ -50,7 +52,7 @@ export function VenueTable() {
   const [addSheetOpen, setAddVenueOpen] = React.useState(false);
   const [detailSheetOpen, setDetailSheetOpen] = React.useState(false);
   const [selectedVenue, setSelectedVenue] = React.useState<VenueRow | null>(
-    null
+    null,
   );
   const [editSheetOpen, setEditSheetOpen] = React.useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
@@ -83,6 +85,8 @@ export function VenueTable() {
       isActive: v.isActive ?? true,
       courtsCount: v._counts?.courts ?? 0,
       bookingsToday: v._counts?.bookingsToday ?? 0,
+      courtsideApiKey: (v as any).courtsideApiKey || null,
+      hasCourtsideApiKey: (v as any).hasCourtsideApiKey ?? false,
     }));
   }, [allVenues]);
 
@@ -298,6 +302,8 @@ export function VenueTable() {
                 openHour: selectedVenue.openHour || "07:00",
                 closeHour: selectedVenue.closeHour || "23:00",
                 isActive: selectedVenue.isActive ?? true,
+                courtsideApiKey: selectedVenue.courtsideApiKey || null,
+                hasCourtsideApiKey: selectedVenue.hasCourtsideApiKey ?? false,
               }
             : null
         }
