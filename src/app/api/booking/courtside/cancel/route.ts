@@ -1,0 +1,76 @@
+import { verifyAuth } from "@/lib/auth-utils";
+import { cancelCourtsideBooking } from "@/lib/services/courtside.service";
+import { cancelCourtsideBookingSchema } from "@/lib/validations/courtside.validation";
+import { createServiceContext } from "@/types/service-context";
+import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(request: NextRequest) {
+  try {
+    const tokenResult = await verifyAuth(request);
+    if (!tokenResult.isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          message: tokenResult.error,
+        },
+        { status: 401 },
+      );
+    }
+
+    const { user } = tokenResult;
+
+    const context = createServiceContext(
+      user.userType,
+      user.userId,
+      user.assignedVenueIds,
+    );
+
+    const body = await request.json();
+
+    const parsed = cancelCourtsideBookingSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          message: "Invalid request body",
+          error: parsed.error,
+        },
+        { status: 400 },
+      );
+    }
+
+    const result = await cancelCourtsideBooking(parsed.data);
+    if (!result.status) {
+      return NextResponse.json(
+        {
+          success: false,
+          data: result.data,
+          message: result.message,
+        },
+        { status: 400 },
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: result.data,
+        message: result.message,
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    console.log(error);
+    return NextResponse.json(
+      {
+        success: false,
+        data: null,
+        message: "Something went wrong",
+      },
+      { status: 500 },
+    );
+  }
+}
