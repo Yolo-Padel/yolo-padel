@@ -4,7 +4,7 @@ import { getCourtsideBookingsSchema } from "@/lib/validations/courtside.validati
 import { createServiceContext } from "@/types/service-context";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const tokenResult = await verifyAuth(request);
     if (!tokenResult.isValid) {

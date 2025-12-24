@@ -22,10 +22,11 @@ export async function getCourtsideBooking(
   const accessError = requirePermission(context, UserType.USER);
   if (accessError) return accessError;
 
-  const response = await fetch(`${BASE_URL}`, {
+  const response = await fetch(`${BASE_URL}/api/public/admin/schedule/list`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Accept: "application/json",
       "API-KEY": request.apiKey,
     },
     body: JSON.stringify({
