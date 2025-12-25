@@ -57,7 +57,7 @@ export function OrderSummaryContainer({
   // Calculate totals
   const courtFeesTotal = bookingItems.reduce(
     (sum, item) => sum + item.totalPrice,
-    0
+    0,
   );
   const taxAmount = taxPercentage * courtFeesTotal; // Per requirement
   const bookingFeeAmount = bookingFeePercentage * courtFeesTotal; // Per requirement
@@ -96,7 +96,7 @@ export function OrderSummaryContainer({
               onClearBookings();
             }
           },
-        }
+        },
       );
     } else {
       // Authenticated user: directly create order
@@ -154,7 +154,7 @@ export function OrderSummaryContainer({
             if (!xenditResponse.ok) {
               const errorData = await xenditResponse.json();
               throw new Error(
-                errorData.message || "Failed to create Xendit payment"
+                errorData.message || "Failed to create Xendit payment",
               );
             }
 
@@ -177,7 +177,7 @@ export function OrderSummaryContainer({
             toast.error(
               error instanceof Error
                 ? error.message
-                : "Failed to create Xendit payment"
+                : "Failed to create Xendit payment",
             );
             // Rollback: clear bookings on error
             if (onClearBookings) {
@@ -193,7 +193,7 @@ export function OrderSummaryContainer({
             onClearBookings();
           }
         },
-      }
+      },
     );
   };
 
@@ -293,7 +293,9 @@ export function OrderSummaryContainer({
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Booking Fee ({bookingFeePercentage * 100}%)</span>
+            <span className="text-muted-foreground">
+              Booking Fee ({bookingFeePercentage * 100}%)
+            </span>
             <span className="font-medium">
               {stringUtils.formatRupiah(bookingFeeAmount)}
             </span>

@@ -89,8 +89,8 @@ export interface GetOrdersForAdminResult {
         id: string;
         channelName: string;
         amount: number;
-        taxAmount: number;    // Fee breakdown field (Requirements 1.3, 2.3)
-        bookingFee: number;   // Fee breakdown field (Requirements 1.3, 2.3)
+        taxAmount: number; // Fee breakdown field (Requirements 1.3, 2.3)
+        bookingFee: number; // Fee breakdown field (Requirements 1.3, 2.3)
         status: PaymentStatus;
         paymentDate: Date | null;
         paymentUrl: string | null;
@@ -175,7 +175,7 @@ export async function createOrder(
     taxAmount?: number;
     bookingFee?: number;
   },
-  context?: ServiceContext
+  context?: ServiceContext,
 ): Promise<
   Order & {
     bookings: Array<{
@@ -187,7 +187,13 @@ export async function createOrder(
     payment: { id: string; status: string } | null;
   }
 > {
-  const { userId, bookings: bookingData, channelName, taxAmount = 0, bookingFee = 0 } = data;
+  const {
+    userId,
+    bookings: bookingData,
+    channelName,
+    taxAmount = 0,
+    bookingFee = 0,
+  } = data;
 
   // Generate order code (orchestration responsibility)
   const orderCode = generateOrderCode();
@@ -195,7 +201,7 @@ export async function createOrder(
   // Calculate base amount from bookings (court rental cost)
   const baseAmount = bookingData.reduce(
     (sum, booking) => sum + booking.price * booking.slots.length,
-    0
+    0,
   );
 
   // Calculate total amount including fees: baseAmount + taxAmount + bookingFee
@@ -235,7 +241,7 @@ export async function createOrder(
         // Generate booking code (orchestration responsibility)
         const bookingNanoId = customAlphabet(
           "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-          5
+          5,
         );
         const bookingCode = `BK-${bookingNanoId()}`;
 
@@ -245,12 +251,8 @@ export async function createOrder(
           return { openHour, closeHour };
         });
 
-        console.log("BOOKING ITEM DATE", bookingItem.date);
-
         // Parse date to local timezone (preserves exact date selected by user)
         const bookingDate = parseDateToLocal(bookingItem.date);
-
-        console.log("BOOKING DATE ON SERVICE", bookingDate);
 
         // Create booking using extracted service
         const booking = await createBooking(
@@ -266,14 +268,14 @@ export async function createOrder(
             source: "YOLO",
             status: BookingStatus.PENDING,
           },
-          tx // Pass transaction client
+          tx, // Pass transaction client
         );
 
         // Create blocking for this booking (using extracted service)
         const blocking = await createBlocking(
           booking.id,
           `Blocked for order ${orderCode}`,
-          tx // Pass transaction client
+          tx, // Pass transaction client
         );
 
         return {
@@ -282,7 +284,7 @@ export async function createOrder(
           bookingCode: booking.bookingCode,
           blocking: { id: blocking.id },
         };
-      })
+      }),
     );
 
     // 3. Create Payment (using extracted service)
@@ -298,7 +300,7 @@ export async function createOrder(
         taxAmount, // Tax portion
         bookingFee, // Service/platform fee
       },
-      tx // Pass transaction client
+      tx, // Pass transaction client
     );
 
     // 4. Assign user to venues from order (for end users)
@@ -410,8 +412,8 @@ export async function getOrderById(orderId: string) {
           id: true,
           channelName: true,
           amount: true,
-          taxAmount: true,    // Fee breakdown field (Requirements 1.3, 2.3)
-          bookingFee: true,   // Fee breakdown field (Requirements 1.3, 2.3)
+          taxAmount: true, // Fee breakdown field (Requirements 1.3, 2.3)
+          bookingFee: true, // Fee breakdown field (Requirements 1.3, 2.3)
           status: true,
           paymentDate: true,
           expiredAt: true,
@@ -432,7 +434,7 @@ export async function getOrdersByUserId(
     page?: number;
     limit?: number;
     status?: OrderStatus;
-  }
+  },
 ) {
   const { page = 1, limit = 10, status } = options || {};
   const skip = (page - 1) * limit;
@@ -487,8 +489,8 @@ export async function getOrdersByUserId(
             id: true,
             status: true,
             amount: true,
-            taxAmount: true,    // Fee breakdown field (Requirements 1.3, 2.3)
-            bookingFee: true,   // Fee breakdown field (Requirements 1.3, 2.3)
+            taxAmount: true, // Fee breakdown field (Requirements 1.3, 2.3)
+            bookingFee: true, // Fee breakdown field (Requirements 1.3, 2.3)
             paymentDate: true,
             channelName: true,
             paymentUrl: true,
@@ -564,8 +566,8 @@ export async function getAllOrdersForAdmin() {
           id: true,
           channelName: true,
           amount: true,
-          taxAmount: true,    // Fee breakdown field (Requirements 1.3, 2.3)
-          bookingFee: true,   // Fee breakdown field (Requirements 1.3, 2.3)
+          taxAmount: true, // Fee breakdown field (Requirements 1.3, 2.3)
+          bookingFee: true, // Fee breakdown field (Requirements 1.3, 2.3)
           status: true,
           paymentDate: true,
           paymentUrl: true,
@@ -587,7 +589,7 @@ export async function getAllOrdersForAdmin() {
 export async function updateOrderStatus(
   orderId: string,
   newStatus: OrderStatus,
-  context?: ServiceContext
+  context?: ServiceContext,
 ): Promise<Order> {
   // Fetch current status before update for diff (Requirements 1.2)
   const currentOrder = await prisma.order.findUnique({
@@ -625,7 +627,7 @@ export async function updateOrderStatus(
  */
 export async function cancelOrder(
   orderId: string,
-  context?: ServiceContext
+  context?: ServiceContext,
 ): Promise<Order> {
   const order = await prisma.$transaction(async (tx) => {
     // Get order with bookings
@@ -705,7 +707,8 @@ export async function checkOrderCompletion(orderId: string): Promise<boolean> {
   // Order is completed if all bookings are COMPLETED or NO_SHOW
   const allFinished = bookings.every(
     (b) =>
-      b.status === BookingStatus.COMPLETED || b.status === BookingStatus.NO_SHOW
+      b.status === BookingStatus.COMPLETED ||
+      b.status === BookingStatus.NO_SHOW,
   );
 
   return allFinished;
@@ -723,7 +726,7 @@ export async function checkOrderCompletion(orderId: string): Promise<boolean> {
 function buildVenueFilter(
   userType: UserType,
   assignedVenueIds: string[],
-  venueId?: string
+  venueId?: string,
 ): Prisma.OrderWhereInput["venueIds"] {
   // ADMIN users have unrestricted access
   if (userType === "ADMIN") {
@@ -844,7 +847,7 @@ function buildSearchFilter(search?: string): Prisma.OrderWhereInput["OR"] {
  * @returns Prisma where clause for payment status filtering
  */
 function buildPaymentStatusFilter(
-  paymentStatus?: PaymentStatus
+  paymentStatus?: PaymentStatus,
 ): Prisma.OrderWhereInput["payment"] {
   // If no payment status specified, return undefined (no filter)
   if (!paymentStatus) {
@@ -868,7 +871,7 @@ function buildPaymentStatusFilter(
 function buildPaginationParams(
   page?: number,
   limit?: number,
-  total?: number
+  total?: number,
 ): {
   skip: number;
   take: number;
@@ -901,7 +904,7 @@ function buildPaginationParams(
  * @returns Complete Prisma where clause
  */
 function buildWhereClause(
-  options: GetOrdersForAdminOptions
+  options: GetOrdersForAdminOptions,
 ): Prisma.OrderWhereInput {
   const { userType, assignedVenueIds, search, venueId, paymentStatus } =
     options;
@@ -962,7 +965,7 @@ function buildWhereClause(
  * });
  */
 export async function getOrdersForAdmin(
-  options: GetOrdersForAdminOptions
+  options: GetOrdersForAdminOptions,
 ): Promise<GetOrdersForAdminResult> {
   // Build where clause combining all filters
   const where = buildWhereClause(options);
@@ -970,7 +973,7 @@ export async function getOrdersForAdmin(
   // Build pagination parameters
   const { skip, take, metadata } = buildPaginationParams(
     options.page,
-    options.limit
+    options.limit,
   );
 
   // Execute query with filters and pagination
@@ -1021,8 +1024,8 @@ export async function getOrdersForAdmin(
             id: true,
             channelName: true,
             amount: true,
-            taxAmount: true,    // Fee breakdown field (Requirements 1.3, 2.3)
-            bookingFee: true,   // Fee breakdown field (Requirements 1.3, 2.3)
+            taxAmount: true, // Fee breakdown field (Requirements 1.3, 2.3)
+            bookingFee: true, // Fee breakdown field (Requirements 1.3, 2.3)
             status: true,
             paymentDate: true,
             paymentUrl: true,
