@@ -43,24 +43,13 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await getCourtsideBooking(parsed.data, context);
-    if (!result.status) {
-      return NextResponse.json(
-        {
-          success: false,
-          data: result.data,
-          message: result.message,
-        },
-        { status: 400 },
-      );
-    }
 
     return NextResponse.json(
       {
         success: true,
-        data: result.data,
-        message: result.message,
+        data: result,
       },
-      { status: 201 },
+      { status: 200 },
     );
   } catch (error) {
     console.log(error);

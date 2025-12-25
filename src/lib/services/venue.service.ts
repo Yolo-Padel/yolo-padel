@@ -116,6 +116,7 @@ export const venueService = {
           openHour: true,
           closeHour: true,
           createdAt: true,
+          courtsideApiKey: true,
         },
         orderBy: { createdAt: "desc" },
       });

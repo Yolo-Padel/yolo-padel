@@ -65,7 +65,7 @@ type BookingStatusGroup = {
 };
 
 function getStatusCountMap(
-  groups: BookingStatusGroup[]
+  groups: BookingStatusGroup[],
 ): Record<BookingStatus, number> {
   return BOOKING_STATUSES.reduce(
     (acc, status) => {
@@ -73,13 +73,13 @@ function getStatusCountMap(
         groups.find((item) => item.status === status)?._count._all ?? 0;
       return acc;
     },
-    {} as Record<BookingStatus, number>
+    {} as Record<BookingStatus, number>,
   );
 }
 
 function buildSummaryFromCounts(
   counts: Record<BookingStatus, number>,
-  expiredPayment: number
+  expiredPayment: number,
 ): BookingSummaryStats {
   const total =
     counts[BookingStatus.PENDING] +
@@ -103,7 +103,7 @@ function buildMetrics(
   expiredPayment: number,
   revenueAmount: number,
   revenueTransactions: number,
-  courtUtilization?: { utilizedCourts: number; totalActiveCourts: number }
+  courtUtilization?: { utilizedCourts: number; totalActiveCourts: number },
 ): { metrics: BookingDashboardMetrics; summary: BookingSummaryStats } {
   const summary = buildSummaryFromCounts(counts, expiredPayment);
   const paidRate =
@@ -143,7 +143,7 @@ function buildMetrics(
         ? 0
         : Math.min(
             100,
-            parseFloat(((utilizedCourts / totalActiveCourts) * 100).toFixed(2))
+            parseFloat(((utilizedCourts / totalActiveCourts) * 100).toFixed(2)),
           );
     metrics.courtUtilization = {
       percentage: utilizationPercentage,
@@ -164,8 +164,8 @@ function getUtcDayRange(date: Date) {
       0,
       0,
       0,
-      0
-    )
+      0,
+    ),
   );
   const end = new Date(
     Date.UTC(
@@ -175,8 +175,8 @@ function getUtcDayRange(date: Date) {
       23,
       59,
       59,
-      999
-    )
+      999,
+    ),
   );
   return { start, end };
 }
@@ -209,7 +209,7 @@ function getUtcLastMonthRange() {
 
   const start = new Date(Date.UTC(lastMonthYear, lastMonth, 1, 0, 0, 0, 0));
   const end = new Date(
-    Date.UTC(lastMonthYear, lastMonth + 1, 0, 23, 59, 59, 999)
+    Date.UTC(lastMonthYear, lastMonth + 1, 0, 23, 59, 59, 999),
   );
 
   return { start, end };
@@ -559,13 +559,13 @@ export const bookingService = {
         statusCounts,
         expiredPaymentCount,
         revenueAmount,
-        revenueTransactions
+        revenueTransactions,
       );
 
       // Calculate comparisons
       const revenueComparison = calculatePercentageChange(
         revenueAmount,
-        lastMonthRevenueAmount
+        lastMonthRevenueAmount,
       );
       const bookingsComparison = calculatePercentageChange(
         summary.total,
@@ -573,7 +573,7 @@ export const bookingService = {
           lastMonthStatusCounts[BookingStatus.UPCOMING] +
           lastMonthStatusCounts[BookingStatus.COMPLETED] +
           lastMonthStatusCounts[BookingStatus.CANCELLED] +
-          lastMonthStatusCounts[BookingStatus.NO_SHOW]
+          lastMonthStatusCounts[BookingStatus.NO_SHOW],
       );
       const paidRateComparison = calculatePercentageChange(
         metrics.paidRate.percentage,
@@ -588,8 +588,8 @@ export const bookingService = {
                     lastMonthStatusCounts[BookingStatus.CANCELLED] +
                     lastMonthStatusCounts[BookingStatus.NO_SHOW])) *
                 100
-              ).toFixed(2)
-            )
+              ).toFixed(2),
+            ),
       );
       const lastMonthCancellationTotal =
         lastMonthStatusCounts[BookingStatus.CANCELLED] +
@@ -597,7 +597,7 @@ export const bookingService = {
         lastMonthExpiredPaymentCount;
       const cancellationComparison = calculatePercentageChange(
         metrics.cancellation.total,
-        lastMonthCancellationTotal
+        lastMonthCancellationTotal,
       );
 
       // Add comparisons to metrics
@@ -643,7 +643,7 @@ export const bookingService = {
   },
 
   getAdminDashboardSnapshot: async (
-    context: ServiceContext
+    context: ServiceContext,
   ): Promise<{
     success: boolean;
     data: AdminDashboardSnapshot | null;
@@ -870,7 +870,7 @@ export const bookingService = {
             ...courtVenueWhere,
             bookingDate: {
               gte: new Date(
-                lastMonthRange.start.getTime() - 7 * 24 * 60 * 60 * 1000
+                lastMonthRange.start.getTime() - 7 * 24 * 60 * 60 * 1000,
               ),
               lte: lastMonthRange.end,
             },
@@ -922,13 +922,13 @@ export const bookingService = {
         {
           utilizedCourts,
           totalActiveCourts,
-        }
+        },
       );
 
       // Calculate comparisons
       const revenueComparison = calculatePercentageChange(
         revenueAmount,
-        lastMonthRevenueAmount
+        lastMonthRevenueAmount,
       );
       const bookingsComparison = calculatePercentageChange(
         metrics.totalBookings.total,
@@ -936,7 +936,7 @@ export const bookingService = {
           lastMonthStatusCounts[BookingStatus.UPCOMING] +
           lastMonthStatusCounts[BookingStatus.COMPLETED] +
           lastMonthStatusCounts[BookingStatus.CANCELLED] +
-          lastMonthStatusCounts[BookingStatus.NO_SHOW]
+          lastMonthStatusCounts[BookingStatus.NO_SHOW],
       );
       const lastMonthPaidRate =
         lastMonthRevenueTransactions === 0
@@ -950,11 +950,11 @@ export const bookingService = {
                     lastMonthStatusCounts[BookingStatus.CANCELLED] +
                     lastMonthStatusCounts[BookingStatus.NO_SHOW])) *
                 100
-              ).toFixed(2)
+              ).toFixed(2),
             );
       const paidRateComparison = calculatePercentageChange(
         metrics.paidRate.percentage,
-        lastMonthPaidRate
+        lastMonthPaidRate,
       );
       const lastMonthCancellationTotal =
         lastMonthStatusCounts[BookingStatus.CANCELLED] +
@@ -962,7 +962,7 @@ export const bookingService = {
         lastMonthExpiredPaymentCount;
       const cancellationComparison = calculatePercentageChange(
         metrics.cancellation.total,
-        lastMonthCancellationTotal
+        lastMonthCancellationTotal,
       );
       const utilizationComparison = calculatePercentageChange(
         metrics.courtUtilization?.percentage ?? 0,
@@ -971,9 +971,11 @@ export const bookingService = {
           : Math.min(
               100,
               parseFloat(
-                ((lastMonthUtilizedCourts / totalActiveCourts) * 100).toFixed(2)
-              )
-            )
+                ((lastMonthUtilizedCourts / totalActiveCourts) * 100).toFixed(
+                  2,
+                ),
+              ),
+            ),
       );
 
       // Add comparisons to metrics
@@ -1183,7 +1185,7 @@ export const bookingService = {
           duration: booking.duration,
           totalPrice: booking.totalPrice,
           status: BookingStatus.PENDING,
-          courtsideCourtId: null,
+          courtsideBookingId: null,
           // Create time slots
           timeSlots: {
             create: booking.timeSlots.map((slot) => ({
@@ -1251,7 +1253,7 @@ export const bookingService = {
   checkAvailability: async (
     courtId: string,
     date: Date,
-    timeSlots: Array<{ openHour: string; closeHour: string }>
+    timeSlots: Array<{ openHour: string; closeHour: string }>,
   ) => {
     try {
       // Normalize date to UTC start/end of day for consistent comparison
@@ -1310,7 +1312,7 @@ export const bookingService = {
         booking.timeSlots.map((ts) => ({
           openHour: ts.openHour,
           closeHour: ts.closeHour,
-        }))
+        })),
       );
 
       // Check which requested slots are available
@@ -1349,7 +1351,7 @@ export const bookingService = {
     }
   },
   getNextBookingForUser: async (
-    userId: string
+    userId: string,
   ): Promise<NextBookingInfo | null> => {
     const nextBooking = await prisma.booking.findFirst({
       where: {
@@ -1499,7 +1501,7 @@ export const bookingService = {
   updateStatus: async (
     id: string,
     status: BookingStatus,
-    context: ServiceContext
+    context: ServiceContext,
   ) => {
     try {
       const accessError = requirePermission(context, UserType.STAFF);
@@ -1530,6 +1532,41 @@ export const bookingService = {
           error instanceof Error
             ? error.message
             : "Update booking status failed",
+      };
+    }
+  },
+  storeCourtsideBookingId: async (
+    id: string,
+    courtsideBookingId: string,
+    context: ServiceContext,
+  ) => {
+    try {
+      const accessError = requirePermission(context, UserType.STAFF);
+      if (accessError) return accessError;
+
+      const booking = await prisma.$transaction(async (tx) => {
+        const updatedBooking = await tx.booking.update({
+          where: { id },
+          data: { courtsideBookingId },
+        });
+
+        return updatedBooking;
+      });
+
+      return {
+        success: true,
+        data: booking,
+        message: "Store courtside booking id successful",
+      };
+    } catch (error) {
+      console.error("Store courtside booking id error:", error);
+      return {
+        success: false,
+        data: null,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Store courtside booking id failed",
       };
     }
   },
@@ -1703,7 +1740,7 @@ function buildSearchFilter(search?: string): Prisma.BookingWhereInput["OR"] {
 function buildVenueFilter(
   userType: UserType,
   assignedVenueIds: string[],
-  venueId?: string
+  venueId?: string,
 ): { venueId: string } | { venueId: { in: string[] } } | undefined {
   // ADMIN users have unrestricted access
   if (userType === "ADMIN") {
@@ -1768,7 +1805,7 @@ function buildVenueFilter(
  * @returns Prisma where clause for status filtering
  */
 function buildStatusFilter(
-  status?: BookingStatus
+  status?: BookingStatus,
 ): Prisma.BookingWhereInput["status"] {
   // If no status specified, return undefined (no filter)
   if (!status) {
@@ -1788,7 +1825,7 @@ function buildStatusFilter(
  */
 function buildDateRangeFilter(
   startDate?: Date,
-  endDate?: Date
+  endDate?: Date,
 ): Prisma.BookingWhereInput["bookingDate"] {
   // If neither date is specified, return undefined (no filter)
   if (!startDate && !endDate) {
@@ -1818,7 +1855,7 @@ function buildDateRangeFilter(
  */
 function buildPaginationParams(
   page?: number,
-  limit?: number
+  limit?: number,
 ): {
   skip: number;
   take: number;
@@ -1851,7 +1888,7 @@ function buildPaginationParams(
  * @returns Complete Prisma where clause
  */
 function buildWhereClause(
-  options: GetBookingsForAdminOptions
+  options: GetBookingsForAdminOptions,
 ): Prisma.BookingWhereInput {
   const {
     userType,
@@ -1879,7 +1916,7 @@ function buildWhereClause(
   });
   console.log(
     "[Booking Service] buildWhereClause - Venue filter:",
-    venueFilter
+    venueFilter,
   );
 
   // Combine all filters with AND logic
@@ -1899,7 +1936,7 @@ function buildWhereClause(
 
   console.log(
     "[Booking Service] buildWhereClause - Final where clause:",
-    JSON.stringify(where, null, 2)
+    JSON.stringify(where, null, 2),
   );
 
   return where;
@@ -1942,7 +1979,7 @@ function buildWhereClause(
  * });
  */
 export async function getBookingsForAdmin(
-  options: GetBookingsForAdminOptions
+  options: GetBookingsForAdminOptions,
 ): Promise<GetBookingsForAdminResult> {
   // Build where clause combining all filters
   const where = buildWhereClause(options);
@@ -1950,7 +1987,7 @@ export async function getBookingsForAdmin(
   // Build pagination parameters
   const { skip, take, metadata } = buildPaginationParams(
     options.page,
-    options.limit
+    options.limit,
   );
 
   // Execute query with filters and pagination
@@ -2064,7 +2101,7 @@ export async function createBooking(
     source?: string;
     status?: BookingStatus;
   },
-  tx?: PrismaTransaction
+  tx?: PrismaTransaction,
 ): Promise<
   Booking & { timeSlots: Array<{ openHour: string; closeHour: string }> }
 > {

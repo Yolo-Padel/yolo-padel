@@ -3,9 +3,19 @@ import { z } from "zod";
 export const getCourtsideBookingsSchema = z.object({
   bookingDate: z.string().min(1, "Date is required"),
   apiKey: z.string().min(1, "API key is required"),
+  courtsideCourtId: z.string().min(1, "Courtside court ID is required"),
 });
 
 export type GetCourtsideBooking = z.infer<typeof getCourtsideBookingsSchema>;
+
+export const getCourtsideBookingsByVenueSchema = z.object({
+  venueId: z.string().min(1, "Venue ID is required"),
+  bookingDate: z.string().min(1, "Date is required"),
+});
+
+export type GetCourtsideBookingsByVenue = z.infer<
+  typeof getCourtsideBookingsByVenueSchema
+>;
 
 export const createCourtsideBookingSchema = z.object({
   apiKey: z.string().min(1, "API key is required"),
