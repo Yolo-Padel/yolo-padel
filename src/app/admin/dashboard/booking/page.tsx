@@ -11,7 +11,7 @@ import { BookingDetailsModal } from "./_components/booking-details-modal";
 import { BookingTableSkeleton } from "./_components/booking-table-skeleton";
 import { BookingEmptyState } from "./_components/booking-empty-state";
 import { BookingStatus } from "@/types/prisma";
-import { ManualBookingSheet } from "../_components/booking-sheet";
+import { ManualBookingSheet } from "../_components/manual-booking-sheet";
 import { usePermissionGuard } from "@/hooks/use-permission-guard";
 import { useQueryClient } from "@tanstack/react-query";
 

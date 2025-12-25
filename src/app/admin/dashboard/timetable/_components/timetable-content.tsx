@@ -23,7 +23,7 @@ import { getNextHour } from "@/components/timetable-utils";
 import {
   ManualBookingDefaults,
   ManualBookingSheet,
-} from "@/app/admin/dashboard/_components/booking-sheet";
+} from "@/app/admin/dashboard/_components/manual-booking-sheet";
 import { usePermissionGuard } from "@/hooks/use-permission-guard";
 import { useUpdateBookingStatus } from "@/hooks/use-booking";
 

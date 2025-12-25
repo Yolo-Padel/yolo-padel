@@ -302,3 +302,67 @@ export async function cancelCourtsideBooking(request: CancelCourtsideBooking) {
 
   return response.json();
 }
+
+/**
+ * Fetch courtside bookings for available slots calculation.
+ * This function doesn't require ServiceContext - used by public endpoints.
+ * Returns booked time ranges in the same format as internal bookings.
+ */
+export async function fetchCourtsideBookingsForSlots(
+  apiKey: string,
+  courtsideCourtId: string,
+  bookingDate: string,
+): Promise<Array<{ openHour: string; closeHour: string }>> {
+  try {
+    const decryptedApiKey = decrypt(apiKey);
+
+    const response = await fetch(`${BASE_URL}/api/public/admin/schedule/list`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "API-KEY": decryptedApiKey,
+      },
+      body: JSON.stringify({
+        date: bookingDate,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`Courtside API error: ${response.status}`);
+      return [];
+    }
+
+    const parsed: GetBookingResult = await response.json();
+    const databyCourt = parsed.data.find(
+      (court) => court.court_id === courtsideCourtId,
+    );
+
+    // Handle the weird API response where bookedTime is [] when empty
+    const hasBookings = (
+      bookedTime: BookedTime | [],
+    ): bookedTime is BookedTime => {
+      return !Array.isArray(bookedTime) && "booking-court" in bookedTime;
+    };
+
+    if (!databyCourt || !hasBookings(databyCourt.booked_time)) {
+      return [];
+    }
+
+    const bookings = databyCourt.booked_time["booking-court"];
+    const bookedRanges: Array<{ openHour: string; closeHour: string }> = [];
+
+    for (const booking of bookings) {
+      const timeSlots = generateHourlyTimeSlots(
+        booking.start_hours,
+        booking.service_menit,
+      );
+      bookedRanges.push(...timeSlots);
+    }
+
+    return bookedRanges;
+  } catch (error) {
+    console.error("Error fetching courtside bookings for slots:", error);
+    return [];
+  }
+}

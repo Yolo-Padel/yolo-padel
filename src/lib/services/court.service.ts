@@ -21,6 +21,7 @@ import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 import { vercelBlobService } from "@/lib/services/vercel-blob.service";
 import { getDayOfWeekKey } from "@/lib/booking-slots-utils";
+import { fetchCourtsideBookingsForSlots } from "@/lib/services/courtside.service";
 
 export const courtService = {
   // Get all courts with venue and schedule info
@@ -727,13 +728,18 @@ export const courtService = {
   // Returns breakdown of hourly slots with availability check
   getAvailableTimeSlots: async (courtId: string, date: Date) => {
     try {
-      // 1. Get court with operating hours
+      // 1. Get court with operating hours and venue (for courtside integration)
       const court = await prisma.court.findUnique({
         where: { id: courtId },
         include: {
           operatingHours: {
             include: {
               slots: true,
+            },
+          },
+          venue: {
+            select: {
+              courtsideApiKey: true,
             },
           },
         },
@@ -826,7 +832,7 @@ export const courtService = {
         },
       });
 
-      // 6. Collect all booked/blocked time ranges
+      // 6. Collect all booked/blocked time ranges from internal bookings
       const bookedRanges: Array<{ openHour: string; closeHour: string }> = [];
 
       for (const booking of bookings) {
@@ -838,7 +844,18 @@ export const courtService = {
         }
       }
 
-      // 7. Helper function to check if a slot overlaps with booked ranges
+      // 7. Fetch courtside bookings if court has courtside integration
+      if (court.courtsideCourtId && court.venue?.courtsideApiKey) {
+        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        const courtsideBookedRanges = await fetchCourtsideBookingsForSlots(
+          court.venue.courtsideApiKey,
+          court.courtsideCourtId,
+          dateStr,
+        );
+        bookedRanges.push(...courtsideBookedRanges);
+      }
+
+      // 8. Helper function to check if a slot overlaps with booked ranges
       const isSlotOverlapping = (
         slotStart: string,
         slotEnd: string,
