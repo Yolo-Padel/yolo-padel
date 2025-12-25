@@ -377,6 +377,10 @@ export function TimetableContent() {
             isLoadingTable={isDateChangeLoading}
             onAddBooking={handleAddBooking}
             onSelectEmptySlot={handleAddBookingFromCell}
+            onRefresh={() => {
+              refetchBlockings();
+              refetchCourtsideBlockings();
+            }}
             canCreateBooking={canCreateBooking}
             isLoadingPermission={isCreateLoading}
           />

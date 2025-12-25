@@ -6,9 +6,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CalendarIcon,
+  RefreshCw,
+} from "lucide-react";
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
 import { addDays } from "@/lib/date-utils";
 import { TimetableTableSkeleton } from "./timetable-table-skeleton";
 import {
@@ -24,6 +28,7 @@ type TimetableProps = {
   selectedDate: Date;
   isLoading?: boolean;
   onDateChange?: (date: Date) => void;
+  onRefresh?: () => void;
   renderCell: TimetableRenderCell;
   showQuickJumpButtons?: boolean;
   primaryAction?: {
@@ -42,6 +47,7 @@ export function Timetable({
   selectedDate,
   isLoading = false,
   onDateChange,
+  onRefresh,
   renderCell,
   showQuickJumpButtons = true,
   primaryAction,
@@ -170,6 +176,16 @@ export function Timetable({
                         >
                           Tomorrow
                         </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={onRefresh}
+                          className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}]`}
+                          disabled={isLoading}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
                       </>
                     )}
 
@@ -210,7 +226,7 @@ export function Timetable({
                         <div className="text-xs text-muted-foreground">
                           {formatOperatingHours(
                             courtOperatingHours.openHour,
-                            courtOperatingHours.closeHour
+                            courtOperatingHours.closeHour,
                           )}
                         </div>
                       </div>
