@@ -2,12 +2,18 @@ import { prisma } from "@/lib/prisma";
 import { ManualBookingInput } from "@/lib/validations/manual-booking.validation";
 import { bookingService, createBooking } from "@/lib/services/booking.service";
 import { createBlocking } from "@/lib/services/blocking.service";
+import { createCourtsideBooking } from "@/lib/services/courtside.service";
 import { resendService } from "@/lib/services/resend.service";
 import {
   activityLogService,
   entityReferenceHelpers,
 } from "@/lib/services/activity-log.service";
 import { calculateSlotsPrice } from "@/lib/booking-pricing-utils";
+import {
+  groupContinuousSlots,
+  buildCourtsidePayload,
+  TimeSlot as CourtsideTimeSlot,
+} from "@/lib/services/order.service";
 import { ServiceContext, requirePermission } from "@/types/service-context";
 import { BookingStatus, UserType, UserStatus } from "@/types/prisma";
 import { ACTION_TYPES } from "@/types/action";
@@ -18,7 +24,7 @@ type TimeSlot = { openHour: string; closeHour: string };
 
 const bookingCodeGenerator = customAlphabet(
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-  5
+  5,
 );
 
 function parseBookingDate(dateString: string | Date): Date {
@@ -95,6 +101,138 @@ function getLoginUrl(): string {
   return `${baseUrl}/auth`;
 }
 
+/**
+ * Sync manual booking to Courtside external system
+ *
+ * This function handles the integration with Courtside for manual bookings.
+ * It applies the same logic as online bookings (Requirement 4.1, 4.2).
+ *
+ * Key behaviors:
+ * - Skips if court has no courtsideCourtId (Requirement 1.2)
+ * - Skips if venue has no courtsideApiKey (Requirement 1.3)
+ * - Groups continuous time slots into single Courtside bookings (Requirement 2.1)
+ * - Creates multiple Courtside bookings for non-continuous slots (Requirement 2.2)
+ * - Uses booking code as offline_user for traceability (Requirement 2.4)
+ * - Stores first Courtside booking ID in booking record (Requirement 1.4)
+ * - Errors are logged but don't fail the booking (fire-and-forget)
+ *
+ * @param bookingData - The manual booking data
+ * @param context - Service context for authorization
+ *
+ * Requirements: 4.1, 4.2
+ */
+async function syncManualBookingToCourtside(
+  bookingData: {
+    bookingId: string;
+    bookingCode: string;
+    courtId: string;
+    bookingDate: Date;
+    timeSlots: TimeSlot[];
+    pricePerSlot: number;
+  },
+  context: ServiceContext,
+): Promise<void> {
+  try {
+    // Fetch court with venue info for Courtside integration
+    const court = await prisma.court.findUnique({
+      where: { id: bookingData.courtId },
+      select: {
+        id: true,
+        courtsideCourtId: true,
+        venue: {
+          select: {
+            id: true,
+            courtsideApiKey: true,
+          },
+        },
+      },
+    });
+
+    // Requirement 1.2: Skip if court has no courtsideCourtId
+    if (!court?.courtsideCourtId) {
+      console.log(
+        `[Courtside Sync] Skipping manual booking ${bookingData.bookingCode}: No courtsideCourtId configured for court ${bookingData.courtId}`,
+      );
+      return;
+    }
+
+    // Requirement 1.3: Skip if venue has no courtsideApiKey
+    if (!court.venue?.courtsideApiKey) {
+      console.log(
+        `[Courtside Sync] Skipping manual booking ${bookingData.bookingCode}: No courtsideApiKey configured for venue`,
+      );
+      return;
+    }
+
+    // Convert TimeSlot to CourtsideTimeSlot format
+    const courtsideTimeSlots: CourtsideTimeSlot[] = bookingData.timeSlots.map(
+      (slot) => ({
+        openHour: slot.openHour,
+        closeHour: slot.closeHour,
+      }),
+    );
+
+    // Group continuous slots for Courtside (Requirements 2.1, 2.2)
+    const slotGroups = groupContinuousSlots(courtsideTimeSlots);
+
+    // Track first Courtside booking ID for storage
+    let firstCourtsideBookingId: string | null = null;
+
+    // Create Courtside booking for each slot group
+    for (const slotGroup of slotGroups) {
+      // Build Courtside payload (Requirements 3.1-3.10)
+      const payload = buildCourtsidePayload(
+        bookingData.bookingCode,
+        bookingData.bookingDate,
+        slotGroup,
+        court.courtsideCourtId,
+        bookingData.pricePerSlot,
+      );
+
+      // Call Courtside API with required fields
+      const courtsideRequest = {
+        apiKey: court.venue.courtsideApiKey,
+        ...payload,
+        createdInternalBookingId: bookingData.bookingId,
+      };
+
+      // Create Courtside booking using existing service
+      const courtsideResponse = await createCourtsideBooking(
+        courtsideRequest,
+        context,
+      );
+
+      // Store first Courtside booking ID (Requirement 1.4)
+      if (!firstCourtsideBookingId && courtsideResponse?.data?.id) {
+        firstCourtsideBookingId = courtsideResponse.data.id;
+      }
+
+      console.log(
+        `[Courtside Sync] Created Courtside booking for manual booking ${bookingData.bookingCode}: ${slotGroup.startHour} (${slotGroup.duration}h)`,
+      );
+    }
+
+    // Requirement 1.4: Store first Courtside booking ID in booking record
+    if (firstCourtsideBookingId) {
+      await prisma.booking.update({
+        where: { id: bookingData.bookingId },
+        data: { courtsideBookingId: firstCourtsideBookingId },
+      });
+
+      console.log(
+        `[Courtside Sync] Stored Courtside booking ID ${firstCourtsideBookingId} for manual booking ${bookingData.bookingCode}`,
+      );
+    }
+  } catch (error) {
+    // Fire-and-forget: Log error but don't fail the booking
+    console.error(
+      `[Courtside Sync] Error syncing manual booking ${bookingData.bookingCode} to Courtside:`,
+      error,
+    );
+    // Don't throw - manual booking should succeed even if Courtside sync fails
+  }
+}
+
 export const manualBookingService = {
   create: async (data: ManualBookingInput, context: ServiceContext) => {
     try {
@@ -145,7 +283,7 @@ export const manualBookingService = {
       const availability = await bookingService.checkAvailability(
         data.courtId,
         bookingDate,
-        slots
+        slots,
       );
 
       if (!availability.success) {
@@ -169,7 +307,7 @@ export const manualBookingService = {
         uiSlots,
         bookingDate,
         court.price,
-        court.dynamicPrices || []
+        court.dynamicPrices || [],
       );
 
       const loginUrl = getLoginUrl();
@@ -182,7 +320,7 @@ export const manualBookingService = {
 
         if (user?.isArchived) {
           throw new Error(
-            "Email is archived and cannot be used for manual booking"
+            "Email is archived and cannot be used for manual booking",
           );
         }
 
@@ -238,13 +376,13 @@ export const manualBookingService = {
             source: "ADMIN_MANUAL",
             status: BookingStatus.UPCOMING,
           },
-          tx
+          tx,
         );
 
         await createBlocking(
           booking.id,
           "Manual booking created from admin panel",
-          tx
+          tx,
         );
 
         return { booking, user };
@@ -268,7 +406,7 @@ export const manualBookingService = {
       if (!emailResult.success) {
         console.error(
           "Failed to send manual booking confirmation email:",
-          emailResult.message
+          emailResult.message,
         );
       }
 
@@ -294,6 +432,22 @@ export const manualBookingService = {
           },
         },
       });
+
+      // ============================================================================
+      // Courtside Integration - Sync manual booking to external Courtside system
+      // Requirements: 4.1, 4.2 - Manual bookings should sync to Courtside
+      // ============================================================================
+      await syncManualBookingToCourtside(
+        {
+          bookingId: result.booking.id,
+          bookingCode: result.booking.bookingCode,
+          courtId: data.courtId,
+          bookingDate,
+          timeSlots: slots,
+          pricePerSlot: court.price,
+        },
+        context,
+      );
 
       return {
         success: true,
