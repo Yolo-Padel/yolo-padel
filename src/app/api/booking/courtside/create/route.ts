@@ -78,8 +78,8 @@ export async function POST(request: NextRequest) {
 
       if (matchingBooking) {
         await bookingService.storeCourtsideBookingId(
+          parsed.data.createdInternalBookingId,
           matchingBooking.bookingId,
-          result.data.bookingId,
           context,
         );
       }

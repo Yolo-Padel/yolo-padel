@@ -27,8 +27,10 @@ export const createCourtsideBookingSchema = z.object({
   diskon: z.number().min(0, "Diskon must be a positive number"),
   notes: z.string().nullable().optional(),
   paid: z.boolean(),
+  payment_method: z.string().nullable().optional(),
   registered: z.boolean(),
   offline_user: z.string().min(1, "Offline user is required"),
+  createdInternalBookingId: z.string().min(1, "Created booking ID is required"),
 });
 
 export type CreateCourtsideBooking = z.infer<
