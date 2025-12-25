@@ -78,7 +78,7 @@ const courtApi = {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(
-        errorData.message || "Failed to toggle court availability"
+        errorData.message || "Failed to toggle court availability",
       );
     }
     return response.json();
@@ -89,12 +89,12 @@ const courtApi = {
       `/api/court/${courtId}/available-slots?date=${dateStr}`,
       {
         credentials: "include",
-      }
+      },
     );
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(
-        errorData.message || "Failed to fetch available time slots"
+        errorData.message || "Failed to fetch available time slots",
       );
     }
     const result = await response.json();
@@ -111,7 +111,7 @@ const courtPublicApi = {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(
-        errorData.message || "Failed to fetch public courts by venue"
+        errorData.message || "Failed to fetch public courts by venue",
       );
     }
     return response.json();
@@ -140,7 +140,7 @@ export const usePublicCourtByVenue = (venueId: string) => {
     queryKey: ["public-court", "venue", venueId],
     queryFn: () => courtPublicApi.getByVenue(venueId),
     enabled: Boolean(venueId),
-    refetchInterval: 1000,
+    // refetchInterval: 1000,
     staleTime: 1000 * 60 * 2,
   });
 };
@@ -218,7 +218,7 @@ export const useToggleCourtAvailability = () => {
       console.error("Toggle court availability error:", error);
       toast.error(
         error.message ||
-          "Failed to update court availability. Please try again."
+          "Failed to update court availability. Please try again.",
       );
     },
   });
@@ -226,7 +226,7 @@ export const useToggleCourtAvailability = () => {
 
 export const useAvailableTimeSlots = (
   courtId: string,
-  date: Date | undefined
+  date: Date | undefined,
 ) => {
   return useQuery({
     queryKey: ["court", "available-slots", courtId, date?.toISOString()],

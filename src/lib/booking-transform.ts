@@ -78,7 +78,7 @@ type PrismaCourt = {
  * The new function fetches from blocking table directly (more efficient).
  */
 export function transformPrismaBookingToTimetable(
-  bookings: PrismaBooking[]
+  bookings: PrismaBooking[],
 ): TimetableBooking[] {
   return bookings
     .filter((booking) => {
@@ -112,7 +112,7 @@ export function transformPrismaBookingToTimetable(
  */
 export function transformPrismaCourtToTimetable(
   courts: PrismaCourt[],
-  selectedDate: string
+  selectedDate: string,
 ): TimetableCourt[] {
   const day = new Date(selectedDate).getDay();
   const dayOfWeek = [
@@ -128,7 +128,7 @@ export function transformPrismaCourtToTimetable(
   return courts.map((court) => {
     // Cari operating hours untuk hari ini
     const todayOperatingHours = court.operatingHours?.find(
-      (oh) => oh.dayOfWeek === dayOfWeek
+      (oh) => oh.dayOfWeek === dayOfWeek,
     );
 
     // Default operating hours dari venue
@@ -171,7 +171,7 @@ export function transformPrismaCourtToTimetable(
 export function transformPrismaBookingToDetail(
   booking: PrismaBooking,
   venueName: string,
-  courtName: string
+  courtName: string,
 ): BookingDetail {
   // Get payment info
   const payment =
@@ -220,7 +220,7 @@ export function transformPrismaBookingToDetail(
  * // Returns: Array of bookings with userName, userAvatar, timeSlots, etc.
  */
 export function transformPrismaBlockingToTimetable(
-  blockings: VenueBlockingData[]
+  blockings: VenueBlockingData[],
 ): TimetableBooking[] {
   return blockings.map((blocking) => ({
     id: blocking.booking.id,
@@ -242,7 +242,7 @@ export function transformPrismaBlockingToTimetable(
  */
 export function transformPrismaBlockingToDetail(
   blocking: VenueBlockingData,
-  venueName: string
+  venueName: string,
 ): BookingDetail {
   const payment = blocking.booking.order?.payment;
 
@@ -257,9 +257,7 @@ export function transformPrismaBlockingToDetail(
     timeSlots: blocking.booking.timeSlots,
     duration: blocking.booking.timeSlots.length,
     totalAmount:
-      blocking.booking.order?.totalAmount ||
-      blocking.booking.totalPrice ||
-      0,
+      blocking.booking.order?.totalAmount || blocking.booking.totalPrice || 0,
     paymentMethod: payment?.channelName || "N/A",
     paymentStatus: (payment?.status as PaymentStatus) || PaymentStatus.UNPAID,
     createdAt: payment?.createdAt

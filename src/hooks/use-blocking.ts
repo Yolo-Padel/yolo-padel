@@ -75,10 +75,10 @@ type GetBlockingsParams = {
 // ════════════════════════════════════════════════════════
 
 async function getActiveBlockingsApi(
-  params: GetBlockingsParams
+  params: GetBlockingsParams,
 ): Promise<ActiveBlocking[]> {
   const { courtId, date } = params;
-  const dateStr = format(date, "yyyy-MM-dd")
+  const dateStr = format(date, "yyyy-MM-dd");
   const url = `/api/blocking?courtId=${encodeURIComponent(courtId)}&date=${encodeURIComponent(dateStr)}`;
 
   const response = await fetch(url, {
@@ -111,7 +111,7 @@ export function useActiveBlockings(params: GetBlockingsParams) {
     queryFn: () => getActiveBlockingsApi(params),
     staleTime: TIMETABLE_CACHE.BLOCKING_STALE_TIME,
     enabled: !!params.courtId && !!params.date,
-    refetchInterval: 1000,
+    // refetchInterval: 1000,
   });
 }
 
@@ -120,7 +120,7 @@ export function useActiveBlockings(params: GetBlockingsParams) {
  */
 async function getBlockingsByVenueAndDateApi(
   venueId: string,
-  date: string
+  date: string,
 ): Promise<VenueBlockingData[]> {
   const url = `/api/blocking/venue?venueId=${encodeURIComponent(venueId)}&date=${encodeURIComponent(date)}`;
 
