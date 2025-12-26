@@ -46,6 +46,7 @@ export interface TimeSlot {
 export interface Blocking {
   id: string;
   bookingId: string;
+  yoloBookingCode: string;
   isBlocking: boolean;
   booking: {
     id: string;
@@ -159,6 +160,7 @@ export async function getCourtsideBookingsByVenue(
       allBlockings.push({
         id: booking.booking_id,
         bookingId: booking.booking_id,
+        yoloBookingCode: booking.user_name,
         isBlocking: true,
         booking: {
           id: booking.booking_id,
@@ -223,6 +225,7 @@ export async function getCourtsideBooking(
     const blocking: Blocking = {
       id: booking.booking_id,
       bookingId: booking.booking_id,
+      yoloBookingCode: booking.user_name,
       isBlocking: true,
       booking: {
         id: booking.booking_id,

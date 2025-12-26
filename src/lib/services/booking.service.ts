@@ -1185,7 +1185,7 @@ export const bookingService = {
           duration: booking.duration,
           totalPrice: booking.totalPrice,
           status: BookingStatus.PENDING,
-          courtsideBookingId: null,
+          courtsideBookingId: [],
           // Create time slots
           timeSlots: {
             create: booking.timeSlots.map((slot) => ({
@@ -1535,19 +1535,12 @@ export const bookingService = {
       };
     }
   },
-  storeCourtsideBookingId: async (
-    id: string,
-    courtsideBookingId: string,
-    context: ServiceContext,
-  ) => {
+  storeCourtsideBookingId: async (id: string, courtsideBookingId: string) => {
     try {
-      const accessError = requirePermission(context, UserType.STAFF);
-      if (accessError) return accessError;
-
       const booking = await prisma.$transaction(async (tx) => {
         const updatedBooking = await tx.booking.update({
           where: { id },
-          data: { courtsideBookingId },
+          data: { courtsideBookingId: { push: courtsideBookingId } },
         });
 
         return updatedBooking;

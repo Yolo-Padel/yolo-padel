@@ -2,7 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { ManualBookingInput } from "@/lib/validations/manual-booking.validation";
 import { bookingService, createBooking } from "@/lib/services/booking.service";
 import { createBlocking } from "@/lib/services/blocking.service";
-import { createCourtsideBooking } from "@/lib/services/courtside.service";
+import {
+  createCourtsideBooking,
+  getCourtsideBooking,
+} from "@/lib/services/courtside.service";
 import { resendService } from "@/lib/services/resend.service";
 import {
   activityLogService,
@@ -19,6 +22,7 @@ import { BookingStatus, UserType, UserStatus } from "@/types/prisma";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 import { customAlphabet } from "nanoid";
+import { format } from "date-fns";
 
 type TimeSlot = { openHour: string; closeHour: string };
 
@@ -212,16 +216,27 @@ async function syncManualBookingToCourtside(
       );
     }
 
-    // Requirement 1.4: Store first Courtside booking ID in booking record
-    if (firstCourtsideBookingId) {
-      await prisma.booking.update({
-        where: { id: bookingData.bookingId },
-        data: { courtsideBookingId: firstCourtsideBookingId },
-      });
+    const courtsideBookingData = await getCourtsideBooking(
+      {
+        apiKey: court.venue.courtsideApiKey,
+        bookingDate: format(bookingData.bookingDate, "yyyy-MM-dd"),
+        courtsideCourtId: court.courtsideCourtId,
+      },
+      context ?? { userRole: "USER", actorUserId: undefined },
+    );
 
-      console.log(
-        `[Courtside Sync] Stored Courtside booking ID ${firstCourtsideBookingId} for manual booking ${bookingData.bookingCode}`,
-      );
+    if (courtsideBookingData && Array.isArray(courtsideBookingData)) {
+      const courtsideBookingIds = courtsideBookingData
+        .filter(
+          (booking) => booking.yoloBookingCode === bookingData.bookingCode,
+        )
+        .map((booking) => booking.id);
+      courtsideBookingIds.forEach((courtsideBookingIds) => {
+        bookingService.storeCourtsideBookingId(
+          bookingData.bookingId,
+          courtsideBookingIds,
+        );
+      });
     }
   } catch (error) {
     // Fire-and-forget: Log error but don't fail the booking

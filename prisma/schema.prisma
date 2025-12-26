@@ -257,7 +257,7 @@ model Booking {
   duration         Int           // Total duration: jumlah slots
   totalPrice       Int
   status           BookingStatus
-  courtsideBookingId String?
+  courtsideBookingId String[] @default([])
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 

@@ -7,10 +7,13 @@ import {
   UserType,
 } from "@/types/prisma";
 import { customAlphabet } from "nanoid";
-import { createBooking } from "./booking.service";
+import { bookingService, createBooking } from "./booking.service";
 import { createPayment } from "./payment.service";
 import { createBlocking } from "./blocking.service";
-import { createCourtsideBooking } from "./courtside.service";
+import {
+  createCourtsideBooking,
+  getCourtsideBooking,
+} from "./courtside.service";
 import { Prisma } from "@prisma/client";
 import {
   activityLogService,
@@ -314,6 +317,8 @@ async function syncBookingsToCourtside(
     const createdBooking = order.bookings[i];
     const originalBookingData = bookingData[i];
 
+    console.log("CODEEE", createdBooking.bookingCode);
+
     try {
       // Fetch court with venue info for Courtside integration
       const court = await prisma.court.findUnique({
@@ -385,14 +390,29 @@ async function syncBookingsToCourtside(
           context ?? { userRole: "USER", actorUserId: undefined },
         );
 
-        // Store first Courtside booking ID (Requirement 1.4)
-        if (!firstCourtsideBookingId && courtsideResponse?.data?.id) {
-          firstCourtsideBookingId = courtsideResponse.data.id;
-        }
-
-        console.log(
-          `[Courtside Sync] Created Courtside booking for ${createdBooking.bookingCode}: ${slotGroup.startHour} (${slotGroup.duration}h)`,
+        const courtsideBookingData = await getCourtsideBooking(
+          {
+            apiKey: court.venue.courtsideApiKey,
+            bookingDate: payload.date,
+            courtsideCourtId: court.courtsideCourtId,
+          },
+          context ?? { userRole: "USER", actorUserId: undefined },
         );
+
+        if (courtsideBookingData && Array.isArray(courtsideBookingData)) {
+          const courtsideBookingIds = courtsideBookingData
+            .filter(
+              (booking) =>
+                booking.yoloBookingCode === createdBooking.bookingCode,
+            )
+            .map((booking) => booking.id);
+          courtsideBookingIds.forEach((courtsideBookingIds) => {
+            bookingService.storeCourtsideBookingId(
+              createdBooking.id,
+              courtsideBookingIds,
+            );
+          });
+        }
       }
 
       // Requirement 1.4: Store first Courtside booking ID in booking record

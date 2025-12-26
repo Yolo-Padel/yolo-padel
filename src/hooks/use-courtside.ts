@@ -12,7 +12,7 @@ interface CourtsideBookingResponse {
 
 const courtsideApi = {
   getCourtsideBooking: async (data: GetCourtsideBooking) => {
-    const response = await fetch("api/booking/courtside", {
+    const response = await fetch("/api/booking/courtside", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

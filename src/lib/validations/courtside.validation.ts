@@ -31,6 +31,7 @@ export const createCourtsideBookingSchema = z.object({
   registered: z.boolean(),
   offline_user: z.string().min(1, "Offline user is required"),
   createdInternalBookingId: z.string().min(1, "Created booking ID is required"),
+  yoloBookingCode: z.string().nullable().optional(),
 });
 
 export type CreateCourtsideBooking = z.infer<
