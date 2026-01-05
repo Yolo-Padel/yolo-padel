@@ -70,7 +70,7 @@ export function generateHourlySlots(open: string, close: string): string[] {
  */
 export function getAvailableSlots(
   court: CourtWithOperatingHours | undefined,
-  date: Date | undefined
+  date: Date | undefined,
 ): string[] {
   if (!court || !date) return [];
 
@@ -84,7 +84,7 @@ export function getAvailableSlots(
   const all: string[] = [];
 
   ranges.forEach((r) =>
-    all.push(...generateHourlySlots(r.openHour, r.closeHour))
+    all.push(...generateHourlySlots(r.openHour, r.closeHour)),
   );
 
   return all;
@@ -96,7 +96,7 @@ export function getAvailableSlots(
  * @returns Array of {openHour, closeHour} objects
  */
 export function transformUISlotsToDbFormat(
-  slots: string[]
+  slots: string[],
 ): Array<{ openHour: string; closeHour: string }> {
   return slots.map((slot) => {
     const [start, end] = slot.split("–");
@@ -117,7 +117,7 @@ export function transformUISlotsToDbFormat(
  * // Output: ["09.00–11.00"]
  */
 export function transformDbFormatToUISlots(
-  timeSlots: Array<{ openHour: string; closeHour: string }>
+  timeSlots: Array<{ openHour: string; closeHour: string }>,
 ): string[] {
   if (timeSlots.length === 0) return [];
 
@@ -196,7 +196,7 @@ export function isSlotBooked(slot: string, bookedSlots: string[]): boolean {
  */
 export function filterBlockedSlots(
   availableSlots: string[],
-  blockedSlots: Array<{ openHour: string; closeHour: string }>
+  blockedSlots: Array<{ openHour: string; closeHour: string }>,
 ): string[] {
   if (blockedSlots.length === 0) return availableSlots;
 

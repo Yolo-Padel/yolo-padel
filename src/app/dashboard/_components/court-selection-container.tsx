@@ -20,7 +20,6 @@ import {
 import { useActiveBlockings } from "@/hooks/use-blocking";
 import { stringUtils } from "@/lib/format/string";
 import { BookingFormSkeleton } from "./booking-form-skeleton";
-import { BookingItem } from "./order-summary-container";
 import { BookingFormValues } from "@/types/booking";
 import {
   useBookingDefaults,
@@ -34,7 +33,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { DynamicPrice } from "@/components/timetable-types";
-import { transformPrismaDynamicPrice } from "@/lib/dynamic-price-transform";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Popover,
@@ -43,6 +41,7 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
+import { useActiveCourtsideBlockings } from "@/hooks/use-courtside";
 
 type CourtSelectionContainerProps = {
   form: UseFormReturn<BookingFormValues>;
@@ -118,13 +117,29 @@ export function CourtSelectionContainer({
     date: watchDate || new Date(),
   });
 
-  // Extract blocked time slots from blocking data
-  const blockedTimeSlots = (() => {
-    if (!blockingsData || blockingsData.length === 0) return [];
+  const { data: courtsideBlockingsData } = useActiveCourtsideBlockings({
+    courtsideCourtId:
+      courtsData.find((court) => court.id === watchCourtId)?.courtsideCourtId ||
+      "",
+    bookingDate: format(watchDate || new Date(), "yyyy-MM-dd"),
+    apiKey:
+      venuesData.find((venue) => venue.id === watchVenueId)?.courtsideApiKey ||
+      "",
+  });
 
-    // Flatten all time slots from all blockings
-    return blockingsData.flatMap((blocking) => blocking.booking.timeSlots);
-  })();
+  // Extract blocked time slots from blocking data (+ courtside blocking data)
+  const blockedTimeSlots = useMemo(() => {
+    const blockedSlots =
+      blockingsData?.flatMap((blocking) => blocking.booking.timeSlots) || [];
+
+    // Courtside returns timeSlots as array of hourly slots, flatten them
+    const courtsideBlockedSlots =
+      courtsideBlockingsData?.flatMap(
+        (blocking) => blocking.booking.timeSlots,
+      ) || [];
+
+    return [...blockedSlots, ...courtsideBlockedSlots];
+  }, [blockingsData, courtsideBlockingsData]);
 
   // Filter out blocked slots from available slots (HIDE them, don't just disable)
   const allSlots = filterBlockedSlots(operatingHoursSlots, blockedTimeSlots);
@@ -150,7 +165,7 @@ export function CourtSelectionContainer({
 
   useEffect(() => {
     const filteredSelections = watchSlots.filter((slot) =>
-      availableFutureSlots.includes(slot)
+      availableFutureSlots.includes(slot),
     );
     if (filteredSelections.length !== watchSlots.length) {
       form.setValue("slots", filteredSelections);
@@ -175,7 +190,7 @@ export function CourtSelectionContainer({
     selectedCourt,
     watchVenueId,
     venuesData,
-    dynamicPrices
+    dynamicPrices,
   );
 
   return isLoadingVenues ? (
@@ -267,7 +282,7 @@ export function CourtSelectionContainer({
                   const isInBookings = watchBookings.some(
                     (item) =>
                       item.courtId === court.id &&
-                      item.date.toDateString() === watchDate?.toDateString()
+                      item.date.toDateString() === watchDate?.toDateString(),
                   );
 
                   return (
@@ -277,7 +292,7 @@ export function CourtSelectionContainer({
                         "relative rounded-lg overflow-hidden group cursor-pointer border transition-all flex-shrink-0",
                         isActive
                           ? "ring-2 ring-primary border-primary shadow-lg"
-                          : ""
+                          : "",
                       )}
                       style={{ width: "140px", height: "90px" }}
                       onClick={() => {
@@ -321,7 +336,7 @@ export function CourtSelectionContainer({
                   variant="outline"
                   className={cn(
                     "w-full justify-start text-left font-normal",
-                    !watchDate && "text-muted-foreground"
+                    !watchDate && "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -421,7 +436,7 @@ export function CourtSelectionContainer({
                     {slot}
                   </ToggleGroupItem>
                 );
-              }
+              },
             )}
           </ToggleGroup>
           {watchCourtId && watchDate && availableFutureSlots.length === 0 && (
@@ -480,7 +495,7 @@ export function CourtSelectionContainer({
         </div>
         <p className="text-sm font-medium">
           {stringUtils.formatRupiah(
-            watchBookings.reduce((sum, item) => sum + item.totalPrice, 0)
+            watchBookings.reduce((sum, item) => sum + item.totalPrice, 0),
           )}
         </p>
       </div>

@@ -21,6 +21,7 @@ import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 import { vercelBlobService } from "@/lib/services/vercel-blob.service";
 import { getDayOfWeekKey } from "@/lib/booking-slots-utils";
+import { fetchCourtsideBookingsForSlots } from "@/lib/services/courtside.service";
 
 export const courtService = {
   // Get all courts with venue and schedule info
@@ -282,6 +283,7 @@ export const courtService = {
           image: data.image, // Now mandatory from validation
           openingType: data.openingHours,
           venueId: data.venueId,
+          courtsideCourtId: data.courtsideCourtId ?? null,
         },
       });
 
@@ -377,6 +379,7 @@ export const courtService = {
             price: data.price,
             openingType: data.openingHours,
             venueId: data.venueId,
+            courtsideCourtId: data.courtsideCourtId ?? null,
           },
         } as any,
       });
@@ -400,7 +403,7 @@ export const courtService = {
   update: async (
     id: string,
     data: CourtCreateData,
-    context: ServiceContext
+    context: ServiceContext,
   ) => {
     try {
       const accessError = requirePermission(context, UserType.STAFF);
@@ -422,12 +425,12 @@ export const courtService = {
       // 2. Delete old image if it's being replaced
       if (existingCourt.image && existingCourt.image !== data.image) {
         const deleteResult = await vercelBlobService.deleteFile(
-          existingCourt.image
+          existingCourt.image,
         );
         if (!deleteResult.success) {
           console.warn(
             "Failed to delete old court image:",
-            deleteResult.message
+            deleteResult.message,
           );
           // Continue with update even if delete fails (non-blocking)
         }
@@ -456,6 +459,7 @@ export const courtService = {
           image: data.image, // Now mandatory from validation
           openingType: data.openingHours,
           venueId: data.venueId,
+          courtsideCourtId: data.courtsideCourtId ?? null,
         },
       });
 
@@ -551,8 +555,9 @@ export const courtService = {
           price: data.price,
           openingType: data.openingHours,
           venueId: data.venueId,
+          courtsideCourtId: data.courtsideCourtId ?? null,
         } as any,
-        ["name", "price", "openingType", "venueId"] as any
+        ["name", "price", "openingType", "venueId", "courtsideCourtId"] as any,
       );
 
       activityLogService.record({
@@ -663,7 +668,7 @@ export const courtService = {
   toggleAvailability: async (
     id: string,
     isActive: boolean,
-    context: ServiceContext
+    context: ServiceContext,
   ) => {
     try {
       const accessError = requirePermission(context, UserType.STAFF);
@@ -723,13 +728,18 @@ export const courtService = {
   // Returns breakdown of hourly slots with availability check
   getAvailableTimeSlots: async (courtId: string, date: Date) => {
     try {
-      // 1. Get court with operating hours
+      // 1. Get court with operating hours and venue (for courtside integration)
       const court = await prisma.court.findUnique({
         where: { id: courtId },
         include: {
           operatingHours: {
             include: {
               slots: true,
+            },
+          },
+          venue: {
+            select: {
+              courtsideApiKey: true,
             },
           },
         },
@@ -755,7 +765,7 @@ export const courtService = {
 
       // 3. Get operating hour for the day
       const operatingHour = court.operatingHours.find(
-        (oh) => oh.dayOfWeek === dayOfWeek
+        (oh) => oh.dayOfWeek === dayOfWeek,
       );
 
       if (!operatingHour || operatingHour.closed) {
@@ -822,7 +832,7 @@ export const courtService = {
         },
       });
 
-      // 6. Collect all booked/blocked time ranges
+      // 6. Collect all booked/blocked time ranges from internal bookings
       const bookedRanges: Array<{ openHour: string; closeHour: string }> = [];
 
       for (const booking of bookings) {
@@ -834,10 +844,21 @@ export const courtService = {
         }
       }
 
-      // 7. Helper function to check if a slot overlaps with booked ranges
+      // 7. Fetch courtside bookings if court has courtside integration
+      if (court.courtsideCourtId && court.venue?.courtsideApiKey) {
+        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        const courtsideBookedRanges = await fetchCourtsideBookingsForSlots(
+          court.venue.courtsideApiKey,
+          court.courtsideCourtId,
+          dateStr,
+        );
+        bookedRanges.push(...courtsideBookedRanges);
+      }
+
+      // 8. Helper function to check if a slot overlaps with booked ranges
       const isSlotOverlapping = (
         slotStart: string,
-        slotEnd: string
+        slotEnd: string,
       ): boolean => {
         // Convert UI format "06.00" to DB format "06:00"
         const dbStart = slotStart.replace(".", ":");

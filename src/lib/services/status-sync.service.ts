@@ -14,13 +14,14 @@ import {
 } from "./activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
+import { cancelCourtsideBooking } from "./courtside.service";
 
 type EmailJob =
   | { type: "order_confirmation"; payload: OrderConfirmationEmailData }
   | { type: "booking_cancelation"; payload: BookingCancelationEmailData };
 
 const formatTimeRange = (
-  timeSlots?: Array<{ openHour: string; closeHour: string }>
+  timeSlots?: Array<{ openHour: string; closeHour: string }>,
 ) => {
   if (!timeSlots || timeSlots.length === 0) {
     return "N/A";
@@ -57,7 +58,7 @@ const getLocationLabel = (court?: {
  */
 export async function syncPaymentStatusToOrder(
   paymentId: string,
-  newPaymentStatus: PaymentStatus
+  newPaymentStatus: PaymentStatus,
 ): Promise<void> {
   const emailJobs: EmailJob[] = [];
 
@@ -88,6 +89,7 @@ export async function syncPaymentStatusToOrder(
                     venue: {
                       select: {
                         name: true,
+                        courtsideApiKey: true,
                       },
                     },
                   },
@@ -115,6 +117,14 @@ export async function syncPaymentStatusToOrder(
     });
 
     const bookingIds = payment.order.bookings.map((b) => b.id);
+    const courtsideApiKey =
+      payment.order.bookings[0]?.court?.venue?.courtsideApiKey;
+    const courtsideBookingIds = [];
+    for (const booking of payment.order.bookings) {
+      if (booking.blocking) {
+        courtsideBookingIds.push(booking.courtsideBookingId);
+      }
+    }
     const customerEmail = payment.order.user?.email || null;
     const customerName = getCustomerName(payment.order.user);
 
@@ -149,7 +159,7 @@ export async function syncPaymentStatusToOrder(
                   booking.timeSlots?.map((slot) => ({
                     openHour: slot.openHour,
                     closeHour: slot.closeHour,
-                  }))
+                  })),
                 ),
                 bookingCode: booking.bookingCode,
                 location: getLocationLabel(booking.court),
@@ -173,6 +183,20 @@ export async function syncPaymentStatusToOrder(
           data: { status: BookingStatus.CANCELLED },
         });
 
+        if (courtsideApiKey) {
+          for (const bookings of courtsideBookingIds) {
+            for (const courtsideBookingId of bookings) {
+              cancelCourtsideBooking({
+                apiKey: courtsideApiKey,
+                id: courtsideBookingId,
+                type: "booking-court",
+                cancel_note: "Payment Expired on YOLO system",
+                email: "dummy@gmail.com",
+              });
+            }
+          }
+        }
+
         // Release all blockings (make slots available again)
         await tx.blocking.updateMany({
           where: { bookingId: { in: bookingIds } },
@@ -193,7 +217,7 @@ export async function syncPaymentStatusToOrder(
                   booking.timeSlots?.map((slot) => ({
                     openHour: slot.openHour,
                     closeHour: slot.closeHour,
-                  }))
+                  })),
                 ),
                 bookingCode: booking.bookingCode,
                 location: getLocationLabel(booking.court),
@@ -218,6 +242,20 @@ export async function syncPaymentStatusToOrder(
           data: { status: BookingStatus.CANCELLED },
         });
 
+        if (courtsideApiKey) {
+          for (const bookings of courtsideBookingIds) {
+            for (const courtsideBookingId of bookings) {
+              cancelCourtsideBooking({
+                apiKey: courtsideApiKey,
+                id: courtsideBookingId,
+                type: "booking-court",
+                cancel_note: "Payment Expired on YOLO system",
+                email: "dummy@gmail.com",
+              });
+            }
+          }
+        }
+
         // Release all blockings
         await tx.blocking.updateMany({
           where: { bookingId: { in: bookingIds } },
@@ -238,7 +276,7 @@ export async function syncPaymentStatusToOrder(
                   booking.timeSlots?.map((slot) => ({
                     openHour: slot.openHour,
                     closeHour: slot.closeHour,
-                  }))
+                  })),
                 ),
                 bookingCode: booking.bookingCode,
                 location: getLocationLabel(booking.court),
@@ -278,7 +316,7 @@ export async function syncPaymentStatusToOrder(
  */
 export async function syncBookingStatusToOrder(
   bookingId: string,
-  newBookingStatus: BookingStatus
+  newBookingStatus: BookingStatus,
 ): Promise<void> {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
@@ -331,7 +369,7 @@ export async function syncBookingStatusToOrder(
 /**
  * Handle order status change and cascade to bookings and payment
  * This is called when admin manually changes order status
- * 
+ *
  * @param orderId - The order ID to update
  * @param newOrderStatus - The new status to set
  * @param context - Optional ServiceContext for activity logging (Requirements 7.1)
@@ -339,7 +377,7 @@ export async function syncBookingStatusToOrder(
 export async function syncOrderStatusToBookings(
   orderId: string,
   newOrderStatus: OrderStatus,
-  context?: ServiceContext
+  context?: ServiceContext,
 ): Promise<void> {
   // Store old status and orderCode for logging before transaction
   const currentOrder = await prisma.order.findUnique({
