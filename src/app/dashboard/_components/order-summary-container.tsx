@@ -136,7 +136,7 @@ export function OrderSummaryContainer({
             const paymentEndpoint = `/api/order/${order.id}/xendit/invoice`;
 
             const requestBody = {
-              externalId: order.payment?.id || order.id,
+              externalId: order.orderCode,
               amount: courtFeesTotal,
               description: `Order ${order.orderCode}`,
               payerEmail: guestEmail || undefined,
