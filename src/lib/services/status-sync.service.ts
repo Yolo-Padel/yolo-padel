@@ -60,7 +60,6 @@ export async function syncPaymentStatusToOrder(
   paymentId: string,
   newPaymentStatus: PaymentStatus,
 ): Promise<void> {
-  console.log("COMPUTER WAS HERE");
   const emailJobs: EmailJob[] = [];
 
   await prisma.$transaction(async (tx) => {
@@ -128,8 +127,6 @@ export async function syncPaymentStatusToOrder(
     }
     const customerEmail = payment.order.user?.email || null;
     const customerName = getCustomerName(payment.order.user);
-
-    console.log("[WEBHOOK] COURTSIDE API KEY EXIST: ", courtsideApiKey);
 
     // Handle different payment statuses
     switch (newPaymentStatus) {

@@ -205,7 +205,7 @@ export async function getCourtsideBooking(
     (court) => court.court_id === request.courtsideCourtId,
   );
 
-  // Handle the weird API response where bookedTime is [] when empty, but object when has data
+  // Handle the weird Courtside API response where bookedTime is [] when empty, but object when has data
   const hasBookings = (
     bookedTime: BookedTime | [],
   ): bookedTime is BookedTime => {
