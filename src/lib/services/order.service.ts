@@ -7,9 +7,13 @@ import {
   UserType,
 } from "@/types/prisma";
 import { customAlphabet } from "nanoid";
-import { createBooking } from "./booking.service";
+import { bookingService, createBooking } from "./booking.service";
 import { createPayment } from "./payment.service";
 import { createBlocking } from "./blocking.service";
+import {
+  createCourtsideBooking,
+  getCourtsideBooking,
+} from "./courtside.service";
 import { Prisma } from "@prisma/client";
 import {
   activityLogService,
@@ -19,6 +23,419 @@ import {
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 import { ServiceContext } from "@/types/service-context";
+
+// ============================================================================
+// Courtside Integration Types and Utilities
+// ============================================================================
+
+/**
+ * Represents a time slot with open and close hours
+ * Format: "HH:mm" (e.g., "10:00", "11:00")
+ */
+export interface TimeSlot {
+  openHour: string; // "HH:mm" format
+  closeHour: string; // "HH:mm" format
+}
+
+/**
+ * Represents a group of continuous time slots for Courtside booking
+ * Courtside only accepts continuous time slots, so non-continuous slots
+ * must be split into separate groups
+ */
+export interface SlotGroup {
+  startHour: string; // First slot's openHour in "HH.mm" format (Courtside format)
+  duration: number; // Duration in MINUTES (e.g., 120 for 2 hours)
+  slots: TimeSlot[]; // Original slots in this group
+}
+
+/**
+ * Convert time from "HH:mm" format to "HH.mm" format (Courtside format)
+ * @param time - Time string in "HH:mm" format
+ * @returns Time string in "HH.mm" format
+ *
+ * @example
+ * convertToCourtSideTimeFormat("10:00") // returns "10.00"
+ * convertToCourtSideTimeFormat("09:30") // returns "09.30"
+ */
+export function convertToCourtSideTimeFormat(time: string): string {
+  return time.replace(":", ".");
+}
+
+/**
+ * Check if two time slots are continuous (adjacent)
+ * Slots are continuous if the first slot's closeHour equals the second slot's openHour
+ *
+ * @param slot1 - First time slot
+ * @param slot2 - Second time slot
+ * @returns true if slots are continuous, false otherwise
+ *
+ * @example
+ * areContinuousSlots({ openHour: "10:00", closeHour: "11:00" }, { openHour: "11:00", closeHour: "12:00" }) // true
+ * areContinuousSlots({ openHour: "10:00", closeHour: "11:00" }, { openHour: "13:00", closeHour: "14:00" }) // false
+ */
+export function areContinuousSlots(slot1: TimeSlot, slot2: TimeSlot): boolean {
+  return slot1.closeHour === slot2.openHour;
+}
+
+/**
+ * Courtside booking payload structure for API requests
+ * This interface matches the Courtside API requirements
+ */
+export interface CourtsideBookingPayload {
+  date: string; // "YYYY-MM-DD"
+  start_hours: string; // "HH.mm" (dot separator)
+  duration: number; // Duration in MINUTES (e.g., 120 for 2 hours)
+  court_id: string; // Courtside court ID
+  harga: number; // Price (totalPrice for the slot group)
+  diskon: number; // Always 0
+  notes: string | null; // Optional notes
+  paid: boolean; // Always true
+  payment_method: string; // Always "offline"
+  registered: boolean; // Always false
+  offline_user: string; // Booking code for traceability
+}
+
+/**
+ * Format a Date object to YYYY-MM-DD string format
+ * @param date - Date object to format
+ * @returns Date string in YYYY-MM-DD format
+ *
+ * @example
+ * formatDateToYYYYMMDD(new Date(2024, 10, 7)) // returns "2024-11-07"
+ */
+export function formatDateToYYYYMMDD(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Builds Courtside booking payload from internal booking data
+ *
+ * This function transforms internal booking data into the format required
+ * by the Courtside API. It handles:
+ * - Date formatting to YYYY-MM-DD
+ * - Using slotGroup.startHour (already in HH.mm format)
+ * - Duration from slotGroup
+ * - Price calculation (slots.length * pricePerSlot)
+ * - Setting hardcoded values for Courtside API
+ *
+ * @param bookingCode - Internal booking code for traceability (used as offline_user)
+ * @param bookingDate - Date of the booking
+ * @param slotGroup - Group of continuous slots from groupContinuousSlots
+ * @param courtsideCourtId - External court ID in Courtside system
+ * @param pricePerSlot - Price per individual slot
+ * @returns CourtsideBookingPayload ready for API submission
+ *
+ * @example
+ * const payload = buildCourtsidePayload(
+ *   "BK-ABC12",
+ *   new Date("2024-11-07"),
+ *   { startHour: "10.00", duration: 2, slots: [...] },
+ *   "court-uuid-123",
+ *   100000
+ * );
+ * // Returns:
+ * // {
+ * //   date: "2024-11-07",
+ * //   start_hours: "10.00",
+ * //   duration: 2,
+ * //   court_id: "court-uuid-123",
+ * //   harga: 200000,
+ * //   diskon: 0,
+ * //   notes: null,
+ * //   paid: true,
+ * //   payment_method: "offline",
+ * //   registered: false,
+ * //   offline_user: "BK-ABC12"
+ * // }
+ *
+ * Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10
+ */
+export function buildCourtsidePayload(
+  bookingCode: string,
+  bookingDate: Date,
+  slotGroup: SlotGroup,
+  courtsideCourtId: string,
+  pricePerSlot: number,
+): CourtsideBookingPayload {
+  return {
+    // Requirement 3.1: Format date as YYYY-MM-DD string
+    date: formatDateToYYYYMMDD(bookingDate),
+
+    // Requirement 3.2: Use slotGroup.startHour (already in HH.mm format)
+    start_hours: slotGroup.startHour,
+
+    // Requirement 3.3: Use slotGroup.duration for duration
+    duration: slotGroup.duration,
+
+    // Requirement 3.4: Set court_id to courtsideCourtId
+    court_id: courtsideCourtId,
+
+    // Requirement 3.5: Calculate harga as slots.length * pricePerSlot
+    harga: slotGroup.slots.length * pricePerSlot,
+
+    // Requirement 3.6: Set diskon to 0
+    diskon: 0,
+
+    // Notes field (optional, set to null)
+    notes:
+      "This Booking was created from YOLO system. Don't cancel it from Courtside system. See Above Booking Owner for reference on Yolo system",
+
+    // Requirement 3.7: Set paid to true
+    paid: true,
+
+    // Requirement 3.8: Set payment_method to "offline"
+    payment_method: "offline",
+
+    // Requirement 3.9: Set registered to false
+    registered: false,
+
+    // Requirement 3.10: Set offline_user to bookingCode
+    offline_user: bookingCode,
+  };
+}
+
+/**
+ * Groups continuous time slots together for Courtside booking creation.
+ * Non-continuous slots are split into separate groups.
+ *
+ * Courtside only accepts continuous time slots, so when a booking has
+ * non-continuous slots (e.g., 10:00-11:00 and 13:00-14:00), we need to
+ * create multiple Courtside bookings.
+ *
+ * @param slots - Array of time slots to group
+ * @returns Array of slot groups, each containing continuous slots
+ *
+ * @example
+ * // Continuous slots: single group
+ * groupContinuousSlots([
+ *   { openHour: "10:00", closeHour: "11:00" },
+ *   { openHour: "11:00", closeHour: "12:00" }
+ * ])
+ * // Returns: [{ startHour: "10.00", duration: 120, slots: [...] }]
+ *
+ * @example
+ * // Non-continuous slots: multiple groups
+ * groupContinuousSlots([
+ *   { openHour: "10:00", closeHour: "11:00" },
+ *   { openHour: "13:00", closeHour: "14:00" }
+ * ])
+ * // Returns: [
+ * //   { startHour: "10.00", duration: 60, slots: [{ openHour: "10:00", closeHour: "11:00" }] },
+ * //   { startHour: "13.00", duration: 60, slots: [{ openHour: "13:00", closeHour: "14:00" }] }
+ * // ]
+ *
+ * Requirements: 2.1, 2.2, 2.3
+ */
+export function groupContinuousSlots(slots: TimeSlot[]): SlotGroup[] {
+  // Handle empty array
+  if (slots.length === 0) {
+    return [];
+  }
+
+  // Sort slots by openHour to ensure proper ordering
+  const sortedSlots = [...slots].sort((a, b) =>
+    a.openHour.localeCompare(b.openHour),
+  );
+
+  const groups: SlotGroup[] = [];
+  let currentGroup: TimeSlot[] = [sortedSlots[0]];
+
+  for (let i = 1; i < sortedSlots.length; i++) {
+    const previousSlot = sortedSlots[i - 1];
+    const currentSlot = sortedSlots[i];
+
+    if (areContinuousSlots(previousSlot, currentSlot)) {
+      // Slots are continuous, add to current group
+      currentGroup.push(currentSlot);
+    } else {
+      // Gap detected, finalize current group and start new one
+      // Duration is in MINUTES: number of slots * 60 minutes per slot
+      groups.push({
+        startHour: convertToCourtSideTimeFormat(currentGroup[0].openHour),
+        duration: currentGroup.length * 60,
+        slots: currentGroup,
+      });
+      currentGroup = [currentSlot];
+    }
+  }
+
+  // Don't forget to add the last group
+  // Duration is in MINUTES: number of slots * 60 minutes per slot
+  groups.push({
+    startHour: convertToCourtSideTimeFormat(currentGroup[0].openHour),
+    duration: currentGroup.length * 60,
+    slots: currentGroup,
+  });
+
+  return groups;
+}
+
+/**
+ * Sync bookings to Courtside external system
+ *
+ * This function handles the integration with Courtside for each booking in an order.
+ * It runs AFTER the main transaction completes to avoid blocking order creation.
+ *
+ * Key behaviors:
+ * - Skips bookings where court has no courtsideCourtId (Requirement 1.2)
+ * - Skips bookings where venue has no courtsideApiKey (Requirement 1.3)
+ * - Groups continuous time slots into single Courtside bookings (Requirement 2.1)
+ * - Creates multiple Courtside bookings for non-continuous slots (Requirement 2.2)
+ * - Uses same booking code as offline_user for traceability (Requirement 2.4)
+ * - Stores first Courtside booking ID in booking record (Requirement 1.4)
+ * - Errors are logged but don't fail the order (fire-and-forget)
+ *
+ * @param order - The created order with bookings
+ * @param bookingData - Original booking data with slots and prices
+ * @param context - Service context for authorization
+ *
+ * Requirements: 1.1, 1.2, 1.3, 1.4, 2.4, 4.1, 4.2
+ */
+async function syncBookingsToCourtside(
+  order: {
+    id: string;
+    orderCode: string;
+    bookings: Array<{
+      id: string;
+      courtId: string;
+      bookingCode: string;
+    }>;
+  },
+  bookingData: Array<{
+    courtId: string;
+    date: string | Date;
+    slots: string[];
+    price: number;
+  }>,
+  context?: ServiceContext,
+): Promise<void> {
+  // Process each booking for Courtside sync
+  for (let i = 0; i < order.bookings.length; i++) {
+    const createdBooking = order.bookings[i];
+    const originalBookingData = bookingData[i];
+
+    console.log("CODEEE", createdBooking.bookingCode);
+
+    try {
+      // Fetch court with venue info for Courtside integration
+      const court = await prisma.court.findUnique({
+        where: { id: createdBooking.courtId },
+        select: {
+          id: true,
+          courtsideCourtId: true,
+          venue: {
+            select: {
+              id: true,
+              courtsideApiKey: true,
+            },
+          },
+        },
+      });
+
+      // Requirement 1.2: Skip if court has no courtsideCourtId
+      if (!court?.courtsideCourtId) {
+        console.log(
+          `[Courtside Sync] Skipping booking ${createdBooking.bookingCode}: No courtsideCourtId configured for court ${createdBooking.courtId}`,
+        );
+        continue;
+      }
+
+      // Requirement 1.3: Skip if venue has no courtsideApiKey
+      if (!court.venue?.courtsideApiKey) {
+        console.log(
+          `[Courtside Sync] Skipping booking ${createdBooking.bookingCode}: No courtsideApiKey configured for venue`,
+        );
+        continue;
+      }
+
+      // Parse time slots from original booking data
+      const timeSlots: TimeSlot[] = originalBookingData.slots.map((slot) => {
+        const [openHour, closeHour] = slot.split("-");
+        return { openHour, closeHour };
+      });
+
+      // Group continuous slots for Courtside (Requirements 2.1, 2.2)
+      const slotGroups = groupContinuousSlots(timeSlots);
+
+      // Parse booking date
+      const bookingDate = parseDateToLocal(originalBookingData.date);
+
+      // Track first Courtside booking ID for storage
+      let firstCourtsideBookingId: string | null = null;
+
+      // Create Courtside booking for each slot group
+      for (const slotGroup of slotGroups) {
+        // Build Courtside payload (Requirements 3.1-3.10)
+        const payload = buildCourtsidePayload(
+          createdBooking.bookingCode,
+          bookingDate,
+          slotGroup,
+          court.courtsideCourtId,
+          originalBookingData.price,
+        );
+
+        // Call Courtside API with required fields
+        const courtsideRequest = {
+          apiKey: court.venue.courtsideApiKey,
+          ...payload,
+          createdInternalBookingId: createdBooking.id,
+        };
+
+        // Create Courtside booking using existing service
+        const courtsideResponse = await createCourtsideBooking(
+          courtsideRequest,
+          context ?? { userRole: "USER", actorUserId: undefined },
+        );
+
+        const courtsideBookingData = await getCourtsideBooking(
+          {
+            apiKey: court.venue.courtsideApiKey,
+            bookingDate: payload.date,
+            courtsideCourtId: court.courtsideCourtId,
+          },
+          context ?? { userRole: "USER", actorUserId: undefined },
+        );
+
+        if (courtsideBookingData && Array.isArray(courtsideBookingData)) {
+          const courtsideBookingIds = courtsideBookingData
+            .filter(
+              (booking) =>
+                booking.yoloBookingCode === createdBooking.bookingCode,
+            )
+            .map((booking) => booking.id);
+          courtsideBookingIds.forEach((courtsideBookingIds) => {
+            bookingService.storeCourtsideBookingId(
+              createdBooking.id,
+              courtsideBookingIds,
+            );
+          });
+        }
+      }
+
+      // Requirement 1.4: Store first Courtside booking ID in booking record
+      if (firstCourtsideBookingId) {
+        await prisma.booking.update({
+          where: { id: createdBooking.id },
+          data: { courtsideBookingId: firstCourtsideBookingId },
+        });
+
+        console.log(
+          `[Courtside Sync] Stored Courtside booking ID ${firstCourtsideBookingId} for booking ${createdBooking.bookingCode}`,
+        );
+      }
+    } catch (error) {
+      // Fire-and-forget: Log error but don't fail the order
+      console.error(
+        `[Courtside Sync] Error syncing booking ${createdBooking.bookingCode} to Courtside:`,
+        error,
+      );
+      // Continue with next booking - don't throw
+    }
+  }
+}
 
 /**
  * Options for filtering orders in admin dashboard
@@ -89,8 +506,8 @@ export interface GetOrdersForAdminResult {
         id: string;
         channelName: string;
         amount: number;
-        taxAmount: number;    // Fee breakdown field (Requirements 1.3, 2.3)
-        bookingFee: number;   // Fee breakdown field (Requirements 1.3, 2.3)
+        taxAmount: number; // Fee breakdown field (Requirements 1.3, 2.3)
+        bookingFee: number; // Fee breakdown field (Requirements 1.3, 2.3)
         status: PaymentStatus;
         paymentDate: Date | null;
         paymentUrl: string | null;
@@ -175,7 +592,7 @@ export async function createOrder(
     taxAmount?: number;
     bookingFee?: number;
   },
-  context?: ServiceContext
+  context?: ServiceContext,
 ): Promise<
   Order & {
     bookings: Array<{
@@ -187,7 +604,13 @@ export async function createOrder(
     payment: { id: string; status: string } | null;
   }
 > {
-  const { userId, bookings: bookingData, channelName, taxAmount = 0, bookingFee = 0 } = data;
+  const {
+    userId,
+    bookings: bookingData,
+    channelName,
+    taxAmount = 0,
+    bookingFee = 0,
+  } = data;
 
   // Generate order code (orchestration responsibility)
   const orderCode = generateOrderCode();
@@ -195,7 +618,7 @@ export async function createOrder(
   // Calculate base amount from bookings (court rental cost)
   const baseAmount = bookingData.reduce(
     (sum, booking) => sum + booking.price * booking.slots.length,
-    0
+    0,
   );
 
   // Calculate total amount including fees: baseAmount + taxAmount + bookingFee
@@ -235,7 +658,7 @@ export async function createOrder(
         // Generate booking code (orchestration responsibility)
         const bookingNanoId = customAlphabet(
           "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-          5
+          5,
         );
         const bookingCode = `BK-${bookingNanoId()}`;
 
@@ -245,12 +668,8 @@ export async function createOrder(
           return { openHour, closeHour };
         });
 
-        console.log("BOOKING ITEM DATE", bookingItem.date);
-
         // Parse date to local timezone (preserves exact date selected by user)
         const bookingDate = parseDateToLocal(bookingItem.date);
-
-        console.log("BOOKING DATE ON SERVICE", bookingDate);
 
         // Create booking using extracted service
         const booking = await createBooking(
@@ -266,14 +685,14 @@ export async function createOrder(
             source: "YOLO",
             status: BookingStatus.PENDING,
           },
-          tx // Pass transaction client
+          tx, // Pass transaction client
         );
 
         // Create blocking for this booking (using extracted service)
         const blocking = await createBlocking(
           booking.id,
           `Blocked for order ${orderCode}`,
-          tx // Pass transaction client
+          tx, // Pass transaction client
         );
 
         return {
@@ -282,7 +701,7 @@ export async function createOrder(
           bookingCode: booking.bookingCode,
           blocking: { id: blocking.id },
         };
-      })
+      }),
     );
 
     // 3. Create Payment (using extracted service)
@@ -298,7 +717,7 @@ export async function createOrder(
         taxAmount, // Tax portion
         bookingFee, // Service/platform fee
       },
-      tx // Pass transaction client
+      tx, // Pass transaction client
     );
 
     // 4. Assign user to venues from order (for end users)
@@ -352,6 +771,14 @@ export async function createOrder(
       },
     },
   });
+
+  // ============================================================================
+  // Courtside Integration - Sync bookings to external Courtside system
+  // Requirements: 1.1, 1.2, 1.3, 1.4, 2.4, 4.1, 4.2
+  // ============================================================================
+  // This step runs AFTER the transaction completes to avoid blocking order creation
+  // Errors are caught and logged but don't fail the order creation (fire-and-forget)
+  await syncBookingsToCourtside(order, bookingData, context);
 
   return order;
 }
@@ -410,8 +837,8 @@ export async function getOrderById(orderId: string) {
           id: true,
           channelName: true,
           amount: true,
-          taxAmount: true,    // Fee breakdown field (Requirements 1.3, 2.3)
-          bookingFee: true,   // Fee breakdown field (Requirements 1.3, 2.3)
+          taxAmount: true, // Fee breakdown field (Requirements 1.3, 2.3)
+          bookingFee: true, // Fee breakdown field (Requirements 1.3, 2.3)
           status: true,
           paymentDate: true,
           expiredAt: true,
@@ -432,7 +859,7 @@ export async function getOrdersByUserId(
     page?: number;
     limit?: number;
     status?: OrderStatus;
-  }
+  },
 ) {
   const { page = 1, limit = 10, status } = options || {};
   const skip = (page - 1) * limit;
@@ -487,8 +914,8 @@ export async function getOrdersByUserId(
             id: true,
             status: true,
             amount: true,
-            taxAmount: true,    // Fee breakdown field (Requirements 1.3, 2.3)
-            bookingFee: true,   // Fee breakdown field (Requirements 1.3, 2.3)
+            taxAmount: true, // Fee breakdown field (Requirements 1.3, 2.3)
+            bookingFee: true, // Fee breakdown field (Requirements 1.3, 2.3)
             paymentDate: true,
             channelName: true,
             paymentUrl: true,
@@ -564,8 +991,8 @@ export async function getAllOrdersForAdmin() {
           id: true,
           channelName: true,
           amount: true,
-          taxAmount: true,    // Fee breakdown field (Requirements 1.3, 2.3)
-          bookingFee: true,   // Fee breakdown field (Requirements 1.3, 2.3)
+          taxAmount: true, // Fee breakdown field (Requirements 1.3, 2.3)
+          bookingFee: true, // Fee breakdown field (Requirements 1.3, 2.3)
           status: true,
           paymentDate: true,
           paymentUrl: true,
@@ -587,7 +1014,7 @@ export async function getAllOrdersForAdmin() {
 export async function updateOrderStatus(
   orderId: string,
   newStatus: OrderStatus,
-  context?: ServiceContext
+  context?: ServiceContext,
 ): Promise<Order> {
   // Fetch current status before update for diff (Requirements 1.2)
   const currentOrder = await prisma.order.findUnique({
@@ -625,7 +1052,7 @@ export async function updateOrderStatus(
  */
 export async function cancelOrder(
   orderId: string,
-  context?: ServiceContext
+  context?: ServiceContext,
 ): Promise<Order> {
   const order = await prisma.$transaction(async (tx) => {
     // Get order with bookings
@@ -705,7 +1132,8 @@ export async function checkOrderCompletion(orderId: string): Promise<boolean> {
   // Order is completed if all bookings are COMPLETED or NO_SHOW
   const allFinished = bookings.every(
     (b) =>
-      b.status === BookingStatus.COMPLETED || b.status === BookingStatus.NO_SHOW
+      b.status === BookingStatus.COMPLETED ||
+      b.status === BookingStatus.NO_SHOW,
   );
 
   return allFinished;
@@ -723,7 +1151,7 @@ export async function checkOrderCompletion(orderId: string): Promise<boolean> {
 function buildVenueFilter(
   userType: UserType,
   assignedVenueIds: string[],
-  venueId?: string
+  venueId?: string,
 ): Prisma.OrderWhereInput["venueIds"] {
   // ADMIN users have unrestricted access
   if (userType === "ADMIN") {
@@ -844,7 +1272,7 @@ function buildSearchFilter(search?: string): Prisma.OrderWhereInput["OR"] {
  * @returns Prisma where clause for payment status filtering
  */
 function buildPaymentStatusFilter(
-  paymentStatus?: PaymentStatus
+  paymentStatus?: PaymentStatus,
 ): Prisma.OrderWhereInput["payment"] {
   // If no payment status specified, return undefined (no filter)
   if (!paymentStatus) {
@@ -868,7 +1296,7 @@ function buildPaymentStatusFilter(
 function buildPaginationParams(
   page?: number,
   limit?: number,
-  total?: number
+  total?: number,
 ): {
   skip: number;
   take: number;
@@ -901,7 +1329,7 @@ function buildPaginationParams(
  * @returns Complete Prisma where clause
  */
 function buildWhereClause(
-  options: GetOrdersForAdminOptions
+  options: GetOrdersForAdminOptions,
 ): Prisma.OrderWhereInput {
   const { userType, assignedVenueIds, search, venueId, paymentStatus } =
     options;
@@ -962,7 +1390,7 @@ function buildWhereClause(
  * });
  */
 export async function getOrdersForAdmin(
-  options: GetOrdersForAdminOptions
+  options: GetOrdersForAdminOptions,
 ): Promise<GetOrdersForAdminResult> {
   // Build where clause combining all filters
   const where = buildWhereClause(options);
@@ -970,7 +1398,7 @@ export async function getOrdersForAdmin(
   // Build pagination parameters
   const { skip, take, metadata } = buildPaginationParams(
     options.page,
-    options.limit
+    options.limit,
   );
 
   // Execute query with filters and pagination
@@ -1021,8 +1449,8 @@ export async function getOrdersForAdmin(
             id: true,
             channelName: true,
             amount: true,
-            taxAmount: true,    // Fee breakdown field (Requirements 1.3, 2.3)
-            bookingFee: true,   // Fee breakdown field (Requirements 1.3, 2.3)
+            taxAmount: true, // Fee breakdown field (Requirements 1.3, 2.3)
+            bookingFee: true, // Fee breakdown field (Requirements 1.3, 2.3)
             status: true,
             paymentDate: true,
             paymentUrl: true,

@@ -14,6 +14,20 @@ import {
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 import { vercelBlobService } from "@/lib/services/vercel-blob.service";
+import { encrypt } from "@/lib/utils/encryption";
+import { maskApiKey } from "@/lib/utils/masking";
+
+/**
+ * Transforms a venue object for API response by masking the API key
+ * and adding hasCourtsideApiKey boolean flag.
+ */
+function transformVenueForResponse(venue: any) {
+  return {
+    ...venue,
+    courtsideApiKey: maskApiKey(venue.courtsideApiKey),
+    hasCourtsideApiKey: !!venue.courtsideApiKey,
+  };
+}
 
 export const venueService = {
   getAll: async (context: ServiceContext) => {
@@ -62,14 +76,14 @@ export const venueService = {
               },
             }),
           ]);
-          return {
+          return transformVenueForResponse({
             ...venue,
             _counts: {
               courts: courtsCount,
               bookingsToday,
             },
-          } as any;
-        })
+          });
+        }),
       );
 
       return {
@@ -102,6 +116,7 @@ export const venueService = {
           openHour: true,
           closeHour: true,
           createdAt: true,
+          courtsideApiKey: true,
         },
         orderBy: { createdAt: "desc" },
       });
@@ -140,7 +155,7 @@ export const venueService = {
 
       return {
         success: true,
-        data: venue,
+        data: transformVenueForResponse(venue),
         message: "Get venue by id successful",
       };
     } catch (error) {
@@ -156,7 +171,7 @@ export const venueService = {
   create: async (
     data: VenueCreateData,
     context: ServiceContext,
-    userId: string
+    userId: string,
   ) => {
     try {
       const accessError = requirePermission(context, UserType.STAFF);
@@ -193,6 +208,11 @@ export const venueService = {
       if (data.openHour) createData.openHour = data.openHour;
       if (data.closeHour) createData.closeHour = data.closeHour;
 
+      // Encrypt API key if provided
+      if (data.courtsideApiKey) {
+        createData.courtsideApiKey = encrypt(data.courtsideApiKey);
+      }
+
       const result = await prisma.venue.create({
         data: createData,
       });
@@ -207,7 +227,7 @@ export const venueService = {
       });
       return {
         success: true,
-        data: result,
+        data: transformVenueForResponse(result),
         message: "Create venue successful",
       };
     } catch (error) {
@@ -242,7 +262,7 @@ export const venueService = {
 
         // Find images that exist in old but not in new (removed images)
         const removedImages = oldImages.filter(
-          (img) => !newImages.includes(img)
+          (img) => !newImages.includes(img),
         );
 
         // Delete each removed image from storage
@@ -252,7 +272,7 @@ export const venueService = {
           if (!deleteResult.success) {
             console.warn(
               "Failed to delete old venue image:",
-              deleteResult.message
+              deleteResult.message,
             );
             // Continue with update even if delete fails (non-blocking)
           }
@@ -279,10 +299,34 @@ export const venueService = {
         }
       }
 
+      // Handle courtsideApiKey encryption
+      let courtsideApiKeyUpdate: string | null | undefined;
+      if (payload.courtsideApiKey !== undefined) {
+        if (
+          payload.courtsideApiKey === null ||
+          payload.courtsideApiKey === ""
+        ) {
+          // Clear the API key
+          courtsideApiKeyUpdate = null;
+        } else {
+          // Encrypt the new API key
+          courtsideApiKeyUpdate = encrypt(payload.courtsideApiKey);
+        }
+      }
+
       const updateData: any = {
         ...payload,
         ...(slugUpdate ? { slug: slugUpdate } : {}),
+        ...(courtsideApiKeyUpdate !== undefined
+          ? { courtsideApiKey: courtsideApiKeyUpdate }
+          : {}),
       };
+
+      // Remove the original courtsideApiKey from payload if we're handling it separately
+      if (courtsideApiKeyUpdate !== undefined) {
+        delete updateData.courtsideApiKey;
+        updateData.courtsideApiKey = courtsideApiKeyUpdate;
+      }
 
       const result = await prisma.venue.update({
         where: { id: venueId },
@@ -291,7 +335,7 @@ export const venueService = {
       const diff = buildChangesDiff(
         exist as any,
         { ...exist, ...updateData } as any,
-        Object.keys(updateData) as any
+        Object.keys(updateData) as any,
       );
       activityLogService.record({
         context,
@@ -304,7 +348,7 @@ export const venueService = {
 
       return {
         success: true,
-        data: result,
+        data: transformVenueForResponse(result),
         message: "Update venue successful",
       };
     } catch (error) {

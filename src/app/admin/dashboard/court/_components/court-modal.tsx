@@ -53,6 +53,7 @@ interface CourtModalProps {
         closeHour: string;
       }>;
     }>;
+    courtsideCourtId?: string | null;
     // Add other court properties as needed
   };
 }
@@ -134,20 +135,21 @@ export function CourtModal({
         setPriceDisplay(
           priceValue
             ? currencyUtils.formatCurrencyInput(priceValue.toString())
-            : ""
+            : "",
         );
         setValue("image", court.image || "");
         setValue(
           "openingHours",
-          court.openingHours || OpeningHoursType.REGULAR
+          court.openingHours || OpeningHoursType.REGULAR,
         );
+        setValue("courtsideCourtId", court.courtsideCourtId || null);
 
         // Load schedule from operatingHours (for both REGULAR and WITHOUT_FIXED)
         // This provides baseline when switching from REGULAR to WITHOUT_FIXED
         if (court.operatingHours && court.operatingHours.length > 0) {
           console.log(
             "Loading schedule from DB operatingHours:",
-            court.operatingHours
+            court.operatingHours,
           );
 
           const scheduleData: any = {};
@@ -165,7 +167,7 @@ export function CourtModal({
           daysOfWeek.forEach((day) => {
             const dayUpper = day.toUpperCase();
             const operatingHour = court.operatingHours?.find(
-              (oh) => oh.dayOfWeek === dayUpper
+              (oh) => oh.dayOfWeek === dayUpper,
             );
 
             if (operatingHour) {
@@ -214,6 +216,7 @@ export function CourtModal({
           image: undefined,
           openingHours: OpeningHoursType.REGULAR,
           schedule,
+          courtsideCourtId: null,
         });
         setPriceDisplay(currencyUtils.formatCurrencyInput("200000"));
         setTimeSlots(slots);
@@ -307,7 +310,7 @@ export function CourtModal({
     day: string,
     index: number,
     field: "openHour" | "closeHour",
-    value: string
+    value: string,
   ) => {
     const newSlots = [...timeSlots[day]];
     newSlots[index] = { ...newSlots[index], [field]: value };
@@ -358,7 +361,7 @@ export function CourtModal({
 
   // Validation function to check if time slots are in correct sequence
   const validateTimeSlots = (
-    slots: Array<{ openHour: string; closeHour: string }>
+    slots: Array<{ openHour: string; closeHour: string }>,
   ) => {
     for (let i = 0; i < slots.length; i++) {
       const currentSlot = slots[i];
@@ -459,6 +462,37 @@ export function CourtModal({
             <div className="h-full">
               {" "}
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {/* Integration Settings Section - At top with special styling */}
+                <div className="space-y-4 p-4 border border-dashed border-primary/50 rounded-lg bg-primary/5">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700">
+                      Integration Settings
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Configure third-party integrations for this court
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="courtsideCourtId"
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Courtside Court ID
+                    </Label>
+                    <Input
+                      id="courtsideCourtId"
+                      placeholder="Enter Courtside Court ID"
+                      {...register("courtsideCourtId")}
+                      className="w-full h-11"
+                      disabled={isViewMode}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      External court identifier from the Courtside system
+                    </p>
+                  </div>
+                </div>
+
                 {/* Court Name */}
                 <div className="space-y-2">
                   <Label
@@ -695,7 +729,7 @@ export function CourtModal({
                                           day,
                                           index,
                                           "openHour",
-                                          e.target.value
+                                          e.target.value,
                                         )
                                       }
                                       className="w-full p-2 border rounded-md text-sm"
@@ -706,7 +740,7 @@ export function CourtModal({
                                           <option key={time} value={time}>
                                             {time}
                                           </option>
-                                        )
+                                        ),
                                       )}
                                     </select>
                                   </div>
@@ -721,14 +755,14 @@ export function CourtModal({
                                           day,
                                           index,
                                           "closeHour",
-                                          e.target.value
+                                          e.target.value,
                                         )
                                       }
                                       className="w-full p-2 border rounded-md text-sm"
                                       disabled={isViewMode}
                                     >
                                       {getAvailableCloseHours(
-                                        slot.openHour
+                                        slot.openHour,
                                       ).map((time) => (
                                         <option key={time} value={time}>
                                           {time}

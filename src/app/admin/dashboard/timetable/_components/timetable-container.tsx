@@ -33,7 +33,7 @@ export type {
 function defaultTransformBookingToDetail(
   booking: Booking,
   venueName: string,
-  courtName: string
+  courtName: string,
 ): BookingDetail {
   return {
     id: booking.id,
@@ -80,6 +80,7 @@ export function TimetableContainer({
   isLoadingTable = false,
   onAddBooking,
   onSelectEmptySlot,
+  onRefresh,
   canCreateBooking = false,
   isLoadingPermission = false,
 }: TimetableProps & {
@@ -89,18 +90,20 @@ export function TimetableContainer({
     startTime: string;
     endTime?: string;
   }) => void;
+  onRefresh?: () => void;
   canCreateBooking: boolean;
   isLoadingPermission: boolean;
 }) {
   const [selectedDate, setSelectedDate] = React.useState<Date>(
-    initialDate || new Date()
+    initialDate || new Date(),
   );
   const [selectedBooking, setSelectedBooking] =
     React.useState<BookingDetail | null>(null);
   const [modalOpen, setModalOpen] = React.useState(false);
   const [cancelModalOpen, setCancelModalOpen] = React.useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = React.useState(false);
-  const [confirmNoShowModalOpen, setConfirmNoShowModalOpen] = React.useState(false);
+  const [confirmNoShowModalOpen, setConfirmNoShowModalOpen] =
+    React.useState(false);
   const [dragState, setDragState] = React.useState<{
     court: Court;
     startSlot: string;
@@ -122,13 +125,13 @@ export function TimetableContainer({
       const bookingDetail = transformBookingToDetail(
         booking,
         venueName,
-        courtName
+        courtName,
       );
       setSelectedBooking(bookingDetail);
       setModalOpen(true);
       setCancelModalOpen(false);
     },
-    [transformBookingToDetail, venueName]
+    [transformBookingToDetail, venueName],
   );
 
   // Handle mark booking as complete
@@ -166,11 +169,11 @@ export function TimetableContainer({
   const handleCloseConfirmBookingModal = () => {
     if (selectedBooking) {
       setConfirmModalOpen(false);
-      setModalOpen(true)
+      setModalOpen(true);
     }
   };
 
-   const handleOpenConfirmNoShowBookingModal = () => {
+  const handleOpenConfirmNoShowBookingModal = () => {
     if (selectedBooking) {
       setModalOpen(false);
       setConfirmNoShowModalOpen(true);
@@ -180,7 +183,7 @@ export function TimetableContainer({
   const handleCloseConfirmNoShowBookingModal = () => {
     if (selectedBooking) {
       setConfirmNoShowModalOpen(false);
-      setModalOpen(true)
+      setModalOpen(true);
     }
   };
 
@@ -229,7 +232,7 @@ export function TimetableContainer({
         endTime: getNextHour(timeSlot),
       });
     },
-    [handleCellClick, onSelectEmptySlot]
+    [handleCellClick, onSelectEmptySlot],
   );
 
   const renderBookingCell = React.useCallback<TimetableRenderCell>(
@@ -240,7 +243,7 @@ export function TimetableContainer({
         court.id,
         bookings ?? [],
         selectedDate,
-        timeSlots
+        timeSlots,
       );
 
       const isFirstSlot = bookingInfo?.isFirstSlot ?? false;
@@ -306,7 +309,7 @@ export function TimetableContainer({
         />
       );
     },
-    [bookings, handleCellInteraction, dragState]
+    [bookings, handleCellInteraction, dragState],
   );
 
   // Handle mouse up to complete drag and open booking sheet
@@ -362,6 +365,7 @@ export function TimetableContainer({
         selectedDate={selectedDate}
         isLoading={isLoadingTable}
         onDateChange={handleDateChange}
+        onRefresh={onRefresh}
         renderCell={renderBookingCell}
       />
 
@@ -384,15 +388,15 @@ export function TimetableContainer({
 
       <ConfirmCompleteBookingModal
         open={confirmModalOpen}
-        onOpenChange={handleCloseConfirmBookingModal}        
+        onOpenChange={handleCloseConfirmBookingModal}
         onCompleteBooking={handleMarkAsComplete}
       />
 
       <ConfirmNoShowBookingModal
         open={confirmNoShowModalOpen}
-        onOpenChange={handleCloseConfirmNoShowBookingModal}        
+        onOpenChange={handleCloseConfirmNoShowBookingModal}
         onMarkBookingAsNoShow={handleMarkAsNoShow}
-        />
+      />
     </div>
   );
 }

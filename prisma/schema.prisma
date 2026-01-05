@@ -146,6 +146,9 @@ model Venue {
   openHour    String   // ex: "07:00"
   closeHour   String   // ex: "23:00"
 
+  // Courtside Integration
+  courtsideApiKey String?  // Encrypted API key for Courtside integration
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   createdBy   User     @relation(fields: [createdById], references: [id])
@@ -165,6 +168,9 @@ model Court {
   price       Int
   openingType OpeningHoursType @default(REGULAR)
   image       String?  // URL gambar court (optional)
+
+  // Courtside Integration
+  courtsideCourtId String?  // External court ID from Courtside system
 
   venue     Venue   @relation(fields: [venueId], references: [id], onDelete: Cascade)
   venueId   String
@@ -251,7 +257,7 @@ model Booking {
   duration         Int           // Total duration: jumlah slots
   totalPrice       Int
   status           BookingStatus
-  courtsideCourtId String?
+  courtsideBookingId String[] @default([])
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 

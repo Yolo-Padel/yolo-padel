@@ -4,6 +4,7 @@ import { getOrderById } from "@/lib/services/order.service";
 import { getPaymentByOrderId } from "@/lib/services/payment.service";
 import { createXenditInvoiceForOrder } from "@/lib/services/xendit-payment.service";
 import { createInvoiceSchema } from "@/lib/validations/xendit.validation";
+import config from "@/config.json";
 
 /**
  * POST /api/order/[id]/xendit/invoice
@@ -12,14 +13,14 @@ import { createInvoiceSchema } from "@/lib/validations/xendit.validation";
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const tokenResult = await verifyAuth(request);
     if (!tokenResult.isValid) {
       return NextResponse.json(
         { success: false, message: tokenResult.error },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -31,14 +32,14 @@ export async function POST(
     if (!order) {
       return NextResponse.json(
         { success: false, message: "Order not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (order.userId !== user.userId) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -47,7 +48,7 @@ export async function POST(
     if (!payment) {
       return NextResponse.json(
         { success: false, message: "Payment not found for this order" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -65,7 +66,7 @@ export async function POST(
       externalId: body.externalId || payment.id,
       amount: body.amount || payment.amount,
       payerEmail: body.payerEmail || user.email,
-      description: body.description || `Order ${order.orderCode}`,
+      description: body.description || `Order payment for YOLO padel`,
       invoiceDuration: body.invoiceDuration || 900, // 15 minutes default
       //   paymentMethods: body.paymentMethods || ["QRIS", "OVO", "DANA"],
       successRedirectUrl:
@@ -121,7 +122,7 @@ export async function POST(
           message: "Validation error",
           errors: validation.error.format(),
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -147,7 +148,7 @@ export async function POST(
           success: false,
           message: result.message,
         },
-        { status: 502 }
+        { status: 502 },
       );
     }
 
@@ -163,7 +164,7 @@ export async function POST(
           xenditInvoice: result.data,
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("[API] Create Xendit invoice error:", error);
@@ -175,7 +176,7 @@ export async function POST(
             ? error.message
             : "Failed to create Xendit invoice",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
