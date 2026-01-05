@@ -363,9 +363,6 @@ async function syncBookingsToCourtside(
       // Parse booking date
       const bookingDate = parseDateToLocal(originalBookingData.date);
 
-      // Track first Courtside booking ID for storage
-      let firstCourtsideBookingId: string | null = null;
-
       // Create Courtside booking for each slot group
       for (const slotGroup of slotGroups) {
         // Build Courtside payload (Requirements 3.1-3.10)
@@ -413,18 +410,6 @@ async function syncBookingsToCourtside(
             );
           });
         }
-      }
-
-      // Requirement 1.4: Store first Courtside booking ID in booking record
-      if (firstCourtsideBookingId) {
-        await prisma.booking.update({
-          where: { id: createdBooking.id },
-          data: { courtsideBookingId: firstCourtsideBookingId },
-        });
-
-        console.log(
-          `[Courtside Sync] Stored Courtside booking ID ${firstCourtsideBookingId} for booking ${createdBooking.bookingCode}`,
-        );
       }
     } catch (error) {
       // Fire-and-forget: Log error but don't fail the order
