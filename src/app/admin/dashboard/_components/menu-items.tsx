@@ -1,40 +1,39 @@
-"use client"
+"use client";
 
-import { usePathname } from "next/navigation"
-import Link from "next/link"
-import {
-  type LucideIcon,
-} from "lucide-react"
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { type LucideIcon } from "lucide-react";
 
 import {
   SidebarGroup,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 export function MenuItems({
   menuItems,
 }: {
   menuItems: {
-    name: string  
-    url: string
-    icon: LucideIcon
-  }[]
+    name: string;
+    url: string;
+    icon: LucideIcon;
+  }[];
 }) {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]">
       <SidebarMenu>
         {menuItems.map((item) => {
-          const isActive = pathname === item.url
-          
+          const isActive = pathname === item.url;
+
           return (
             <SidebarMenuItem key={item.name}>
-              <SidebarMenuButton 
-                asChild 
+              <SidebarMenuButton
+                asChild
                 isActive={isActive}
+                className="data-[active=true]:bg-primary-blue data-[active=true]:text-primary-blue-foreground"
               >
                 <Link href={item.url}>
                   <item.icon />
@@ -42,9 +41,9 @@ export function MenuItems({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          )
+          );
         })}
       </SidebarMenu>
     </SidebarGroup>
-  )
+  );
 }
