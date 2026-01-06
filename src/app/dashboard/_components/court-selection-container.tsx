@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { usePublicCourtByVenue } from "@/hooks/use-court";
 import { useMemo, useEffect } from "react";
 import Image from "next/image";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar, CalendarDayButton } from "@/components/ui/calendar";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { UseFormReturn } from "react-hook-form";
 import {
@@ -209,7 +209,7 @@ export function CourtSelectionContainer({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-0 right-0 h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
+            className="absolute top-0 right-0 h-8 w-8 rounded-full bg-brand hover:bg-brand/90"
             onClick={onClose}
           >
             <X className="h-4 w-4" />
@@ -245,14 +245,14 @@ export function CourtSelectionContainer({
                 <TabsTrigger
                   key={venue.id}
                   value={venue.id}
-                  className="pb-2 data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-b-primary data-[state=active]:shadow-none rounded-none text-muted-foreground"
+                  className="pb-2 data-[state=active]:bg-transparent data-[state=active]:text-brand data-[state=active]:border-b-2 data-[state=active]:border-b-brand data-[state=active]:shadow-none rounded-none text-muted-foreground"
                 >
                   {venue.name}
                 </TabsTrigger>
               );
             })}
           </TabsList>
-          <Separator />
+          <Separator className="bg-brand/40" />
         </div>
       </Tabs>
 
@@ -291,7 +291,7 @@ export function CourtSelectionContainer({
                       className={cn(
                         "relative rounded-lg overflow-hidden group cursor-pointer border transition-all flex-shrink-0",
                         isActive
-                          ? "ring-2 ring-primary border-primary shadow-lg"
+                          ? "ring-2 ring-brand border-brand shadow-lg"
                           : "",
                       )}
                       style={{ width: "140px", height: "90px" }}
@@ -312,8 +312,8 @@ export function CourtSelectionContainer({
                         {court.name}
                       </div>
                       {isInBookings && (
-                        <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1.5 shadow-md">
-                          <Check className="h-3 w-3 text-black" />
+                        <div className="absolute top-2 right-2 bg-brand text-white rounded-full p-1.5 shadow-md">
+                          <Check className="size-4" />
                         </div>
                       )}
                     </div>
@@ -378,7 +378,20 @@ export function CourtSelectionContainer({
                 // Otherwise will be reset to empty
               }}
               showOutsideDays
-              className="w-full border rounded-sm"
+              className="w-full border border-brand/40 rounded-sm"
+              components={{
+                DayButton(props) {
+                  return (
+                    <CalendarDayButton
+                      {...props}
+                      className={cn(
+                        props.className,
+                        "data-[selected-single=true]:bg-brand/40",
+                      )}
+                    />
+                  );
+                },
+              }}
               disabled={(date) => {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -395,7 +408,7 @@ export function CourtSelectionContainer({
             <p className="text-sm">Available Time</p>
             <Button
               variant="outline"
-              className="border-primary"
+              className="border-brand/40"
               size="sm"
               onClick={() => {
                 // All slots in allSlots are already filtered (not blocked)
@@ -431,7 +444,7 @@ export function CourtSelectionContainer({
                   <ToggleGroupItem
                     key={slot}
                     value={slot}
-                    className="justify-center border rounded-md data-[state=on]:bg-primary data-[state=on]:text-black"
+                    className="justify-center border border-brand/40 rounded-md data-[state=on]:bg-brand data-[state=on]:text-white"
                   >
                     {slot}
                   </ToggleGroupItem>
@@ -502,7 +515,7 @@ export function CourtSelectionContainer({
 
       {/* Action Button */}
       <Button
-        className="w-full h-11"
+        className="w-full h-11 bg-brand text-brand-foreground hover:bg-brand/90"
         onClick={onProceedToSummary}
         disabled={
           watchBookings.length === 0 ||

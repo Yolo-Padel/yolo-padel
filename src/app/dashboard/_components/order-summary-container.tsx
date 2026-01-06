@@ -204,7 +204,7 @@ export function OrderSummaryContainer({
         <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-10 rounded-full bg-primary hover:bg-primary/90"
+          className="h-10 w-10 rounded-full bg-brand hover:bg-brand/90 text-white"
           onClick={onBack}
         >
           <ChevronLeft className="h-5 w-5" />
@@ -225,7 +225,7 @@ export function OrderSummaryContainer({
           return (
             <div
               key={`${item.courtId}-${index}`}
-              className="border border-primary rounded-lg p-4 space-y-2"
+              className="border border-brand/40 rounded-lg p-4 space-y-2"
             >
               <div className="flex gap-3">
                 {/* Court Image */}
@@ -313,7 +313,7 @@ export function OrderSummaryContainer({
 
       {/* Action Button */}
       <Button
-        className="w-full h-11"
+        className="w-full h-11 bg-brand text-brand-foreground hover:bg-brand/90"
         onClick={handleSubmit}
         disabled={isProcessing}
       >
