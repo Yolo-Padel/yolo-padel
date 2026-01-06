@@ -24,7 +24,10 @@ export function BookingHeader({
         </Badge>
       </div>
       {canCreateBooking && !isLoadingPermission && (
-        <Button onClick={onAddBooking}>
+        <Button
+          onClick={onAddBooking}
+          className="bg-brand text-brand-foreground hover:bg-brand/90"
+        >
           <Plus className="size-4" />
           Add Booking
         </Button>

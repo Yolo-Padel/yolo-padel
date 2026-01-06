@@ -463,7 +463,7 @@ export function CourtModal({
               {" "}
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {/* Integration Settings Section - At top with special styling */}
-                <div className="space-y-4 p-4 border border-dashed border-primary/50 rounded-lg bg-primary/5">
+                <div className="space-y-4 p-4 border border-dashed border-brand/50 rounded-lg bg-brand/5">
                   <div>
                     <h3 className="text-sm font-medium text-gray-700">
                       Integration Settings
@@ -628,7 +628,7 @@ export function CourtModal({
                       <RadioGroupItem
                         value={OpeningHoursType.REGULAR}
                         id="regular"
-                        className="mt-1"
+                        className="mt-1 border-brand text-brand"
                       />
                       <div className="space-y-1">
                         <Label
@@ -647,7 +647,7 @@ export function CourtModal({
                       <RadioGroupItem
                         value={OpeningHoursType.WITHOUT_FIXED}
                         id="without-fixed"
-                        className="mt-1"
+                        className="mt-1 border-brand text-brand"
                       />
                       <div className="space-y-1">
                         <Label
@@ -817,14 +817,14 @@ export function CourtModal({
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                className="flex-1"
+                className="flex-1 border-primary"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1"
+                className="flex-1 bg-brand text-brand-foreground hover:bg-brand/90"
                 onClick={handleSubmit(onSubmit)}
               >
                 {isSubmitting

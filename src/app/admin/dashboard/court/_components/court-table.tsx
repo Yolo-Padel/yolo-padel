@@ -185,7 +185,7 @@ export function CourtTable() {
   const paginationButtonBaseClass =
     "w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]";
   const paginationButtonActiveClass =
-    "bg-primary border-primary hover:bg-primary text-black";
+    "bg-brand border-brand hover:bg-brand/90 text-brand-foreground";
 
   // Reset page to 1 when search changes
   useEffect(() => {
@@ -232,7 +232,7 @@ export function CourtTable() {
             setSelected(null);
             setSheetOpen(true);
           }}
-          className="text-black"
+          className="bg-brand text-brand-foreground hover:bg-brand/90"
         >
           Add Court
           <Plus className="ml-2 size-4" />
@@ -265,7 +265,7 @@ export function CourtTable() {
                 setSelected(null);
                 setSheetOpen(true);
               }}
-              className="text-black"
+              className="bg-brand text-brand-foreground hover:bg-brand/90"
             >
               Add Court
               <Plus className="ml-2 size-4" />
@@ -327,6 +327,7 @@ export function CourtTable() {
                           onCheckedChange={(checked: boolean) => {
                             handleAvailabilityToggle(court.id, checked);
                           }}
+                          className="data-[state=checked]:bg-brand"
                         />
                       </div>
                     </TableCell>

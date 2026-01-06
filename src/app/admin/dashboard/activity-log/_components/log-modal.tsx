@@ -40,19 +40,38 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 /**
  * Check if a value looks like a permission object
  */
-const isPermissionObject = (value: unknown): value is { module?: string; permission?: string; allowed?: boolean; moduleId?: string; permissionId?: string } => {
+const isPermissionObject = (
+  value: unknown,
+): value is {
+  module?: string;
+  permission?: string;
+  allowed?: boolean;
+  moduleId?: string;
+  permissionId?: string;
+} => {
   if (!isRecord(value)) return false;
-  return ('module' in value || 'moduleId' in value) && ('permission' in value || 'permissionId' in value);
+  return (
+    ("module" in value || "moduleId" in value) &&
+    ("permission" in value || "permissionId" in value)
+  );
 };
 
 /**
  * Format a permission object to human-readable string
  */
-const formatPermission = (perm: { module?: string; permission?: string; allowed?: boolean; moduleId?: string; permissionId?: string }): string => {
+const formatPermission = (perm: {
+  module?: string;
+  permission?: string;
+  allowed?: boolean;
+  moduleId?: string;
+  permissionId?: string;
+}): string => {
   const moduleName = perm.module || perm.moduleId || "Unknown Module";
-  const permissionName = perm.permission || perm.permissionId || "Unknown Permission";
-  const status = perm.allowed !== undefined ? (perm.allowed ? "enabled" : "disabled") : "";
-  
+  const permissionName =
+    perm.permission || perm.permissionId || "Unknown Permission";
+  const status =
+    perm.allowed !== undefined ? (perm.allowed ? "enabled" : "disabled") : "";
+
   if (status) {
     return `${moduleName}: ${permissionName} (${status})`;
   }
@@ -64,37 +83,44 @@ const formatPermission = (perm: { module?: string; permission?: string; allowed?
  */
 const formatPermissionArray = (permissions: unknown[]): string => {
   if (permissions.length === 0) return "-";
-  
+
   // Check if all items are permission objects
   const allPermissions = permissions.every(isPermissionObject);
-  
+
   if (allPermissions) {
     // Group by module for cleaner display
     const byModule = new Map<string, string[]>();
-    
-    for (const perm of permissions as Array<{ module?: string; permission?: string; allowed?: boolean; moduleId?: string; permissionId?: string }>) {
+
+    for (const perm of permissions as Array<{
+      module?: string;
+      permission?: string;
+      allowed?: boolean;
+      moduleId?: string;
+      permissionId?: string;
+    }>) {
       const moduleName = perm.module || perm.moduleId || "Unknown";
       const permName = perm.permission || perm.permissionId || "Unknown";
-      const status = perm.allowed !== undefined ? (perm.allowed ? "✓" : "✗") : "";
+      const status =
+        perm.allowed !== undefined ? (perm.allowed ? "✓" : "✗") : "";
       const displayPerm = status ? `${permName} ${status}` : permName;
-      
+
       if (!byModule.has(moduleName)) {
         byModule.set(moduleName, []);
       }
       byModule.get(moduleName)!.push(displayPerm);
     }
-    
+
     // Format as "Module: perm1, perm2; Module2: perm3"
     const parts: string[] = [];
     for (const [module, perms] of byModule) {
       parts.push(`${module}: ${perms.join(", ")}`);
     }
-    
+
     return parts.join("; ");
   }
-  
+
   // Fall back to default array formatting
-  return permissions.map(item => formatValue(item)).join(", ");
+  return permissions.map((item) => formatValue(item)).join(", ");
 };
 
 /**
@@ -130,71 +156,74 @@ const formatValue = (value: unknown): string => {
   if (value === null || value === undefined) {
     return "-";
   }
-  
+
   // Handle boolean values
   if (typeof value === "boolean") {
     return value ? "Yes" : "No";
   }
-  
+
   // Handle string values
   if (typeof value === "string") {
     if (value.length === 0) return "-";
-    
+
     // Check if it's a date string
     const dateFormatted = formatDate(value);
     if (dateFormatted) return dateFormatted;
-    
+
     return value;
   }
-  
+
   // Handle number values
   if (typeof value === "number") {
     return String(value);
   }
-  
+
   // Handle arrays
   if (Array.isArray(value)) {
     if (value.length === 0) return "-";
-    
+
     // Check if it's an array of permissions
     if (value.some(isPermissionObject)) {
       return formatPermissionArray(value);
     }
-    
+
     // For short arrays, show all items
     if (value.length <= 3) {
-      return value.map(item => formatValue(item)).join(", ");
+      return value.map((item) => formatValue(item)).join(", ");
     }
-    
+
     // For longer arrays, show count
     return `${value.length} items`;
   }
-  
+
   // Handle permission objects
   if (isPermissionObject(value)) {
     return formatPermission(value);
   }
-  
+
   // Handle other objects
   if (typeof value === "object") {
     // Check if it's a date
     const dateFormatted = formatDate(value);
     if (dateFormatted) return dateFormatted;
-    
+
     // For objects with few keys, show key-value pairs
     const keys = Object.keys(value);
     if (keys.length === 0) return "-";
-    
+
     if (keys.length <= 2) {
       return keys
-        .map(k => `${stringUtils.toTitleCase(k)}: ${formatValue((value as Record<string, unknown>)[k])}`)
+        .map(
+          (k) =>
+            `${stringUtils.toTitleCase(k)}: ${formatValue((value as Record<string, unknown>)[k])}`,
+        )
         .join(", ");
     }
-    
+
     // For larger objects, show summary
     return `${keys.length} properties`;
   }
-  
+
   return String(value);
 };
 
@@ -206,7 +235,7 @@ const extractChanges = (payload?: ChangePayload) => {
   const before = isRecord(payload.before) ? payload.before : {};
   const after = isRecord(payload.after) ? payload.after : {};
   const fields = Array.from(
-    new Set([...Object.keys(before), ...Object.keys(after)])
+    new Set([...Object.keys(before), ...Object.keys(after)]),
   );
 
   return fields
@@ -223,7 +252,7 @@ const extractChanges = (payload?: ChangePayload) => {
     })
     .filter(
       (entry): entry is { key: string; before: unknown; after: unknown } =>
-        entry !== null
+        entry !== null,
     );
 };
 
@@ -240,7 +269,7 @@ export function LogDetails({
   logDetailsProps: LogDetailsProps | null;
 }) {
   const changes = extractChanges(
-    logDetailsProps?.changes as ChangePayload | undefined
+    logDetailsProps?.changes as ChangePayload | undefined,
   );
 
   return (
@@ -249,7 +278,10 @@ export function LogDetails({
       onOpenChange={onOpenChange}
       key={logDetailsProps?.entityId || logDetailsProps?.entityReference}
     >
-      <DialogContent className="max-h-[90vh] flex flex-col overflow-hidden sm:max-w-lg" showCloseButton={false}>
+      <DialogContent
+        className="max-h-[90vh] flex flex-col overflow-hidden sm:max-w-lg"
+        showCloseButton={false}
+      >
         <DialogHeader>
           <div className="flex justify-between">
             <div className="flex flex-col">
@@ -259,9 +291,9 @@ export function LogDetails({
                 {logDetailsProps?.performedBy}
               </DialogDescription>
             </div>
-             <Button
+            <Button
               onClick={() => onOpenChange(false)}
-              className="relative shrink-0 size-8 cursor-pointer h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
+              className="relative shrink-0 size-8 cursor-pointer h-8 w-8 rounded-full bg-brand hover:bg-brand/90 text-brand-foreground"
               aria-label="Close profile modal"
             >
               <X className="size-4" />
@@ -294,20 +326,20 @@ export function LogDetails({
               </span>
 
               <span className="text-muted-foreground">Module</span>
-              <span className="truncate">
-                {logDetailsProps?.module}
-              </span>
+              <span className="truncate">{logDetailsProps?.module}</span>
 
               <span className="text-muted-foreground">Action</span>
               <span className="truncate">
                 {stringUtils.toTitleCase(
-                  logDetailsProps?.action?.split("_")[0] ?? ""
+                  logDetailsProps?.action?.split("_")[0] ?? "",
                 )}
               </span>
 
               <span className="text-muted-foreground">Reference</span>
               <span className="truncate">
-                {logDetailsProps?.entityReference || logDetailsProps?.entityId || "-"}
+                {logDetailsProps?.entityReference ||
+                  logDetailsProps?.entityId ||
+                  "-"}
               </span>
             </div>
           </div>

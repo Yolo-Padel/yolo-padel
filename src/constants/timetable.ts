@@ -86,7 +86,7 @@ export const BOOKING_COLORS = {
   /** Hover background color for booked cells */
   BOOKED_HOVER: "#D4E6D5",
   /** Border color for primary actions */
-  PRIMARY_BORDER: "#C3D223",
+  PRIMARY_BORDER: "brand",
 } as const;
 
 /**

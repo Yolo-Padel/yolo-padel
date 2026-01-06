@@ -156,9 +156,8 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
           </DialogHeader>
 
           <Button
-            variant="ghost"
             size="icon"
-            className="absolute top-0 right-0 h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
+            className="absolute top-0 right-0 h-8 w-8 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
             onClick={() => onOpenChange(false)}
           >
             <X className="h-4 w-4" />
@@ -352,7 +351,7 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
               </Button>
               <Button
                 type="submit"
-                className="flex-1 bg-primary hover:bg-primary/90"
+                className="flex-1 bg-brand text-brand-foreground hover:bg-brand/90"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Processing..." : primaryButtonText}
