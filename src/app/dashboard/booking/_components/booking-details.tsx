@@ -3,7 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Info, XIcon } from "lucide-react";
+import { Info, X } from "lucide-react";
 import { BookingStatus } from "@/types/prisma";
 {
   /*Import Modal*/
@@ -63,7 +63,7 @@ export function SeeBookingDetails({
           >
             <span className="text-xs">
               {stringUtils.toTitleCase(
-                bookingDetails?.status || BookingStatus.PENDING
+                bookingDetails?.status || BookingStatus.PENDING,
               )}
             </span>
           </Badge>
@@ -72,10 +72,6 @@ export function SeeBookingDetails({
             View all information related to your booking.
           </p>
         </div>
-        <XIcon
-          className="top-4 right-4 cursor-pointer bg-primary rounded-full p-2 size-8"
-          onClick={() => onOpenChange(false)}
-        />
       </div>
       {/*Body Content*/}
       <div className="space-y-7">
@@ -104,7 +100,7 @@ export function SeeBookingDetails({
                 day: "numeric",
                 month: "short",
                 year: "numeric",
-              }
+              },
             ) || "-"}
           </div>
 
@@ -140,7 +136,7 @@ export function SeeBookingDetails({
           <div>
             <Button
               onClick={() => onOpenChange(false)}
-              className="w-full p-4 rounded-sm"
+              className="w-full p-4 rounded-sm bg-brand text-brand-foreground hover:bg-brand/90"
             >
               Close
             </Button>
@@ -150,7 +146,7 @@ export function SeeBookingDetails({
           <div>
             <Button
               onClick={() => onOpenChange(false)}
-              className="w-full p-4 rounded-sm"
+              className="w-full p-4 rounded-sm bg-brand text-brand-foreground hover:bg-brand/90"
             >
               Close
             </Button>
@@ -161,7 +157,7 @@ export function SeeBookingDetails({
             <Button
               onClick={() => onOpenChange(false)}
               variant="outline"
-              className="w-full p-4 rounded-sm"
+              className="w-full p-4 rounded-sm bg-brand text-brand-foreground hover:bg-brand/90"
             >
               Close
             </Button>

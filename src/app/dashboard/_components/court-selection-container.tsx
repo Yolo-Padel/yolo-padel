@@ -209,7 +209,7 @@ export function CourtSelectionContainer({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-0 right-0 h-8 w-8 rounded-full bg-brand hover:bg-brand/90"
+            className="absolute top-0 right-0 h-8 w-8 rounded-full bg-brand hover:bg-brand/90 text-brand-foreground hover:text-brand-foreground"
             onClick={onClose}
           >
             <X className="h-4 w-4" />
