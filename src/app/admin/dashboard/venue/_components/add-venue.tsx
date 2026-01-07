@@ -200,7 +200,7 @@ export function VenueFormSheet({
             className="space-y-6"
           >
             {/* Integration Settings Section - At top with special styling */}
-            <div className="space-y-4 p-4 border border-dashed border-primary/50 rounded-lg bg-primary/5">
+            <div className="space-y-4 p-4 border border-dashed border-brand/50 rounded-lg bg-brand/5">
               <div>
                 <h3 className="text-sm font-medium">Integration Settings</h3>
                 <p className="text-xs text-muted-foreground">
@@ -393,7 +393,7 @@ export function VenueFormSheet({
               </Button>
             </SheetClose>
             <Button
-              className="w-1/2 text-black font-normal"
+              className="w-1/2 bg-brand text-brand-foreground hover:bg-brand/90 font-normal"
               type="submit"
               disabled={isSubmitting}
               onClick={handleSubmit(onSubmit as SubmitHandler<any>)}

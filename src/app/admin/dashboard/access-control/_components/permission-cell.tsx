@@ -26,6 +26,7 @@ export function PermissionCell({
         onCheckedChange={onToggle}
         disabled={disabled}
         aria-label={`${permission.action} ${module.label}`}
+        className="data-[state=checked]:bg-brand"
       />
     </TableCell>
   );

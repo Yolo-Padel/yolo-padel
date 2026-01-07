@@ -56,7 +56,7 @@ export function RoleForm({
       await onSubmit(values);
     } catch (error) {
       setFormError(
-        error instanceof Error ? error.message : "Failed to save role"
+        error instanceof Error ? error.message : "Failed to save role",
       );
     }
   });
@@ -109,6 +109,7 @@ export function RoleForm({
                 onCheckedChange={field.onChange}
                 aria-label="Active status of role"
                 disabled={!canEdit}
+                className="data-[state=checked]:bg-brand"
               />
             </div>
           )}
@@ -133,7 +134,11 @@ export function RoleForm({
               Cancel
             </Button>
           ) : null}
-          <Button type="submit" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="bg-brand text-brand-foreground hover:bg-brand/90"
+          >
             {isSubmitting ? "Saving..." : submitLabel}
           </Button>
         </div>

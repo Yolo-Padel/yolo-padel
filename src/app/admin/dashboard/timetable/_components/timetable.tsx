@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar, CalendarDayButton } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
@@ -22,6 +22,7 @@ import {
 } from "@/components/timetable-utils";
 import { BOOKING_COLORS } from "@/constants/timetable";
 import type { Court, TimetableRenderCell } from "@/components/timetable-types";
+import { cn } from "@/lib/utils";
 
 type TimetableProps = {
   courts: Court[];
@@ -111,7 +112,7 @@ export function Timetable({
                       variant="outline"
                       size="sm"
                       onClick={goToPreviousDay}
-                      className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}]`}
+                      className={`border-${BOOKING_COLORS.PRIMARY_BORDER}`}
                       disabled={isLoading}
                     >
                       <ChevronLeft className="h-4 w-4" />
@@ -141,6 +142,19 @@ export function Timetable({
                             }
                           }}
                           disabled={isLoading}
+                          components={{
+                            DayButton(props) {
+                              return (
+                                <CalendarDayButton
+                                  {...props}
+                                  className={cn(
+                                    props.className,
+                                    "data-[selected-single=true]:bg-brand/40",
+                                  )}
+                                />
+                              );
+                            },
+                          }}
                         />
                       </PopoverContent>
                     </Popover>
@@ -149,7 +163,7 @@ export function Timetable({
                       variant="outline"
                       size="sm"
                       onClick={goToNextDay}
-                      className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}]`}
+                      className={`border-${BOOKING_COLORS.PRIMARY_BORDER}`}
                       disabled={isLoading}
                     >
                       <ChevronRight className="h-4 w-4" />
@@ -161,7 +175,7 @@ export function Timetable({
                           variant="outline"
                           size="sm"
                           onClick={goToToday}
-                          className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}]`}
+                          className={`border-${BOOKING_COLORS.PRIMARY_BORDER}`}
                           disabled={isLoading}
                         >
                           Go to Today
@@ -171,7 +185,7 @@ export function Timetable({
                           variant="outline"
                           size="sm"
                           onClick={goToTomorrow}
-                          className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}]`}
+                          className={`border-${BOOKING_COLORS.PRIMARY_BORDER}`}
                           disabled={isLoading}
                         >
                           Tomorrow
@@ -181,7 +195,7 @@ export function Timetable({
                           variant="outline"
                           size="sm"
                           onClick={onRefresh}
-                          className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}]`}
+                          className={`border-${BOOKING_COLORS.PRIMARY_BORDER}`}
                           disabled={isLoading}
                         >
                           <RefreshCw className="h-4 w-4" />
@@ -192,7 +206,7 @@ export function Timetable({
                     {primaryAction && (
                       <Button
                         variant="outline"
-                        className="border-primary"
+                        className="border-brand"
                         size="sm"
                         onClick={primaryAction.onClick}
                         disabled={primaryAction.disabled}

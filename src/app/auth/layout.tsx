@@ -10,7 +10,7 @@ export default function AdminAuthLayout({
         {/* Mobile background image + overlay */}
         <div className="absolute inset-0 lg:hidden">
           <img
-            src="/auth-new-bg.jpg"
+            src="/auth.jpg"
             alt="Background"
             className="h-full w-full object-cover"
           />
@@ -35,9 +35,9 @@ export default function AdminAuthLayout({
       <div className="relative hidden lg:flex p-6">
         <div className="relative w-full h-full rounded-2xl overflow-hidden">
           <img
-            src="/auth-new-bg.jpg"
+            src="/auth.jpg"
             alt="Background"
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover object-[0%_0%]"
           />
           <div className="absolute inset-0 bg-black/[0.18]" />
 

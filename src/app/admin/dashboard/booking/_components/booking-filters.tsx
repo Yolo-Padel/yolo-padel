@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar, CalendarDayButton } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
@@ -93,7 +93,7 @@ export function BookingFilters({
     if (user.userType === "ADMIN") {
       venues = allVenues.filter(
         (venue: { isActive: boolean; isArchived: boolean }) =>
-          venue.isActive && !venue.isArchived
+          venue.isActive && !venue.isArchived,
       );
     }
     // Staff can only see assigned venues
@@ -103,7 +103,7 @@ export function BookingFilters({
           (venue: { id: string; isActive: boolean; isArchived: boolean }) =>
             user.assignedVenueIds.includes(venue.id) &&
             venue.isActive &&
-            !venue.isArchived
+            !venue.isArchived,
         );
       }
     }
@@ -200,7 +200,7 @@ export function BookingFilters({
             variant="outline"
             className={cn(
               "w-[256px] justify-start text-left font-normal",
-              !dateRange && "text-muted-foreground"
+              !dateRange && "text-muted-foreground",
             )}
             aria-label="Filter by date range"
           >
@@ -216,6 +216,19 @@ export function BookingFilters({
             onSelect={handleTempDateRangeChange}
             numberOfMonths={2}
             className="rounded-lg"
+            components={{
+              DayButton(props) {
+                return (
+                  <CalendarDayButton
+                    {...props}
+                    className={cn(
+                      props.className,
+                      "data-[range-start=true]:bg-brand/40 data-[range-end=true]:bg-brand/40",
+                    )}
+                  />
+                );
+              },
+            }}
           />
           <div className="flex items-center gap-2 p-3 border-t">
             <Button
@@ -226,7 +239,11 @@ export function BookingFilters({
             >
               Clear
             </Button>
-            <Button size="sm" onClick={handleApplyDateRange} className="flex-1">
+            <Button
+              size="sm"
+              onClick={handleApplyDateRange}
+              className="flex-1 bg-brand text-brand-foreground hover:bg-brand/90"
+            >
               Apply
             </Button>
           </div>

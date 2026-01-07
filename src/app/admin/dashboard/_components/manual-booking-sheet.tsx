@@ -101,7 +101,7 @@ export function ManualBookingSheet({
 
   const { data: venueData, isLoading: venuesLoading } = useVenue();
   const { data: courtData, isLoading: courtsLoading } = useCourtByVenue(
-    watchVenueId || ""
+    watchVenueId || "",
   );
 
   const manualBooking = useManualBooking();
@@ -181,11 +181,15 @@ export function ManualBookingSheet({
     if (!selectedDate) return slots;
 
     const now = new Date();
-    const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayOnly = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
     const selectedDateOnly = new Date(
       selectedDate.getFullYear(),
       selectedDate.getMonth(),
-      selectedDate.getDate()
+      selectedDate.getDate(),
     );
     const isToday = todayOnly.getTime() === selectedDateOnly.getTime();
 
@@ -470,14 +474,14 @@ export function ManualBookingSheet({
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={manualBooking.isPending}
-                className="flex-1"
+                className="flex-1 border-primary"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={manualBooking.isPending}
-                className="flex-1"
+                className="flex-1 bg-brand text-brand-foreground hover:bg-brand/90"
               >
                 {manualBooking.isPending ? "Processing..." : "Book Now"}
               </Button>

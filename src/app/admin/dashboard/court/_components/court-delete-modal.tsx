@@ -1,44 +1,50 @@
-"use client"
+"use client";
 
-import React from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { X } from 'lucide-react'
-import { useDeleteCourt } from '@/hooks/use-court'
-import { toast } from 'sonner'
+import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
+import { useDeleteCourt } from "@/hooks/use-court";
+import { toast } from "sonner";
 
 type CourtDeleteModalProps = {
-  deleteModalOpen: boolean
-  onOpenChange: (open: boolean) => void
+  deleteModalOpen: boolean;
+  onOpenChange: (open: boolean) => void;
   courtData?: {
-    id: string
-    name: string
-    price: number
-  } | null
-  onSuccess?: () => void
-}
+    id: string;
+    name: string;
+    price: number;
+  } | null;
+  onSuccess?: () => void;
+};
 
 export function CourtDeleteModal({
   deleteModalOpen,
   onOpenChange,
   courtData,
-  onSuccess
+  onSuccess,
 }: CourtDeleteModalProps) {
-  const deleteCourtMutation = useDeleteCourt()
+  const deleteCourtMutation = useDeleteCourt();
 
   const handleDelete = async () => {
-    if (!courtData?.id) return
+    if (!courtData?.id) return;
 
     try {
-      await deleteCourtMutation.mutateAsync(courtData.id)
-      toast.success("Court deleted successfully")
-      onOpenChange(false)
-      onSuccess?.()
+      await deleteCourtMutation.mutateAsync(courtData.id);
+      toast.success("Court deleted successfully");
+      onOpenChange(false);
+      onSuccess?.();
     } catch (error) {
-      console.error("Error deleting court:", error)
-      toast.error("Failed to delete court")
+      console.error("Error deleting court:", error);
+      toast.error("Failed to delete court");
     }
-  }
+  };
 
   return (
     <Dialog open={deleteModalOpen} onOpenChange={onOpenChange}>
@@ -49,14 +55,15 @@ export function CourtDeleteModal({
               Remove Court
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground mt-2">
-             Deleting this court will permanently remove all related booking history and availability settings. Make sure there are no active or upcoming bookings before continuing.
+              Deleting this court will permanently remove all related booking
+              history and availability settings. Make sure there are no active
+              or upcoming bookings before continuing.
             </DialogDescription>
           </DialogHeader>
-          
+
           <Button
-            variant="ghost"
             size="icon"
-            className="absolute top-0 right-0 h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
+            className="absolute top-0 right-0 h-8 w-8 rounded-full bg-brand hover:bg-brand/90 text-brand-foreground"
             onClick={() => onOpenChange(false)}
           >
             <X className="h-4 w-4" />
@@ -84,5 +91,5 @@ export function CourtDeleteModal({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

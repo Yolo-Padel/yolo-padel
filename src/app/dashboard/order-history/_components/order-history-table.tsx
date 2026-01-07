@@ -175,7 +175,7 @@ export default function OrderHistoryTable() {
                   {/* Payment Paid Button */}
                   {paymentStatus === "PAID" && (
                     <Button
-                      className="w-full border-primary"
+                      className="w-full bg-brand text-brand-foreground hover:bg-brand/90"
                       onClick={() => {
                         setSelectedOrder(order);
                         setOrderModal(true);
@@ -190,7 +190,7 @@ export default function OrderHistoryTable() {
                   {paymentStatus === "UNPAID" && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
                       <Button
-                        className="w-full border-primary"
+                        className="w-full bg-primary/20 text-[#6B7413] hover:text-[#6B7413] hover:bg-primary/50"
                         variant="outline"
                         onClick={() => {
                           setSelectedOrder(order);
@@ -201,7 +201,7 @@ export default function OrderHistoryTable() {
                         See Details
                       </Button>
                       <Button
-                        className="w-full"
+                        className="w-full bg-brand text-brand-foreground hover:bg-brand/90"
                         variant="default"
                         onClick={() => {
                           window.open(order.payment?.paymentUrl, "_blank");
@@ -217,7 +217,7 @@ export default function OrderHistoryTable() {
                     paymentStatus === "EXPIRED") && (
                     <div className="grid w-full gap-2">
                       <Button
-                        className="w-full border-primary"
+                        className="w-full bg-brand text-brand-foreground hover:bg-brand/90"
                         onClick={() => {
                           setSelectedOrder(order);
                           setOrderModal(true);

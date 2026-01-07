@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar, CalendarDayButton } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
@@ -196,7 +196,7 @@ export function ActivityLogFilters({
             variant="outline"
             className={cn(
               "w-[256px] justify-start text-left font-normal",
-              !dateRange && "text-muted-foreground"
+              !dateRange && "text-muted-foreground",
             )}
             aria-label="Filter by date range"
           >
@@ -212,6 +212,19 @@ export function ActivityLogFilters({
             onSelect={handleTempDateRangeChange}
             numberOfMonths={2}
             className="rounded-lg"
+            components={{
+              DayButton(props) {
+                return (
+                  <CalendarDayButton
+                    {...props}
+                    className={cn(
+                      props.className,
+                      "data-[range-start=true]:bg-brand/40 data-[range-end=true]:bg-brand/40",
+                    )}
+                  />
+                );
+              },
+            }}
           />
           <div className="flex items-center gap-2 p-3 border-t">
             <Button
@@ -222,7 +235,11 @@ export function ActivityLogFilters({
             >
               Clear
             </Button>
-            <Button size="sm" onClick={handleApplyDateRange} className="flex-1">
+            <Button
+              size="sm"
+              onClick={handleApplyDateRange}
+              className="flex-1 bg-brand text-brand-foreground hover:bg-brand/90"
+            >
               Apply
             </Button>
           </div>

@@ -99,7 +99,7 @@ export function BookingTable({
   const paginationButtonBaseClass =
     "w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]";
   const paginationButtonActiveClass =
-    "bg-primary border-primary hover:bg-primary text-black";
+    "bg-brand border-brand hover:bg-brand/90 text-brand-foreground";
 
   return (
     <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
@@ -191,7 +191,7 @@ export function BookingTable({
                 <div className="flex items-center gap-1">
                   {generatePageNumbers(
                     paginationInfo.pageSafe,
-                    paginationInfo.totalPages
+                    paginationInfo.totalPages,
                   ).map((pageNum, index) => (
                     <div key={index}>
                       {pageNum === "..." ? (
@@ -206,7 +206,7 @@ export function BookingTable({
                           className={cn(
                             paginationButtonBaseClass,
                             pageNum === paginationInfo.pageSafe &&
-                              paginationButtonActiveClass
+                              paginationButtonActiveClass,
                           )}
                         >
                           {pageNum}

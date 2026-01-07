@@ -81,9 +81,8 @@ export function EditVenueDetails({
               Details Venue
             </DialogTitle>
             <Button
-              variant="ghost"
               size="icon"
-              className="absolute top-0 right-0 h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
+              className="absolute top-0 right-0 h-8 w-8 rounded-full bg-brand hover:bg-brand/90 text-brand-foreground"
               onClick={() => onOpenChange(false)}
             >
               <X className="h-4 w-4" />
@@ -123,10 +122,10 @@ export function EditVenueDetails({
             <Button
               variant={canEditVenue ? "outline" : "default"}
               className={cn(
-                "flex-1",
+                "flex-1 border-primary",
                 canEditVenue
                   ? ""
-                  : "bg-destructive text-primary-foreground hover:bg-destructive/90"
+                  : "bg-destructive text-primary-foreground hover:bg-destructive/90",
               )}
               onClick={() => {
                 if (onDeleteVenue) onDeleteVenue();
@@ -137,7 +136,7 @@ export function EditVenueDetails({
           )}
           {canEditVenue && (
             <Button
-              className="bg-[#C3D223] text-black hover:bg-[#A9B920] flex-1"
+              className="bg-brand text-brand-foreground hover:bg-brand/90 flex-1"
               onClick={() => {
                 onOpenChange(false);
                 if (onEditVenue) onEditVenue();

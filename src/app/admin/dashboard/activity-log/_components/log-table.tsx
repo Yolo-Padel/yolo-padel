@@ -74,14 +74,14 @@ export function ActivityLogTable({
   // Local UI state for modal
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<ActivityLogWithUser | null>(
-    null
+    null,
   );
 
   // Pagination button styles (consistent with OrderTable)
   const paginationButtonBaseClass =
     "w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]";
   const paginationButtonActiveClass =
-    "bg-primary text-black border-primary hover:bg-primary";
+    "bg-brand text-black border-brand hover:bg-brand text-brand-foreground";
 
   /**
    * Handle view button click
@@ -169,7 +169,7 @@ export function ActivityLogTable({
                 <div className="flex items-center gap-1">
                   {generatePageNumbers(
                     paginationInfo.pageSafe,
-                    paginationInfo.totalPages
+                    paginationInfo.totalPages,
                   ).map((pageNum, index) => (
                     <div key={index}>
                       {pageNum === "..." ? (
@@ -184,7 +184,7 @@ export function ActivityLogTable({
                           className={cn(
                             paginationButtonBaseClass,
                             pageNum === paginationInfo.pageSafe &&
-                              paginationButtonActiveClass
+                              paginationButtonActiveClass,
                           )}
                         >
                           {pageNum}

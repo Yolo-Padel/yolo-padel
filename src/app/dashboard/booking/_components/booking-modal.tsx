@@ -52,7 +52,7 @@ export function BookingModal({
       | "book-again"
       | "payment-paid"
       | "payment-pending"
-      | "booking-payment"
+      | "booking-payment",
   ) => void;
 }) {
   return (
@@ -62,13 +62,13 @@ export function BookingModal({
       </DialogTitle>
       <DialogContent showCloseButton={false} className="p-8">
         <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-8 right-8 h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
-            onClick={() => onOpenChange(false)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          variant="ghost"
+          size="icon"
+          className="absolute top-8 right-8 h-8 w-8 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
+          onClick={() => onOpenChange(false)}
+        >
+          <X className="h-4 w-4" />
+        </Button>
 
         {/*Booking Details Modal*/}
         {mode === "booking-details" && (

@@ -63,9 +63,9 @@ export function LoginForm({
             type="button"
             size="icon"
             onClick={handleGoBack}
-            className="h-8 w-8 rounded-lg bg-primary hover:bg-primary/90"
+            className="h-8 w-8 rounded-lg bg-brand hover:bg-brand/90 text-white"
           >
-            <ArrowLeft className="h-4 w-4 text-foreground" />
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-2xl font-bold text-white lg:text-foreground">
             Confirm your Email
@@ -84,7 +84,7 @@ export function LoginForm({
           <Button
             type="button"
             onClick={handleCheckEmail}
-            className="w-full bg-primary hover:bg-primary/90 text-foreground flex items-center justify-center gap-2"
+            className="w-full bg-brand hover:bg-brand/90 text-white flex items-center justify-center gap-2"
           >
             Check Email
             <ArrowRight className="h-4 w-4" />
@@ -97,7 +97,7 @@ export function LoginForm({
                 type="button"
                 onClick={handleResendLink}
                 disabled={magicLinkRequestMutation.isPending}
-                className="text-primary hover:text-primary/90 hover:underline disabled:opacity-50 cursor-pointer"
+                className="text-brand hover:text-brand/90 hover:underline disabled:opacity-50 cursor-pointer"
               >
                 {magicLinkRequestMutation.isPending
                   ? "Sending..."
@@ -146,7 +146,7 @@ export function LoginForm({
           <Button
             type="submit"
             disabled={magicLinkRequestMutation.isPending}
-            className="bg-primary hover:bg-primary/90 text-foreground"
+            className="bg-brand hover:bg-brand/90 text-brand-foreground hover:bg-brand/90"
           >
             {magicLinkRequestMutation.isPending
               ? "Sending magic link..."
