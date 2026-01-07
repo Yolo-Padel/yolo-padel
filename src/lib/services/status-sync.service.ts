@@ -14,6 +14,8 @@ import {
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 import { checkOrderCompletion, updateOrderStatus } from "./order.service";
+import { cancelAyoBooking } from "./ayo.service";
+import { CancelAyoBookingSchema } from "../validations/ayo.validation";
 
 type EmailJob =
   | { type: "order_confirmation"; payload: OrderConfirmationEmailData }
@@ -174,6 +176,20 @@ export async function syncPaymentStatusToOrder(
           data: { status: BookingStatus.CANCELLED },
         });
 
+        const cancelExpiredPaymentPromises: Promise<void>[] = [];
+
+        for (const orderBooking of payment.order.bookings) {
+          for (const ayoOrderId of orderBooking.ayoOrderIds) {
+            const payload: CancelAyoBookingSchema = {
+              order_detail_id: ayoOrderId,
+            };
+
+            cancelExpiredPaymentPromises.push(cancelAyoBooking(payload));
+          }
+        }
+
+        await Promise.all(cancelExpiredPaymentPromises);
+
         // Release all blockings (make slots available again)
         await tx.blocking.updateMany({
           where: { bookingId: { in: bookingIds } },
@@ -218,6 +234,20 @@ export async function syncPaymentStatusToOrder(
           where: { id: { in: bookingIds } },
           data: { status: BookingStatus.CANCELLED },
         });
+
+        const cancelFailedPaymentPromises: Promise<void>[] = [];
+
+        for (const orderBooking of payment.order.bookings) {
+          for (const ayoOrderId of orderBooking.ayoOrderIds) {
+            const payload: CancelAyoBookingSchema = {
+              order_detail_id: ayoOrderId,
+            };
+
+            cancelFailedPaymentPromises.push(cancelAyoBooking(payload));
+          }
+        }
+
+        await Promise.all(cancelFailedPaymentPromises);
 
         // Release all blockings
         await tx.blocking.updateMany({

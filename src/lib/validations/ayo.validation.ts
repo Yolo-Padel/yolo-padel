@@ -8,4 +8,9 @@ export const createAyoBookingSchema = z.object({
   total_price: z.int().min(1, { message: "Total price is required" }),
 });
 
+export const cancelAyoBookingSchema = z.object({
+  order_detail_id: z.int().min(1, { message: "Booking ID is required" }),
+});
+
 export type CreateAyoBookingSchema = z.infer<typeof createAyoBookingSchema>;
+export type CancelAyoBookingSchema = z.infer<typeof cancelAyoBookingSchema>;

@@ -1,4 +1,7 @@
-import { CreateAyoBookingSchema } from "../validations/ayo-indonesia.validation";
+import {
+  CancelAyoBookingSchema,
+  CreateAyoBookingSchema,
+} from "../validations/ayo.validation";
 import crypto from "crypto";
 import { bookingService } from "./booking.service";
 
@@ -95,6 +98,44 @@ export async function createAyoBooking(
     createdBookingInternalId,
     data.data.order_detail_id,
   );
+
+  return data;
+}
+
+export async function cancelAyoBooking(request: CancelAyoBookingSchema) {
+  const requestWithToken = {
+    token: AYO_API_TOKEN,
+    order_detail_id: request.order_detail_id,
+  };
+
+  const sortedRequest = sortObjectByKey(requestWithToken);
+
+  const queryString = new URLSearchParams(
+    Object.entries(sortedRequest).map(([key, value]) => [key, String(value)]),
+  ).toString();
+
+  const signature = crypto
+    .createHmac("sha512", AYO_PRIVATE_KEY)
+    .update(queryString)
+    .digest("hex");
+
+  const requestWithSignature = {
+    ...sortedRequest,
+    signature,
+  };
+
+  const response = await fetch(`${AYO_HOST}/${BASE_URL}/cancel-reservation`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requestWithSignature),
+  });
+
+  const data = await response.json();
+
+  console.log("RESPONSE AYOOOO: ", data);
 
   return data;
 }

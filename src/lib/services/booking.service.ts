@@ -26,8 +26,8 @@ import type {
 import { Prisma, Court } from "@prisma/client";
 import { NextBookingInfo } from "@/types/profile";
 import { syncBookingStatusToOrder } from "@/lib/services/status-sync.service";
-import { CreateAyoBookingSchema } from "../validations/ayo-indonesia.validation";
-import { createAyoBooking } from "./ayo-indonesia.service";
+import { CreateAyoBookingSchema } from "../validations/ayo.validation";
+import { createAyoBooking } from "./ayo.service";
 import { format } from "date-fns";
 
 interface TimeSlot {
