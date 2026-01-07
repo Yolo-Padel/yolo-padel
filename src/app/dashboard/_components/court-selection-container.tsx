@@ -41,7 +41,6 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
-import { useActiveCourtsideBlockings } from "@/hooks/use-courtside";
 
 type CourtSelectionContainerProps = {
   form: UseFormReturn<BookingFormValues>;
@@ -117,29 +116,13 @@ export function CourtSelectionContainer({
     date: watchDate || new Date(),
   });
 
-  const { data: courtsideBlockingsData } = useActiveCourtsideBlockings({
-    courtsideCourtId:
-      courtsData.find((court) => court.id === watchCourtId)?.courtsideCourtId ||
-      "",
-    bookingDate: format(watchDate || new Date(), "yyyy-MM-dd"),
-    apiKey:
-      venuesData.find((venue) => venue.id === watchVenueId)?.courtsideApiKey ||
-      "",
-  });
-
-  // Extract blocked time slots from blocking data (+ courtside blocking data)
+  // Extract blocked time slots from blocking data
   const blockedTimeSlots = useMemo(() => {
     const blockedSlots =
       blockingsData?.flatMap((blocking) => blocking.booking.timeSlots) || [];
 
-    // Courtside returns timeSlots as array of hourly slots, flatten them
-    const courtsideBlockedSlots =
-      courtsideBlockingsData?.flatMap(
-        (blocking) => blocking.booking.timeSlots,
-      ) || [];
-
-    return [...blockedSlots, ...courtsideBlockedSlots];
-  }, [blockingsData, courtsideBlockingsData]);
+    return [...blockedSlots];
+  }, [blockingsData]);
 
   // Filter out blocked slots from available slots (HIDE them, don't just disable)
   const allSlots = filterBlockedSlots(operatingHoursSlots, blockedTimeSlots);

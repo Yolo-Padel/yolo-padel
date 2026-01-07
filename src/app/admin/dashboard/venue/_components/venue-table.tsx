@@ -41,8 +41,6 @@ type VenueRow = {
   isActive?: boolean;
   courtsCount?: number;
   bookingsToday?: number;
-  courtsideApiKey?: string | null;
-  hasCourtsideApiKey?: boolean;
 };
 
 const PAGE_SIZE = 10;
@@ -85,8 +83,6 @@ export function VenueTable() {
       isActive: v.isActive ?? true,
       courtsCount: v._counts?.courts ?? 0,
       bookingsToday: v._counts?.bookingsToday ?? 0,
-      courtsideApiKey: (v as any).courtsideApiKey || null,
-      hasCourtsideApiKey: (v as any).hasCourtsideApiKey ?? false,
     }));
   }, [allVenues]);
 
@@ -303,8 +299,6 @@ export function VenueTable() {
                 openHour: selectedVenue.openHour || "07:00",
                 closeHour: selectedVenue.closeHour || "23:00",
                 isActive: selectedVenue.isActive ?? true,
-                courtsideApiKey: selectedVenue.courtsideApiKey || null,
-                hasCourtsideApiKey: selectedVenue.hasCourtsideApiKey ?? false,
               }
             : null
         }

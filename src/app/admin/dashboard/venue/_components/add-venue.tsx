@@ -29,7 +29,6 @@ import {
 } from "@/lib/validations/venue.validation";
 import { FileUploader } from "@/components/file-uploader";
 import { useCreateVenue, useUpdateVenue } from "@/hooks/use-venue";
-import { Eye, EyeOff, X } from "lucide-react";
 
 type VenueFormValues = VenueFormData;
 
@@ -41,20 +40,11 @@ export function VenueFormSheet({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  venueData:
-    | (Partial<VenueFormValues> & {
-        courtsideApiKey?: string | null;
-        hasCourtsideApiKey?: boolean;
-      })
-    | null;
+  venueData: Partial<VenueFormValues> | null;
   mode?: "create" | "edit";
 }) {
   const createMutation = useCreateVenue();
   const updateMutation = useUpdateVenue();
-
-  // State for API key visibility and editing
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [isEditingApiKey, setIsEditingApiKey] = useState(false);
 
   const {
     register,
@@ -76,20 +66,11 @@ export function VenueFormSheet({
       openHour: "07:00",
       closeHour: "23:00",
       isActive: true,
-      courtsideApiKey: null,
     },
   });
 
-  // Track if venue has existing API key (from server)
-  const hasExistingApiKey = mode === "edit" && venueData?.hasCourtsideApiKey;
-  const maskedApiKey = venueData?.courtsideApiKey;
-
   useEffect(() => {
     if (!open) return;
-
-    // Reset API key editing state when sheet opens
-    setIsEditingApiKey(false);
-    setShowApiKey(false);
 
     if (mode === "edit" && venueData) {
       reset({
@@ -103,7 +84,6 @@ export function VenueFormSheet({
         openHour: (venueData as any).openHour ?? "07:00",
         closeHour: (venueData as any).closeHour ?? "23:00",
         isActive: (venueData as any).isActive ?? true,
-        courtsideApiKey: null, // Don't populate with masked value
       });
     } else if (mode === "create") {
       reset({
@@ -117,7 +97,6 @@ export function VenueFormSheet({
         openHour: "07:00",
         closeHour: "23:00",
         isActive: true,
-        courtsideApiKey: null,
       });
     }
   }, [open, mode, reset]);
@@ -125,17 +104,6 @@ export function VenueFormSheet({
   const onSubmit: SubmitHandler<VenueFormValues> = async (values) => {
     // Ensure only single image is submitted
     const imagesOne: string[] = (values.images ?? []).slice(0, 1);
-
-    // Handle API key logic:
-    // - Create mode: always send the value
-    // - Edit mode with existing key: only send if user clicked "Change" (isEditingApiKey)
-    // - Edit mode without existing key: always send the value (user is typing directly)
-    const shouldSendApiKey =
-      mode === "create" || isEditingApiKey || !hasExistingApiKey;
-
-    const apiKeyToSend = shouldSendApiKey
-      ? values.courtsideApiKey || null
-      : undefined; // undefined means don't update
 
     if (mode === "edit" && values.id) {
       await updateMutation.mutateAsync({
@@ -149,7 +117,6 @@ export function VenueFormSheet({
         openHour: values.openHour,
         closeHour: values.closeHour,
         isActive: values.isActive,
-        ...(apiKeyToSend !== undefined && { courtsideApiKey: apiKeyToSend }),
       });
     } else {
       await createMutation.mutateAsync({
@@ -162,22 +129,9 @@ export function VenueFormSheet({
         openHour: values.openHour,
         closeHour: values.closeHour,
         isActive: values.isActive,
-        courtsideApiKey: values.courtsideApiKey || null,
       });
     }
     onOpenChange(false);
-  };
-
-  // Handle clearing the API key
-  const handleClearApiKey = () => {
-    setValue("courtsideApiKey", "");
-    setIsEditingApiKey(true);
-  };
-
-  // Handle starting to edit API key
-  const handleStartEditApiKey = () => {
-    setIsEditingApiKey(true);
-    setValue("courtsideApiKey", "");
   };
 
   return (
@@ -199,76 +153,6 @@ export function VenueFormSheet({
             onSubmit={handleSubmit(onSubmit as SubmitHandler<any>)}
             className="space-y-6"
           >
-            {/* Integration Settings Section - At top with special styling */}
-            <div className="space-y-4 p-4 border border-dashed border-brand/50 rounded-lg bg-brand/5">
-              <div>
-                <h3 className="text-sm font-medium">Integration Settings</h3>
-                <p className="text-xs text-muted-foreground">
-                  Configure third-party integrations for this venue
-                </p>
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Courtside API Key</Label>
-                {mode === "edit" && hasExistingApiKey && !isEditingApiKey ? (
-                  // Show masked value with edit/clear buttons
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 relative">
-                      <Input
-                        type="text"
-                        value={maskedApiKey || ""}
-                        disabled
-                        className="pr-10 bg-muted"
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleStartEditApiKey}
-                    >
-                      Change
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClearApiKey}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  // Show editable input
-                  <div className="relative">
-                    <Input
-                      type={showApiKey ? "text" : "password"}
-                      placeholder="Enter Courtside API key"
-                      {...register("courtsideApiKey")}
-                      className="pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                      onClick={() => setShowApiKey(!showApiKey)}
-                    >
-                      {showApiKey ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </Button>
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  API key for authenticating with the Courtside system
-                </p>
-              </div>
-            </div>
-
             <div className="grid gap-2">
               <Label>
                 Venue Name <span className="text-red-500">*</span>
