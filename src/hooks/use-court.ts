@@ -140,7 +140,7 @@ export const usePublicCourtByVenue = (venueId: string) => {
     queryKey: ["public-court", "venue", venueId],
     queryFn: () => courtPublicApi.getByVenue(venueId),
     enabled: Boolean(venueId),
-    refetchInterval: 1000,
+    // refetchInterval: 1000,
     staleTime: 1000 * 60 * 2,
   });
 };
