@@ -62,7 +62,7 @@ export function TimetableHeader({
           {/* Add Booking Button */}
           {onAddBooking && canCreateBooking && (
             <Button
-              className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}] gap-2`}
+              className={`border-${BOOKING_COLORS.PRIMARY_BORDER} gap-2 bg-brand text-brand-foreground hover:bg-brand/90`}
               onClick={onAddBooking}
               disabled={isLoading || !selectedVenueId || isLoadingPermission}
             >
@@ -77,7 +77,7 @@ export function TimetableHeader({
         <Button
           variant="outline"
           size="sm"
-          className={`border-[${BOOKING_COLORS.PRIMARY_BORDER}] gap-2 shrink-0`}
+          className={`border-${BOOKING_COLORS.PRIMARY_BORDER} gap-2 shrink-0`}
           disabled={isLoading}
         >
           <Filter className="h-4 w-4" />

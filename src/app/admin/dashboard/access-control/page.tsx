@@ -23,7 +23,7 @@ export default function AccessControlPage() {
 
   const handleDelete = async (roleId: string) => {
     const confirmation = window.confirm(
-      "Are you sure you want to delete this role? This action cannot be undone."
+      "Are you sure you want to delete this role? This action cannot be undone.",
     );
 
     if (!confirmation) return;
@@ -67,7 +67,11 @@ export default function AccessControlPage() {
             </p>
           </div>
           {canCreateRole && (
-            <Button asChild disabled={isCreateRolePermissionLoading}>
+            <Button
+              asChild
+              disabled={isCreateRolePermissionLoading}
+              className="bg-brand text-brand-foreground hover:bg-brand/90"
+            >
               <Link href="/admin/dashboard/access-control/create">
                 Create Role
               </Link>

@@ -137,7 +137,11 @@ export default function UsersPage() {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <UserHeader userCount={0} />
-          <Button onClick={handleAddUser} className="text-black">
+          <Button
+            onClick={handleAddUser}
+            className="bg-brand text-brand-foreground"
+            disabled
+          >
             Add User
             <Plus className="ml-0 size-4" />
           </Button>
@@ -172,7 +176,10 @@ export default function UsersPage() {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <UserHeader userCount={apiPagination?.total ?? 0} />
-          <Button onClick={handleAddUser} className="text-black">
+          <Button
+            onClick={handleAddUser}
+            className="bg-brand text-brand-foreground"
+          >
             Add User
             <Plus className="ml-0 size-4" />
           </Button>
@@ -203,7 +210,10 @@ export default function UsersPage() {
         <UserHeader userCount={apiPagination?.total ?? 0} />
 
         {canCreateUser && !isPermissionLoading && (
-          <Button onClick={handleAddUser} className="text-black">
+          <Button
+            onClick={handleAddUser}
+            className="bg-brand text-brand-foreground hover:bg-brand/90"
+          >
             Add User
             <Plus className="ml-0 size-4" />
           </Button>

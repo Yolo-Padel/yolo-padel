@@ -63,7 +63,7 @@ export function OrderDetailsContainer({
       | "payment-instruction"
       | "payment-status"
       | "view-booking"
-      | "change-payment-method"
+      | "change-payment-method",
   ) => void;
   showButtons?: boolean;
 }) {
@@ -91,7 +91,7 @@ export function OrderDetailsContainer({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-0 right-0 h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
+              className="absolute top-0 right-0 h-8 w-8 rounded-full bg-brand hover:bg-brand/90 text-brand-foreground"
               onClick={() => onOpenChange(false)}
             >
               <X className="h-4 w-4" />
@@ -135,7 +135,7 @@ export function OrderDetailsContainer({
               const bookingDate = format(
                 new Date(booking.bookingDate),
                 "d MMM yyyy",
-                { locale: idLocale }
+                { locale: idLocale },
               );
 
               // Format time slots
@@ -196,7 +196,7 @@ export function OrderDetailsContainer({
           <div className={`font-medium`}>
             <Badge
               className={getPaymentStatus(
-                orderDetails?.payment?.status || PaymentStatus.UNPAID
+                orderDetails?.payment?.status || PaymentStatus.UNPAID,
               )}
             >
               {stringUtils.toTitleCase(orderDetails?.payment?.status || "")}
@@ -219,7 +219,7 @@ export function OrderDetailsContainer({
                 {format(
                   new Date(orderDetails.payment.paymentDate),
                   "d MMM yyyy, HH:mm",
-                  { locale: idLocale }
+                  { locale: idLocale },
                 )}
               </div>
             </>
@@ -232,7 +232,7 @@ export function OrderDetailsContainer({
           {orderDetails?.payment?.status === PaymentStatus.PAID && (
             <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
               <Button
-                className="w-full border-primary rounded-sm"
+                className="w-full border-brand text-brand rounded-sm"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
               >
@@ -240,7 +240,7 @@ export function OrderDetailsContainer({
               </Button>
 
               <Button
-                className="w-full rounded-sm"
+                className="w-full rounded-sm bg-brand text-brand-foreground hover:bg-brand"
                 variant="default"
                 onClick={handleDownloadReceipt}
                 disabled={isGenerating}
@@ -254,7 +254,7 @@ export function OrderDetailsContainer({
           {orderDetails?.payment?.status === PaymentStatus.UNPAID && (
             <div className="w-full gap-2">
               <Button
-                className="w-full rounded-sm"
+                className="w-full rounded-sm bg-brand text-brand-foreground hover:bg-brand/90"
                 variant="default"
                 onClick={() => {
                   window.open(orderDetails?.payment?.paymentUrl, "_blank");
@@ -270,7 +270,7 @@ export function OrderDetailsContainer({
             orderDetails?.payment?.status === PaymentStatus.EXPIRED) && (
             <div className="grid grid-cols-1 sm:grid-cols-2 w-full gap-2">
               <Button
-                className="w-full border-primary rounded-sm"
+                className="w-full border-brand text-brand rounded-sm"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
               >
@@ -278,7 +278,7 @@ export function OrderDetailsContainer({
               </Button>
 
               <Button
-                className="w-full rounded-sm"
+                className="w-full rounded-sm bg-brand text-brand-foreground hover:bg-brand"
                 variant="default"
                 onClick={() => ""}
               >

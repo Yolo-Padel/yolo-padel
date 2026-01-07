@@ -22,7 +22,7 @@ export default function AccessControlCreatePage() {
         onSuccess: () => {
           router.push("/admin/dashboard/access-control");
         },
-      }
+      },
     );
   };
 

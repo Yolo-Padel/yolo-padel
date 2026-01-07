@@ -152,7 +152,7 @@ export function VenueTable() {
           <Button
             variant="outline"
             onClick={() => setAddVenueOpen(true)}
-            className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
+            className="font-normal bg-brand  text-brand-foreground hover:bg-brand/90 hover:text-brand-foreground"
           >
             Add Venue
             <PlusIcon className="mr-2 size-4" />
@@ -182,7 +182,7 @@ export function VenueTable() {
             <Button
               variant="outline"
               onClick={() => setAddVenueOpen(true)}
-              className="font-normal bg-[#C3D223] hover:bg-[#A9B920] text-black rounded-sm"
+              className="font-normal bg-brand  text-brand-foreground hover:bg-brand/90 hover:text-brand-foreground"
             >
               Add Venue
               <PlusIcon className="mr-0 size-4" />
@@ -228,13 +228,14 @@ export function VenueTable() {
                     setSelectedVenue(venue);
                     setDetailSheetOpen(true);
                   }}
-                  className="w-full border-primary"
+                  className="w-full bg-primary/20 border-primary/20 text-[#6B7413] hover:text-[#6B7413] hover:bg-primary/50"
                   variant="outline"
                 >
                   See Detail
                 </Button>
                 <Button
                   variant="default"
+                  className="w-full bg-brand text-brand-foreground hover:bg-brand/90 hover:text-brand-foreground"
                   onClick={() =>
                     router.push(`/admin/dashboard/court?venueId=${venue.id}`)
                   }

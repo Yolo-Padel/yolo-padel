@@ -20,7 +20,7 @@ export function HeroSection() {
 
           {/* Right Section - Booking Form */}
           <div className="flex justify-center w-full min-w-0 max-w-full">
-            <div className="w-full min-w-0 max-w-full bg-white rounded-4xl p-6 lg:max-h-[calc(100vh-12rem)] overflow-y-auto overflow-x-hidden">
+            <div className="w-full min-w-0 max-w-full bg-white rounded-4xl p-6 lg:max-h-[calc(100vh-12rem)] overflow-y-auto overflow-x-hidden scrollbar-hide">
               <BookingForm onClose={() => {}} isModal={false} />
             </div>
           </div>
