@@ -27,7 +27,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar, CalendarDayButton } from "@/components/ui/calendar";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -37,6 +37,7 @@ import {
 import { useVenue } from "@/hooks/use-venue";
 import { useCourtByVenue, useAvailableTimeSlots } from "@/hooks/use-court";
 import { useManualBooking } from "@/hooks/use-booking";
+import { cn } from "@/lib/utils";
 
 export type ManualBookingDefaults = {
   venueId?: string;
@@ -411,6 +412,19 @@ export function ManualBookingSheet({
                     <Calendar
                       mode="single"
                       selected={selectedDateObj}
+                      components={{
+                        DayButton(props) {
+                          return (
+                            <CalendarDayButton
+                              {...props}
+                              className={cn(
+                                props.className,
+                                "data-[selected-single=true]:bg-brand",
+                              )}
+                            />
+                          );
+                        },
+                      }}
                       onSelect={(date) => {
                         if (date) {
                           const formatted = formatDateInput(date);
@@ -453,7 +467,7 @@ export function ManualBookingSheet({
                       <ToggleGroupItem
                         key={slot}
                         value={slot}
-                        className="justify-center border rounded-md data-[state=on]:bg-primary data-[state=on]:text-black"
+                        className="justify-center border rounded-md data-[state=on]:bg-brand data-[state=on]:text-white"
                       >
                         {slot}
                       </ToggleGroupItem>
@@ -471,10 +485,9 @@ export function ManualBookingSheet({
             <SheetFooter className="flex flex-row gap-2 w-full px-0">
               <Button
                 type="button"
-                variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={manualBooking.isPending}
-                className="flex-1 border-primary"
+                className="flex-1 border border-primary bg-primary/20 text-black hover:bg-primary/50"
               >
                 Cancel
               </Button>

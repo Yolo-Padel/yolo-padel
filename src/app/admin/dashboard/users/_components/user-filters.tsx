@@ -66,7 +66,7 @@ export function UserFilters({
     if (user.userType === UserType.ADMIN) {
       venues = allVenues.filter(
         (venue: { isActive: boolean; isArchived: boolean }) =>
-          venue.isActive && !venue.isArchived
+          venue.isActive && !venue.isArchived,
       );
     }
     // Staff can only see assigned venues
@@ -76,7 +76,7 @@ export function UserFilters({
           (venue: { id: string; isActive: boolean; isArchived: boolean }) =>
             user.assignedVenueIds.includes(venue.id) &&
             venue.isActive &&
-            !venue.isArchived
+            !venue.isArchived,
         );
       }
     }
@@ -92,7 +92,7 @@ export function UserFilters({
   return (
     <div className="flex items-center gap-4">
       {/* Search Input */}
-      <InputGroup className="flex-1">
+      <InputGroup className="flex-1 border-brand/40">
         <InputGroupInput
           placeholder="Search by name or email..."
           className="w-full"
@@ -107,10 +107,10 @@ export function UserFilters({
 
       {/* User Type Filter */}
       <Select value={userTypeFilter || "all"} onValueChange={onUserTypeChange}>
-        <SelectTrigger className="w-full max-w-[160px]">
+        <SelectTrigger className="w-full max-w-[160px] border-brand/40">
           <SelectValue placeholder="All user types" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className=" border-brand/40">
           <SelectItem value="all">All user types</SelectItem>
           <SelectItem value={UserType.ADMIN}>Admin</SelectItem>
           <SelectItem value={UserType.STAFF}>Staff</SelectItem>
@@ -120,10 +120,10 @@ export function UserFilters({
 
       {/* Status Filter */}
       <Select value={statusFilter || "all"} onValueChange={onStatusChange}>
-        <SelectTrigger className="w-full max-w-[160px]">
+        <SelectTrigger className="w-full max-w-[160px] border-brand/40">
           <SelectValue placeholder="All statuses" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className=" border-brand/40">
           <SelectItem value="all">All statuses</SelectItem>
           <SelectItem value={UserStatus.JOINED}>Joined</SelectItem>
           <SelectItem value={UserStatus.INVITED}>Invited</SelectItem>
@@ -132,10 +132,10 @@ export function UserFilters({
 
       {/* Venue Filter */}
       <Select value={venueFilter || "all"} onValueChange={onVenueChange}>
-        <SelectTrigger className="w-full max-w-[160px]">
+        <SelectTrigger className="w-full max-w-[160px] border-brand/40">
           <SelectValue placeholder="All venues" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className=" border-brand/40">
           <SelectItem value="all">All venues</SelectItem>
           {venues.map((venue) => (
             <SelectItem key={venue.id} value={venue.id}>

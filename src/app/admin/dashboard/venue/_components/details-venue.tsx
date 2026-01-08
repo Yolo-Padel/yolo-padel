@@ -120,9 +120,8 @@ export function EditVenueDetails({
         <div className="mt-6 flex justify-center gap-3 rounded-b-sm">
           {canDeleteVenue && (
             <Button
-              variant={canEditVenue ? "outline" : "default"}
               className={cn(
-                "flex-1 border-primary",
+                "flex-1 border border-primary bg-primary/20 hover:bg-primary/50",
                 canEditVenue
                   ? ""
                   : "bg-destructive text-primary-foreground hover:bg-destructive/90",

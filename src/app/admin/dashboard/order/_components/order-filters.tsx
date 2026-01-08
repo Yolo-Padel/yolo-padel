@@ -59,7 +59,7 @@ export function OrderFilters({
     else if (user.userType === UserType.STAFF) {
       if (user.assignedVenueIds && user.assignedVenueIds.length > 0) {
         venues = allVenues.filter((venue) =>
-          user.assignedVenueIds.includes(venue.id)
+          user.assignedVenueIds.includes(venue.id),
         );
       }
     }
@@ -73,7 +73,7 @@ export function OrderFilters({
 
   return (
     <div className="flex items-center gap-4">
-      <InputGroup className="flex-1">
+      <InputGroup className="flex-1 border-brand/40">
         <InputGroupInput
           placeholder="Search by order code or customer name..."
           className="w-full"
@@ -87,10 +87,10 @@ export function OrderFilters({
       </InputGroup>
 
       <Select value={venueFilter || "all"} onValueChange={onVenueFilterChange}>
-        <SelectTrigger className="w-[200px]">
+        <SelectTrigger className="w-[200px] border-brand/40">
           <SelectValue placeholder="All venues" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="border-brand/40">
           <SelectItem value="all">All venues</SelectItem>
           {venues.map((venue) => (
             <SelectItem key={venue.id} value={venue.id}>
@@ -104,10 +104,10 @@ export function OrderFilters({
         value={paymentStatusFilter || "all"}
         onValueChange={onPaymentStatusFilterChange}
       >
-        <SelectTrigger className="w-[200px]">
+        <SelectTrigger className="w-[200px] border-brand/40">
           <SelectValue placeholder="All status" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="border-brand/40">
           <SelectItem value="all">All status</SelectItem>
           {Object.values(PaymentStatus).map((status) => (
             <SelectItem key={status} value={status}>

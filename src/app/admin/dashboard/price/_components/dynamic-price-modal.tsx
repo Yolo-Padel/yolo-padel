@@ -30,7 +30,7 @@ import {
 } from "@/hooks/use-court-dynamic-price";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar, CalendarDayButton } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
@@ -145,7 +145,7 @@ export function DynamicPriceModal({
       setPriceDisplay(
         priceValue > 0
           ? currencyUtils.formatCurrencyInput(priceValue.toString())
-          : ""
+          : "",
       );
     }
     // Reset the flag after sync
@@ -167,7 +167,7 @@ export function DynamicPriceModal({
       setPriceDisplay(
         initialPrice
           ? currencyUtils.formatCurrencyInput(initialPrice.toString())
-          : ""
+          : "",
       );
     } else {
       setValue("courtId", initialCourtId ?? courts[0]?.id ?? "");
@@ -179,7 +179,7 @@ export function DynamicPriceModal({
       setPriceDisplay(
         priceValue
           ? currencyUtils.formatCurrencyInput(priceValue.toString())
-          : ""
+          : "",
       );
     }
   }, [
@@ -258,12 +258,11 @@ export function DynamicPriceModal({
 
             <Button
               type="button"
-              variant="ghost"
               size="icon"
-              className="absolute top-4 right-4 h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
+              className="absolute top-4 right-4 h-8 w-8 rounded-full bg-brand hover:bg-brand/90 text-brand-foreground"
               onClick={() => onOpenChange(false)}
             >
-              <X className="h-4 w-4 text-black" />
+              <X className="h-4 w-4" />
             </Button>
 
             <div className="mt-6 space-y-4">
@@ -338,9 +337,22 @@ export function DynamicPriceModal({
                           )}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent align="start" className="p-0">
+                      <PopoverContent align="start" className="w-auto p-0">
                         <Calendar
                           mode="single"
+                          components={{
+                            DayButton(props) {
+                              return (
+                                <CalendarDayButton
+                                  {...props}
+                                  className={cn(
+                                    props.className,
+                                    "data-[selected-single=true]:bg-brand",
+                                  )}
+                                />
+                              );
+                            },
+                          }}
                           selected={
                             field.value instanceof Date
                               ? field.value
@@ -379,7 +391,7 @@ export function DynamicPriceModal({
                         onValueChange={(value) => {
                           field.onChange(value);
                           const options = timeOptions.filter(
-                            (time) => time > value
+                            (time) => time > value,
                           );
                           const fallback = options[0] ?? getNextHour(value);
                           setValue("endHour", fallback, {
@@ -498,8 +510,8 @@ export function DynamicPriceModal({
             <Button
               type="submit"
               className={cn(
-                "flex-1 bg-primary hover:bg-primary/90",
-                !showDeleteButton && "w-full"
+                "flex-1 bg-brand hover:bg-brand/90 text-brand-foreground",
+                !showDeleteButton && "w-full",
               )}
               disabled={
                 isSubmitting ||

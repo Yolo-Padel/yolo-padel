@@ -224,7 +224,7 @@ export function VenueTable() {
                     setSelectedVenue(venue);
                     setDetailSheetOpen(true);
                   }}
-                  className="w-full bg-primary/20 border-primary/20 text-[#6B7413] hover:text-[#6B7413] hover:bg-primary/50"
+                  className="w-full bg-primary/20 border border-primary text-black hover:bg-primary/50"
                   variant="outline"
                 >
                   See Detail

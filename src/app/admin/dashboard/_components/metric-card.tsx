@@ -31,15 +31,15 @@ export function MetricCard({
   const percentageChange = comparison?.percentageChange ?? 0;
 
   return (
-    <Card className="flex-1 border-[1.5px] border-border/50 rounded-xl p-5">
+    <Card className="flex-1 border-[1.5px] border-brand/40 rounded-xl p-5">
       <CardContent className="flex flex-col gap-3 p-0">
         <div
           className={cn(
             "rounded-xl size-12 flex items-center justify-center",
-            iconBg
+            iconBg,
           )}
         >
-          <Icon className="size-6 text-[#8a9519]" />
+          <Icon className="size-6 text-brand" />
         </div>
 
         <div className="flex flex-col gap-2">
@@ -60,7 +60,7 @@ export function MetricCard({
           <div
             className={cn(
               "flex items-center gap-1 rounded-md font-medium",
-              isPositive ? "text-[#079455]" : "text-[#D92D20]"
+              isPositive ? "text-[#079455]" : "text-[#D92D20]",
             )}
           >
             {isPositive ? (

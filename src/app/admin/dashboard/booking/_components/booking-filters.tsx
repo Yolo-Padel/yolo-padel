@@ -179,7 +179,7 @@ export function BookingFilters({
   return (
     <div className="flex items-center gap-4">
       {/* Search Input */}
-      <InputGroup className="flex-1">
+      <InputGroup className="flex-1 border-brand/40">
         <InputGroupInput
           placeholder="Search by booking code or customer..."
           className="w-full"
@@ -199,7 +199,7 @@ export function BookingFilters({
           <Button
             variant="outline"
             className={cn(
-              "w-[256px] justify-start text-left font-normal",
+              "w-[256px] justify-start text-left font-normal border-brand/40",
               !dateRange && "text-muted-foreground",
             )}
             aria-label="Filter by date range"
@@ -223,7 +223,7 @@ export function BookingFilters({
                     {...props}
                     className={cn(
                       props.className,
-                      "data-[range-start=true]:bg-brand/40 data-[range-end=true]:bg-brand/40",
+                      "data-[range-start=true]:bg-brand data-[range-end=true]:bg-brand/40",
                     )}
                   />
                 );
@@ -232,10 +232,9 @@ export function BookingFilters({
           />
           <div className="flex items-center gap-2 p-3 border-t">
             <Button
-              variant="outline"
               size="sm"
               onClick={handleClearDateRange}
-              className="flex-1"
+              className="flex-1 bg-primary/20 text-black border border-primary hover:bg-primary/50"
             >
               Clear
             </Button>
@@ -253,7 +252,7 @@ export function BookingFilters({
       {/* Venue Filter */}
       <Select value={venueFilter || "all"} onValueChange={onVenueChange}>
         <SelectTrigger
-          className="w-full max-w-[160px]"
+          className="w-full max-w-[160px] border-brand/40"
           aria-label="Filter by venue"
         >
           <SelectValue placeholder="All venues" />
@@ -271,7 +270,7 @@ export function BookingFilters({
       {/* Status Filter */}
       <Select value={statusFilter || "all"} onValueChange={onStatusChange}>
         <SelectTrigger
-          className="w-full max-w-[160px]"
+          className="w-full max-w-[160px] border-brand/40"
           aria-label="Filter by status"
         >
           <SelectValue placeholder="All statuses" />

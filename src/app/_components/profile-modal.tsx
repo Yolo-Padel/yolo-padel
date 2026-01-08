@@ -168,7 +168,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
           </div>
           <Button
             onClick={() => onOpenChange(false)}
-            className="relative shrink-0 size-8 cursor-pointer h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
+            className="relative shrink-0 size-8 cursor-pointer h-8 w-8 rounded-full bg-brand hover:bg-brand/90 text-white"
             aria-label="Close profile modal"
           >
             <X className="size-4" />
@@ -204,7 +204,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
                       <Badge
                         className={cn(
                           "text-xs font-medium px-2 py-0.5 rounded-[6px]",
-                          badgeConfig.className
+                          badgeConfig.className,
                         )}
                       >
                         {badgeConfig.label}
@@ -298,9 +298,8 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
         <div className="sticky bottom-0 z-10 bg-white flex gap-4 w-full border-t border-border/40">
           <Button
             type="button"
-            variant="outline"
             onClick={handleCancel}
-            className="flex-1 h-10 border-[#c3d223] text-[#262626] font-medium text-sm hover:bg-accent"
+            className="flex-1 h-10 border border-primary bg-primary/20 font-medium text-sm hover:bg-primary/50"
           >
             Cancel
           </Button>
@@ -308,7 +307,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
             type="submit"
             onClick={form.handleSubmit(onSubmit)}
             disabled={!canSubmit}
-            className="flex-1 h-10 bg-[#c3d223] text-[#262626] font-medium text-sm hover:bg-[#c3d223]/90 disabled:opacity-60"
+            className="flex-1 h-10 bg-brand text-brand-foreground font-medium text-sm hover:bg-brand/90 disabled:opacity-60"
           >
             {isSaving ? "Saving..." : "Save Changes"}
           </Button>
