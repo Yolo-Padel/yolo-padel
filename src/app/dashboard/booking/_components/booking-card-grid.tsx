@@ -119,7 +119,7 @@ export function BookingCardGrid({
             <CardFooter className="px-1 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
                 onClick={() => onViewDetails(booking)}
-                className="w-full border-primary bg-primary/20 text-[#6B7413] hover:bg-primary/50"
+                className="w-full border border-primary bg-primary/20 text-black hover:bg-primary/50"
                 variant="outline"
               >
                 See Details
@@ -136,7 +136,7 @@ export function BookingCardGrid({
             <CardFooter className="px-1 pb-1 w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
                 onClick={() => onViewDetails(booking)}
-                className="w-full border-primary bg-primary/20 text-[#6B7413] hover:bg-primary/50"
+                className="w-full border border-primary bg-primary/20 text-black hover:bg-primary/50 "
                 variant="outline"
               >
                 See Details

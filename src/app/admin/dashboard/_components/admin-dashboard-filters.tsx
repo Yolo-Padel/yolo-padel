@@ -212,13 +212,16 @@ export function AdminDashboardFilters({
     <div className="flex items-center gap-4">
       {/* Date Range Picker - Only shown when Custom is selected */}
       {dateFilter === "custom" && (
-        <Popover open={isDatePopoverOpen} onOpenChange={handlePopoverOpenChange}>
+        <Popover
+          open={isDatePopoverOpen}
+          onOpenChange={handlePopoverOpenChange}
+        >
           <PopoverTrigger asChild>
             <Button
               variant="outline"
               className={cn(
                 "w-full sm:w-[300px] justify-start text-left font-normal",
-                !dateRange && "text-muted-foreground"
+                !dateRange && "text-muted-foreground",
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
@@ -236,10 +239,9 @@ export function AdminDashboardFilters({
             />
             <div className="flex items-center gap-2 p-3 border-t">
               <Button
-                variant="outline"
                 size="sm"
                 onClick={handleClearDateRange}
-                className="flex-1"
+                className="flex-1 bg-primary/20 text-black border border-primary hover:bg-primary/50"
               >
                 Clear
               </Button>

@@ -820,9 +820,8 @@ export function CourtModal({
             <div className="flex flex-1 h-fit items-center bg-background gap-3 p-6 border-t rounded-b-3xl">
               <Button
                 type="button"
-                variant="outline"
                 onClick={() => onOpenChange(false)}
-                className="flex-1 border-primary"
+                className="flex-1 border border-primary bg-primary/20 text-black hover:bg-primary/50"
               >
                 Cancel
               </Button>

@@ -123,7 +123,7 @@ export function Timetable({
                         <Button
                           variant="outline"
                           size="sm"
-                          className={`gap-2`}
+                          className={`gap-2 border-${BOOKING_COLORS.PRIMARY_BORDER}`}
                           disabled={isLoading}
                         >
                           <CalendarIcon className="h-4 w-4" />
@@ -149,7 +149,7 @@ export function Timetable({
                                   {...props}
                                   className={cn(
                                     props.className,
-                                    "data-[selected-single=true]:bg-brand/40",
+                                    "data-[selected-single=true]:bg-brand",
                                   )}
                                 />
                               );
@@ -206,7 +206,7 @@ export function Timetable({
                     {primaryAction && (
                       <Button
                         variant="outline"
-                        className="border-brand"
+                        className={`border-${BOOKING_COLORS.PRIMARY_BORDER}`}
                         size="sm"
                         onClick={primaryAction.onClick}
                         disabled={primaryAction.disabled}

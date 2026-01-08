@@ -2,7 +2,7 @@ import { UserCreateData } from "../validations/user.validation";
 import { magicLinkService } from "./magic-link.service";
 import { profileService } from "./profile.service";
 import { usersService } from "./users.service";
-import { resendService } from "./resend.service";
+import { brevoService } from "./brevo.service";
 import { prisma } from "@/lib/prisma";
 import { requirePermission, ServiceContext } from "@/types/service-context";
 import { UserType } from "@/types/prisma";
@@ -44,7 +44,7 @@ export const inviteUserService = {
           {
             fullName: data.fullName,
           },
-          tx
+          tx,
         );
 
         if (!profile.success) {
@@ -67,7 +67,7 @@ export const inviteUserService = {
 
       // Generate magic link
       const magicLink = await magicLinkService.generateMagicLink(
-        inviteResult.data!.user.email
+        inviteResult.data!.user.email,
       );
 
       if (!magicLink.success) {
@@ -79,7 +79,7 @@ export const inviteUserService = {
       }
 
       // Send email
-      const email = await resendService.sendInvitationEmail({
+      const email = await brevoService.sendInvitationEmail({
         email: inviteResult.data!.user.email,
         userName: data.fullName,
         invitationUrl:
@@ -164,7 +164,7 @@ export const inviteUserService = {
       const invitationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify?token=${magicLink.token}`;
       const fullName = user.profile?.fullName || user.email;
 
-      const emailResult = await resendService.sendInvitationEmail({
+      const emailResult = await brevoService.sendInvitationEmail({
         email: user.email,
         userName: fullName,
         invitationUrl,
