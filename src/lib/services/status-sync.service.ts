@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { OrderStatus, BookingStatus, PaymentStatus } from "@/types/prisma";
 import { releaseBlockingsByBookingIds } from "./blocking.service";
-import { resendService } from "./resend.service";
+import { brevoService } from "./brevo.service";
 import type {
   BookingCancelationEmailData,
   OrderConfirmationEmailData,
@@ -290,9 +290,9 @@ export async function syncPaymentStatusToOrder(
   for (const job of emailJobs) {
     try {
       if (job.type === "order_confirmation") {
-        await resendService.sendOrderConfirmationEmail(job.payload);
+        await brevoService.sendOrderConfirmationEmail(job.payload);
       } else {
-        await resendService.sendBookingCancelationEmail(job.payload);
+        await brevoService.sendBookingCancelationEmail(job.payload);
       }
     } catch (error) {
       console.error("[EMAIL] Failed to send transactional email:", {
