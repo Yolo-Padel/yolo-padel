@@ -37,7 +37,7 @@ type MetricItem = {
   };
 };
 
-const CARD_ICON_BG = "bg-[#ecf1bb]";
+const CARD_ICON_BG = "bg-brand/40";
 
 const numberFormatter = new Intl.NumberFormat("id-ID");
 
@@ -52,7 +52,7 @@ function formatPercentage(value?: number | null) {
 }
 
 function buildSuperAdminMetrics(
-  snapshot?: SuperAdminDashboardSnapshot
+  snapshot?: SuperAdminDashboardSnapshot,
 ): MetricItem[] {
   const metrics = snapshot?.metrics;
   const summary = snapshot?.bookingSummary;
@@ -74,7 +74,7 @@ function buildSuperAdminMetrics(
       title: "Total Bookings",
       description: summary
         ? `${formatCount(summary.completed)} completed • ${formatCount(
-            summary.total - summary.completed
+            summary.total - summary.completed,
           )} Others`
         : "Completed • Others",
       value: `${formatCount(summary?.total ?? 0)} Bookings`,
@@ -112,11 +112,11 @@ function buildAdminMetrics(snapshot?: AdminDashboardSnapshot): MetricItem[] {
       title: "Total Bookings",
       description: metrics
         ? `${formatCount(
-            metrics.totalBookings.completed
+            metrics.totalBookings.completed,
           )} Completed • ${formatCount(metrics.totalBookings.upcoming)} Upcoming  • ${formatCount(
             metrics.totalBookings.total -
               metrics.totalBookings.completed -
-              metrics.totalBookings.upcoming
+              metrics.totalBookings.upcoming,
           )} Others`
         : "0 Completed • 0 Upcoming • 0 Others",
       value: `${formatCount(metrics?.totalBookings.total ?? 0)} Bookings`,
@@ -128,7 +128,7 @@ function buildAdminMetrics(snapshot?: AdminDashboardSnapshot): MetricItem[] {
       title: "Court Utilization",
       description: utilization
         ? `${formatCount(utilization.utilizedCourts)} of ${formatCount(
-            utilization.totalActiveCourts
+            utilization.totalActiveCourts,
           )} active courts`
         : "Based on total active courts",
       value: utilization ? formatPercentage(utilization.percentage) : "-",
@@ -181,7 +181,7 @@ export function DashboardMetrics({ userType }: DashboardMetricsProps) {
     return isStaff
       ? buildAdminMetrics(snapshot as AdminDashboardSnapshot | undefined)
       : buildSuperAdminMetrics(
-          snapshot as SuperAdminDashboardSnapshot | undefined
+          snapshot as SuperAdminDashboardSnapshot | undefined,
         );
   }, [snapshot, isStaff]);
 

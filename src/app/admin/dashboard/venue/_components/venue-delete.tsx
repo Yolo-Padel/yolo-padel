@@ -74,16 +74,15 @@ export function DeleteVenue({
         <div className="flex gap-3 pt-4 w-full">
           <Button
             type="button"
-            variant="outline"
             onClick={() => onOpenChange(false)}
-            className="flex-1 border-primary text-gray-700 hover:bg-gray-50"
+            className="flex-1 border border-primary text-black bg-primary/20 hover:bg-primary/50"
             disabled={deleteVenueMutation.isPending}
           >
             Cancel
           </Button>
           <Button
             type="button"
-            className="flex-1 bg-destructive hover:bg-destructive/90 text-white"
+            className="flex-1 bg-brand hover:bg-brand/90 text-white"
             onClick={handleDelete}
             disabled={deleteVenueMutation.isPending}
           >

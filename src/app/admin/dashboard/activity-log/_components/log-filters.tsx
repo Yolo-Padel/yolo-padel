@@ -176,7 +176,7 @@ export function ActivityLogFilters({
   return (
     <div className="flex flex-wrap items-center gap-4">
       {/* Search Input */}
-      <InputGroup className="flex-1 min-w-[250px]">
+      <InputGroup className="flex-1 min-w-[250px] border-brand/40">
         <InputGroupInput
           placeholder="Search by description, user name, or email..."
           className="w-full"
@@ -195,7 +195,7 @@ export function ActivityLogFilters({
           <Button
             variant="outline"
             className={cn(
-              "w-[256px] justify-start text-left font-normal",
+              "w-[256px] justify-start text-left font-normal border-brand/40",
               !dateRange && "text-muted-foreground",
             )}
             aria-label="Filter by date range"
@@ -204,7 +204,7 @@ export function ActivityLogFilters({
             {formatDateRange()}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent className="w-auto p-0 border-brand/40" align="start">
           <Calendar
             mode="range"
             defaultMonth={tempDateRange?.from || dateRange?.from}
@@ -219,7 +219,7 @@ export function ActivityLogFilters({
                     {...props}
                     className={cn(
                       props.className,
-                      "data-[range-start=true]:bg-brand/40 data-[range-end=true]:bg-brand/40",
+                      "data-[range-start=true]:bg-brand data-[range-end=true]:bg-brand",
                     )}
                   />
                 );
@@ -228,10 +228,9 @@ export function ActivityLogFilters({
           />
           <div className="flex items-center gap-2 p-3 border-t">
             <Button
-              variant="outline"
               size="sm"
               onClick={handleClearDateRange}
-              className="flex-1"
+              className="flex-1 bg-primary/20 text-black border border-primary hover:bg-primary/50"
             >
               Clear
             </Button>
@@ -251,10 +250,10 @@ export function ActivityLogFilters({
         value={entityTypeFilter || "all"}
         onValueChange={onEntityTypeChange}
       >
-        <SelectTrigger className="w-[160px]">
+        <SelectTrigger className="w-[160px] border-brand/40">
           <SelectValue placeholder="All entities" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="border-brand/40">
           <SelectItem value="all">All entities</SelectItem>
           {Object.values(ENTITY_TYPES).map((entityType) => (
             <SelectItem key={entityType} value={entityType}>
@@ -269,10 +268,10 @@ export function ActivityLogFilters({
         value={actionTypeFilter || "all"}
         onValueChange={onActionTypeChange}
       >
-        <SelectTrigger className="w-[140px]">
+        <SelectTrigger className="w-[140px] border-brand/40">
           <SelectValue placeholder="All actions" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="border-brand/40">
           <SelectItem value="all">All actions</SelectItem>
           {ACTION_TYPES.map((action) => (
             <SelectItem key={action.value} value={action.value}>

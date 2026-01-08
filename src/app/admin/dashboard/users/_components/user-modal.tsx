@@ -342,9 +342,8 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
             <div className="flex gap-3 pt-4 w-full">
               <Button
                 type="button"
-                variant="outline"
                 onClick={() => onOpenChange(false)}
-                className="flex-1 border-primary text-gray-700 hover:bg-gray-50"
+                className="flex-1 bg-primary/20 text-black hover:bg-primary/60 border border-primary"
                 disabled={isSubmitting}
               >
                 Cancel

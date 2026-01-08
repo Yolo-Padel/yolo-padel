@@ -274,7 +274,7 @@ export function CourtSelectionContainer({
                       className={cn(
                         "relative rounded-lg overflow-hidden group cursor-pointer border transition-all flex-shrink-0",
                         isActive
-                          ? "ring-2 ring-brand border-brand shadow-lg"
+                          ? "ring-1 ring-brand border-brand shadow-lg"
                           : "",
                       )}
                       style={{ width: "140px", height: "90px" }}
@@ -295,7 +295,7 @@ export function CourtSelectionContainer({
                         {court.name}
                       </div>
                       {isInBookings && (
-                        <div className="absolute top-2 right-2 bg-brand text-white rounded-full p-1.5 shadow-md">
+                        <div className="absolute top-2 right-2 bg-primary rounded-full p-1.5 shadow-md">
                           <Check className="size-4" />
                         </div>
                       )}
@@ -341,6 +341,19 @@ export function CourtSelectionContainer({
                   }}
                   showOutsideDays
                   className="w-full"
+                  components={{
+                    DayButton(props) {
+                      return (
+                        <CalendarDayButton
+                          {...props}
+                          className={cn(
+                            props.className,
+                            "data-[selected-single=true]:bg-brand",
+                          )}
+                        />
+                      );
+                    },
+                  }}
                   disabled={(date) => {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
@@ -369,7 +382,7 @@ export function CourtSelectionContainer({
                       {...props}
                       className={cn(
                         props.className,
-                        "data-[selected-single=true]:bg-brand/40",
+                        "data-[selected-single=true]:bg-brand",
                       )}
                     />
                   );

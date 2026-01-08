@@ -127,7 +127,7 @@ export function RoleForm({
           {onCancel ? (
             <Button
               type="button"
-              variant="outline"
+              className="bg-primary/20 text-black border border-primary hover:bg-primary/50"
               onClick={onCancel}
               disabled={isSubmitting}
             >

@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { ManualBookingInput } from "@/lib/validations/manual-booking.validation";
 import { bookingService, createBooking } from "@/lib/services/booking.service";
 import { createBlocking } from "@/lib/services/blocking.service";
-import { resendService } from "@/lib/services/resend.service";
+import { brevoService } from "@/lib/services/brevo.service";
 import {
   activityLogService,
   entityReferenceHelpers,
@@ -263,7 +263,7 @@ export const manualBookingService = {
       };
 
       const emailResult =
-        await resendService.sendManualBookingConfirmationEmail(emailPayload);
+        await brevoService.sendManualBookingConfirmationEmail(emailPayload);
 
       if (!emailResult.success) {
         console.error(

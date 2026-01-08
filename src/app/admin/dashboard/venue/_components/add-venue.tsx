@@ -270,7 +270,7 @@ export function VenueFormSheet({
           <div className="flex justify-between gap-2 w-full">
             <SheetClose asChild>
               <Button
-                className="w-1/2 text-black font-normal"
+                className="w-1/2 text-black font-normal bg-primary/20 border border-primary hover:bg-primary/50"
                 variant="outline"
               >
                 Close
