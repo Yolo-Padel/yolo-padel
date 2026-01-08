@@ -26,7 +26,7 @@ import type { PrismaTransaction } from "@/types/prisma-transaction";
 export async function createBlocking(
   bookingId: string,
   description: string = "Booking slot locked",
-  tx?: PrismaTransaction
+  tx?: PrismaTransaction,
 ): Promise<Blocking> {
   const client = tx || prisma;
 
@@ -58,7 +58,7 @@ export async function releaseBlocking(blockingId: string): Promise<Blocking> {
  * Release blocking by booking ID
  */
 export async function releaseBlockingByBookingId(
-  bookingId: string
+  bookingId: string,
 ): Promise<Blocking | null> {
   const blocking = await prisma.blocking.findUnique({
     where: { bookingId },
@@ -90,7 +90,7 @@ export async function releaseBlockings(blockingIds: string[]): Promise<number> {
  * Release blockings by booking IDs
  */
 export async function releaseBlockingsByBookingIds(
-  bookingIds: string[]
+  bookingIds: string[],
 ): Promise<number> {
   const result = await prisma.blocking.updateMany({
     where: {
@@ -108,7 +108,7 @@ export async function releaseBlockingsByBookingIds(
  */
 export async function getActiveBlockings(
   courtId: string,
-  date: Date
+  date: Date,
 ): Promise<
   Array<{
     id: string;
@@ -173,7 +173,7 @@ export async function isSlotBlocked(
   courtId: string,
   date: Date,
   slotOpenHour: string,
-  slotCloseHour: string
+  slotCloseHour: string,
 ): Promise<boolean> {
   const activeBlockings = await getActiveBlockings(courtId, date);
 
@@ -193,7 +193,7 @@ export async function isSlotBlocked(
  * Get blocking by booking ID
  */
 export async function getBlockingByBookingId(
-  bookingId: string
+  bookingId: string,
 ): Promise<Blocking | null> {
   const blocking = await prisma.blocking.findUnique({
     where: { bookingId },
@@ -209,7 +209,7 @@ export async function getBlockingByBookingId(
  */
 export async function getActiveBlockingsByVenueAndDate(
   venueId: string,
-  date: Date
+  date: Date,
 ): Promise<
   Array<{
     id: string;
@@ -220,7 +220,7 @@ export async function getActiveBlockingsByVenueAndDate(
       courtId: string;
       bookingCode: string;
       source: string;
-      userId: string;
+      userId: string | null;
       bookingDate: Date;
       status: string;
       totalPrice: number;
@@ -234,7 +234,7 @@ export async function getActiveBlockingsByVenueAndDate(
           fullName: string | null;
           avatar: string | null;
         } | null;
-      };
+      } | null;
       court: {
         id: string;
         name: string;

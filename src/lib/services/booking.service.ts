@@ -932,7 +932,8 @@ export const bookingService = {
             openHour: slot.openHour,
             closeHour: slot.closeHour,
           })),
-          customerName: booking.user.profile?.fullName || booking.user.email,
+          customerName:
+            booking.user?.profile?.fullName || booking.user?.email || "Player",
           courtName: booking.court.name,
           venueName: booking.court.venue.name,
         })),
@@ -1634,7 +1635,7 @@ export interface GetBookingsForAdminResult {
           fullName: string | null;
           avatar: string | null;
         } | null;
-      };
+      } | null;
       court: {
         id: string;
         name: string;
