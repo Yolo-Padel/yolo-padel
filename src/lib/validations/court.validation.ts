@@ -38,7 +38,7 @@ export const courtCreateSchema = z
         sunday: dayScheduleSchema,
       })
       .optional(),
-    courtsideCourtId: z.string().optional().nullable(),
+    ayoFieldId: z.number().int().optional().nullable(),
   })
   .refine(
     (data) => {

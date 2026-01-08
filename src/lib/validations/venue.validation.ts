@@ -15,7 +15,6 @@ export const venueFormSchema = z.object({
   openHour: z.string().default("07:00"),
   closeHour: z.string().default("23:00"),
   isActive: z.boolean().default(true),
-  courtsideApiKey: z.string().optional().nullable(),
 });
 
 // Create schema (for API)
@@ -31,7 +30,6 @@ export const venueCreateSchema = z.object({
   openHour: z.string().optional().default("07:00"),
   closeHour: z.string().optional().default("23:00"),
   isActive: z.boolean().optional().default(true),
-  courtsideApiKey: z.string().optional().nullable(),
 });
 
 // Update schema (for API)
@@ -46,7 +44,6 @@ export const venueUpdateSchema = z.object({
   openHour: z.string().optional(),
   closeHour: z.string().optional(),
   isActive: z.boolean().optional(),
-  courtsideApiKey: z.string().optional().nullable(),
 });
 
 // Delete Venue (soft delete)

@@ -12,7 +12,7 @@ type PrismaBooking = {
   id: string;
   bookingCode: string;
   courtId: string;
-  userId: string;
+  userId: string | null;
   bookingDate: string | Date;
   source: string;
   status: string;
@@ -26,7 +26,11 @@ type PrismaBooking = {
       fullName: string | null;
       avatar: string | null;
     } | null;
-  };
+  } | null;
+  // AYO booking metadata (when user is null)
+  ayoBookerName?: string | null;
+  ayoBookerPhone?: string | null;
+  ayoBookerEmail?: string | null;
   court: {
     id: string;
     name: string;
@@ -96,8 +100,11 @@ export function transformPrismaBookingToTimetable(
       id: booking.id,
       courtId: booking.courtId,
       userId: booking.userId,
-      userName: booking.user.profile?.fullName || "Unknown User",
-      userAvatar: booking.user.profile?.avatar || undefined,
+      userName:
+        booking.user?.profile?.fullName ||
+        booking.ayoBookerName ||
+        "Unknown User",
+      userAvatar: booking.user?.profile?.avatar || undefined,
       bookingDate: new Date(booking.bookingDate),
       timeSlots: booking.timeSlots,
       status: booking.status as TimetableBooking["status"],
@@ -183,7 +190,7 @@ export function transformPrismaBookingToDetail(
     id: booking.id,
     source: booking.source,
     status: booking.status as BookingStatus,
-    userName: booking.user.profile?.fullName || "Unknown User",
+    userName: booking.user?.profile?.fullName || "Unknown User",
     venueName,
     courtName,
     bookingDate: new Date(booking.bookingDate),
@@ -226,8 +233,8 @@ export function transformPrismaBlockingToTimetable(
     id: blocking.booking.id,
     courtId: blocking.booking.courtId,
     userId: blocking.booking.userId,
-    userName: blocking.booking.user.profile?.fullName || "Unknown User",
-    userAvatar: blocking.booking.user.profile?.avatar || undefined,
+    userName: blocking.booking.user?.profile?.fullName || "Unknown User",
+    userAvatar: blocking.booking.user?.profile?.avatar || undefined,
     bookingDate: new Date(blocking.booking.bookingDate),
     timeSlots: blocking.booking.timeSlots,
     status: blocking.booking.status as TimetableBooking["status"],

@@ -61,7 +61,7 @@ type Court = {
       closeHour: string;
     }>;
   }>;
-  courtsideCourtId?: string | null;
+  ayoFieldId?: number | null;
 };
 
 const PAGE_SIZE = 10;
@@ -132,7 +132,7 @@ export function CourtTable() {
         image: (court as any).image,
         openingHours: court.openingType,
         operatingHours: operatingHours,
-        courtsideCourtId: court.courtsideCourtId,
+        ayoFieldId: court.ayoFieldId,
       };
     });
   }, [courtData, venueData]);
@@ -449,7 +449,7 @@ export function CourtTable() {
                   openingHours:
                     selected.openingHours || OpeningHoursType.REGULAR,
                   operatingHours: selected.operatingHours || [],
-                  courtsideCourtId: selected.courtsideCourtId || null,
+                  ayoFieldId: selected.ayoFieldId || null,
                 };
               })()
             : undefined

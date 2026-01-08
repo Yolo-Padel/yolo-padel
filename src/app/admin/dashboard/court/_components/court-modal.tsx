@@ -53,7 +53,7 @@ interface CourtModalProps {
         closeHour: string;
       }>;
     }>;
-    courtsideCourtId?: string | null;
+    ayoFieldId?: number | null;
     // Add other court properties as needed
   };
 }
@@ -142,7 +142,7 @@ export function CourtModal({
           "openingHours",
           court.openingHours || OpeningHoursType.REGULAR,
         );
-        setValue("courtsideCourtId", court.courtsideCourtId || null);
+        setValue("ayoFieldId", court.ayoFieldId || null);
 
         // Load schedule from operatingHours (for both REGULAR and WITHOUT_FIXED)
         // This provides baseline when switching from REGULAR to WITHOUT_FIXED
@@ -216,7 +216,7 @@ export function CourtModal({
           image: undefined,
           openingHours: OpeningHoursType.REGULAR,
           schedule,
-          courtsideCourtId: null,
+          ayoFieldId: null,
         });
         setPriceDisplay(currencyUtils.formatCurrencyInput("200000"));
         setTimeSlots(slots);
@@ -475,20 +475,25 @@ export function CourtModal({
 
                   <div className="space-y-2">
                     <Label
-                      htmlFor="courtsideCourtId"
+                      htmlFor="ayoFieldId"
                       className="text-sm font-medium text-gray-700"
                     >
-                      Courtside Court ID
+                      Ayo Field ID
                     </Label>
                     <Input
-                      id="courtsideCourtId"
-                      placeholder="Enter Courtside Court ID"
-                      {...register("courtsideCourtId")}
+                      id="ayoFieldId"
+                      placeholder="Enter Ayo Field ID"
+                      {...register("ayoFieldId", {
+                        valueAsNumber: true,
+                        setValueAs: (v) =>
+                          v === "" || Number.isNaN(v) ? null : v,
+                      })}
                       className="w-full h-11"
                       disabled={isViewMode}
                     />
                     <p className="text-xs text-muted-foreground">
-                      External court identifier from the Courtside system
+                      External court identifier from the AYO system. can be
+                      retrieved from /list-fields.
                     </p>
                   </div>
                 </div>

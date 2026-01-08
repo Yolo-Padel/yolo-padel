@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     if (!tokenResult.isValid) {
       return NextResponse.json(
         { success: false, message: tokenResult.error },
-        { status: 401 }
+        { status: 401 },
       );
     }
     const { user } = tokenResult;
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
           success: false,
           message: "Invalid user authentication",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
             userIdLength: user.userId?.length,
           },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueIds
+      user.assignedVenueIds,
     );
 
     // Create order with bookings
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
         taxAmount: data.taxAmount,
         bookingFee: data.bookingFee,
       },
-      serviceContext
+      serviceContext,
     );
 
     // Response includes fee breakdown per Requirements 1.3, 2.3, 3.3
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
         message: "Order created successfully",
         data: order,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("[API] Create order error:", error);
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
         message:
           error instanceof Error ? error.message : "Failed to create order",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
     if (!tokenResult.isValid) {
       return NextResponse.json(
         { success: false, message: tokenResult.error },
-        { status: 401 }
+        { status: 401 },
       );
     }
     const { user } = tokenResult;
@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
           message: "Validation error",
           errors: validation.error,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -180,7 +180,7 @@ export async function GET(request: NextRequest) {
         message:
           error instanceof Error ? error.message : "Failed to get orders",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
