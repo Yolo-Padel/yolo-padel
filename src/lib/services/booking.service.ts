@@ -23,9 +23,33 @@ import type {
   SuperAdminDashboardSnapshot,
   TodaysBookingCollection,
 } from "@/types/booking-dashboard";
-import { Prisma } from "@prisma/client";
+import { Prisma, Court } from "@prisma/client";
 import { NextBookingInfo } from "@/types/profile";
 import { syncBookingStatusToOrder } from "@/lib/services/status-sync.service";
+import { CreateAyoBookingSchema } from "../validations/ayo.validation";
+import { createAyoBooking } from "./ayo.service";
+import { format } from "date-fns";
+
+interface TimeSlot {
+  openHour: string; // "HH:mm" format
+  closeHour: string; // "HH:mm" format
+}
+
+/**
+ * Check if two time slots are continuous (adjacent)
+ * Slots are continuous if the first slot's closeHour equals the second slot's openHour
+ *
+ * @param slot1 - First time slot
+ * @param slot2 - Second time slot
+ * @returns true if slots are continuous, false otherwise
+ *
+ * @example
+ * areContinuousSlots({ openHour: "10:00", closeHour: "11:00" }, { openHour: "11:00", closeHour: "12:00" }) // true
+ * areContinuousSlots({ openHour: "10:00", closeHour: "11:00" }, { openHour: "13:00", closeHour: "14:00" }) // false
+ */
+export function areContinuousSlots(slot1: TimeSlot, slot2: TimeSlot): boolean {
+  return slot1.closeHour === slot2.openHour;
+}
 
 /**
  * Parse date string (YYYY-MM-DD) and return Date object representing start of day in local timezone
@@ -908,7 +932,8 @@ export const bookingService = {
             openHour: slot.openHour,
             closeHour: slot.closeHour,
           })),
-          customerName: booking.user.profile?.fullName || booking.user.email,
+          customerName:
+            booking.user?.profile?.fullName || booking.user?.email || "Player",
           courtName: booking.court.name,
           venueName: booking.court.venue.name,
         })),
@@ -1185,7 +1210,6 @@ export const bookingService = {
           duration: booking.duration,
           totalPrice: booking.totalPrice,
           status: BookingStatus.PENDING,
-          courtsideBookingId: [],
           // Create time slots
           timeSlots: {
             create: booking.timeSlots.map((slot) => ({
@@ -1535,12 +1559,12 @@ export const bookingService = {
       };
     }
   },
-  storeCourtsideBookingId: async (id: string, courtsideBookingId: string) => {
+  storeAyoOrderId: async (id: string, ayoOrderId: number) => {
     try {
       const booking = await prisma.$transaction(async (tx) => {
         const updatedBooking = await tx.booking.update({
           where: { id },
-          data: { courtsideBookingId: { push: courtsideBookingId } },
+          data: { ayoOrderIds: { push: ayoOrderId } },
         });
 
         return updatedBooking;
@@ -1549,17 +1573,15 @@ export const bookingService = {
       return {
         success: true,
         data: booking,
-        message: "Store courtside booking id successful",
+        message: "Store ayo order id successful",
       };
     } catch (error) {
-      console.error("Store courtside booking id error:", error);
+      console.error("Store ayo order id error:", error);
       return {
         success: false,
         data: null,
         message:
-          error instanceof Error
-            ? error.message
-            : "Store courtside booking id failed",
+          error instanceof Error ? error.message : "Store ayo order id failed",
       };
     }
   },
@@ -1613,7 +1635,7 @@ export interface GetBookingsForAdminResult {
           fullName: string | null;
           avatar: string | null;
         } | null;
-      };
+      } | null;
       court: {
         id: string;
         name: string;
@@ -2055,6 +2077,137 @@ export async function getBookingsForAdmin(
 }
 
 /**
+ * Represents a time range with start and end times
+ */
+export interface TimeRange {
+  startTime: string; // "HH:mm:ss" format
+  endTime: string; // "HH:mm:ss" format
+}
+
+/**
+ * Groups continuous time slots and returns simplified time ranges.
+ * Similar to groupContinuousSlots but returns only start and end times.
+ *
+ * @param slots - Array of time slots to group
+ * @returns Array of time ranges, each containing startTime and endTime
+ *
+ * @example
+ * // Continuous slots: single range
+ * groupContinuousSlotsToTimeRanges([
+ *   { openHour: "10:00", closeHour: "11:00" },
+ *   { openHour: "11:00", closeHour: "12:00" }
+ * ])
+ * // Returns: [{ startTime: "10:00", endTime: "12:00" }]
+ *
+ * @example
+ * // Non-continuous slots: multiple ranges
+ * groupContinuousSlotsToTimeRanges([
+ *   { openHour: "10:00", closeHour: "11:00" },
+ *   { openHour: "13:00", closeHour: "14:00" }
+ * ])
+ * // Returns: [
+ * //   { startTime: "10:00", endTime: "11:00" },
+ * //   { startTime: "13:00", endTime: "14:00" }
+ * // ]
+ */
+export function groupContinuousSlotsToTimeRanges(
+  slots: TimeSlot[],
+): TimeRange[] {
+  if (slots.length === 0) {
+    return [];
+  }
+
+  // Sort slots by openHour to ensure proper ordering
+  const sortedSlots = [...slots].sort((a, b) =>
+    a.openHour.localeCompare(b.openHour),
+  );
+
+  const ranges: TimeRange[] = [];
+  let currentGroup: TimeSlot[] = [sortedSlots[0]];
+
+  for (let i = 1; i < sortedSlots.length; i++) {
+    const previousSlot = sortedSlots[i - 1];
+    const currentSlot = sortedSlots[i];
+
+    if (areContinuousSlots(previousSlot, currentSlot)) {
+      currentGroup.push(currentSlot);
+    } else {
+      // Gap detected, finalize current group and start new one
+      ranges.push({
+        startTime: formatTimeToHHMMSS(currentGroup[0].openHour),
+        endTime: formatTimeToHHMMSS(
+          currentGroup[currentGroup.length - 1].closeHour,
+        ),
+      });
+      currentGroup = [currentSlot];
+    }
+  }
+
+  // Add the last group
+  ranges.push({
+    startTime: formatTimeToHHMMSS(currentGroup[0].openHour),
+    endTime: formatTimeToHHMMSS(
+      currentGroup[currentGroup.length - 1].closeHour,
+    ),
+  });
+
+  return ranges;
+}
+
+/**
+ * Formats a time string to HH:mm:ss format.
+ * Handles both "HH:mm" and "HH:mm:ss" input formats.
+ */
+function formatTimeToHHMMSS(time: string): string {
+  // If already has seconds, return as-is
+  if (time.length === 8) {
+    return time;
+  }
+  // Otherwise append :00
+  return `${time}:00`;
+}
+
+/**
+ * Sync Bookings to AYO indonesia external system
+ *
+ * This function handles the integration with AYO Indonesia for each booking in an order.
+ * It runs AFTER the main transaction completes to avoid blocking order creation.
+ *
+ * Key Behaviors:
+ * - Groups continuous time slots into single AYO bookings
+ * - Creates multiple AYO bookings for non-continuous slots
+ */
+async function syncBookingToAyo(
+  booking: Booking & { court: Court } & {
+    timeSlots: Array<{ openHour: string; closeHour: string }>;
+  },
+  price: number,
+) {
+  try {
+    const slotGroups = groupContinuousSlotsToTimeRanges(booking.timeSlots);
+
+    for (const slotGroup of slotGroups) {
+      if (booking.court.ayoFieldId) {
+        const payload: CreateAyoBookingSchema = {
+          date: format(booking.bookingDate, "yyyy-MM-dd"),
+          field_id: booking.court.ayoFieldId,
+          start_time: slotGroup.startTime,
+          end_time: slotGroup.endTime,
+          total_price: price,
+        };
+
+        createAyoBooking(payload, booking.id);
+      }
+    }
+  } catch (error) {
+    console.error(
+      `[AYO Sync] Error syncing booking ${booking.bookingCode} to AYO system:`,
+      error,
+    );
+  }
+}
+
+/**
  * Create a booking with time slots
  * Supports both standalone mode (uses prisma) and transaction mode (uses tx parameter)
  *
@@ -2096,7 +2249,9 @@ export async function createBooking(
   },
   tx?: PrismaTransaction,
 ): Promise<
-  Booking & { timeSlots: Array<{ openHour: string; closeHour: string }> }
+  Booking & { court: Court } & {
+    timeSlots: Array<{ openHour: string; closeHour: string }>;
+  }
 > {
   const client = tx || prisma;
 
@@ -2117,8 +2272,11 @@ export async function createBooking(
     },
     include: {
       timeSlots: true,
+      court: true,
     },
   });
+
+  syncBookingToAyo(booking, data.totalPrice);
 
   return booking;
 }

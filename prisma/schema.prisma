@@ -146,9 +146,6 @@ model Venue {
   openHour    String   // ex: "07:00"
   closeHour   String   // ex: "23:00"
 
-  // Courtside Integration
-  courtsideApiKey String?  // Encrypted API key for Courtside integration
-
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   createdBy   User     @relation(fields: [createdById], references: [id])
@@ -169,8 +166,8 @@ model Court {
   openingType OpeningHoursType @default(REGULAR)
   image       String?  // URL gambar court (optional)
 
-  // Courtside Integration
-  courtsideCourtId String?  // External court ID from Courtside system
+  // AYO Integration
+  ayoFieldId Int?  // External court ID from AYO system
 
   venue     Venue   @relation(fields: [venueId], references: [id], onDelete: Cascade)
   venueId   String
@@ -248,22 +245,22 @@ model MagicLink {
 model Booking {
   id               String        @id @default(cuid())
   courtId          String
-  userId           String
+  userId           String?       // Nullable for AYO bookings without user data
   orderId          String?       // Nullable for backward compatibility
-  source           String        // flag for booking created by YOLO / Courtside system
+  source           String        // flag for booking created by YOLO / AYO system
   bookingDate      DateTime          @db.Date
   bookingHour      String?       // Deprecated, keep for backward compatibility
   bookingCode      String        @unique
   duration         Int           // Total duration: jumlah slots
   totalPrice       Int
   status           BookingStatus
-  courtsideBookingId String[] @default([])
+  ayoOrderIds Int[] @default([])
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
   // Relations
   court     Court             @relation(fields: [courtId], references: [id], onDelete: Cascade)
-  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
   order     Order?            @relation(fields: [orderId], references: [id], onDelete: Cascade)
   payments  Payment[]
   blocking  Blocking?

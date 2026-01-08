@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { OrderStatus, BookingStatus, PaymentStatus } from "@/types/prisma";
 import { releaseBlockingsByBookingIds } from "./blocking.service";
-import { checkOrderCompletion, updateOrderStatus } from "./order.service";
 import { resendService } from "./resend.service";
 import type {
   BookingCancelationEmailData,
@@ -14,7 +13,9 @@ import {
 } from "./activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
-import { cancelCourtsideBooking } from "./courtside.service";
+import { checkOrderCompletion, updateOrderStatus } from "./order.service";
+import { cancelAyoBooking } from "./ayo.service";
+import { CancelAyoBookingSchema } from "../validations/ayo.validation";
 
 type EmailJob =
   | { type: "order_confirmation"; payload: OrderConfirmationEmailData }
@@ -89,7 +90,6 @@ export async function syncPaymentStatusToOrder(
                     venue: {
                       select: {
                         name: true,
-                        courtsideApiKey: true,
                       },
                     },
                   },
@@ -117,14 +117,7 @@ export async function syncPaymentStatusToOrder(
     });
 
     const bookingIds = payment.order.bookings.map((b) => b.id);
-    const courtsideApiKey =
-      payment.order.bookings[0]?.court?.venue?.courtsideApiKey;
-    const courtsideBookingIds = [];
-    for (const booking of payment.order.bookings) {
-      if (booking.blocking) {
-        courtsideBookingIds.push(booking.courtsideBookingId);
-      }
-    }
+
     const customerEmail = payment.order.user?.email || null;
     const customerName = getCustomerName(payment.order.user);
 
@@ -183,19 +176,19 @@ export async function syncPaymentStatusToOrder(
           data: { status: BookingStatus.CANCELLED },
         });
 
-        if (courtsideApiKey) {
-          for (const bookings of courtsideBookingIds) {
-            for (const courtsideBookingId of bookings) {
-              cancelCourtsideBooking({
-                apiKey: courtsideApiKey,
-                id: courtsideBookingId,
-                type: "booking-court",
-                cancel_note: "Payment Expired on YOLO system",
-                email: "dummy@gmail.com",
-              });
-            }
+        const cancelExpiredPaymentPromises: Promise<void>[] = [];
+
+        for (const orderBooking of payment.order.bookings) {
+          for (const ayoOrderId of orderBooking.ayoOrderIds) {
+            const payload: CancelAyoBookingSchema = {
+              order_detail_id: ayoOrderId,
+            };
+
+            cancelExpiredPaymentPromises.push(cancelAyoBooking(payload));
           }
         }
+
+        await Promise.all(cancelExpiredPaymentPromises);
 
         // Release all blockings (make slots available again)
         await tx.blocking.updateMany({
@@ -242,19 +235,19 @@ export async function syncPaymentStatusToOrder(
           data: { status: BookingStatus.CANCELLED },
         });
 
-        if (courtsideApiKey) {
-          for (const bookings of courtsideBookingIds) {
-            for (const courtsideBookingId of bookings) {
-              cancelCourtsideBooking({
-                apiKey: courtsideApiKey,
-                id: courtsideBookingId,
-                type: "booking-court",
-                cancel_note: "Payment Expired on YOLO system",
-                email: "dummy@gmail.com",
-              });
-            }
+        const cancelFailedPaymentPromises: Promise<void>[] = [];
+
+        for (const orderBooking of payment.order.bookings) {
+          for (const ayoOrderId of orderBooking.ayoOrderIds) {
+            const payload: CancelAyoBookingSchema = {
+              order_detail_id: ayoOrderId,
+            };
+
+            cancelFailedPaymentPromises.push(cancelAyoBooking(payload));
           }
         }
+
+        await Promise.all(cancelFailedPaymentPromises);
 
         // Release all blockings
         await tx.blocking.updateMany({

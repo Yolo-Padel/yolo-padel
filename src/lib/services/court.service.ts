@@ -21,7 +21,6 @@ import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 import { vercelBlobService } from "@/lib/services/vercel-blob.service";
 import { getDayOfWeekKey } from "@/lib/booking-slots-utils";
-import { fetchCourtsideBookingsForSlots } from "@/lib/services/courtside.service";
 
 export const courtService = {
   // Get all courts with venue and schedule info
@@ -283,7 +282,7 @@ export const courtService = {
           image: data.image, // Now mandatory from validation
           openingType: data.openingHours,
           venueId: data.venueId,
-          courtsideCourtId: data.courtsideCourtId ?? null,
+          ayoFieldId: data.ayoFieldId ?? null,
         },
       });
 
@@ -379,7 +378,7 @@ export const courtService = {
             price: data.price,
             openingType: data.openingHours,
             venueId: data.venueId,
-            courtsideCourtId: data.courtsideCourtId ?? null,
+            ayoFieldId: data.ayoFieldId ?? null,
           },
         } as any,
       });
@@ -459,7 +458,7 @@ export const courtService = {
           image: data.image, // Now mandatory from validation
           openingType: data.openingHours,
           venueId: data.venueId,
-          courtsideCourtId: data.courtsideCourtId ?? null,
+          ayoFieldId: data.ayoFieldId ?? null,
         },
       });
 
@@ -555,9 +554,9 @@ export const courtService = {
           price: data.price,
           openingType: data.openingHours,
           venueId: data.venueId,
-          courtsideCourtId: data.courtsideCourtId ?? null,
+          ayoFieldId: data.ayoFieldId ?? null,
         } as any,
-        ["name", "price", "openingType", "venueId", "courtsideCourtId"] as any,
+        ["name", "price", "openingType", "venueId", "ayoFieldId"] as any,
       );
 
       activityLogService.record({
@@ -728,18 +727,13 @@ export const courtService = {
   // Returns breakdown of hourly slots with availability check
   getAvailableTimeSlots: async (courtId: string, date: Date) => {
     try {
-      // 1. Get court with operating hours and venue (for courtside integration)
+      // 1. Get court with operating hours and venue
       const court = await prisma.court.findUnique({
         where: { id: courtId },
         include: {
           operatingHours: {
             include: {
               slots: true,
-            },
-          },
-          venue: {
-            select: {
-              courtsideApiKey: true,
             },
           },
         },
@@ -842,17 +836,6 @@ export const courtService = {
             closeHour: slot.closeHour,
           });
         }
-      }
-
-      // 7. Fetch courtside bookings if court has courtside integration
-      if (court.courtsideCourtId && court.venue?.courtsideApiKey) {
-        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-        const courtsideBookedRanges = await fetchCourtsideBookingsForSlots(
-          court.venue.courtsideApiKey,
-          court.courtsideCourtId,
-          dateStr,
-        );
-        bookedRanges.push(...courtsideBookedRanges);
       }
 
       // 8. Helper function to check if a slot overlaps with booked ranges

@@ -24,7 +24,7 @@ export type Court = {
 export type Booking = {
   id: string;
   courtId: string;
-  userId: string;
+  userId: string | null;
   userName: string;
   userAvatar?: string;
   bookingDate: Date;
@@ -55,7 +55,7 @@ export type TimetableProps = {
   transformBookingToDetail?: (
     booking: Booking,
     venueName: string,
-    courtName: string
+    courtName: string,
   ) => BookingDetail;
   onMarkAsComplete?: (bookingId: string) => void;
   onMarkAsNoShow?: (bookingId: string) => void;
@@ -100,5 +100,5 @@ export type TimetableRenderCellParams = {
 };
 
 export type TimetableRenderCell = (
-  params: TimetableRenderCellParams
+  params: TimetableRenderCellParams,
 ) => ReactNode;

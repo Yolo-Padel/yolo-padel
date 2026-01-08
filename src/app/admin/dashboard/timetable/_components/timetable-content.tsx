@@ -10,7 +10,6 @@ import { TimetableEmptyState } from "@/components/timetable-empty-state";
 import { useVenue } from "@/hooks/use-venue";
 import { useCourtByVenue } from "@/hooks/use-court";
 import { useBlockingByVenueAndDate } from "@/hooks/use-blocking";
-import { useCourtsideBlockingsByVenue } from "@/hooks/use-courtside";
 import {
   transformPrismaBlockingToTimetable,
   transformPrismaCourtToTimetable,
@@ -87,16 +86,6 @@ export function TimetableContent() {
     refetch: refetchBlockings,
   } = useBlockingByVenueAndDate(selectedVenueId, normalizedDate);
 
-  // Fetch courtside blockings for the venue
-  const {
-    data: courtsideBlockingsData,
-    isLoading: courtsideBlockingsLoading,
-    refetch: refetchCourtsideBlockings,
-  } = useCourtsideBlockingsByVenue({
-    venueId: selectedVenueId,
-    bookingDate: normalizedDate,
-  });
-
   const { mutate: updateBookingStatusMutation } = useUpdateBookingStatus();
 
   // Transform venues data
@@ -121,32 +110,13 @@ export function TimetableContent() {
     return transformPrismaCourtToTimetable(courtsData.data, normalizedDate);
   }, [courtsData, normalizedDate]);
 
-  // Transform blockings data (internal + courtside)
+  // Transform blockings data (internal)
   const bookings: Booking[] = useMemo(() => {
     const internalBookings = blockingsData
       ? transformPrismaBlockingToTimetable(blockingsData)
       : [];
-
-    // Transform courtside blockings to timetable format
-    const courtsideBookings: Booking[] = courtsideBlockingsData
-      ? courtsideBlockingsData.map((blocking) => ({
-          id: blocking.id,
-          courtId: blocking.booking.courtId,
-          userId: "", // Courtside bookings don't have internal userId
-          bookingCode: `CS-${blocking.bookingId}`,
-          status: "COMPLETED" as BookingStatus,
-          source: "COURTSIDE",
-          userName: "Courtside Booking",
-          bookingDate: new Date(blocking.booking.bookingDate),
-          timeSlots: blocking.booking.timeSlots.map((slot) => ({
-            openHour: slot.openHour,
-            closeHour: slot.closeHour,
-          })),
-        }))
-      : [];
-
-    return [...internalBookings, ...courtsideBookings];
-  }, [blockingsData, courtsideBlockingsData]);
+    return [...internalBookings];
+  }, [blockingsData]);
 
   // Get selected venue name
   const selectedVenue = venues.find((v) => v.id === selectedVenueId);
@@ -262,13 +232,10 @@ export function TimetableContent() {
   // Determine loading states
   const isInitialLoad =
     venuesLoading ||
-    (isFirstRenderRef.current &&
-      (courtsLoading || blockingsLoading || courtsideBlockingsLoading));
+    (isFirstRenderRef.current && (courtsLoading || blockingsLoading));
   const isVenueChangeLoading =
-    venueChanged &&
-    (courtsLoading || blockingsLoading || courtsideBlockingsLoading);
-  const isDateChangeLoading =
-    dateChanged && (blockingsLoading || courtsideBlockingsLoading);
+    venueChanged && (courtsLoading || blockingsLoading);
+  const isDateChangeLoading = dateChanged && blockingsLoading;
 
   // Handle errors
   if (venuesError) {
@@ -379,7 +346,6 @@ export function TimetableContent() {
             onSelectEmptySlot={handleAddBookingFromCell}
             onRefresh={() => {
               refetchBlockings();
-              refetchCourtsideBlockings();
             }}
             canCreateBooking={canCreateBooking}
             isLoadingPermission={isCreateLoading}
@@ -392,7 +358,6 @@ export function TimetableContent() {
         defaults={sheetDefaults}
         onSuccess={() => {
           refetchBlockings();
-          refetchCourtsideBlockings();
         }}
       />
     </>

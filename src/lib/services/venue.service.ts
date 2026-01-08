@@ -14,20 +14,6 @@ import {
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 import { vercelBlobService } from "@/lib/services/vercel-blob.service";
-import { encrypt } from "@/lib/utils/encryption";
-import { maskApiKey } from "@/lib/utils/masking";
-
-/**
- * Transforms a venue object for API response by masking the API key
- * and adding hasCourtsideApiKey boolean flag.
- */
-function transformVenueForResponse(venue: any) {
-  return {
-    ...venue,
-    courtsideApiKey: maskApiKey(venue.courtsideApiKey),
-    hasCourtsideApiKey: !!venue.courtsideApiKey,
-  };
-}
 
 export const venueService = {
   getAll: async (context: ServiceContext) => {
@@ -76,13 +62,13 @@ export const venueService = {
               },
             }),
           ]);
-          return transformVenueForResponse({
+          return {
             ...venue,
             _counts: {
               courts: courtsCount,
               bookingsToday,
             },
-          });
+          };
         }),
       );
 
@@ -116,7 +102,6 @@ export const venueService = {
           openHour: true,
           closeHour: true,
           createdAt: true,
-          courtsideApiKey: true,
         },
         orderBy: { createdAt: "desc" },
       });
@@ -155,7 +140,7 @@ export const venueService = {
 
       return {
         success: true,
-        data: transformVenueForResponse(venue),
+        data: venue,
         message: "Get venue by id successful",
       };
     } catch (error) {
@@ -208,11 +193,6 @@ export const venueService = {
       if (data.openHour) createData.openHour = data.openHour;
       if (data.closeHour) createData.closeHour = data.closeHour;
 
-      // Encrypt API key if provided
-      if (data.courtsideApiKey) {
-        createData.courtsideApiKey = encrypt(data.courtsideApiKey);
-      }
-
       const result = await prisma.venue.create({
         data: createData,
       });
@@ -227,7 +207,7 @@ export const venueService = {
       });
       return {
         success: true,
-        data: transformVenueForResponse(result),
+        data: result,
         message: "Create venue successful",
       };
     } catch (error) {
@@ -299,34 +279,10 @@ export const venueService = {
         }
       }
 
-      // Handle courtsideApiKey encryption
-      let courtsideApiKeyUpdate: string | null | undefined;
-      if (payload.courtsideApiKey !== undefined) {
-        if (
-          payload.courtsideApiKey === null ||
-          payload.courtsideApiKey === ""
-        ) {
-          // Clear the API key
-          courtsideApiKeyUpdate = null;
-        } else {
-          // Encrypt the new API key
-          courtsideApiKeyUpdate = encrypt(payload.courtsideApiKey);
-        }
-      }
-
       const updateData: any = {
         ...payload,
         ...(slugUpdate ? { slug: slugUpdate } : {}),
-        ...(courtsideApiKeyUpdate !== undefined
-          ? { courtsideApiKey: courtsideApiKeyUpdate }
-          : {}),
       };
-
-      // Remove the original courtsideApiKey from payload if we're handling it separately
-      if (courtsideApiKeyUpdate !== undefined) {
-        delete updateData.courtsideApiKey;
-        updateData.courtsideApiKey = courtsideApiKeyUpdate;
-      }
 
       const result = await prisma.venue.update({
         where: { id: venueId },
@@ -348,7 +304,7 @@ export const venueService = {
 
       return {
         success: true,
-        data: transformVenueForResponse(result),
+        data: result,
         message: "Update venue successful",
       };
     } catch (error) {
