@@ -245,7 +245,7 @@ model MagicLink {
 model Booking {
   id               String        @id @default(cuid())
   courtId          String
-  userId           String
+  userId           String?       // Nullable for AYO bookings without user data
   orderId          String?       // Nullable for backward compatibility
   source           String        // flag for booking created by YOLO / AYO system
   bookingDate      DateTime          @db.Date
@@ -260,7 +260,7 @@ model Booking {
 
   // Relations
   court     Court             @relation(fields: [courtId], references: [id], onDelete: Cascade)
-  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
   order     Order?            @relation(fields: [orderId], references: [id], onDelete: Cascade)
   payments  Payment[]
   blocking  Blocking?
