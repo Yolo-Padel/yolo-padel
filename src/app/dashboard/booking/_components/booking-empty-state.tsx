@@ -24,7 +24,10 @@ export function BookingEmptyState({
         You haven&apos;t booked a court yet. Start your first game today!
       </p>
 
-      <Button className="bg-primary mx-auto px-6 py-2" onClick={onBookCourt}>
+      <Button
+        className="bg-brand text-brand-foreground hover:bg-brand/90 mx-auto px-6 py-2"
+        onClick={onBookCourt}
+      >
         Book Court
         <LandPlot className="size-4" />
       </Button>
