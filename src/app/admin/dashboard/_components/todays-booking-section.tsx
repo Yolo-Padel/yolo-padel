@@ -52,7 +52,7 @@ function getStatusLabel(status: BookingStatus) {
 }
 
 function getDurationLabel(
-  timeSlots: Array<{ openHour: string; closeHour: string }>
+  timeSlots: Array<{ openHour: string; closeHour: string }>,
 ) {
   if (!timeSlots.length) return "-";
   const start = timeSlots[0].openHour;
@@ -192,7 +192,7 @@ export function TodaysBookingSection({
                     <Badge
                       className={cn(
                         "border font-medium",
-                        getStatusBadgeClass(booking.status)
+                        getStatusBadgeClass(booking.status),
                       )}
                     >
                       {getStatusLabel(booking.status)}
@@ -228,7 +228,7 @@ export function TodaysBookingSection({
                   </div>
 
                   <Button
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm h-9"
+                    className="bg-brand text-brand-foreground hover:bg-brand/90 shadow-sm h-9"
                     onClick={() => handleViewBooking(booking)}
                   >
                     View Booking
