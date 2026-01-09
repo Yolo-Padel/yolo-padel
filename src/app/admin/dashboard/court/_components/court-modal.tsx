@@ -19,7 +19,7 @@ import {
   InputGroupText,
 } from "@/components/ui/input-group";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { X, Plus, Trash2 } from "lucide-react";
+import { X, Plus, Trash2, ExternalLink } from "lucide-react";
 import {
   courtCreateSchema,
   CourtCreateData,
@@ -30,6 +30,7 @@ import { FileUploader } from "@/components/file-uploader";
 import { useVenueById } from "@/hooks/use-venue";
 import Image from "next/image";
 import { currencyUtils } from "@/lib/format/currency";
+import { AyoFieldsModal } from "./ayo-fields-modal";
 
 interface CourtModalProps {
   open: boolean;
@@ -81,9 +82,21 @@ export function CourtModal({
   // State for formatted price display
   const [priceDisplay, setPriceDisplay] = useState<string>("");
 
+  // State for AYO fields modal - Requirements: 1.1, 1.3
+  const [ayoFieldsModalOpen, setAyoFieldsModalOpen] = useState(false);
+
   // Add mutation hooks
   const createCourtMutation = useCreateCourt();
   const updateCourtMutation = useUpdateCourt();
+
+  /**
+   * Handler for AYO field selection from the modal
+   * Sets the ayoFieldId in the form when a field is selected
+   * Requirements: 5.1, 5.2, 5.3
+   */
+  const handleAyoFieldSelect = (fieldId: number) => {
+    setValue("ayoFieldId", fieldId, { shouldValidate: true });
+  };
 
   const {
     register,
@@ -464,13 +477,29 @@ export function CourtModal({
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {/* Integration Settings Section - At top with special styling */}
                 <div className="space-y-4 p-4 border border-dashed border-brand/50 rounded-lg bg-brand/5">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700">
-                      Integration Settings
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Configure third-party integrations for this court
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700">
+                        Integration Settings
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Configure third-party integrations for this court
+                      </p>
+                    </div>
+                    {/* View AYO Fields button - only show in add/edit mode */}
+                    {/* Requirements: 1.1, 1.2, 1.3 */}
+                    {!isViewMode && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAyoFieldsModalOpen(true)}
+                        className="gap-2"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        View AYO Fields
+                      </Button>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -492,8 +521,8 @@ export function CourtModal({
                       disabled={isViewMode}
                     />
                     <p className="text-xs text-muted-foreground">
-                      External court identifier from the AYO system. can be
-                      retrieved from /list-fields.
+                      External court identifier from the AYO system. Click "View
+                      AYO Fields" to browse available fields.
                     </p>
                   </div>
                 </div>
@@ -842,6 +871,13 @@ export function CourtModal({
             </div>
           )}
         </div>
+
+        {/* AYO Fields Reference Modal - Requirements: 1.3, 5.1, 5.2, 5.3 */}
+        <AyoFieldsModal
+          open={ayoFieldsModalOpen}
+          onOpenChange={setAyoFieldsModalOpen}
+          onSelectField={handleAyoFieldSelect}
+        />
       </DialogContent>
     </Dialog>
   );

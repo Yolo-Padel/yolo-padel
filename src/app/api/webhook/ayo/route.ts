@@ -24,6 +24,7 @@ interface AyoWebhookPayload {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("AYO WEBHOOK PAYLOAD: ", request);
     const payload = (await request.json()) as AyoWebhookPayload[];
 
     if (!Array.isArray(payload) || payload.length === 0) {
