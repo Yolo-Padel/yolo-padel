@@ -52,6 +52,7 @@ export interface BookingDashboardMetrics {
 export interface TodaysBookingCard {
   id: string;
   bookingCode: string;
+  source: string;
   bookingDate: Date;
   totalPrice: number;
   duration: number;
