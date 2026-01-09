@@ -7,6 +7,7 @@ import { bookingService } from "./booking.service";
 import { prisma } from "@/lib/prisma";
 import { BookingStatus } from "@/types/prisma";
 import { customAlphabet } from "nanoid";
+import { createBlocking, releaseBlockingByBookingId } from "./blocking.service";
 
 // AYO Field entity from list-fields API
 export interface AyoField {
@@ -221,36 +222,48 @@ export async function handleAyoBookingConfirmed(
     const nanoId = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 5);
     const bookingCode = `BK-AYO-${nanoId()}`;
 
-    // Create booking with UPCOMING status, no userId (AYO booking)
-    const booking = await prisma.booking.create({
-      data: {
-        courtId: court.id,
-        userId: null, // No user for AYO bookings
-        orderId: null,
-        source: "AYO",
-        bookingDate,
-        bookingCode,
-        duration,
-        totalPrice: total_price,
-        status: BookingStatus.UPCOMING,
-        ayoOrderIds: [order_detail_id],
-        timeSlots: {
-          create: [{ openHour, closeHour }],
+    // Create booking with UPCOMING status and blocking in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create booking with UPCOMING status, no userId (AYO booking)
+      const booking = await tx.booking.create({
+        data: {
+          courtId: court.id,
+          userId: null, // No user for AYO bookings
+          orderId: null,
+          source: "AYO",
+          bookingDate,
+          bookingCode,
+          duration,
+          totalPrice: total_price,
+          status: BookingStatus.UPCOMING,
+          ayoOrderIds: [order_detail_id],
+          timeSlots: {
+            create: [{ openHour, closeHour }],
+          },
         },
-      },
-      include: {
-        timeSlots: true,
-        court: true,
-      },
+        include: {
+          timeSlots: true,
+          court: true,
+        },
+      });
+
+      // Create blocking to lock the time slots
+      const blocking = await createBlocking(
+        booking.id,
+        `Blocked for AYO booking ${bookingCode}`,
+        tx,
+      );
+
+      return { booking, blocking };
     });
 
     console.log(
-      `AYO booking created: ${booking.id} for order_detail_id: ${order_detail_id}`,
+      `AYO booking created: ${result.booking.id} with blocking: ${result.blocking.id} for order_detail_id: ${order_detail_id}`,
     );
 
     return {
       success: true,
-      data: booking,
+      data: result.booking,
       message: "Booking created from AYO webhook",
     };
   } catch (error) {
@@ -292,8 +305,11 @@ export async function handleAyoBookingCancelled(orderDetailId: number) {
       data: { status: BookingStatus.CANCELLED },
     });
 
+    // Release the blocking to make time slots available again
+    const releasedBlocking = await releaseBlockingByBookingId(booking.id);
+
     console.log(
-      `AYO booking cancelled: ${booking.id} for order_detail_id: ${orderDetailId}`,
+      `AYO booking cancelled: ${booking.id} for order_detail_id: ${orderDetailId}${releasedBlocking ? `, blocking released: ${releasedBlocking.id}` : ""}`,
     );
 
     return {
