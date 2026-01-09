@@ -16,12 +16,13 @@ type BookingSegment = {
  */
 export function calculateBookingSpan(
   segment: BookingSegment,
-  timeSlots: string[]
+  timeSlots: string[],
 ): number {
   if (!segment) return 1;
 
   const bookingStart = segment.start;
-  const bookingEnd = segment.end;
+  // Normalize "00:00" to "24:00" for midnight-crossing bookings
+  const bookingEnd = segment.end === "00:00" ? "24:00" : segment.end;
 
   let startIndex = -1;
   let endIndex = -1;
@@ -29,12 +30,14 @@ export function calculateBookingSpan(
   for (let i = 0; i < timeSlots.length; i++) {
     const slotStart = timeSlots[i];
     const slotEnd = getNextHour(slotStart);
+    // Normalize slot end for comparison (23:00 -> 00:00 becomes 24:00)
+    const normalizedSlotEnd = slotEnd === "00:00" ? "24:00" : slotEnd;
 
     if (startIndex === -1 && slotStart === bookingStart) {
       startIndex = i;
     }
 
-    if (slotEnd === bookingEnd) {
+    if (normalizedSlotEnd === bookingEnd) {
       endIndex = i;
     }
   }
@@ -43,9 +46,11 @@ export function calculateBookingSpan(
     return endIndex - startIndex + 1;
   }
 
+  // Fallback calculation using minutes
   const [startHour, startMin] = bookingStart.split(":").map(Number);
   const [endHour, endMin] = bookingEnd.split(":").map(Number);
   const startMinutes = startHour * 60 + startMin;
+  // Handle midnight: "24:00" means 24*60 = 1440 minutes
   const endMinutes = endHour * 60 + endMin;
   const durationMinutes = endMinutes - startMinutes;
   const durationHours = Math.ceil(durationMinutes / 60);
@@ -54,12 +59,12 @@ export function calculateBookingSpan(
 }
 
 function groupContinuousBookingSlots(
-  timeSlots: Booking["timeSlots"]
+  timeSlots: Booking["timeSlots"],
 ): BookingSegment[] {
   if (timeSlots.length === 0) return [];
 
   const sorted = [...timeSlots].sort((a, b) =>
-    a.openHour > b.openHour ? 1 : -1
+    a.openHour > b.openHour ? 1 : -1,
   );
   const segments: BookingSegment[] = [];
 
@@ -79,6 +84,17 @@ function groupContinuousBookingSlots(
 
   segments.push({ start: currentStart, end: currentEnd });
   return segments;
+}
+
+/**
+ * Normalize time for comparison, treating "00:00" as "24:00" for end times
+ * This handles midnight-crossing bookings (e.g., 23:00-00:00)
+ */
+function normalizeTimeForComparison(time: string, isEndTime: boolean): string {
+  if (isEndTime && time === "00:00") {
+    return "24:00";
+  }
+  return time;
 }
 
 /**
@@ -117,7 +133,7 @@ export function getTimeSlotBooking(
   courtId: string,
   bookings: Booking[],
   selectedDate: Date,
-  allTimeSlots: string[]
+  allTimeSlots: string[],
 ): BookingSlotInfo | null {
   const dateStr = format(selectedDate, "yyyy-MM-dd");
 
@@ -134,10 +150,15 @@ export function getTimeSlotBooking(
     const segments = groupContinuousBookingSlots(booking.timeSlots);
 
     // Check if this hourly time slot is within the booking range
-    const [timeStart, timeEnd] = [timeSlot, getNextHour(timeSlot)];
+    const timeStart = timeSlot;
+    const timeEnd = normalizeTimeForComparison(getNextHour(timeSlot), true);
 
     for (const segment of segments) {
-      if (timeStart >= segment.end || timeEnd <= segment.start) continue;
+      // Normalize segment end time for midnight-crossing bookings (e.g., 23:00-00:00)
+      const segmentEnd = normalizeTimeForComparison(segment.end, true);
+
+      // Check if time slot is outside the segment range
+      if (timeStart >= segmentEnd || timeEnd <= segment.start) continue;
 
       const isFirstSlot = timeStart === segment.start;
 
