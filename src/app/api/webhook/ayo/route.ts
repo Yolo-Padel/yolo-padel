@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
   try {
     console.log("AYO WEBHOOK PAYLOAD: ", request);
     const payload = (await request.json()) as AyoWebhookPayload[];
+    console.log("AYO WEBHOOK PAYLOAD: ", payload);
 
     if (!Array.isArray(payload) || payload.length === 0) {
       return NextResponse.json(
