@@ -233,7 +233,10 @@ export function transformPrismaBlockingToTimetable(
     id: blocking.booking.id,
     courtId: blocking.booking.courtId,
     userId: blocking.booking.userId,
-    userName: blocking.booking.user?.profile?.fullName || "Unknown User",
+    userName:
+      blocking.booking.source === "AYO"
+        ? "AYO user"
+        : blocking.booking.user?.profile?.fullName || "Unknown User",
     userAvatar: blocking.booking.user?.profile?.avatar || undefined,
     bookingDate: new Date(blocking.booking.bookingDate),
     timeSlots: blocking.booking.timeSlots,
@@ -257,7 +260,10 @@ export function transformPrismaBlockingToDetail(
     id: blocking.booking.id,
     source: blocking.booking.source,
     status: blocking.booking.status as BookingStatus,
-    userName: blocking.booking.user.profile?.fullName || "Unknown User",
+    userName:
+      blocking.booking.source === "AYO"
+        ? "AYO user"
+        : blocking.booking.user?.profile?.fullName || "Unknown User",
     venueName,
     courtName: blocking.booking.court.name,
     bookingDate: new Date(blocking.booking.bookingDate),

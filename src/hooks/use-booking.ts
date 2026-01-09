@@ -55,7 +55,7 @@ const bookingApi = {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(
-        errorData.message || "Failed to fetch bookings by status"
+        errorData.message || "Failed to fetch bookings by status",
       );
     }
     return response.json();
@@ -66,12 +66,12 @@ const bookingApi = {
       `/api/booking?venueId=${venueId}&date=${dateStr}`,
       {
         credentials: "include",
-      }
+      },
     );
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(
-        errorData.message || "Failed to fetch bookings by venue and date"
+        errorData.message || "Failed to fetch bookings by venue and date",
       );
     }
     return response.json();
@@ -147,7 +147,7 @@ const bookingApi = {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(
-        errorData.message || "Failed to fetch super admin dashboard snapshot"
+        errorData.message || "Failed to fetch super admin dashboard snapshot",
       );
     }
     return response.json();
@@ -161,7 +161,7 @@ const bookingApi = {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(
-        errorData.message || "Failed to fetch admin dashboard snapshot"
+        errorData.message || "Failed to fetch admin dashboard snapshot",
       );
     }
     return response.json();
@@ -282,7 +282,7 @@ type DashboardHookOptions = {
 };
 
 export const useSuperAdminBookingDashboard = (
-  options: DashboardHookOptions = {}
+  options: DashboardHookOptions = {},
 ) => {
   return useQuery({
     queryKey: ["booking-dashboard", "super-admin"],
@@ -293,7 +293,7 @@ export const useSuperAdminBookingDashboard = (
 };
 
 export const useAdminBookingDashboard = (
-  options: DashboardHookOptions = {}
+  options: DashboardHookOptions = {},
 ) => {
   return useQuery({
     queryKey: ["booking-dashboard", "admin"],
@@ -365,6 +365,7 @@ interface AdminBookingsResponse {
   data: Array<{
     id: string;
     bookingCode: string;
+    source: string;
     bookingDate: Date;
     duration: number;
     totalPrice: number;
@@ -419,7 +420,7 @@ interface AdminBookingsResponse {
  * API function to fetch admin bookings with filters
  */
 async function getAdminBookingsApi(
-  options: UseAdminBookingsOptions = {}
+  options: UseAdminBookingsOptions = {},
 ): Promise<AdminBookingsResponse> {
   // Build query parameters from filter options
   const searchParams = new URLSearchParams();
