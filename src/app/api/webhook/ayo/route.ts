@@ -14,7 +14,7 @@ interface AyoWebhookPayload {
   start_time: string; // "HH:mm:ss"
   end_time: string; // "HH:mm:ss"
   total_price: number;
-  status: "CONFIRMED" | "CANCELLED" | string;
+  status: "SUCCESS" | "CANCELLED" | string;
   booker_name: string;
   booker_phone: string;
   booker_email: string;
@@ -25,6 +25,7 @@ interface AyoWebhookPayload {
 export async function POST(request: NextRequest) {
   try {
     const payload = (await request.json()) as AyoWebhookPayload[];
+    console.log("AYO WEBHOOK PAYLOAD: ", payload);
 
     if (!Array.isArray(payload) || payload.length === 0) {
       return NextResponse.json(
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
     for (const item of payload) {
       const { status, order_detail_id } = item;
 
-      if (status === "CONFIRMED") {
+      if (status === "SUCCESS") {
         const result = await handleAyoBookingConfirmed(item);
         results.push({ order_detail_id, status, result });
       } else if (status === "CANCELLED") {

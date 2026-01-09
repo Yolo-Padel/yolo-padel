@@ -782,6 +782,7 @@ export const bookingService = {
           select: {
             id: true,
             bookingCode: true,
+            source: true,
             bookingDate: true,
             totalPrice: true,
             duration: true,
@@ -923,6 +924,7 @@ export const bookingService = {
         total: todaysBookingsRaw.length,
         items: todaysBookingsRaw.map((booking) => ({
           id: booking.id,
+          source: booking.source,
           bookingCode: booking.bookingCode,
           bookingDate: booking.bookingDate,
           totalPrice: booking.totalPrice,
@@ -933,7 +935,11 @@ export const bookingService = {
             closeHour: slot.closeHour,
           })),
           customerName:
-            booking.user?.profile?.fullName || booking.user?.email || "Player",
+            booking.source === "AYO"
+              ? "AYO User"
+              : booking.user?.profile?.fullName ||
+                booking.user?.email ||
+                "Player",
           courtName: booking.court.name,
           venueName: booking.court.venue.name,
         })),

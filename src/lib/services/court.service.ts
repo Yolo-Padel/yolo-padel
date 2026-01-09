@@ -786,11 +786,19 @@ export const courtService = {
         const [openHour, openMin] = range.openHour.split(":").map(Number);
         const [closeHour, closeMin] = range.closeHour.split(":").map(Number);
         const start = new Date(0, 0, 0, openHour, openMin, 0);
-        const end = new Date(0, 0, 0, closeHour, closeMin, 0);
+        // Handle 00:00 as end of day (midnight = 24:00)
+        const end =
+          closeHour === 0 && closeMin === 0
+            ? new Date(0, 0, 1, 0, 0, 0) // Next day midnight
+            : new Date(0, 0, 0, closeHour, closeMin, 0);
         const current = new Date(start);
 
-        const formatTime = (d: Date) =>
-          `${String(d.getHours()).padStart(2, "0")}.${String(d.getMinutes()).padStart(2, "0")}`;
+        // Format time, handling 24:00 edge case for display as 00:00
+        const formatTime = (d: Date) => {
+          const hours =
+            d.getDate() === 1 && d.getHours() === 0 ? 0 : d.getHours();
+          return `${String(hours).padStart(2, "0")}.${String(d.getMinutes()).padStart(2, "0")}`;
+        };
 
         while (current < end) {
           const next = new Date(current);

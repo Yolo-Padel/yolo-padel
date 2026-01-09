@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 export type BookingWithRelations = {
   id: string;
   bookingCode: string;
+  source: string;
   bookingDate: Date;
   duration: number;
   status: BookingStatus;
@@ -116,7 +117,10 @@ export function BookingTable({
         </TableHeader>
         <TableBody>
           {bookings.map((b) => {
-            const userName = b.user?.profile?.fullName || "N/A";
+            const userName =
+              b.source === "AYO"
+                ? "AYO User"
+                : b.user?.profile?.fullName || "N/A";
             const userEmail = b.user?.email || "";
             const userAvatar = b.user?.profile?.avatar || "";
             const venueName = b.court?.venue?.name || "N/A";

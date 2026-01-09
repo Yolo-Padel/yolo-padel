@@ -10,6 +10,7 @@ import { formatTimeRange } from "@/lib/time-slots-formatter";
 type BookingWithRelations = {
   id: string;
   bookingCode: string;
+  source: string;
   bookingDate: Date;
   duration: number;
   status: BookingStatus;
@@ -43,6 +44,7 @@ type BookingWithRelations = {
 type BookingDetails = {
   id: string;
   venue: string;
+  source: string;
   courtName: string;
   image?: string;
   bookingTime?: string;
@@ -62,13 +64,14 @@ interface BookingDetailsModalProps {
  * Safely handles null/undefined values in nested data
  */
 function transformBookingData(
-  booking: BookingWithRelations | null
+  booking: BookingWithRelations | null,
 ): BookingDetails | null {
   if (!booking) return null;
 
   return {
     id: booking.bookingCode || booking.id,
     venue: booking.court?.venue?.name || "N/A",
+    source: booking.source || "N/A",
     courtName: booking.court?.name || "N/A",
     image: booking.court?.venue?.images?.[0],
     bookingTime: formatTimeRange(booking.timeSlots || []),

@@ -7,6 +7,22 @@ import { bookingService } from "./booking.service";
 import { prisma } from "@/lib/prisma";
 import { BookingStatus } from "@/types/prisma";
 import { customAlphabet } from "nanoid";
+import { createBlocking, releaseBlockingByBookingId } from "./blocking.service";
+
+// AYO Field entity from list-fields API
+export interface AyoField {
+  id: number;
+  name: string;
+  venue_name: string;
+}
+
+// Response from AYO list-fields endpoint
+export interface ListFieldsResponse {
+  error: boolean;
+  data: AyoField[];
+  message: string;
+  status_code: number;
+}
 
 // Ayo webhook payload type
 export interface AyoWebhookBookingPayload {
@@ -206,36 +222,48 @@ export async function handleAyoBookingConfirmed(
     const nanoId = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 5);
     const bookingCode = `BK-AYO-${nanoId()}`;
 
-    // Create booking with UPCOMING status, no userId (AYO booking)
-    const booking = await prisma.booking.create({
-      data: {
-        courtId: court.id,
-        userId: null, // No user for AYO bookings
-        orderId: null,
-        source: "AYO",
-        bookingDate,
-        bookingCode,
-        duration,
-        totalPrice: total_price,
-        status: BookingStatus.UPCOMING,
-        ayoOrderIds: [order_detail_id],
-        timeSlots: {
-          create: [{ openHour, closeHour }],
+    // Create booking with UPCOMING status and blocking in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create booking with UPCOMING status, no userId (AYO booking)
+      const booking = await tx.booking.create({
+        data: {
+          courtId: court.id,
+          userId: null, // No user for AYO bookings
+          orderId: null,
+          source: "AYO",
+          bookingDate,
+          bookingCode,
+          duration,
+          totalPrice: total_price,
+          status: BookingStatus.UPCOMING,
+          ayoOrderIds: [order_detail_id],
+          timeSlots: {
+            create: [{ openHour, closeHour }],
+          },
         },
-      },
-      include: {
-        timeSlots: true,
-        court: true,
-      },
+        include: {
+          timeSlots: true,
+          court: true,
+        },
+      });
+
+      // Create blocking to lock the time slots
+      const blocking = await createBlocking(
+        booking.id,
+        `Blocked for AYO booking ${bookingCode}`,
+        tx,
+      );
+
+      return { booking, blocking };
     });
 
     console.log(
-      `AYO booking created: ${booking.id} for order_detail_id: ${order_detail_id}`,
+      `AYO booking created: ${result.booking.id} with blocking: ${result.blocking.id} for order_detail_id: ${order_detail_id}`,
     );
 
     return {
       success: true,
-      data: booking,
+      data: result.booking,
       message: "Booking created from AYO webhook",
     };
   } catch (error) {
@@ -277,8 +305,11 @@ export async function handleAyoBookingCancelled(orderDetailId: number) {
       data: { status: BookingStatus.CANCELLED },
     });
 
+    // Release the blocking to make time slots available again
+    const releasedBlocking = await releaseBlockingByBookingId(booking.id);
+
     console.log(
-      `AYO booking cancelled: ${booking.id} for order_detail_id: ${orderDetailId}`,
+      `AYO booking cancelled: ${booking.id} for order_detail_id: ${orderDetailId}${releasedBlocking ? `, blocking released: ${releasedBlocking.id}` : ""}`,
     );
 
     return {
@@ -296,4 +327,44 @@ export async function handleAyoBookingCancelled(orderDetailId: number) {
           : "Failed to cancel booking from AYO",
     };
   }
+}
+
+/**
+ * Fetches list of fields from AYO API
+ * Uses existing signature generation pattern with HMAC-SHA512
+ * Note: Uses GET with query params since Node.js fetch doesn't allow body with GET
+ */
+export async function getAyoFields(): Promise<ListFieldsResponse> {
+  const requestWithToken = {
+    token: AYO_API_TOKEN,
+  };
+
+  const sortedRequest = sortObjectByKey(requestWithToken);
+
+  const queryString = new URLSearchParams(
+    Object.entries(sortedRequest).map(([key, value]) => [key, String(value)]),
+  ).toString();
+
+  const signature = crypto
+    .createHmac("sha512", AYO_PRIVATE_KEY)
+    .update(queryString)
+    .digest("hex");
+
+  // Build URL with query parameters (token + signature)
+  const params = new URLSearchParams();
+  params.set("token", AYO_API_TOKEN);
+  params.set("signature", signature);
+
+  const url = `${AYO_HOST}/${BASE_URL}/list-fields?${params.toString()}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  const data = (await response.json()) as ListFieldsResponse;
+
+  return data;
 }

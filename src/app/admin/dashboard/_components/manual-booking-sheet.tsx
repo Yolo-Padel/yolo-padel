@@ -218,11 +218,18 @@ export function ManualBookingSheet({
     // This handles the case when defaults are provided
     const slots: string[] = [];
     const startHour = parseInt(watchStartTime.split(":")[0]);
-    const endHour = parseInt(watchEndTime.split(":")[0]);
+    let endHour = parseInt(watchEndTime.split(":")[0]);
+
+    // Handle 00:00 as end of day (midnight = 24)
+    if (endHour === 0) {
+      endHour = 24;
+    }
 
     for (let hour = startHour; hour < endHour; hour++) {
       const startFormatted = `${String(hour).padStart(2, "0")}.00`;
-      const endFormatted = `${String(hour + 1).padStart(2, "0")}.00`;
+      // Handle hour 24 display as 00
+      const nextHour = hour + 1 === 24 ? 0 : hour + 1;
+      const endFormatted = `${String(nextHour).padStart(2, "0")}.00`;
       slots.push(`${startFormatted}–${endFormatted}`);
     }
 
