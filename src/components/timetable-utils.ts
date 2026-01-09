@@ -47,12 +47,12 @@ export function formatTimeWithAMPM(time: string): string {
 
 // Format waktu range: ["06:00", "07:00"] -> "06.00AM-07.00AM"
 export function formatTimeRange(
-  timeSlots: Array<{ openHour: string; closeHour: string }>
+  timeSlots: Array<{ openHour: string; closeHour: string }>,
 ): string {
   if (timeSlots.length === 0) return "";
   // Gabungkan slot yang saling menyambung agar range tampil lebih ringkas
   const sortedSlots = [...timeSlots].sort((a, b) =>
-    a.openHour > b.openHour ? 1 : -1
+    a.openHour > b.openHour ? 1 : -1,
   );
   const merged: Array<{ start: string; end: string }> = [];
 
@@ -74,7 +74,7 @@ export function formatTimeRange(
   return merged
     .map(
       ({ start, end }) =>
-        `${formatTimeWithAMPM(start)}-${formatTimeWithAMPM(end)}`
+        `${formatTimeWithAMPM(start)}-${formatTimeWithAMPM(end)}`,
     )
     .join(", ");
 }
@@ -89,7 +89,7 @@ export function getNextHour(time: string): string {
 // Format operating hours: "10:00" -> "20:00" -> "10.00AM-20.00PM"
 export function formatOperatingHours(
   openHour: string,
-  closeHour: string
+  closeHour: string,
 ): string {
   return `${formatTimeWithAMPM(openHour)}-${formatTimeWithAMPM(closeHour)}`;
 }
@@ -115,7 +115,7 @@ export function isTimeSlotInOperatingHours(
       openHour: string;
       closeHour: string;
     }>;
-  }
+  },
 ): boolean {
   // If no operating hours data, assume it's open (backward compatibility)
   if (!operatingHours) return true;
@@ -129,7 +129,9 @@ export function isTimeSlotInOperatingHours(
   // Check if time slot is within any of the operating hour slots
   // Time slot format: "HH:00" (e.g., "06:00", "07:00")
   // We check if the time slot hour is >= openHour and < closeHour
+  // Handle 00:00 as end of day (midnight = 24:00) for comparison
   return operatingHours.slots.some((slot) => {
-    return timeSlot >= slot.openHour && timeSlot < slot.closeHour;
+    const closeHour = slot.closeHour === "00:00" ? "24:00" : slot.closeHour;
+    return timeSlot >= slot.openHour && timeSlot < closeHour;
   });
 }

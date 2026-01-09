@@ -288,6 +288,55 @@ export const venueService = {
         where: { id: venueId },
         data: updateData,
       });
+
+      // If operating hours changed, update court_time_slots for REGULAR courts
+      const openHourChanged =
+        payload.openHour && payload.openHour !== exist.openHour;
+      const closeHourChanged =
+        payload.closeHour && payload.closeHour !== exist.closeHour;
+
+      if (openHourChanged || closeHourChanged) {
+        const newOpenHour = payload.openHour ?? exist.openHour;
+        const newCloseHour = payload.closeHour ?? exist.closeHour;
+
+        // Find all courts with REGULAR opening type for this venue
+        const regularCourts = await prisma.court.findMany({
+          where: {
+            venueId,
+            openingType: "REGULAR",
+            isArchived: false,
+          },
+          select: { id: true },
+        });
+
+        if (regularCourts.length > 0) {
+          const courtIds = regularCourts.map((c) => c.id);
+
+          // Get all operating hours for these courts
+          const operatingHours = await prisma.courtOperatingHour.findMany({
+            where: { courtId: { in: courtIds } },
+            select: { id: true },
+          });
+
+          if (operatingHours.length > 0) {
+            const operatingHourIds = operatingHours.map((oh) => oh.id);
+
+            // Update all time slots for these operating hours
+            await prisma.courtTimeSlot.updateMany({
+              where: { courtOperatingHourId: { in: operatingHourIds } },
+              data: {
+                openHour: newOpenHour,
+                closeHour: newCloseHour,
+              },
+            });
+
+            console.log(
+              `Updated time slots for ${regularCourts.length} REGULAR courts`,
+            );
+          }
+        }
+      }
+
       const diff = buildChangesDiff(
         exist as any,
         { ...exist, ...updateData } as any,

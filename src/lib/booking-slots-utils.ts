@@ -36,7 +36,7 @@ export function getDayOfWeekKey(date?: Date): DayOfWeek | undefined {
 /**
  * Generate hourly time slot labels from open and close time
  * @param open Open time in "HH:MM" format
- * @param close Close time in "HH:MM" format
+ * @param close Close time in "HH:MM" format (supports "00:00" as end of day/midnight)
  * @returns Array of time slot labels in "HH.mm–HH.mm" format
  */
 export function generateHourlySlots(open: string, close: string): string[] {
@@ -44,7 +44,12 @@ export function generateHourlySlots(open: string, close: string): string[] {
   const [oh, om] = open.split(":").map(Number);
   const [ch, cm] = close.split(":").map(Number);
   const start = new Date(0, 0, 0, oh, om, 0);
-  const end = new Date(0, 0, 0, ch, cm, 0);
+  // Handle 00:00 as end of day (midnight = 24:00)
+  // If closeHour is 00:00, treat it as next day to make comparison work
+  const end =
+    ch === 0 && cm === 0
+      ? new Date(0, 0, 1, 0, 0, 0) // Next day midnight
+      : new Date(0, 0, 0, ch, cm, 0);
   const out: string[] = [];
   const cur = new Date(start);
 
@@ -53,8 +58,11 @@ export function generateHourlySlots(open: string, close: string): string[] {
     next.setHours(next.getHours() + 1);
     if (next > end) break;
 
-    const fmt = (d: Date) =>
-      `${String(d.getHours()).padStart(2, "0")}.${String(d.getMinutes()).padStart(2, "0")}`;
+    // Format time, handling 24:00 edge case for display as 00:00
+    const fmt = (d: Date) => {
+      const hours = d.getDate() === 1 && d.getHours() === 0 ? 0 : d.getHours();
+      return `${String(hours).padStart(2, "0")}.${String(d.getMinutes()).padStart(2, "0")}`;
+    };
     out.push(`${fmt(cur)}–${fmt(next)}`);
     cur.setHours(cur.getHours() + 1);
   }
