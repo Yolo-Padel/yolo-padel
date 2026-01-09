@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X, Info } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -143,7 +143,7 @@ export function BookingDetailModal({
             <Badge
               className={cn(
                 "rounded-sm px-3 text-xs font-medium",
-                getBookingStatusBadgeClass(booking.status)
+                getBookingStatusBadgeClass(booking.status),
               )}
             >
               {stringUtils.getRoleDisplay(booking.status)}
@@ -194,7 +194,7 @@ export function BookingDetailModal({
             </div>
           </div>
 
-          {booking.source !== "ADMIN_MANUAL" && (
+          {booking.source !== "ADMIN_MANUAL" && booking.source !== "AYO" && (
             <div className="space-y-4">
               <h3 className="font-semibold text-lg">Payment Info</h3>
               <div className="space-y-3">
@@ -209,7 +209,7 @@ export function BookingDetailModal({
                   <Badge
                     className={cn(
                       "rounded-full px-3 py-1 text-xs font-medium",
-                      getPaymentStatusBadgeClass(booking.paymentStatus)
+                      getPaymentStatusBadgeClass(booking.paymentStatus),
                     )}
                   >
                     {booking.paymentStatus === PaymentStatus.PAID
@@ -227,35 +227,45 @@ export function BookingDetailModal({
             </div>
           )}
 
+          {booking.source === "AYO" && (
+            <Badge className="rounded-md bg-[#ECF1BB] text-[#6B7413] p-4 text-sm font-normal">
+              <Info className="w-6 h-6 mr-2 mb-5" />
+              This booking was synced from AYO. Manage it in AYO Venue Manager.
+            </Badge>
+          )}
+
           {/* Action Buttons */}
-          {booking.status !== BookingStatus.COMPLETED && booking.status !== BookingStatus.NO_SHOW && (
-          <div className="flex gap-3 pt-4">
-            <Button
-              variant="outline"
-              className="flex-1 border-[#C3D223] text-foreground"
-              onClick={onConfirmMarkAsNoShowBooking}
-            >
-              No Show
-            </Button>
-            <Button
-              className="flex-1 bg-[#C3D223] hover:bg-[#A9B920]"
-              onClick={onConfirmMarkAsCompleteBooking}
-            >
-              Mark as Complete
-            </Button>
-          </div>
-          )}
-          {booking.status === BookingStatus.COMPLETED || booking.status === BookingStatus.NO_SHOW && (
-            <div className="flex gap-3 pt-4">
-              <Button
-                variant={"outline"}
-                className="flex-1 border-primary"
-                onClick={() => onOpenChange(false)}
-              >
-                Close
-              </Button>
-            </div>
-          )}
+          {booking.source !== "AYO" &&
+            booking.status !== BookingStatus.COMPLETED &&
+            booking.status !== BookingStatus.NO_SHOW && (
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-[#C3D223] text-foreground"
+                  onClick={onConfirmMarkAsNoShowBooking}
+                >
+                  No Show
+                </Button>
+                <Button
+                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920]"
+                  onClick={onConfirmMarkAsCompleteBooking}
+                >
+                  Mark as Complete
+                </Button>
+              </div>
+            )}
+          {booking.status === BookingStatus.COMPLETED ||
+            (booking.status === BookingStatus.NO_SHOW && (
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant={"outline"}
+                  className="flex-1 border-primary"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            ))}
         </div>
       </DialogContent>
     </Dialog>
