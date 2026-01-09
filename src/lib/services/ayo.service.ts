@@ -8,6 +8,21 @@ import { prisma } from "@/lib/prisma";
 import { BookingStatus } from "@/types/prisma";
 import { customAlphabet } from "nanoid";
 
+// AYO Field entity from list-fields API
+export interface AyoField {
+  id: number;
+  name: string;
+  venue_name: string;
+}
+
+// Response from AYO list-fields endpoint
+export interface ListFieldsResponse {
+  error: boolean;
+  data: AyoField[];
+  message: string;
+  status_code: number;
+}
+
 // Ayo webhook payload type
 export interface AyoWebhookBookingPayload {
   order_detail_id: number;
@@ -296,4 +311,44 @@ export async function handleAyoBookingCancelled(orderDetailId: number) {
           : "Failed to cancel booking from AYO",
     };
   }
+}
+
+/**
+ * Fetches list of fields from AYO API
+ * Uses existing signature generation pattern with HMAC-SHA512
+ * Note: Uses GET with query params since Node.js fetch doesn't allow body with GET
+ */
+export async function getAyoFields(): Promise<ListFieldsResponse> {
+  const requestWithToken = {
+    token: AYO_API_TOKEN,
+  };
+
+  const sortedRequest = sortObjectByKey(requestWithToken);
+
+  const queryString = new URLSearchParams(
+    Object.entries(sortedRequest).map(([key, value]) => [key, String(value)]),
+  ).toString();
+
+  const signature = crypto
+    .createHmac("sha512", AYO_PRIVATE_KEY)
+    .update(queryString)
+    .digest("hex");
+
+  // Build URL with query parameters (token + signature)
+  const params = new URLSearchParams();
+  params.set("token", AYO_API_TOKEN);
+  params.set("signature", signature);
+
+  const url = `${AYO_HOST}/${BASE_URL}/list-fields?${params.toString()}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  const data = (await response.json()) as ListFieldsResponse;
+
+  return data;
 }
