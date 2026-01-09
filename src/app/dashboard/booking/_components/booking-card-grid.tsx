@@ -14,6 +14,7 @@ import { BookingStatus, PaymentStatus } from "@/types/prisma";
 export interface BookingCardRow {
   id: string;
   venue: string;
+  source: string;
   courtName: string;
   image?: string;
   bookingTime?: string;

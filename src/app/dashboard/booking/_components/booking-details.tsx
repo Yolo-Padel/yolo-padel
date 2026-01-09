@@ -13,6 +13,7 @@ import { stringUtils } from "@/lib/format/string";
 type BookingDetails = {
   id: string;
   venue: string;
+  source: string;
   courtName: string;
   image?: string;
   bookingTime?: string;
@@ -116,19 +117,28 @@ export function SeeBookingDetails({
         </div>
 
         <div>
-          {bookingDetails?.status === BookingStatus.UPCOMING && (
-            <Badge className="rounded-md bg-[#ECF1BB] text-[#6B7413] p-4 text-sm font-normal">
-              <Info className="w-6 h-6 mr-2 mb-5" /> Please arrive at least
-              10-15 minutes before your booking time to ensure a smooth check-in
-              and warm-up.
-            </Badge>
-          )}
+          {bookingDetails?.source !== "AYO" ? (
+            <>
+              {bookingDetails?.status === BookingStatus.UPCOMING && (
+                <Badge className="rounded-md bg-[#ECF1BB] text-[#6B7413] p-4 text-sm font-normal">
+                  <Info className="w-6 h-6 mr-2 mb-5" /> Please arrive at least
+                  10-15 minutes before your booking time to ensure a smooth
+                  check-in and warm-up.
+                </Badge>
+              )}
 
-          {bookingDetails?.status === BookingStatus.COMPLETED && (
+              {bookingDetails?.status === BookingStatus.COMPLETED && (
+                <Badge className="rounded-md bg-[#ECF1BB] text-[#6B7413] p-4 text-sm font-normal">
+                  <Info className="w-6 h-6 mr-2 mb-5" /> Thanks for playing with
+                  us! If you enjoyed this session, feel free to book again at
+                  the same venue.
+                </Badge>
+              )}
+            </>
+          ) : (
             <Badge className="rounded-md bg-[#ECF1BB] text-[#6B7413] p-4 text-sm font-normal">
-              <Info className="w-6 h-6 mr-2 mb-5" /> Thanks for playing with us!
-              If you enjoyed this session, feel free to book again at the same
-              venue.
+              <Info className="w-6 h-6 mr-2 mb-5" />
+              This booking was synced from AYO. Manage it in AYO Venue Manager.
             </Badge>
           )}
         </div>

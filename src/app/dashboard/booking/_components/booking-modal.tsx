@@ -18,6 +18,7 @@ type BookingModalProps = {
   id: string;
   venue: string;
   courtName: string;
+  source: string;
   image?: string;
   bookingTime?: string;
   bookingDate: string;
