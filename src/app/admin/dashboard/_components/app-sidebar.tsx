@@ -39,8 +39,15 @@ const menuConfig: MenuItem[] = [
     userTypes: [UserType.ADMIN, UserType.STAFF],
   },
   {
-    name: "Users Management",
+    name: "Staff Management",
     url: "/admin/dashboard/users",
+    icon: Users,
+    userTypes: [UserType.ADMIN, UserType.STAFF],
+    moduleKey: "users",
+  },
+  {
+    name: "Customer Management",
+    url: "/admin/dashboard/customers",
     icon: Users,
     userTypes: [UserType.ADMIN, UserType.STAFF],
     moduleKey: "users",
@@ -137,7 +144,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return new Set(
       rolePermissions
         .filter((permission) => permission.allowed)
-        .map((permission) => permission.moduleId)
+        .map((permission) => permission.moduleId),
     );
   }, [rolePermissions]);
 
