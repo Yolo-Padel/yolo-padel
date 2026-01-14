@@ -19,14 +19,7 @@ import {
   Trash,
   Eye,
 } from "lucide-react";
-import {
-  User,
-  Profile,
-  UserType,
-  UserStatus,
-  Membership,
-  Roles,
-} from "@/types/prisma";
+import { User, Profile, UserStatus, Membership, Roles } from "@/types/prisma";
 import { generatePageNumbers } from "@/lib/pagination-utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ResendInviteButton } from "@/app/admin/dashboard/users/_components/resend-invite-button";
@@ -74,7 +67,6 @@ export function UsersTable({
     "Profile",
     "Status",
     "Assigned Role",
-    "Membership",
     "Join Date",
     "Actions",
   ];
@@ -137,10 +129,7 @@ export function UsersTable({
   };
 
   const getAssignedRole = (user: User & { roles?: Roles | null }) => {
-    // Jika USER biasa, tidak ada assigned role
-    if (user.userType === UserType.USER) return "User";
-
-    // Jika ADMIN atau STAFF, tampilkan role name dari relasi roles
+    // Return role name from relasi roles
     return user.roles?.name || "-";
   };
 
@@ -153,7 +142,6 @@ export function UsersTable({
               <TableHead className="h-11">Profile</TableHead>
               <TableHead className="h-11">Status</TableHead>
               <TableHead className="h-11">Assigned Role</TableHead>
-              <TableHead className="h-11">Membership</TableHead>
               <TableHead className="h-11">Join Date</TableHead>
               <TableHead className="h-11 text-right"></TableHead>
             </TableRow>
@@ -181,13 +169,6 @@ export function UsersTable({
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {getAssignedRole(u)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {u.userType !== UserType.USER
-                      ? "Staff"
-                      : u.membership
-                        ? `${u.membership.name} Member`
-                        : "Non-member"}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {u.joinDate

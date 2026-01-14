@@ -19,11 +19,9 @@ export function UserTableSkeleton() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="h-11">Name</TableHead>
+            <TableHead className="h-11">Profile</TableHead>
             <TableHead className="h-11">Status</TableHead>
-            <TableHead className="h-11">User Type</TableHead>
-            <TableHead className="h-11">Membership</TableHead>
-            <TableHead className="h-11">Email address</TableHead>
+            <TableHead className="h-11">Assigned Role</TableHead>
             <TableHead className="h-11">Join Date</TableHead>
             <TableHead className="h-11 text-right"></TableHead>
           </TableRow>
@@ -34,7 +32,10 @@ export function UserTableSkeleton() {
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Skeleton className="h-10 w-10 rounded-full" />
-                  <Skeleton className="h-5 w-32" />
+                  <div className="flex flex-col gap-1">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
                 </div>
               </TableCell>
               <TableCell>
@@ -42,12 +43,6 @@ export function UserTableSkeleton() {
               </TableCell>
               <TableCell>
                 <Skeleton className="h-5 w-20" />
-              </TableCell>
-              <TableCell>
-                <Skeleton className="h-5 w-28" />
-              </TableCell>
-              <TableCell>
-                <Skeleton className="h-5 w-40" />
               </TableCell>
               <TableCell>
                 <Skeleton className="h-5 w-24" />
@@ -63,7 +58,7 @@ export function UserTableSkeleton() {
         </TableBody>
         <TableFooter className="bg-transparent">
           <TableRow>
-            <TableCell colSpan={7} className="p-4">
+            <TableCell colSpan={5} className="p-4">
               <div className="flex items-center justify-between">
                 <Button
                   variant="outline"

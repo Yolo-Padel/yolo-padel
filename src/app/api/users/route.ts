@@ -45,9 +45,17 @@ function parseQueryParameters(request: NextRequest) {
     }
   }
 
-  // Validate user type (must be valid enum value)
+  // Handle special filter values and validate user type
   let userTypeFilter: UserType | undefined = undefined;
-  if (userTypeParam) {
+  let excludeUserType: UserType | undefined = undefined;
+
+  if (userTypeParam === "STAFF_ONLY") {
+    // Special filter: exclude USER type (show only ADMIN and STAFF)
+    excludeUserType = UserType.USER;
+  } else if (userTypeParam === "USER_ONLY") {
+    // Special filter: show only USER type
+    userTypeFilter = UserType.USER;
+  } else if (userTypeParam) {
     const validUserTypes: UserType[] = [
       UserType.ADMIN,
       UserType.STAFF,
@@ -61,10 +69,7 @@ function parseQueryParameters(request: NextRequest) {
   // Validate status (must be valid enum value)
   let statusFilter: UserStatus | undefined = undefined;
   if (statusParam) {
-    const validStatuses: UserStatus[] = [
-      UserStatus.JOINED,
-      UserStatus.INVITED,
-    ];
+    const validStatuses: UserStatus[] = [UserStatus.JOINED, UserStatus.INVITED];
     if (validStatuses.includes(statusParam as UserStatus)) {
       statusFilter = statusParam as UserStatus;
     }
@@ -87,6 +92,7 @@ function parseQueryParameters(request: NextRequest) {
   return {
     search: sanitizedSearch,
     userTypeFilter,
+    excludeUserType,
     statusFilter,
     venueId,
     page,
@@ -102,7 +108,7 @@ export async function GET(request: NextRequest) {
     if (!tokenResult.isValid) {
       return NextResponse.json(
         { success: false, message: tokenResult.error },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -111,7 +117,7 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, message: "Unauthorized - Invalid user context" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -119,13 +125,20 @@ export async function GET(request: NextRequest) {
     if (!ALLOWED_ADMIN_ROLES.includes(user.userType)) {
       return NextResponse.json(
         { success: false, message: "Forbidden - Admin access required" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // 3. Parse & validate query parameters
-    const { search, userTypeFilter, statusFilter, venueId, page, limit } =
-      parseQueryParameters(request);
+    const {
+      search,
+      userTypeFilter,
+      excludeUserType,
+      statusFilter,
+      venueId,
+      page,
+      limit,
+    } = parseQueryParameters(request);
 
     // 4. Call service layer with filter options
     const result = await getUsersForAdmin({
@@ -133,6 +146,7 @@ export async function GET(request: NextRequest) {
       assignedVenueIds: user.assignedVenueIds,
       search,
       userTypeFilter,
+      excludeUserType,
       statusFilter,
       venueId,
       page,
@@ -154,7 +168,7 @@ export async function GET(request: NextRequest) {
         message:
           error instanceof Error ? error.message : "Failed to fetch users",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -168,21 +182,21 @@ export async function DELETE(request: NextRequest) {
     if (!tokenResult.isValid) {
       return NextResponse.json(
         { success: false, message: tokenResult.error },
-        { status: 401 }
+        { status: 401 },
       );
     }
     const { user } = tokenResult;
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueIds
+      user.assignedVenueIds,
     );
     const result = await usersService.deleteUser(validatedData, serviceContext);
 
     if (!result.success) {
       return NextResponse.json(
         { success: false, message: result.message },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -196,13 +210,13 @@ export async function DELETE(request: NextRequest) {
     if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
         { success: false, message: "Validation error", errors: error.message },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     return NextResponse.json(
       { success: false, message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -216,24 +230,24 @@ export async function PATCH(request: NextRequest) {
     if (!tokenResult.isValid) {
       return NextResponse.json(
         { success: false, message: tokenResult.error },
-        { status: 401 }
+        { status: 401 },
       );
     }
     const { user } = tokenResult;
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueIds
+      user.assignedVenueIds,
     );
     const result = await usersService.updateUser(
       validatedData as any,
-      serviceContext
+      serviceContext,
     );
 
     if (!result.success) {
       return NextResponse.json(
         { success: false, message: result.message },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -248,13 +262,13 @@ export async function PATCH(request: NextRequest) {
     if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
         { success: false, message: "Validation error", errors: error.message },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     return NextResponse.json(
       { success: false, message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

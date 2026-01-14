@@ -40,7 +40,6 @@ export default function UsersPage() {
   const {
     filters,
     setSearch,
-    setUserType,
     setStatus,
     setVenue,
     setPage,
@@ -49,9 +48,10 @@ export default function UsersPage() {
   } = useUserFilters();
 
   // Build options object from filter state and pass to hook
+  // Staff management: only show ADMIN and STAFF users (exclude USER type)
   const filterOptions = {
     search: filters.search || undefined,
-    userType: filters.userType || undefined,
+    userType: "STAFF_ONLY", // Special filter to exclude USER type
     status: filters.status || undefined,
     venue: filters.venue || undefined,
     page: filters.page,
@@ -102,10 +102,6 @@ export default function UsersPage() {
     setPage(newPage);
   };
 
-  const handleUserTypeChange = (value: string) => {
-    setUserType(value === "all" ? "" : value);
-  };
-
   const handleStatusChange = (value: string) => {
     setStatus(value === "all" ? "" : value);
   };
@@ -131,7 +127,7 @@ export default function UsersPage() {
     setDeleteModalOpen(true);
   };
 
-  // Display error message on failure (Requirement 8.4)
+  // Display error message on failure
   if (error) {
     return (
       <div className="flex flex-col gap-4">
@@ -142,35 +138,33 @@ export default function UsersPage() {
             className="bg-brand text-brand-foreground"
             disabled
           >
-            Add User
+            Add Staff
             <Plus className="ml-0 size-4" />
           </Button>
         </div>
         <UserFilters
           searchValue={filters.search}
-          userTypeFilter={filters.userType}
           statusFilter={filters.status}
           venueFilter={filters.venue}
           onSearchSubmit={setSearch}
-          onUserTypeChange={handleUserTypeChange}
           onStatusChange={handleStatusChange}
           onVenueChange={handleVenueChange}
           hasActiveFilters={hasActiveFilters}
           onReset={resetFilters}
         />
         <div className="rounded-2xl border border-[#E9EAEB] p-8 text-center">
-          <p className="text-red-600 font-medium mb-2">Failed to load users</p>
+          <p className="text-red-600 font-medium mb-2">Failed to load staff</p>
           <p className="text-sm text-muted-foreground">
             {error instanceof Error
               ? error.message
-              : "An error occurred while fetching users"}
+              : "An error occurred while fetching staff"}
           </p>
         </div>
       </div>
     );
   }
 
-  // Conditional rendering - Empty state (Requirement 8.3)
+  // Conditional rendering - Empty state
   if (!isInitialLoad && users.length === 0) {
     return (
       <div className="flex flex-col gap-4">
@@ -180,17 +174,15 @@ export default function UsersPage() {
             onClick={handleAddUser}
             className="bg-brand text-brand-foreground"
           >
-            Add User
+            Add Staff
             <Plus className="ml-0 size-4" />
           </Button>
         </div>
         <UserFilters
           searchValue={filters.search}
-          userTypeFilter={filters.userType}
           statusFilter={filters.status}
           venueFilter={filters.venue}
           onSearchSubmit={setSearch}
-          onUserTypeChange={handleUserTypeChange}
           onStatusChange={handleStatusChange}
           onVenueChange={handleVenueChange}
           hasActiveFilters={hasActiveFilters}
@@ -203,7 +195,7 @@ export default function UsersPage() {
     );
   }
 
-  // Main UI rendering (Requirement 9.3, 9.4)
+  // Main UI rendering
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -214,7 +206,7 @@ export default function UsersPage() {
             onClick={handleAddUser}
             className="bg-brand text-brand-foreground hover:bg-brand/90"
           >
-            Add User
+            Add Staff
             <Plus className="ml-0 size-4" />
           </Button>
         )}
@@ -222,18 +214,16 @@ export default function UsersPage() {
 
       <UserFilters
         searchValue={filters.search}
-        userTypeFilter={filters.userType}
         statusFilter={filters.status}
         venueFilter={filters.venue}
         onSearchSubmit={setSearch}
-        onUserTypeChange={handleUserTypeChange}
         onStatusChange={handleStatusChange}
         onVenueChange={handleVenueChange}
         hasActiveFilters={hasActiveFilters}
         onReset={resetFilters}
       />
 
-      {/* Distinguish initial load vs refetch loading states (Requirement 8.2) */}
+      {/* Distinguish initial load vs refetch loading states */}
       {isInitialLoad || isRefetching ? (
         <UserTableSkeleton />
       ) : (
@@ -254,6 +244,7 @@ export default function UsersPage() {
         onOpenChange={setModalOpen}
         mode={modalMode}
         user={selectedUser}
+        isStaffOnly={true}
       />
 
       <DeleteUserModal

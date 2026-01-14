@@ -43,6 +43,7 @@ interface UserModalProps {
   onOpenChange: (open: boolean) => void;
   mode: "add" | "edit" | "view";
   user?: User & { profile?: Profile | null };
+  isStaffOnly?: boolean;
 }
 
 type UserFormData = {
@@ -54,7 +55,13 @@ type UserFormData = {
   roleId?: string;
 };
 
-export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
+export function UserModal({
+  open,
+  onOpenChange,
+  mode,
+  user,
+  isStaffOnly = false,
+}: UserModalProps) {
   const inviteUserMutation = useInviteUser();
   const updateUserMutation = useUpdateUser();
   const { data: venues, isLoading: isLoadingVenues } = useVenue();
@@ -95,14 +102,14 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
         reset({
           fullName: "",
           email: "",
-          userType: UserType.USER,
+          userType: isStaffOnly ? UserType.STAFF : UserType.USER,
           assignedVenueIds: [],
           membershipId: "",
           roleId: "",
         });
       }
     }
-  }, [open, mode, user, setValue, reset]);
+  }, [open, mode, user, setValue, reset, isStaffOnly]);
 
   const onSubmit = async (data: UserFormData) => {
     try {
@@ -188,32 +195,50 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
             <Label htmlFor="userType" className="text-sm font-medium">
               User Type <span className="text-red-500">*</span>
             </Label>
-            <Select
-              value={watch("userType")}
-              onValueChange={(value) => {
-                setValue("userType", value as UserType);
-                // Reset assignedVenueIds and roleId if userType is USER
-                if (value === UserType.USER) {
-                  setValue("assignedVenueIds", []);
-                  setValue("roleId", "");
-                }
-              }}
-              disabled={isViewMode}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select User Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={UserType.USER}>User</SelectItem>
-                <SelectItem value={UserType.STAFF}>Staff</SelectItem>
-              </SelectContent>
-            </Select>
+            {isStaffOnly ? (
+              <Select
+                value={watch("userType")}
+                onValueChange={(value) => {
+                  setValue("userType", value as UserType);
+                }}
+                disabled={isViewMode}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select User Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UserType.STAFF}>Staff</SelectItem>
+                  <SelectItem value={UserType.ADMIN}>Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <Select
+                value={watch("userType")}
+                onValueChange={(value) => {
+                  setValue("userType", value as UserType);
+                  // Reset assignedVenueIds and roleId if userType is USER
+                  if (value === UserType.USER) {
+                    setValue("assignedVenueIds", []);
+                    setValue("roleId", "");
+                  }
+                }}
+                disabled={isViewMode}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select User Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UserType.USER}>User</SelectItem>
+                  <SelectItem value={UserType.STAFF}>Staff</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             {errors.userType && (
               <p className="text-sm text-red-500">{errors.userType.message}</p>
             )}
           </div>
 
-          {watch("userType") === UserType.USER && (
+          {!isStaffOnly && watch("userType") === UserType.USER && (
             <div className="space-y-2">
               <Label htmlFor="membershipId" className="text-sm font-medium">
                 Membership
@@ -245,8 +270,8 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
             </div>
           )}
 
-          {/* Access Role - Only show if userType is STAFF */}
-          {watch("userType") === UserType.STAFF && (
+          {/* Access Role - Only show if userType is STAFF or ADMIN (staff management) */}
+          {(isStaffOnly || watch("userType") === UserType.STAFF) && (
             <div className="space-y-2">
               <Label htmlFor="roleId" className="text-sm font-medium">
                 Access Role
@@ -281,8 +306,8 @@ export function UserModal({ open, onOpenChange, mode, user }: UserModalProps) {
             </div>
           )}
 
-          {/* Venue Assignment - Only show if userType is STAFF */}
-          {watch("userType") === UserType.STAFF && (
+          {/* Venue Assignment - Only show if userType is STAFF or ADMIN (staff management) */}
+          {(isStaffOnly || watch("userType") === UserType.STAFF) && (
             <div className="space-y-2">
               <Label htmlFor="assignedVenueIds" className="text-sm font-medium">
                 Assigned Venues

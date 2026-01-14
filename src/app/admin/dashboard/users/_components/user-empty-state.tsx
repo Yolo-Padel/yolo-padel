@@ -13,11 +13,11 @@ export function UserEmptyState({ isFiltered }: UserEmptyStateProps) {
         </div>
 
         <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          No users found
+          No staff found
         </h3>
 
         <p className="text-gray-500 text-center mb-6 max-w-md">
-          No users match your search criteria. Try adjusting your filters or
+          No staff match your search criteria. Try adjusting your filters or
           search terms.
         </p>
       </div>
@@ -30,11 +30,11 @@ export function UserEmptyState({ isFiltered }: UserEmptyStateProps) {
         <Users className="w-12 h-12 text-gray-400" />
       </div>
 
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">No users yet</h3>
+      <h3 className="text-xl font-semibold text-gray-900 mb-2">No staff yet</h3>
 
       <p className="text-gray-500 text-center mb-6 max-w-md">
-        No users have been added to the system yet. Users will appear here once
-        they are invited or registered.
+        No staff have been added to the system yet. Staff will appear here once
+        they are invited.
       </p>
     </div>
   );

@@ -22,13 +22,11 @@ import { useAuth } from "@/hooks/use-auth";
 interface UserFiltersProps {
   // Current values
   searchValue: string;
-  userTypeFilter: string;
   statusFilter: string;
   venueFilter: string;
 
   // Event handlers
   onSearchSubmit: (value: string) => void;
-  onUserTypeChange: (value: string) => void;
   onStatusChange: (value: string) => void;
   onVenueChange: (value: string) => void;
 
@@ -39,11 +37,9 @@ interface UserFiltersProps {
 
 export function UserFilters({
   searchValue,
-  userTypeFilter,
   statusFilter,
   venueFilter,
   onSearchSubmit,
-  onUserTypeChange,
   onStatusChange,
   onVenueChange,
   hasActiveFilters,
@@ -104,19 +100,6 @@ export function UserFilters({
           <Search />
         </InputGroupAddon>
       </InputGroup>
-
-      {/* User Type Filter */}
-      <Select value={userTypeFilter || "all"} onValueChange={onUserTypeChange}>
-        <SelectTrigger className="w-full max-w-[160px] border-brand/40">
-          <SelectValue placeholder="All user types" />
-        </SelectTrigger>
-        <SelectContent className=" border-brand/40">
-          <SelectItem value="all">All user types</SelectItem>
-          <SelectItem value={UserType.ADMIN}>Admin</SelectItem>
-          <SelectItem value={UserType.STAFF}>Staff</SelectItem>
-          <SelectItem value={UserType.USER}>User</SelectItem>
-        </SelectContent>
-      </Select>
 
       {/* Status Filter */}
       <Select value={statusFilter || "all"} onValueChange={onStatusChange}>

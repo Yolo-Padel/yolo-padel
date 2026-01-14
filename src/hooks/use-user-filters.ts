@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 
 interface UserFilters {
   search: string;
-  userType: string;
   status: string;
   venue: string;
   page: number;
@@ -14,7 +13,6 @@ interface UserFilters {
 interface UseUserFiltersReturn {
   filters: UserFilters;
   setSearch: (value: string) => void;
-  setUserType: (value: string) => void;
   setStatus: (value: string) => void;
   setVenue: (value: string) => void;
   setPage: (page: number) => void;
@@ -24,7 +22,6 @@ interface UseUserFiltersReturn {
 
 const DEFAULT_FILTERS: UserFilters = {
   search: "",
-  userType: "",
   status: "",
   venue: "",
   page: 1,
@@ -37,7 +34,6 @@ export function useUserFilters(): UseUserFiltersReturn {
   // Initialize state from URL search params on mount
   const [filters, setFilters] = useState<UserFilters>(() => ({
     search: searchParams.get("search") || DEFAULT_FILTERS.search,
-    userType: searchParams.get("userType") || DEFAULT_FILTERS.userType,
     status: searchParams.get("status") || DEFAULT_FILTERS.status,
     venue: searchParams.get("venue") || DEFAULT_FILTERS.venue,
     page: parseInt(searchParams.get("page") || "1", 10) || DEFAULT_FILTERS.page,
@@ -46,7 +42,6 @@ export function useUserFilters(): UseUserFiltersReturn {
   // Computed value: hasActiveFilters
   const hasActiveFilters =
     filters.search !== DEFAULT_FILTERS.search ||
-    filters.userType !== DEFAULT_FILTERS.userType ||
     filters.status !== DEFAULT_FILTERS.status ||
     filters.venue !== DEFAULT_FILTERS.venue;
 
@@ -56,7 +51,6 @@ export function useUserFilters(): UseUserFiltersReturn {
 
     // Only add non-empty parameters to URL
     if (filters.search) params.set("search", filters.search);
-    if (filters.userType) params.set("userType", filters.userType);
     if (filters.status) params.set("status", filters.status);
     if (filters.venue) params.set("venue", filters.venue);
     if (filters.page > 1) params.set("page", filters.page.toString());
@@ -76,14 +70,6 @@ export function useUserFilters(): UseUserFiltersReturn {
       ...prev,
       search: value,
       page: 1, // Auto-reset page to 1 when search changes
-    }));
-  };
-
-  const setUserType = (value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      userType: value,
-      page: 1, // Auto-reset page to 1 when user type changes
     }));
   };
 
@@ -118,7 +104,6 @@ export function useUserFilters(): UseUserFiltersReturn {
   return {
     filters,
     setSearch,
-    setUserType,
     setStatus,
     setVenue,
     setPage,
