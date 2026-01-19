@@ -309,6 +309,39 @@ export function BookingDetailModal({
               </Button>
             </div>
           )}
+
+          {/* Action Buttons */}
+          {booking.source !== "AYO" &&
+            booking.status !== BookingStatus.COMPLETED &&
+            booking.status !== BookingStatus.NO_SHOW && (
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-[#C3D223] text-foreground"
+                  onClick={onConfirmMarkAsNoShowBooking}
+                >
+                  No Show
+                </Button>
+                <Button
+                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920]"
+                  onClick={onConfirmMarkAsCompleteBooking}
+                >
+                  Mark as Complete
+                </Button>
+              </div>
+            )}
+          {booking.status === BookingStatus.COMPLETED ||
+            (booking.status === BookingStatus.NO_SHOW && (
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant={"outline"}
+                  className="flex-1 border-primary"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            ))}
         </div>
       </DialogContent>
     </Dialog>
