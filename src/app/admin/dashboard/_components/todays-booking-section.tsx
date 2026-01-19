@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminBookingDashboard } from "@/hooks/use-booking";
 import { formatCurrency } from "@/lib/order-utils";
@@ -12,6 +12,11 @@ import { BookingStatus } from "@/types/prisma";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookingWithRelations } from "../booking/_components/booking-table";
 import { TodaysBookingCard } from "@/types/booking-dashboard";
+import { useCountdown } from "@/hooks/use-countdown";
+import {
+  createBookingStartDateTime,
+  isBookingUpcomingToday,
+} from "@/lib/booking-time-utils";
 
 const totalFormatter = new Intl.NumberFormat("id-ID");
 
@@ -71,6 +76,89 @@ function getDurationLabel(
 function formatTotalBadgeValue(value?: number | null) {
   if (value === undefined || value === null) return "0";
   return totalFormatter.format(value);
+}
+
+function BookingCard({
+  booking,
+  onViewBooking,
+}: {
+  booking: TodaysBookingCard;
+  onViewBooking: (booking: TodaysBookingCard) => void;
+}) {
+  // Create target datetime for countdown
+  const bookingTimeString = formatTimeRange(booking.timeSlots);
+  const targetDateTime = createBookingStartDateTime(
+    booking.bookingDate,
+    bookingTimeString,
+  );
+
+  // Use countdown hook
+  const { timeLeft, isExpired } = useCountdown(targetDateTime);
+
+  // Check if we should show countdown (only for upcoming bookings today)
+  const shouldShowCountdown =
+    booking.status === BookingStatus.UPCOMING &&
+    isBookingUpcomingToday(booking.bookingDate, bookingTimeString);
+
+  return (
+    <Card className="border border-[#d1d1d1] rounded-lg p-4">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <Badge
+            className={cn(
+              "border font-medium",
+              getStatusBadgeClass(booking.status),
+            )}
+          >
+            {getStatusLabel(booking.status)}
+          </Badge>
+          <div className="flex gap-1 items-center">
+            <CalendarDays className="size-4 text-foreground" />
+            <p className="text-xs font-normal text-foreground">
+              {formatDateLabel(booking.bookingDate)}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium text-muted-foreground">
+            {booking.bookingCode}
+          </p>
+          <p className="text-base font-semibold text-foreground">
+            {booking.customerName} • {booking.venueName} • {booking.courtName}
+          </p>
+          <p className="text-sm font-medium text-foreground">
+            {bookingTimeString}
+          </p>
+          {shouldShowCountdown && (
+            <div className="flex items-center gap-1">
+              <p
+                className={`text-xs font-medium ${isExpired ? "text-green-600" : "text-blue-600"}`}
+              >
+                Starts in {timeLeft}
+              </p>
+            </div>
+          )}
+          <p className="text-sm font-normal text-muted-foreground">
+            {getDurationLabel(booking.timeSlots)}
+          </p>
+        </div>
+
+        <div className="flex flex-col">
+          <p className="text-lg font-semibold text-foreground">
+            {formatCurrency(booking.totalPrice)}
+          </p>
+        </div>
+
+        <Button
+          className="bg-brand text-brand-foreground hover:bg-brand/90 shadow-sm h-9"
+          onClick={() => onViewBooking(booking)}
+        >
+          View Booking
+        </Button>
+      </div>
+    </Card>
+  );
 }
 
 function TodaysBookingSkeleton() {
@@ -183,58 +271,11 @@ export function TodaysBookingSection({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-6 py-3">
             {todaysBookings.map((booking) => (
-              <Card
+              <BookingCard
                 key={booking.id}
-                className="border border-[#d1d1d1] rounded-lg p-4"
-              >
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <Badge
-                      className={cn(
-                        "border font-medium",
-                        getStatusBadgeClass(booking.status),
-                      )}
-                    >
-                      {getStatusLabel(booking.status)}
-                    </Badge>
-                    <div className="flex gap-1 items-center">
-                      <CalendarDays className="size-4 text-foreground" />
-                      <p className="text-xs font-normal text-foreground">
-                        {formatDateLabel(booking.bookingDate)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {booking.bookingCode}
-                    </p>
-                    <p className="text-base font-semibold text-foreground">
-                      {booking.customerName} • {booking.venueName} •{" "}
-                      {booking.courtName}
-                    </p>
-                    <p className="text-sm font-medium text-foreground">
-                      {formatTimeRange(booking.timeSlots)}
-                    </p>
-                    <p className="text-sm font-normal text-muted-foreground">
-                      {getDurationLabel(booking.timeSlots)}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col">
-                    <p className="text-lg font-semibold text-foreground">
-                      {formatCurrency(booking.totalPrice)}
-                    </p>
-                  </div>
-
-                  <Button
-                    className="bg-brand text-brand-foreground hover:bg-brand/90 shadow-sm h-9"
-                    onClick={() => handleViewBooking(booking)}
-                  >
-                    View Booking
-                  </Button>
-                </div>
-              </Card>
+                booking={booking}
+                onViewBooking={handleViewBooking}
+              />
             ))}
           </div>
         )}

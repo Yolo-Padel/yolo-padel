@@ -17,7 +17,7 @@ export function ConfirmCompleteBookingModal({
   isLoading = false,
 }: {
   open: boolean;
-  onOpenChange:() => void;
+  onOpenChange: () => void;
   onCompleteBooking: () => void;
   isLoading?: boolean;
 }) {
@@ -26,9 +26,8 @@ export function ConfirmCompleteBookingModal({
       <DialogContent className="sm:max-w-[500px]" showCloseButton={false}>
         {/* Custom Close Button */}
         <Button
-          variant="ghost"
           size="icon"
-          className="absolute top-4 right-4 size-8 rounded-full bg-[#C3D223] hover:bg-[#A9B920]"
+          className="absolute top-4 right-4 size-8 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
           onClick={onOpenChange}
         >
           <X className="h-5 w-5" />
@@ -48,16 +47,15 @@ export function ConfirmCompleteBookingModal({
           </DialogHeader>
           <div className="flex gap-3 pt-4">
             <Button
-              variant="outline"
               onClick={onOpenChange}
-              className="flex-1 p-4 rounded-sm text-foreground border-[#C3D223]"
+              className="flex-1 border border-primary bg-primary/20 text-black hover:bg-primary/50"
               disabled={isLoading}
             >
               Cancel
             </Button>
             <Button
               onClick={onCompleteBooking}
-              className="flex-1 p-4 rounded-sm bg-[#C3D223] hover:bg-[#A9B920]"
+              className="flex-1 bg-brand text-brand-foreground hover:bg-brand/90"
               disabled={isLoading}
             >
               {isLoading ? "Completing..." : "Complete Booking"}

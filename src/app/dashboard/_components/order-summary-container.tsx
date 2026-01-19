@@ -202,7 +202,6 @@ export function OrderSummaryContainer({
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button
-          variant="ghost"
           size="icon"
           className="h-10 w-10 rounded-full bg-brand hover:bg-brand/90 text-white"
           onClick={onBack}

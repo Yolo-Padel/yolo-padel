@@ -36,7 +36,7 @@ function formatDate(date: Date): string {
 
 // Format time range: ["06:00", "07:00"] -> "06.00-07.00"
 function formatTimeRange(
-  timeSlots: Array<{ openHour: string; closeHour: string }>
+  timeSlots: Array<{ openHour: string; closeHour: string }>,
 ): string {
   if (timeSlots.length === 0) return "";
   const first = timeSlots[0];
@@ -62,7 +62,6 @@ export function CancelBookingModal({
       <DialogContent className="sm:max-w-[500px]" showCloseButton={false}>
         {/* Custom Close Button */}
         <Button
-          variant="ghost"
           size="icon"
           className="absolute top-4 right-4 size-8 rounded-full bg-[#C3D223] hover:bg-[#A9B920]"
           onClick={() => onOpenChange(false)}
