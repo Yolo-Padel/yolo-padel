@@ -8,9 +8,21 @@ import { TimetableError } from "@/app/admin/dashboard/timetable/_components/time
 import { TimetableEmptyState } from "@/components/timetable-empty-state";
 import { DynamicPriceCell } from "./dynamic-price-cell";
 import { DynamicPriceModal } from "./dynamic-price-modal";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { useVenue } from "@/hooks/use-venue";
 import { useCourtByVenue } from "@/hooks/use-court";
-import { useCourtDynamicPrices } from "@/hooks/use-court-dynamic-price";
+import {
+  useCourtDynamicPrices,
+  useDeleteCourtDynamicPrice,
+} from "@/hooks/use-court-dynamic-price";
 import { transformPrismaCourtToTimetable } from "@/lib/booking-transform";
 import { usePermissionGuard } from "@/hooks/use-permission-guard";
 import type {
@@ -32,6 +44,7 @@ export function PriceContent() {
   const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
   const [selectedVenueId, setSelectedVenueId] = React.useState<string>("");
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [modalContext, setModalContext] = React.useState<{
     courtId: string;
     startHour: string;
@@ -83,13 +96,13 @@ export function PriceContent() {
     if (!courtsData?.data) return [];
     return transformPrismaCourtToTimetable(
       courtsData.data,
-      formatDateToString(selectedDate)
+      formatDateToString(selectedDate),
     );
   }, [courtsData, selectedDate]);
 
   const courtIds = React.useMemo(
     () => courts.map((court) => court.id),
-    [courts]
+    [courts],
   );
 
   const {
@@ -100,9 +113,11 @@ export function PriceContent() {
     refetch: refetchDynamicPrices,
   } = useCourtDynamicPrices(courtIds);
 
+  const deleteMutation = useDeleteCourtDynamicPrice();
+
   const pricesByCourt = React.useMemo<Record<string, DynamicPrice[]>>(
     () => dynamicPriceQuery?.byCourt ?? {},
-    [dynamicPriceQuery]
+    [dynamicPriceQuery],
   );
 
   const timeSlots = React.useMemo(() => generateTimeSlots(), []);
@@ -153,7 +168,7 @@ export function PriceContent() {
       setModalContext(context);
       setIsModalOpen(true);
     },
-    []
+    [],
   );
 
   const renderDynamicPriceCell = React.useCallback<TimetableRenderCell>(
@@ -165,7 +180,7 @@ export function PriceContent() {
         court.id,
         courtPrices,
         selectedDate,
-        timeSlots
+        timeSlots,
       );
 
       const isFirstSlot = slotInfo?.isFirstSlot ?? false;
@@ -232,7 +247,7 @@ export function PriceContent() {
       canCreateDynamicPrice,
       canUpdateDynamicPrice,
       isPermissionLoading,
-    ]
+    ],
   );
 
   React.useEffect(() => {
@@ -274,6 +289,27 @@ export function PriceContent() {
       endHour: getNextHour(defaultStart),
       dynamicPriceId: undefined,
     });
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!modalContext?.dynamicPriceId) return;
+
+    try {
+      await deleteMutation.mutateAsync(modalContext.dynamicPriceId);
+      setShowDeleteConfirm(false);
+      setIsModalOpen(false);
+      setModalContext(null);
+    } catch (error) {
+      console.error("Failed to delete dynamic price:", error);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
   };
 
   if (venuesError) {
@@ -404,8 +440,50 @@ export function PriceContent() {
           canCreate={canCreateDynamicPrice}
           canUpdate={canUpdateDynamicPrice}
           canDelete={canDeleteDynamicPrice}
+          onDelete={handleDeleteClick}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="sm:max-w-[400px]" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Delete Custom Price</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this custom price? This action
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Button
+            type="button"
+            size="icon"
+            className="absolute top-4 right-4 h-8 w-8 rounded-full bg-brand hover:bg-brand/90 text-brand-foreground"
+            onClick={handleDeleteCancel}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+
+          <div className="flex gap-3 mt-6">
+            <Button
+              type="button"
+              className="flex-1 border border-primary bg-primary/20 font-medium text-sm hover:bg-primary/50"
+              onClick={handleDeleteCancel}
+              disabled={deleteMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="flex-1 bg-brand text-brand-foreground font-medium text-sm hover:bg-brand/90 disabled:opacity-60"
+              onClick={handleDeleteConfirm}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

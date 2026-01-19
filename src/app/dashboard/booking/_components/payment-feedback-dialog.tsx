@@ -2,7 +2,15 @@
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, XCircle, XIcon, Calendar, Clock, MapPin } from "lucide-react";
+import {
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  XIcon,
+  Calendar,
+  Clock,
+  MapPin,
+} from "lucide-react";
 import { stringUtils } from "@/lib/format/string";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -29,8 +37,8 @@ export type PaymentStatusResponse = {
   id: string;
   status: string;
   amount: number;
-  taxAmount: number;    // Fee breakdown field (Requirements 1.3)
-  bookingFee: number;   // Fee breakdown field (Requirements 2.3)
+  taxAmount: number; // Fee breakdown field (Requirements 1.3)
+  bookingFee: number; // Fee breakdown field (Requirements 2.3)
   paymentDate: string | null;
   expiredAt: string | null;
   order: {
@@ -95,7 +103,6 @@ export function PaymentFeedbackDialog({
             Payment {isSuccess ? "Successful" : "Failed"}
           </DialogTitle>
           <Button
-            variant="ghost"
             size="icon"
             className="absolute top-0 right-0 bg-primary hover:bg-primary/90 rounded-full"
             onClick={onClose}
@@ -231,14 +238,16 @@ export function PaymentFeedbackDialog({
                   {payment.bookingFee > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Booking Fee</span>
-                      <span>{stringUtils.formatRupiah(payment.bookingFee)}</span>
+                      <span>
+                        {stringUtils.formatRupiah(payment.bookingFee)}
+                      </span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm font-semibold border-t pt-2">
                     <span>Total Payment</span>
                     <span>
                       {stringUtils.formatRupiah(
-                        payment.amount + payment.taxAmount + payment.bookingFee
+                        payment.amount + payment.taxAmount + payment.bookingFee,
                       )}
                     </span>
                   </div>

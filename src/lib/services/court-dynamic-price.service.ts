@@ -12,6 +12,7 @@ import {
 } from "./activity-log.service";
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
+import { stringUtils } from "../format/string";
 
 const buildSuccess = <T>(data: T, message: string) => ({
   success: true,
@@ -56,7 +57,7 @@ const ensureCourtAccess = async (courtId: string, context: ServiceContext) => {
 
 const ensureDynamicPriceAccess = async (
   id: string,
-  context: ServiceContext
+  context: ServiceContext,
 ) => {
   const dynamicPrice = await prisma.courtDynamicPrice.findUnique({
     where: { id },
@@ -79,7 +80,7 @@ const ensureDynamicPriceAccess = async (
   if (
     context.userRole === UserType.STAFF &&
     context.assignedVenueId &&
-    dynamicPrice.court.venueId !== context.assignedVenueId
+    !context.assignedVenueId.includes(dynamicPrice.court.venueId)
   ) {
     return {
       error: buildError("You are not authorized to access this dynamic price"),
@@ -104,6 +105,59 @@ const minutesToTimeString = (minutes: number) => {
   return `${hours.toString().padStart(2, "0")}:${remainingMinutes
     .toString()
     .padStart(2, "0")}`;
+};
+
+const checkTimeSlotOverlap = async (
+  courtId: string,
+  startHour: string,
+  endHour: string,
+  date: Date | null,
+  dayOfWeek: string | null,
+  excludePriceId?: string,
+) => {
+  const startMinutes = timeStringToMinutes(startHour);
+  const endMinutes = timeStringToMinutes(endHour);
+
+  // Build where clause for same court and time period
+  const whereClause: any = {
+    courtId,
+    isArchived: false,
+    ...(excludePriceId && { id: { not: excludePriceId } }),
+  };
+
+  // Add date/dayOfWeek filter
+  if (date) {
+    whereClause.date = date;
+  } else if (dayOfWeek) {
+    whereClause.dayOfWeek = dayOfWeek;
+  }
+
+  const existingPrices = await prisma.courtDynamicPrice.findMany({
+    where: whereClause,
+    select: {
+      id: true,
+      startHour: true,
+      endHour: true,
+      price: true,
+    },
+  });
+
+  // Check for time overlap
+  for (const price of existingPrices) {
+    const existingStart = timeStringToMinutes(price.startHour);
+    const existingEnd = timeStringToMinutes(price.endHour);
+
+    // Check if time ranges overlap
+    // Two ranges overlap if: start1 < end2 AND start2 < end1
+    if (startMinutes < existingEnd && existingStart < endMinutes) {
+      return {
+        hasOverlap: true,
+        conflictingPrice: price,
+      };
+    }
+  }
+
+  return { hasOverlap: false };
 };
 
 export const courtDynamicPriceService = {
@@ -140,7 +194,7 @@ export const courtDynamicPriceService = {
 
       const { dynamicPrice, error } = await ensureDynamicPriceAccess(
         id,
-        context
+        context,
       );
       if (error) return error;
 
@@ -153,7 +207,7 @@ export const courtDynamicPriceService = {
 
   create: async (
     data: CourtDynamicPriceCreateData,
-    context: ServiceContext
+    context: ServiceContext,
   ) => {
     try {
       const accessError = requirePermission(context, UserType.STAFF);
@@ -161,6 +215,22 @@ export const courtDynamicPriceService = {
 
       const { error } = await ensureCourtAccess(data.courtId, context);
       if (error) return error;
+
+      // Check for time slot overlaps before creating
+      const overlapCheck = await checkTimeSlotOverlap(
+        data.courtId,
+        data.startHour,
+        data.endHour,
+        data.date ?? null,
+        data.dayOfWeek ?? null,
+        // No excludePriceId for creation
+      );
+
+      if (overlapCheck.hasOverlap) {
+        return buildError(
+          `The selected time slot overlaps with an existing custom price (${overlapCheck.conflictingPrice?.startHour}-${overlapCheck.conflictingPrice?.endHour} for ${stringUtils.formatRupiah(overlapCheck.conflictingPrice?.price || 0)})`,
+        );
+      }
 
       const baseData = {
         courtId: data.courtId,
@@ -223,7 +293,7 @@ export const courtDynamicPriceService = {
   update: async (
     id: string,
     data: CourtDynamicPriceUpdateData,
-    context: ServiceContext
+    context: ServiceContext,
   ) => {
     try {
       const accessError = requirePermission(context, UserType.STAFF);
@@ -231,18 +301,48 @@ export const courtDynamicPriceService = {
 
       const { dynamicPrice, error } = await ensureDynamicPriceAccess(
         id,
-        context
+        context,
       );
       if (error) return error;
 
-      if (data.startHour !== undefined || data.endHour !== undefined) {
-        return buildError("Updating startHour/endHour is not allowed");
+      // Check if time slots are being changed
+      const timeSlotChanged =
+        (data.startHour !== undefined &&
+          data.startHour !== dynamicPrice.startHour) ||
+        (data.endHour !== undefined && data.endHour !== dynamicPrice.endHour);
+
+      // If time slots are changing, validate for overlaps
+      if (timeSlotChanged) {
+        const newStartHour = data.startHour ?? dynamicPrice.startHour;
+        const newEndHour = data.endHour ?? dynamicPrice.endHour;
+        const newDate = data.date !== undefined ? data.date : dynamicPrice.date;
+        const newDayOfWeek =
+          data.dayOfWeek !== undefined
+            ? data.dayOfWeek
+            : dynamicPrice.dayOfWeek;
+
+        const overlapCheck = await checkTimeSlotOverlap(
+          dynamicPrice.courtId,
+          newStartHour,
+          newEndHour,
+          newDate,
+          newDayOfWeek,
+          id, // Exclude current price from overlap check
+        );
+
+        if (overlapCheck.hasOverlap) {
+          return buildError(
+            `The selected time slot overlaps with an existing custom price (${overlapCheck.conflictingPrice?.startHour}-${overlapCheck.conflictingPrice?.endHour} for ${stringUtils.formatRupiah(overlapCheck.conflictingPrice?.price || 0)})`,
+          );
+        }
       }
 
       // Capture before state for diff
       const beforeState = {
         dayOfWeek: dynamicPrice.dayOfWeek,
         date: dynamicPrice.date,
+        startHour: dynamicPrice.startHour,
+        endHour: dynamicPrice.endHour,
         price: dynamicPrice.price,
         isActive: dynamicPrice.isActive,
       };
@@ -253,6 +353,8 @@ export const courtDynamicPriceService = {
           : dynamicPrice.dayOfWeek;
       const resolvedDate =
         data.date !== undefined ? (data.date ?? null) : dynamicPrice.date;
+      const resolvedStartHour = data.startHour ?? dynamicPrice.startHour;
+      const resolvedEndHour = data.endHour ?? dynamicPrice.endHour;
       const resolvedPrice = data.price ?? dynamicPrice.price;
       const resolvedIsActive =
         data.isActive !== undefined ? data.isActive : dynamicPrice.isActive;
@@ -262,6 +364,8 @@ export const courtDynamicPriceService = {
         data: {
           dayOfWeek: resolvedDayOfWeek,
           date: resolvedDate,
+          startHour: resolvedStartHour,
+          endHour: resolvedEndHour,
           price: resolvedPrice,
           isActive: resolvedIsActive,
         },
@@ -271,6 +375,8 @@ export const courtDynamicPriceService = {
       const afterState = {
         dayOfWeek: updatedDynamicPrice.dayOfWeek,
         date: updatedDynamicPrice.date,
+        startHour: updatedDynamicPrice.startHour,
+        endHour: updatedDynamicPrice.endHour,
         price: updatedDynamicPrice.price,
         isActive: updatedDynamicPrice.isActive,
       };
@@ -304,7 +410,7 @@ export const courtDynamicPriceService = {
 
       return buildSuccess(
         updatedDynamicPrice,
-        "Dynamic price updated successfully"
+        "Dynamic price updated successfully",
       );
     } catch (err) {
       console.error("update dynamic price error:", err);
@@ -319,7 +425,7 @@ export const courtDynamicPriceService = {
 
       const { dynamicPrice, error } = await ensureDynamicPriceAccess(
         id,
-        context
+        context,
       );
       if (error) return error;
 

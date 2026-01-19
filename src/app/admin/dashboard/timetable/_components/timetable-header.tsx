@@ -44,8 +44,9 @@ export function TimetableHeader({
           disabled={isLoading}
         >
           <SelectTrigger
-            className="w-[280px] border-none shadow-none text-2xl font-semibold p-0"
+            className="border-none shadow-none text-2xl font-semibold p-0"
             chevronOpacity={100}
+            chevronSize={6}
           >
             <SelectValue placeholder="Pilih Venue" />
           </SelectTrigger>

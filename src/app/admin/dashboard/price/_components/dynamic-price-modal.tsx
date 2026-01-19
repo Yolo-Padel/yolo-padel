@@ -26,6 +26,7 @@ import {
 } from "@/lib/validations/court-dynamic-price.validation";
 import {
   useCreateCourtDynamicPrice,
+  useUpdateCourtDynamicPrice,
   useDeleteCourtDynamicPrice,
 } from "@/hooks/use-court-dynamic-price";
 import { cn } from "@/lib/utils";
@@ -61,6 +62,7 @@ type DynamicPriceModalProps = {
   canCreate?: boolean;
   canUpdate?: boolean;
   canDelete?: boolean;
+  onDelete?: () => void; // Add delete callback
 };
 
 const dynamicPriceFormSchema = courtDynamicPriceCreateSchema.safeExtend({
@@ -87,6 +89,7 @@ export function DynamicPriceModal({
   canCreate = false,
   canUpdate = false,
   canDelete = false,
+  onDelete, // Add onDelete prop
 }: DynamicPriceModalProps) {
   const timeOptions = React.useMemo(() => generateTimeSlots(), []);
 
@@ -95,6 +98,7 @@ export function DynamicPriceModal({
   const isUserTypingRef = React.useRef(false);
 
   const createMutation = useCreateCourtDynamicPrice();
+  const updateMutation = useUpdateCourtDynamicPrice();
   const deleteMutation = useDeleteCourtDynamicPrice();
 
   const {
@@ -220,10 +224,19 @@ export function DynamicPriceModal({
     } as CourtDynamicPriceCreateData;
 
     try {
-      await createMutation.mutateAsync(payload);
+      if (isEditingExisting && initialDynamicPriceId) {
+        // Update existing dynamic price
+        await updateMutation.mutateAsync({
+          id: initialDynamicPriceId,
+          data: payload,
+        });
+      } else {
+        // Create new dynamic price
+        await createMutation.mutateAsync(payload);
+      }
       onOpenChange(false);
     } catch (error) {
-      console.error("Failed to create dynamic price:", error);
+      console.error("Failed to save dynamic price:", error);
     }
   };
 
@@ -238,6 +251,14 @@ export function DynamicPriceModal({
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to delete dynamic price:", error);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    if (onDelete) {
+      onDelete(); // Call parent's delete handler
+    } else {
+      handleDelete(); // Fallback to direct delete
     }
   };
 
@@ -497,10 +518,11 @@ export function DynamicPriceModal({
                 type="button"
                 variant="destructive"
                 className="flex-1"
-                onClick={handleDelete}
+                onClick={handleDeleteClick}
                 disabled={
                   isSubmitting ||
                   createMutation.isPending ||
+                  updateMutation.isPending ||
                   deleteMutation.isPending
                 }
               >
@@ -516,11 +538,12 @@ export function DynamicPriceModal({
               disabled={
                 isSubmitting ||
                 createMutation.isPending ||
+                updateMutation.isPending ||
                 deleteMutation.isPending ||
                 isReadOnly
               }
             >
-              {createMutation.isPending
+              {createMutation.isPending || updateMutation.isPending
                 ? "Saving..."
                 : isReadOnly
                   ? "View Only"

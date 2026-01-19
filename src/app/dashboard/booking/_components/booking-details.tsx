@@ -3,12 +3,18 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Info, X } from "lucide-react";
-import { BookingStatus } from "@/types/prisma";
+import { Info, X, Clock } from "lucide-react";
+
 {
   /*Import Modal*/
 }
 import { stringUtils } from "@/lib/format/string";
+import { BookingStatus } from "@/types/prisma";
+import { useCountdown } from "@/hooks/use-countdown";
+import {
+  createBookingStartDateTime,
+  isBookingUpcomingToday,
+} from "@/lib/booking-time-utils";
 
 type BookingDetails = {
   id: string;
@@ -50,6 +56,24 @@ export function SeeBookingDetails({
   bookingDetails: BookingDetails | null;
   onChangeMode: (mode: "booking-details" | "book-again") => void;
 }) {
+  // Create target datetime for countdown
+  const targetDateTime = bookingDetails
+    ? createBookingStartDateTime(
+        bookingDetails.bookingDate,
+        bookingDetails.bookingTime || "",
+      )
+    : null;
+
+  // Use countdown hook
+  const { timeLeft, isExpired } = useCountdown(targetDateTime);
+
+  // Check if we should show countdown (only for upcoming bookings today)
+  const shouldShowCountdown =
+    bookingDetails?.status === BookingStatus.UPCOMING &&
+    isBookingUpcomingToday(
+      bookingDetails.bookingDate,
+      bookingDetails.bookingTime || "",
+    );
   return (
     <div className="space-y-8">
       {/*Header*/}
@@ -99,7 +123,7 @@ export function SeeBookingDetails({
               {
                 weekday: "long",
                 day: "numeric",
-                month: "short",
+                month: "long",
                 year: "numeric",
               },
             ) || "-"}
@@ -114,6 +138,21 @@ export function SeeBookingDetails({
           <div className="font-medium text-foreground min-w-0">
             {bookingDetails?.duration || "-"}
           </div>
+
+          {shouldShowCountdown && (
+            <>
+              <div className="flex items-center gap-1">
+                <span>Game Starts in</span>
+              </div>
+              <div className="font-medium text-foreground min-w-0">
+                <span
+                  className={`font-medium ${isExpired ? "text-green-600" : "text-blue-600"}`}
+                >
+                  {timeLeft}
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         <div>
@@ -152,7 +191,8 @@ export function SeeBookingDetails({
             </Button>
           </div>
         )}
-        {bookingDetails?.status === BookingStatus.PENDING && (
+        {(bookingDetails?.status === BookingStatus.PENDING ||
+          bookingDetails?.status === BookingStatus.CANCELLED) && (
           <div>
             <Button
               onClick={() => onOpenChange(false)}
@@ -166,14 +206,13 @@ export function SeeBookingDetails({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center justify-center">
             <Button
               onClick={() => onOpenChange(false)}
-              variant="outline"
-              className="w-full p-4 rounded-sm bg-brand text-brand-foreground hover:bg-brand/90"
+              className="flex-1 border border-primary bg-primary/20 text-black hover:bg-primary/50"
             >
               Close
             </Button>
             <Button
               onClick={() => onChangeMode("book-again")}
-              className="w-full p-4 rounded-sm"
+              className="w-full p-4 bg-brand text-brand-foreground hover:bg-brand/90"
             >
               Book Again
             </Button>

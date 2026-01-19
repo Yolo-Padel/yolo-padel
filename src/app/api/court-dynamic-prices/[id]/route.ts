@@ -7,7 +7,7 @@ import { courtDynamicPriceUpdateSchema } from "@/lib/validations/court-dynamic-p
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -15,7 +15,7 @@ export async function GET(
     if (!tokenResult.isValid) {
       return NextResponse.json(
         { success: false, message: tokenResult.error },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -23,7 +23,7 @@ export async function GET(
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueIds
+      user.assignedVenueIds,
     );
 
     const result = await courtDynamicPriceService.getById(id, serviceContext);
@@ -31,7 +31,7 @@ export async function GET(
     if (!result.success) {
       return NextResponse.json(
         { success: false, message: result.message },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -40,14 +40,14 @@ export async function GET(
     console.error("GET /api/court-dynamic-prices/[id] error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const body = await request.json();
@@ -58,27 +58,28 @@ export async function PUT(
     if (!tokenResult.isValid) {
       return NextResponse.json(
         { success: false, message: tokenResult.error },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const { user } = tokenResult;
+
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueIds
+      user.assignedVenueIds,
     );
 
     const result = await courtDynamicPriceService.update(
       id,
       payload,
-      serviceContext
+      serviceContext,
     );
 
     if (!result.success) {
       return NextResponse.json(
         { success: false, message: result.message },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -93,20 +94,20 @@ export async function PUT(
           message: "Validation error",
           errors: error.flatten(),
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     return NextResponse.json(
       { success: false, message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -114,7 +115,7 @@ export async function DELETE(
     if (!tokenResult.isValid) {
       return NextResponse.json(
         { success: false, message: tokenResult.error },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -122,7 +123,7 @@ export async function DELETE(
     const serviceContext = createServiceContext(
       user.userType,
       user.userId,
-      user.assignedVenueIds
+      user.assignedVenueIds,
     );
 
     const result = await courtDynamicPriceService.delete(id, serviceContext);
@@ -130,7 +131,7 @@ export async function DELETE(
     if (!result.success) {
       return NextResponse.json(
         { success: false, message: result.message },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -139,7 +140,7 @@ export async function DELETE(
     console.error("DELETE /api/court-dynamic-prices/[id] error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

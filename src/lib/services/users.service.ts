@@ -21,6 +21,7 @@ import { ENTITY_TYPES } from "@/types/entity";
  * Security notes:
  * - search: Sanitized and length-limited (max 100 chars)
  * - userTypeFilter: Validated against UserType enum
+ * - excludeUserType: Validated against UserType enum (for excluding specific types)
  * - statusFilter: Validated against UserStatus enum
  * - venueId: Validated as UUID format
  * - page/limit: Validated as positive integers, limit capped at 100
@@ -33,6 +34,7 @@ export interface GetUsersForAdminOptions {
   // Filter options (will be validated/sanitized)
   search?: string;
   userTypeFilter?: UserType;
+  excludeUserType?: UserType;
   statusFilter?: UserStatus;
   venueId?: string;
 
@@ -165,10 +167,7 @@ function validateUserStatus(value?: string): UserStatus | undefined {
   if (!value) return undefined;
 
   // Check if value is a valid UserStatus enum value
-  const validStatuses: UserStatus[] = [
-    UserStatus.JOINED,
-    UserStatus.INVITED,
-  ];
+  const validStatuses: UserStatus[] = [UserStatus.JOINED, UserStatus.INVITED];
 
   if (validStatuses.includes(value as UserStatus)) {
     return value as UserStatus;
@@ -233,11 +232,21 @@ function buildSearchFilter(search?: string): Prisma.UserWhereInput["OR"] {
  * Build user type filter with validation
  *
  * @param userTypeFilter - User type to filter by
+ * @param excludeUserType - User type to exclude
  * @returns Prisma where clause for user type filtering
  */
 function buildUserTypeFilter(
-  userTypeFilter?: UserType
+  userTypeFilter?: UserType,
+  excludeUserType?: UserType,
 ): Prisma.UserWhereInput["userType"] {
+  // If excluding a user type, return NOT filter
+  if (excludeUserType) {
+    const validatedExclude = validateUserType(excludeUserType);
+    if (validatedExclude) {
+      return { not: validatedExclude };
+    }
+  }
+
   // Validate the user type filter
   const validatedUserType = validateUserType(userTypeFilter);
 
@@ -257,7 +266,7 @@ function buildUserTypeFilter(
  * @returns Prisma where clause for status filtering
  */
 function buildStatusFilter(
-  statusFilter?: UserStatus
+  statusFilter?: UserStatus,
 ): Prisma.UserWhereInput["userStatus"] {
   // Validate the status filter
   const validatedStatus = validateUserStatus(statusFilter);
@@ -283,7 +292,7 @@ function buildStatusFilter(
 function buildVenueFilter(
   userType: UserType,
   assignedVenueIds: string[],
-  venueId?: string
+  venueId?: string,
 ): Prisma.UserWhereInput {
   // Validate venue ID format if provided
   const validatedVenueId = validateVenueId(venueId);
@@ -371,7 +380,7 @@ function buildVenueFilter(
  */
 function buildPaginationParams(
   page?: number,
-  limit?: number
+  limit?: number,
 ): {
   skip: number;
   take: number;
@@ -404,25 +413,29 @@ function buildPaginationParams(
  * @returns Complete Prisma where clause
  */
 function buildWhereClause(
-  options: GetUsersForAdminOptions
+  options: GetUsersForAdminOptions,
 ): Prisma.UserWhereInput {
   const {
     userType,
     assignedVenueIds,
     search,
     userTypeFilter,
+    excludeUserType,
     statusFilter,
     venueId,
   } = options;
 
   // Build individual filter components
   const searchFilter = buildSearchFilter(search);
-  const userTypeFilterClause = buildUserTypeFilter(userTypeFilter);
+  const userTypeFilterClause = buildUserTypeFilter(
+    userTypeFilter,
+    excludeUserType,
+  );
   const statusFilterClause = buildStatusFilter(statusFilter);
   const venueFilterClause = buildVenueFilter(
     userType,
     assignedVenueIds,
-    venueId
+    venueId,
   );
 
   // Combine all filters with AND logic
@@ -483,7 +496,7 @@ function buildWhereClause(
  * });
  */
 export async function getUsersForAdmin(
-  options: GetUsersForAdminOptions
+  options: GetUsersForAdminOptions,
 ): Promise<GetUsersForAdminResult> {
   // Build where clause combining all filters
   const where = buildWhereClause(options);
@@ -491,7 +504,7 @@ export async function getUsersForAdmin(
   // Build pagination parameters
   const { skip, take, metadata } = buildPaginationParams(
     options.page,
-    options.limit
+    options.limit,
   );
 
   // Execute query with filters and pagination
@@ -652,7 +665,7 @@ export const usersService = {
   createUser: async (
     data: UserCreateData,
     context: ServiceContext,
-    tx?: Prisma.TransactionClient
+    tx?: Prisma.TransactionClient,
   ) => {
     try {
       const accessError = requirePermission(context, UserType.STAFF);

@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { useAdminUsers } from "@/hooks/use-users";
-import { useUserFilters } from "@/hooks/use-user-filters";
-import { UserHeader } from "@/app/admin/dashboard/users/_components/user-header";
-import { UsersTable } from "@/app/admin/dashboard/users/_components/users-table";
-import { UserFilters } from "@/app/admin/dashboard/users/_components/user-filters";
-import { UserTableSkeleton } from "@/app/admin/dashboard/users/_components/user-table-skeleton";
-import { UserEmptyState } from "@/app/admin/dashboard/users/_components/user-empty-state";
-import { UserModal } from "@/app/admin/dashboard/users/_components/user-modal";
-import { DeleteUserModal } from "@/app/admin/dashboard/users/_components/delete-user-modal";
+import { useCustomerFilters } from "@/hooks/use-customer-filters";
+import { CustomerHeader } from "@/app/admin/dashboard/customers/_components/customer-header";
+import { CustomerTable } from "@/app/admin/dashboard/customers/_components/customer-table";
+import { CustomerFilters } from "@/app/admin/dashboard/customers/_components/customer-filters";
+import { CustomerTableSkeleton } from "@/app/admin/dashboard/customers/_components/customer-table-skeleton";
+import { CustomerEmptyState } from "@/app/admin/dashboard/customers/_components/customer-empty-state";
+import { CustomerModal } from "@/app/admin/dashboard/customers/_components/customer-modal";
+import { DeleteCustomerModal } from "@/app/admin/dashboard/customers/_components/delete-customer-modal";
 import { User, Profile } from "@/types/prisma";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -17,43 +17,42 @@ import { usePermissionGuard } from "@/hooks/use-permission-guard";
 
 const PAGE_SIZE = 10;
 
-export default function UsersPage() {
+export default function CustomersPage() {
   // Access Control
-  const { canAccess: canCreateUser, isLoading: isCreateLoading } =
+  const { canAccess: canCreateCustomer, isLoading: isCreateLoading } =
     usePermissionGuard({
       moduleKey: "users",
       action: "create",
     });
-  const { canAccess: canEditUser, isLoading: isEditLoading } =
+  const { canAccess: canEditCustomer, isLoading: isEditLoading } =
     usePermissionGuard({
       moduleKey: "users",
       action: "update",
     });
-  const { canAccess: canDeleteUser, isLoading: isDeleteLoading } =
+  const { canAccess: canDeleteCustomer, isLoading: isDeleteLoading } =
     usePermissionGuard({
       moduleKey: "users",
       action: "delete",
     });
   const isPermissionLoading =
     isCreateLoading || isEditLoading || isDeleteLoading;
-  // Use the useUserFilters hook for all filter logic
+
+  // Use the useCustomerFilters hook for all filter logic
   const {
     filters,
     setSearch,
     setStatus,
-    setVenue,
     setPage,
     resetFilters,
     hasActiveFilters,
-  } = useUserFilters();
+  } = useCustomerFilters();
 
   // Build options object from filter state and pass to hook
-  // Staff management: only show ADMIN and STAFF users (exclude USER type)
+  // Customer management: only show USER type
   const filterOptions = {
     search: filters.search || undefined,
-    userType: "STAFF_ONLY", // Special filter to exclude USER type
+    userType: "USER_ONLY", // Special filter to show only USER type
     status: filters.status || undefined,
-    venue: filters.venue || undefined,
     page: filters.page,
     limit: PAGE_SIZE,
   };
@@ -62,10 +61,10 @@ export default function UsersPage() {
   const { data, isLoading, isFetching, error } = useAdminUsers(filterOptions);
 
   // Use pagination metadata from API response
-  const users = data?.data ?? [];
+  const customers = data?.data ?? [];
   const apiPagination = data?.pagination;
 
-  // Transform API pagination to match UsersTable's PaginationInfo interface
+  // Transform API pagination to match CustomerTable's PaginationInfo interface
   const paginationInfo = apiPagination
     ? {
         pageSafe: apiPagination.page,
@@ -89,11 +88,11 @@ export default function UsersPage() {
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit" | "view">("add");
-  const [selectedUser, setSelectedUser] = useState<
+  const [selectedCustomer, setSelectedCustomer] = useState<
     (User & { profile?: Profile | null }) | undefined
   >(undefined);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<
+  const [customerToDelete, setCustomerToDelete] = useState<
     (User & { profile?: Profile | null }) | undefined
   >(undefined);
 
@@ -106,24 +105,24 @@ export default function UsersPage() {
     setStatus(value === "all" ? "" : value);
   };
 
-  const handleVenueChange = (value: string) => {
-    setVenue(value === "all" ? "" : value);
-  };
-
-  const handleAddUser = () => {
+  const handleAddCustomer = () => {
     setModalMode("add");
-    setSelectedUser(undefined);
+    setSelectedCustomer(undefined);
     setModalOpen(true);
   };
 
-  const handleEditUser = (user: User & { profile?: Profile | null }) => {
-    setModalMode(canEditUser && !isPermissionLoading ? "edit" : "view");
-    setSelectedUser(user);
+  const handleEditCustomer = (
+    customer: User & { profile?: Profile | null },
+  ) => {
+    setModalMode(canEditCustomer && !isPermissionLoading ? "edit" : "view");
+    setSelectedCustomer(customer);
     setModalOpen(true);
   };
 
-  const handleDeleteUser = (user: User & { profile?: Profile | null }) => {
-    setUserToDelete(user);
+  const handleDeleteCustomer = (
+    customer: User & { profile?: Profile | null },
+  ) => {
+    setCustomerToDelete(customer);
     setDeleteModalOpen(true);
   };
 
@@ -132,32 +131,32 @@ export default function UsersPage() {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <UserHeader userCount={0} />
+          <CustomerHeader customerCount={0} />
           <Button
-            onClick={handleAddUser}
+            onClick={handleAddCustomer}
             className="bg-brand text-brand-foreground"
             disabled
           >
-            Add Staff
+            Add Customer
             <Plus className="ml-0 size-4" />
           </Button>
         </div>
-        <UserFilters
+        <CustomerFilters
           searchValue={filters.search}
           statusFilter={filters.status}
-          venueFilter={filters.venue}
           onSearchSubmit={setSearch}
           onStatusChange={handleStatusChange}
-          onVenueChange={handleVenueChange}
           hasActiveFilters={hasActiveFilters}
           onReset={resetFilters}
         />
         <div className="rounded-2xl border border-[#E9EAEB] p-8 text-center">
-          <p className="text-red-600 font-medium mb-2">Failed to load staff</p>
+          <p className="text-red-600 font-medium mb-2">
+            Failed to load customers
+          </p>
           <p className="text-sm text-muted-foreground">
             {error instanceof Error
               ? error.message
-              : "An error occurred while fetching staff"}
+              : "An error occurred while fetching customers"}
           </p>
         </div>
       </div>
@@ -165,31 +164,29 @@ export default function UsersPage() {
   }
 
   // Conditional rendering - Empty state
-  if (!isInitialLoad && users.length === 0) {
+  if (!isInitialLoad && customers.length === 0) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <UserHeader userCount={apiPagination?.total ?? 0} />
+          <CustomerHeader customerCount={apiPagination?.total ?? 0} />
           <Button
-            onClick={handleAddUser}
+            onClick={handleAddCustomer}
             className="bg-brand text-brand-foreground"
           >
-            Add Staff
+            Add Customer
             <Plus className="ml-0 size-4" />
           </Button>
         </div>
-        <UserFilters
+        <CustomerFilters
           searchValue={filters.search}
           statusFilter={filters.status}
-          venueFilter={filters.venue}
           onSearchSubmit={setSearch}
           onStatusChange={handleStatusChange}
-          onVenueChange={handleVenueChange}
           hasActiveFilters={hasActiveFilters}
           onReset={resetFilters}
         />
         <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
-          <UserEmptyState isFiltered={hasActiveFilters} />
+          <CustomerEmptyState isFiltered={hasActiveFilters} />
         </div>
       </div>
     );
@@ -199,58 +196,55 @@ export default function UsersPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <UserHeader userCount={apiPagination?.total ?? 0} />
+        <CustomerHeader customerCount={apiPagination?.total ?? 0} />
 
-        {canCreateUser && !isPermissionLoading && (
+        {canCreateCustomer && !isPermissionLoading && (
           <Button
-            onClick={handleAddUser}
+            onClick={handleAddCustomer}
             className="bg-brand text-brand-foreground hover:bg-brand/90"
           >
-            Add Staff
+            Add Customer
             <Plus className="ml-0 size-4" />
           </Button>
         )}
       </div>
 
-      <UserFilters
+      <CustomerFilters
         searchValue={filters.search}
         statusFilter={filters.status}
-        venueFilter={filters.venue}
         onSearchSubmit={setSearch}
         onStatusChange={handleStatusChange}
-        onVenueChange={handleVenueChange}
         hasActiveFilters={hasActiveFilters}
         onReset={resetFilters}
       />
 
       {/* Distinguish initial load vs refetch loading states */}
       {isInitialLoad || isRefetching ? (
-        <UserTableSkeleton />
+        <CustomerTableSkeleton />
       ) : (
-        <UsersTable
-          users={users}
+        <CustomerTable
+          customers={customers}
           paginationInfo={paginationInfo}
           onPageChange={handlePageChange}
-          onEditUser={handleEditUser}
-          onDeleteUser={handleDeleteUser}
-          canDeleteUser={canDeleteUser}
-          canEditUser={canEditUser}
+          onEditCustomer={handleEditCustomer}
+          onDeleteCustomer={handleDeleteCustomer}
+          canDeleteCustomer={canDeleteCustomer}
+          canEditCustomer={canEditCustomer}
           isPermissionLoading={isPermissionLoading}
         />
       )}
 
-      <UserModal
+      <CustomerModal
         open={modalOpen}
         onOpenChange={setModalOpen}
         mode={modalMode}
-        user={selectedUser}
-        isStaffOnly={true}
+        customer={selectedCustomer}
       />
 
-      <DeleteUserModal
+      <DeleteCustomerModal
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
-        user={userToDelete}
+        customer={customerToDelete}
       />
     </div>
   );

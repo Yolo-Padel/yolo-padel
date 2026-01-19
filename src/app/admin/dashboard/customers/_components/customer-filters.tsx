@@ -15,68 +15,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { UserType, UserStatus, Venue } from "@prisma/client";
-import { useVenue } from "@/hooks/use-venue";
-import { useAuth } from "@/hooks/use-auth";
+import { UserStatus } from "@prisma/client";
 
-interface UserFiltersProps {
+interface CustomerFiltersProps {
   // Current values
   searchValue: string;
   statusFilter: string;
-  venueFilter: string;
 
   // Event handlers
   onSearchSubmit: (value: string) => void;
   onStatusChange: (value: string) => void;
-  onVenueChange: (value: string) => void;
 
   // UI state
   hasActiveFilters: boolean;
   onReset: () => void;
 }
 
-export function UserFilters({
+export function CustomerFilters({
   searchValue,
   statusFilter,
-  venueFilter,
   onSearchSubmit,
   onStatusChange,
-  onVenueChange,
   hasActiveFilters,
   onReset,
-}: UserFiltersProps) {
-  const { data: venuesData, isLoading: isLoadingVenues } = useVenue();
-  const { user } = useAuth();
-
+}: CustomerFiltersProps) {
   // Local state for controlled search input
   const [localSearchValue, setLocalSearchValue] = useState(searchValue);
-
-  // API returns { success, data: Venue[], message }
-  const allVenues: Venue[] = venuesData?.data || [];
-
-  // Filter venues based on user type and assigned venues
-  let venues: Venue[] = [];
-
-  if (user) {
-    // Admin can see all venues
-    if (user.userType === UserType.ADMIN) {
-      venues = allVenues.filter(
-        (venue: { isActive: boolean; isArchived: boolean }) =>
-          venue.isActive && !venue.isArchived,
-      );
-    }
-    // Staff can only see assigned venues
-    else if (user.userType === UserType.STAFF) {
-      if (user.assignedVenueIds && user.assignedVenueIds.length > 0) {
-        venues = allVenues.filter(
-          (venue: { id: string; isActive: boolean; isArchived: boolean }) =>
-            user.assignedVenueIds.includes(venue.id) &&
-            venue.isActive &&
-            !venue.isArchived,
-        );
-      }
-    }
-  }
 
   // Handle Enter key for search submission
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -110,21 +74,6 @@ export function UserFilters({
           <SelectItem value="all">All statuses</SelectItem>
           <SelectItem value={UserStatus.JOINED}>Joined</SelectItem>
           <SelectItem value={UserStatus.INVITED}>Invited</SelectItem>
-        </SelectContent>
-      </Select>
-
-      {/* Venue Filter */}
-      <Select value={venueFilter || "all"} onValueChange={onVenueChange}>
-        <SelectTrigger className="w-full max-w-[160px] border-brand/40">
-          <SelectValue placeholder="All venues" />
-        </SelectTrigger>
-        <SelectContent className=" border-brand/40">
-          <SelectItem value="all">All venues</SelectItem>
-          {venues.map((venue) => (
-            <SelectItem key={venue.id} value={venue.id}>
-              {venue.name}
-            </SelectItem>
-          ))}
         </SelectContent>
       </Select>
 

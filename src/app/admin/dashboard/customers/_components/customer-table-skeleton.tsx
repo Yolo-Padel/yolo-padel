@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function UserTableSkeleton() {
+export function CustomerTableSkeleton() {
   return (
     <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
       <Table>
@@ -21,7 +21,7 @@ export function UserTableSkeleton() {
           <TableRow>
             <TableHead className="h-11">Profile</TableHead>
             <TableHead className="h-11">Status</TableHead>
-            <TableHead className="h-11">Assigned Role</TableHead>
+            <TableHead className="h-11">Membership</TableHead>
             <TableHead className="h-11">Join Date</TableHead>
             <TableHead className="h-11 text-right"></TableHead>
           </TableRow>
@@ -42,7 +42,7 @@ export function UserTableSkeleton() {
                 <Skeleton className="h-6 w-24 rounded-full" />
               </TableCell>
               <TableCell>
-                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-5 w-28" />
               </TableCell>
               <TableCell>
                 <Skeleton className="h-5 w-24" />
