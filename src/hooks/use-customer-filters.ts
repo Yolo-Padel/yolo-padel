@@ -3,47 +3,42 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
-interface UserFilters {
+interface CustomerFilters {
   search: string;
   status: string;
-  venue: string;
   page: number;
 }
 
-interface UseUserFiltersReturn {
-  filters: UserFilters;
+interface UseCustomerFiltersReturn {
+  filters: CustomerFilters;
   setSearch: (value: string) => void;
   setStatus: (value: string) => void;
-  setVenue: (value: string) => void;
   setPage: (page: number) => void;
   resetFilters: () => void;
   hasActiveFilters: boolean;
 }
 
-const DEFAULT_FILTERS: UserFilters = {
+const DEFAULT_FILTERS: CustomerFilters = {
   search: "",
   status: "",
-  venue: "",
   page: 1,
 };
 
-export function useUserFilters(): UseUserFiltersReturn {
+export function useCustomerFilters(): UseCustomerFiltersReturn {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   // Initialize state from URL search params on mount
-  const [filters, setFilters] = useState<UserFilters>(() => ({
+  const [filters, setFilters] = useState<CustomerFilters>(() => ({
     search: searchParams.get("search") || DEFAULT_FILTERS.search,
     status: searchParams.get("status") || DEFAULT_FILTERS.status,
-    venue: searchParams.get("venue") || DEFAULT_FILTERS.venue,
     page: parseInt(searchParams.get("page") || "1", 10) || DEFAULT_FILTERS.page,
   }));
 
   // Computed value: hasActiveFilters
   const hasActiveFilters =
     filters.search !== DEFAULT_FILTERS.search ||
-    filters.status !== DEFAULT_FILTERS.status ||
-    filters.venue !== DEFAULT_FILTERS.venue;
+    filters.status !== DEFAULT_FILTERS.status;
 
   // URL synchronization - update URL when filters change
   useEffect(() => {
@@ -52,7 +47,6 @@ export function useUserFilters(): UseUserFiltersReturn {
     // Only add non-empty parameters to URL
     if (filters.search) params.set("search", filters.search);
     if (filters.status) params.set("status", filters.status);
-    if (filters.venue) params.set("venue", filters.venue);
     if (filters.page > 1) params.set("page", filters.page.toString());
 
     // Update URL without page reload
@@ -81,14 +75,6 @@ export function useUserFilters(): UseUserFiltersReturn {
     }));
   };
 
-  const setVenue = (value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      venue: value,
-      page: 1, // Auto-reset page to 1 when venue changes
-    }));
-  };
-
   const setPage = (page: number) => {
     setFilters((prev) => ({
       ...prev,
@@ -105,7 +91,6 @@ export function useUserFilters(): UseUserFiltersReturn {
     filters,
     setSearch,
     setStatus,
-    setVenue,
     setPage,
     resetFilters,
     hasActiveFilters,

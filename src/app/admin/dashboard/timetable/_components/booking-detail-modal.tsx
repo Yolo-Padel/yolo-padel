@@ -10,13 +10,18 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, Info } from "lucide-react";
+import { X, Info, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { stringUtils } from "@/lib/format/string";
 import { BookingStatus, PaymentStatus } from "@/types/prisma";
 import { formatTimeRange } from "@/components/timetable-utils";
+import { useCountdown } from "@/hooks/use-countdown";
+import {
+  createBookingStartDateTime,
+  isBookingUpcomingToday,
+} from "@/lib/booking-time-utils";
 
 // Extended booking type dengan payment info
 export type BookingDetail = {
@@ -123,14 +128,43 @@ export function BookingDetailModal({
 }: BookingDetailModalProps) {
   if (!booking) return null;
 
+  // Create target datetime for countdown
+  const bookingTimeString = formatTimeRange(booking.timeSlots);
+  const targetDateTime = createBookingStartDateTime(
+    booking.bookingDate,
+    bookingTimeString,
+  );
+
+  // Use countdown hook
+  const { timeLeft, isExpired } = useCountdown(targetDateTime);
+
+  // Check if we should show countdown (only for upcoming bookings today)
+  const shouldShowCountdown =
+    booking.status === BookingStatus.UPCOMING &&
+    isBookingUpcomingToday(booking.bookingDate, bookingTimeString);
+
+  // Debug logging (remove in production)
+  console.log("Debug countdown logic:", {
+    bookingStatus: booking.status,
+    bookingDate: booking.bookingDate,
+    bookingTimeString,
+    targetDateTime,
+    shouldShowCountdown,
+    isUpcomingToday: isBookingUpcomingToday(
+      booking.bookingDate,
+      bookingTimeString,
+    ),
+    timeLeft,
+    isExpired,
+  });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]" showCloseButton={false}>
         {/* Custom Close Button */}
         <Button
-          variant="ghost"
           size="icon"
-          className="absolute top-4 right-4 size-8 rounded-full bg-[#C3D223] hover:bg-[#A9B920]"
+          className="absolute top-4 right-4 size-8 rounded-full bg-brand hover:bg-brand/90 text-brand-foreground"
           onClick={() => onOpenChange(false)}
         >
           <X className="h-5 w-5" />
@@ -187,6 +221,18 @@ export function BookingDetailModal({
                   {formatTimeRange(booking.timeSlots)}
                 </span>
               </div>
+              {shouldShowCountdown && (
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <span>Game Starts in</span>
+                  </div>
+                  <span
+                    className={`font-medium ${isExpired ? "text-green-600" : "text-blue-600"}`}
+                  >
+                    {timeLeft}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Duration</span>
                 <span className="font-medium">{booking.duration} hrs</span>
@@ -240,32 +286,30 @@ export function BookingDetailModal({
             booking.status !== BookingStatus.NO_SHOW && (
               <div className="flex gap-3 pt-4">
                 <Button
-                  variant="outline"
-                  className="flex-1 border-[#C3D223] text-foreground"
+                  className="flex-1 border border-primary bg-primary/20 text-black hover:bg-primary/50"
                   onClick={onConfirmMarkAsNoShowBooking}
                 >
                   No Show
                 </Button>
                 <Button
-                  className="flex-1 bg-[#C3D223] hover:bg-[#A9B920]"
+                  className="flex-1 bg-brand text-brand-foreground hover:bg-brand/90"
                   onClick={onConfirmMarkAsCompleteBooking}
                 >
                   Mark as Complete
                 </Button>
               </div>
             )}
-          {booking.status === BookingStatus.COMPLETED ||
-            (booking.status === BookingStatus.NO_SHOW && (
-              <div className="flex gap-3 pt-4">
-                <Button
-                  variant={"outline"}
-                  className="flex-1 border-primary"
-                  onClick={() => onOpenChange(false)}
-                >
-                  Close
-                </Button>
-              </div>
-            ))}
+          {(booking.status === BookingStatus.COMPLETED ||
+            booking.status === BookingStatus.NO_SHOW) && (
+            <div className="flex gap-3 pt-4">
+              <Button
+                className="flex-1 bg-brand text-brand-foreground hover:bg-brand/90"
+                onClick={() => onOpenChange(false)}
+              >
+                Close
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

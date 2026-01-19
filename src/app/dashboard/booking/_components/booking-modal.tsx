@@ -63,7 +63,6 @@ export function BookingModal({
       </DialogTitle>
       <DialogContent showCloseButton={false} className="p-8">
         <Button
-          variant="ghost"
           size="icon"
           className="absolute top-8 right-8 h-8 w-8 rounded-full bg-brand text-brand-foreground hover:bg-brand/90"
           onClick={() => onOpenChange(false)}

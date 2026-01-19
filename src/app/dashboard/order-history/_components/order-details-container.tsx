@@ -89,7 +89,6 @@ export function OrderDetailsContainer({
               </p>
             </div>
             <Button
-              variant="ghost"
               size="icon"
               className="absolute top-0 right-0 h-8 w-8 rounded-full bg-brand hover:bg-brand/90 text-brand-foreground"
               onClick={() => onOpenChange(false)}

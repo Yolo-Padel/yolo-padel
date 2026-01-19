@@ -98,12 +98,12 @@ export function Timetable({
           <thead>
             {/* Row 1: Time Slot + Date Navigation */}
             <tr>
-              <th className="border p-3 text-left font-semibold sticky left-0 top-0 z-30 min-w-[120px]">
+              <th className="border p-3 text-left font-semibold sticky left-0 top-0 z-30 min-w-[120px] bg-white">
                 Time
               </th>
               <th
                 colSpan={courts.length}
-                className="border p-3 text-left font-semibold sticky top-0 z-20"
+                className="border p-3 text-left font-semibold sticky top-0 z-20 bg-white"
                 style={{ padding: 0 }}
               >
                 <div className="p-3" style={{ width: "fit-content" }}>
@@ -232,7 +232,7 @@ export function Timetable({
                 return (
                   <th
                     key={court.id}
-                    className="border p-3 text-center font-semibold min-w-[150px] sticky top-[57px] z-20"
+                    className="border p-3 text-center font-semibold min-w-[150px] sticky top-[57px] z-20 bg-white"
                   >
                     <div className="flex flex-col gap-1">
                       <div className="text-left">

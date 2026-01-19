@@ -39,7 +39,7 @@ interface AyoFieldsModalProps {
 
 /**
  * Filters AYO fields based on search term
- * Matches against Field ID, Field Name, and Venue Name (case-insensitive)
+ * Matches against Field ID & Field Name
  *
  * Requirements: 4.2, 4.3
  */
@@ -73,7 +73,6 @@ function TableSkeleton() {
       {Array.from({ length: 5 }).map((_, index) => (
         <div key={index} className="flex gap-4 p-3">
           <Skeleton className="h-5 w-16" />
-          <Skeleton className="h-5 flex-1" />
           <Skeleton className="h-5 flex-1" />
         </div>
       ))}
@@ -264,7 +263,6 @@ export function AyoFieldsModal({
                   <TableRow>
                     <TableHead className="w-[100px]">Field ID</TableHead>
                     <TableHead>Field Name</TableHead>
-                    <TableHead>Venue Name</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -278,9 +276,6 @@ export function AyoFieldsModal({
                         {field.id}
                       </TableCell>
                       <TableCell>{field.name}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {field.venue_name}
-                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

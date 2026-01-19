@@ -19,10 +19,9 @@ import {
   Trash,
   Eye,
 } from "lucide-react";
-import { User, Profile, UserStatus, Membership, Roles } from "@/types/prisma";
+import { User, Profile, UserStatus, Membership } from "@/types/prisma";
 import { generatePageNumbers } from "@/lib/pagination-utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ResendInviteButton } from "@/app/admin/dashboard/users/_components/resend-invite-button";
 import { cn } from "@/lib/utils";
 
 export interface PaginationInfo {
@@ -33,11 +32,10 @@ export interface PaginationInfo {
   total: number;
 }
 
-export interface UsersTableProps {
-  users: (User & {
+export interface CustomerTableProps {
+  customers: (User & {
     profile?: Profile | null;
     membership?: Membership | null;
-    roles?: Roles | null;
     invitation?: {
       state: "valid" | "expired" | "used" | "none";
       expiresAt?: string;
@@ -45,31 +43,25 @@ export interface UsersTableProps {
   })[];
   paginationInfo: PaginationInfo;
   onPageChange: (page: number) => void;
-  onEditUser: (user: User & { profile?: Profile | null }) => void;
-  onDeleteUser: (user: User & { profile?: Profile | null }) => void;
-  canDeleteUser: boolean;
-  canEditUser: boolean;
+  onEditCustomer: (customer: User & { profile?: Profile | null }) => void;
+  onDeleteCustomer: (customer: User & { profile?: Profile | null }) => void;
+  canDeleteCustomer: boolean;
+  canEditCustomer: boolean;
   isPermissionLoading: boolean;
 }
 
-export function UsersTable({
-  users,
+export function CustomerTable({
+  customers,
   paginationInfo,
   onPageChange,
-  onEditUser,
-  onDeleteUser,
-  canDeleteUser,
-  canEditUser,
+  onEditCustomer,
+  onDeleteCustomer,
+  canDeleteCustomer,
+  canEditCustomer,
   isPermissionLoading,
-}: UsersTableProps) {
+}: CustomerTableProps) {
   // Define table columns for colSpan
-  const columns = [
-    "Profile",
-    "Status",
-    "Assigned Role",
-    "Join Date",
-    "Actions",
-  ];
+  const columns = ["Profile", "Status", "Membership", "Join Date", "Actions"];
 
   const paginationButtonBaseClass =
     "w-8 h-8 p-0 bg-[#FAFAFA] border border-[#E9EAEB] text-[#A4A7AE] hover:bg-[#E9EAEB]";
@@ -98,16 +90,16 @@ export function UsersTable({
   };
 
   const renderStatusBadge = (
-    user: User & { profile?: Profile | null } & {
+    customer: User & { profile?: Profile | null } & {
       invitation?: {
         state: "valid" | "expired" | "used" | "none";
         expiresAt?: string;
       };
     },
   ) => {
-    if (user.userStatus !== UserStatus.INVITED)
-      return getStatusBadge(user.userStatus);
-    const state = user.invitation?.state || "none";
+    if (customer.userStatus !== UserStatus.INVITED)
+      return getStatusBadge(customer.userStatus);
+    const state = customer.invitation?.state || "none";
 
     return (
       <Badge variant="outline">
@@ -128,11 +120,6 @@ export function UsersTable({
     );
   };
 
-  const getAssignedRole = (user: User & { roles?: Roles | null }) => {
-    // Return role name from relasi roles
-    return user.roles?.name || "-";
-  };
-
   return (
     <>
       <div className="rounded-2xl border border-[#E9EAEB] overflow-hidden">
@@ -141,65 +128,63 @@ export function UsersTable({
             <TableRow>
               <TableHead className="h-11">Profile</TableHead>
               <TableHead className="h-11">Status</TableHead>
-              <TableHead className="h-11">Assigned Role</TableHead>
+              <TableHead className="h-11">Membership</TableHead>
               <TableHead className="h-11">Join Date</TableHead>
               <TableHead className="h-11 text-right"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((u) => {
+            {customers.map((c) => {
               return (
-                <TableRow key={u.id}>
+                <TableRow key={c.id}>
                   <TableCell className="flex items-center gap-3">
                     <Avatar>
-                      <AvatarImage src={u.profile?.avatar || ""} />
+                      <AvatarImage src={c.profile?.avatar || ""} />
                       <AvatarFallback className="uppercase">
-                        {u.profile?.fullName?.charAt(0).toUpperCase()}
+                        {c.profile?.fullName?.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
-                      <span className="font-medium">{u.profile?.fullName}</span>
-                      <span className="text-muted-foreground">{u.email}</span>
+                      <span className="font-medium">{c.profile?.fullName}</span>
+                      <span className="text-muted-foreground">{c.email}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {renderStatusBadge(u)}
+                      {renderStatusBadge(c)}
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {getAssignedRole(u)}
+                    {c.membership
+                      ? `${c.membership.name} Member`
+                      : "Non-member"}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {u.joinDate
-                      ? new Date(u.joinDate).toLocaleDateString()
+                    {c.joinDate
+                      ? new Date(c.joinDate).toLocaleDateString()
                       : "-"}
                   </TableCell>
                   <TableCell className="text-right">
-                    {canDeleteUser && !isPermissionLoading && (
+                    {canDeleteCustomer && !isPermissionLoading && (
                       <Button
                         variant="outline"
-                        onClick={() => onDeleteUser(u)}
+                        onClick={() => onDeleteCustomer(c)}
                         className="border-none shadow-none"
                       >
                         <Trash className="size-4 text-[#A4A7AE]" />
                       </Button>
                     )}
-                    {u.userStatus === UserStatus.INVITED ? (
-                      <ResendInviteButton userId={u.id} />
-                    ) : (
-                      <Button
-                        variant="outline"
-                        onClick={() => onEditUser(u)}
-                        className="border-none shadow-none"
-                      >
-                        {canEditUser ? (
-                          <Pencil className="size-4 text-[#A4A7AE]" />
-                        ) : (
-                          <Eye className="size-4 text-[#A4A7AE]" />
-                        )}
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      onClick={() => onEditCustomer(c)}
+                      className="border-none shadow-none"
+                    >
+                      {canEditCustomer ? (
+                        <Pencil className="size-4 text-[#A4A7AE]" />
+                      ) : (
+                        <Eye className="size-4 text-[#A4A7AE]" />
+                      )}
+                    </Button>
                   </TableCell>
                 </TableRow>
               );

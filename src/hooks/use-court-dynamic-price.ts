@@ -23,7 +23,7 @@ const dynamicPriceApi = {
       `/api/court-dynamic-prices?courtId=${courtId}`,
       {
         credentials: "include",
-      }
+      },
     );
 
     if (!response.ok) {
@@ -48,7 +48,7 @@ const dynamicPriceApi = {
     if (courtIds.length === 0) return [];
 
     const results = await Promise.all(
-      courtIds.map((courtId) => dynamicPriceApi.listByCourt(courtId))
+      courtIds.map((courtId) => dynamicPriceApi.listByCourt(courtId)),
     );
 
     return results.flat();
@@ -157,7 +157,7 @@ export const useCreateCourtDynamicPrice = () => {
     onError: (error: Error) => {
       console.error("Create court dynamic price error:", error);
       toast.error(
-        error.message || "Failed to create dynamic price. Please try again."
+        error.message || "Failed to create dynamic price. Please try again.",
       );
     },
   });
@@ -181,7 +181,7 @@ export const useUpdateCourtDynamicPrice = () => {
     onError: (error: Error) => {
       console.error("Update court dynamic price error:", error);
       toast.error(
-        error.message || "Failed to update dynamic price. Please try again."
+        error.message || "Failed to update dynamic price. Please try again.",
       );
     },
   });
@@ -199,7 +199,7 @@ export const useDeleteCourtDynamicPrice = () => {
     onError: (error: Error) => {
       console.error("Delete court dynamic price error:", error);
       toast.error(
-        error.message || "Failed to delete dynamic price. Please try again."
+        error.message || "Failed to delete dynamic price. Please try again.",
       );
     },
   });
