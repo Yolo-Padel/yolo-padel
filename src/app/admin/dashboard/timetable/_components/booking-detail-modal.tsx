@@ -126,17 +126,16 @@ export function BookingDetailModal({
   onConfirmMarkAsCompleteBooking,
   onConfirmMarkAsNoShowBooking,
 }: BookingDetailModalProps) {
-  if (!booking) return null;
+  // Create target datetime for countdown - use fallback values when booking is null
+  const bookingTimeString = booking ? formatTimeRange(booking.timeSlots) : "";
+  const targetDateTime = booking
+    ? createBookingStartDateTime(booking.bookingDate, bookingTimeString)
+    : new Date();
 
-  // Create target datetime for countdown
-  const bookingTimeString = formatTimeRange(booking.timeSlots);
-  const targetDateTime = createBookingStartDateTime(
-    booking.bookingDate,
-    bookingTimeString,
-  );
-
-  // Use countdown hook
+  // Use countdown hook - must be called unconditionally
   const { timeLeft, isExpired } = useCountdown(targetDateTime);
+
+  if (!booking) return null;
 
   // Check if we should show countdown (only for upcoming bookings today)
   const shouldShowCountdown =
