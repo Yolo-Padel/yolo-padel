@@ -165,6 +165,62 @@ class MagicLinkService {
       };
     }
   }
+
+  /**
+   * Extend expiry time of an expired magic link token
+   */
+  async extendMagicLink(token: string): Promise<MagicLinkResult> {
+    try {
+      // Find the magic link
+      const magicLink = await prisma.magicLink.findUnique({
+        where: { token },
+      });
+
+      if (!magicLink) {
+        return {
+          success: false,
+          message: "Magic link is invalid",
+        };
+      }
+
+      // Check if already used
+      if (magicLink.used) {
+        return {
+          success: false,
+          message: "Magic link has already been used. Please request a new one.",
+        };
+      }
+
+      // Check if not expired (no need to extend)
+      if (magicLink.expiresAt >= new Date()) {
+        return {
+          success: false,
+          message: "Magic link is still valid. Please try verifying again.",
+        };
+      }
+
+      // Extend expiry time by 15 minutes from now
+      const newExpiresAt = new Date();
+      newExpiresAt.setMinutes(newExpiresAt.getMinutes() + this.TOKEN_EXPIRY_MINUTES);
+
+      await prisma.magicLink.update({
+        where: { id: magicLink.id },
+        data: { expiresAt: newExpiresAt },
+      });
+
+      return {
+        success: true,
+        message: "Magic link extended successfully",
+        token,
+      };
+    } catch (error) {
+      console.error("Error extending magic link:", error);
+      return {
+        success: false,
+        message: "Error extending magic link",
+      };
+    }
+  }
 }
 
 export const magicLinkService = new MagicLinkService();

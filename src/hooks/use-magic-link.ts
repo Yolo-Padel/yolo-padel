@@ -34,6 +34,14 @@ export type VerifyMagicLinkResult = {
   };
 };
 
+export type ExtendMagicLinkResult = {
+  success: boolean;
+  message: string;
+  data?: {
+    token: string;
+  };
+};
+
 // Api functions
 const magicLinkApi = {
   verify: async (
@@ -51,6 +59,24 @@ const magicLinkApi = {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || "Magic link verification failed");
+    }
+
+    return response.json();
+  },
+  extend: async (
+    input: MagicLinkVerifyInput
+  ): Promise<ExtendMagicLinkResult> => {
+    const response = await fetch("/api/auth/magic-link/extend", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Magic link extension failed");
     }
 
     return response.json();
@@ -112,6 +138,21 @@ export const useMagicLinkRequest = () => {
     onError: (error: Error) => {
       console.error("Magic link request error:", error);
       toast.error(error.message || "Magic link request failed");
+    },
+  });
+};
+
+export const useMagicLinkExtend = () => {
+  return useMutation({
+    mutationFn: (input: MagicLinkVerifyInput) => {
+      return magicLinkApi.extend(input);
+    },
+    onSuccess: (data: ExtendMagicLinkResult) => {
+      toast.success(data.message || "Magic link extended successfully");
+    },
+    onError: (error: Error) => {
+      console.error("Magic link extend error:", error);
+      toast.error(error.message || "Magic link extension failed");
     },
   });
 };
