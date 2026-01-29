@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar, CalendarDayButton } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
@@ -251,6 +251,19 @@ export function AdminDashboardFilters({
               onSelect={setTempDateRange}
               numberOfMonths={2}
               className="rounded-lg"
+              components={{
+                DayButton(props) {
+                  return (
+                    <CalendarDayButton
+                      {...props}
+                      className={cn(
+                        props.className,
+                        "data-[range-start=true]:bg-brand data-[range-end=true]:bg-brand",
+                      )}
+                    />
+                  );
+                },
+              }}
             />
             <div className="flex items-center gap-2 p-3 border-t">
               <Button
@@ -263,7 +276,7 @@ export function AdminDashboardFilters({
               <Button
                 size="sm"
                 onClick={handleApplyDateRange}
-                className="flex-1"
+                className="flex-1 bg-brand text-brand-foreground hover:bg-brand/90"
               >
                 Apply
               </Button>
