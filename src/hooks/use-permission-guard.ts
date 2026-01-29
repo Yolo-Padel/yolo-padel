@@ -2,6 +2,7 @@ import { useMemo } from "react";
 
 import { useAuth } from "@/hooks/use-auth";
 import { useModules, useRolePermissions } from "@/hooks/use-rbac";
+import { UserType } from "@/types/prisma";
 
 interface UsePermissionGuardParams {
   moduleKey: string;
@@ -18,6 +19,24 @@ export function usePermissionGuard({
   action,
 }: UsePermissionGuardParams): UsePermissionGuardResult {
   const { user } = useAuth();
+
+  // Handle loading state - user not yet loaded
+  if (!user) {
+    return {
+      isLoading: true,
+      canAccess: false,
+    };
+  }
+
+  // ADMIN bypass: Grant immediate access without permission checks
+  if (user.userType === UserType.ADMIN) {
+    return {
+      isLoading: false,
+      canAccess: true,
+    };
+  }
+
+  // For STAFF users, continue with existing permission check logic
   const roleId = user?.roleId ?? "";
 
   const { data: modulesData, isLoading: isModulesLoading } = useModules();
