@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { RoleTable } from "./_components/role-table";
 import { RoleTableLoading } from "./_components/role-table-loading";
 import { RoleEmptyState } from "./_components/role-empty-state";
 import { ErrorAlert } from "./_components/error-alert";
+import { DeleteRoleConfirmationModal } from "./_components/delete-role-confirmation-modal";
 import { useRoles, useDeleteRole } from "@/hooks/use-rbac";
 import { usePermissionGuard } from "@/hooks/use-permission-guard";
 
@@ -16,19 +18,41 @@ export default function AccessControlPage() {
   const router = useRouter();
   const { data: roles = [], isLoading, error } = useRoles();
   const deleteRole = useDeleteRole();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const handleEdit = (roleId: string) => {
     router.push(`/admin/dashboard/access-control/${roleId}`);
   };
 
   const handleDelete = async (roleId: string) => {
-    const confirmation = window.confirm(
-      "Are you sure you want to delete this role? This action cannot be undone.",
-    );
+    const role = roles.find((r) => r.id === roleId);
+    setRoleToDelete({
+      id: roleId,
+      name: role?.name || "",
+    });
+    setShowDeleteConfirm(true);
+  };
 
-    if (!confirmation) return;
+  const handleDeleteConfirm = () => {
+    if (roleToDelete) {
+      deleteRole.mutate(roleToDelete.id, {
+        onSuccess: () => {
+          setShowDeleteConfirm(false);
+          setRoleToDelete(null);
+        },
+      });
+    }
+  };
 
-    deleteRole.mutate(roleId);
+  const handleDeleteCancel = () => {
+    if (!deleteRole.isPending) {
+      setShowDeleteConfirm(false);
+      setRoleToDelete(null);
+    }
   };
 
   const { canAccess: canCreateRole, isLoading: isCreateRolePermissionLoading } =
@@ -96,6 +120,15 @@ export default function AccessControlPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteRoleConfirmationModal
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        onConfirm={handleDeleteConfirm}
+        roleName={roleToDelete?.name}
+        isDeleting={deleteRole.isPending}
+      />
     </div>
   );
 }

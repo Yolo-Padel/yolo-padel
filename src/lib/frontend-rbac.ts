@@ -39,8 +39,15 @@ export const filterMenuByAccess = ({
   allowedModuleIds?: Set<string> | null;
 }): MenuItem[] => {
   return menuItems.filter((item) => {
+    // Check if user type matches menu item requirements
     if (!hasUserType(userType, item.userTypes)) {
       return false;
+    }
+
+    // ADMIN bypass: Show all menu items that match userType
+    // ADMIN users have unrestricted access to all features
+    if (userType === UserType.ADMIN) {
+      return true;
     }
 
     // Jika menu tidak terkait module spesifik, cukup cek role
@@ -48,6 +55,7 @@ export const filterMenuByAccess = ({
       return true;
     }
 
+    // STAFF users: Check module permissions
     // Pastikan data module siap
     if (!moduleKeyMap || !allowedModuleIds) {
       return false;

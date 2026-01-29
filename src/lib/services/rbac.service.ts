@@ -141,12 +141,16 @@ export async function createRole(
 
 /**
  * Get all roles with permission counts
+ * Excludes archived roles
  *
  * @returns Array of roles ordered by creation date (newest first)
  */
 export async function getAllRoles(): Promise<RoleWithPermissionCount[]> {
   const [roles, allowedCounts] = await Promise.all([
     prisma.roles.findMany({
+      where: {
+        isArchived: false,
+      },
       include: {
         _count: {
           select: {
@@ -288,7 +292,7 @@ export async function updateRole(
 }
 
 /**
- * Delete a role
+ * Delete a role (soft delete by setting isArchived to true)
  *
  * @param roleId - The role ID to delete
  * @param context - Service context for activity logging (Requirements 7.3)
@@ -307,23 +311,30 @@ export async function deleteRole(
     throw new Error(`Role with ID "${roleId}" not found`);
   }
 
-  // Check if role is assigned to any users
-  // Note: The User model uses an enum UserType, not a relation to Roles table
-  // So we need to check if the role name matches any of the enum values being used
-  // For now, we'll skip this check since the User.userType is an enum, not a foreign key
-  // If you want to prevent deletion of system roles, you could check the role name
+  // Check if role is already archived
+  if (role.isArchived) {
+    throw new Error(`Role with ID "${roleId}" is already archived`);
+  }
 
-  // Delete role and associated rolePermissions in a transaction
-  await prisma.$transaction([
-    // Delete all rolePermissions first
-    prisma.rolePermission.deleteMany({
-      where: { roleId },
-    }),
-    // Then delete the role
-    prisma.roles.delete({
-      where: { id: roleId },
-    }),
-  ]);
+  // Check if role is assigned to any users
+  const usersWithRole = await prisma.user.count({
+    where: { roleId },
+  });
+
+  if (usersWithRole > 0) {
+    throw new Error(
+      `Cannot archive role "${role.name}" because it is assigned to ${usersWithRole} user(s)`
+    );
+  }
+
+  // Soft delete: Set isArchived to true
+  await prisma.roles.update({
+    where: { id: roleId },
+    data: {
+      isArchived: true,
+      isActive: false, // Also deactivate when archiving
+    },
+  });
 
   // Log role deletion activity
   // Requirements 3.3: Record DELETE_ROLE action with role name in changes.before
@@ -352,11 +363,15 @@ export async function deleteRole(
 
 /**
  * Get all modules ordered by orderIndex
+ * Excludes archived modules
  *
  * @returns Array of modules ordered by orderIndex ascending
  */
 export async function getAllModules(): Promise<Module[]> {
   const modules = await prisma.module.findMany({
+    where: {
+      isArchived: false,
+    },
     orderBy: {
       orderIndex: "asc",
     },

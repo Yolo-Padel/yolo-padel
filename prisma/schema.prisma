@@ -103,14 +103,16 @@ model Profile {
 }
 
 model Membership {
-  id        String   @id @default(cuid())
-  name      String   @unique   // e.g. "Gold", "Silver", "Platinum"
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  name       String   @unique   // e.g. "Gold", "Silver", "Platinum"
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Relation to users
   users User[]
 
+  @@index([isArchived])
   @@map("memberships")
 }
 
@@ -372,11 +374,13 @@ model Module {
   description String?
   orderIndex  Int
   isActive    Boolean  @default(true)
+  isArchived  Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   rolePermissions RolePermission[]
 
+  @@index([isArchived])
   @@map("modules")
 }
 
@@ -395,12 +399,14 @@ model Roles {
   name        String   @unique
   description String?
   isActive    Boolean  @default(true)
+  isArchived  Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   rolePermissions RolePermission[]
   users           User[]
 
+  @@index([isArchived])
   @@map("roles")
 }
 

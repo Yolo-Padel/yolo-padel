@@ -113,19 +113,27 @@ export function UserModal({
 
   const onSubmit = async (data: UserFormData) => {
     try {
+      // Clean data for ADMIN users - ensure no roleId or assignedVenueIds
+      const cleanedData = {
+        ...data,
+        roleId: data.userType === UserType.ADMIN ? "" : data.roleId,
+        assignedVenueIds:
+          data.userType === UserType.ADMIN ? [] : data.assignedVenueIds,
+      };
+
       if (mode === "add") {
-        await inviteUserMutation.mutateAsync(data);
+        await inviteUserMutation.mutateAsync(cleanedData);
         onOpenChange(false);
       } else {
         if (!user) return;
         const payload: UserUpdateData = {
           userId: user.id,
-          email: data.email,
-          userType: data.userType,
-          fullName: data.fullName,
-          assignedVenueIds: data.assignedVenueIds,
-          membershipId: data.membershipId,
-          roleId: data.roleId,
+          email: cleanedData.email,
+          userType: cleanedData.userType,
+          fullName: cleanedData.fullName,
+          assignedVenueIds: cleanedData.assignedVenueIds,
+          membershipId: cleanedData.membershipId,
+          roleId: cleanedData.roleId,
         };
         await updateUserMutation.mutateAsync(payload);
         onOpenChange(false);
@@ -200,6 +208,12 @@ export function UserModal({
                 value={watch("userType")}
                 onValueChange={(value) => {
                   setValue("userType", value as UserType);
+                  
+                  // Clear roleId and assignedVenueIds when switching to ADMIN
+                  if (value === UserType.ADMIN) {
+                    setValue("assignedVenueIds", []);
+                    setValue("roleId", "");
+                  }
                 }}
                 disabled={isViewMode}
               >
@@ -216,8 +230,9 @@ export function UserModal({
                 value={watch("userType")}
                 onValueChange={(value) => {
                   setValue("userType", value as UserType);
-                  // Reset assignedVenueIds and roleId if userType is USER
-                  if (value === UserType.USER) {
+                  
+                  // Clear assignedVenueIds and roleId for USER or ADMIN
+                  if (value === UserType.USER || value === UserType.ADMIN) {
                     setValue("assignedVenueIds", []);
                     setValue("roleId", "");
                   }
@@ -230,6 +245,7 @@ export function UserModal({
                 <SelectContent>
                   <SelectItem value={UserType.USER}>User</SelectItem>
                   <SelectItem value={UserType.STAFF}>Staff</SelectItem>
+                  <SelectItem value={UserType.ADMIN}>Admin</SelectItem>
                 </SelectContent>
               </Select>
             )}
@@ -270,11 +286,13 @@ export function UserModal({
             </div>
           )}
 
-          {/* Access Role - Only show if userType is STAFF or ADMIN (staff management) */}
-          {(isStaffOnly || watch("userType") === UserType.STAFF) && (
+          {/* Access Role - Only show for STAFF users, hide for ADMIN */}
+          {(isStaffOnly
+            ? watch("userType") === UserType.STAFF
+            : watch("userType") === UserType.STAFF) && (
             <div className="space-y-2">
               <Label htmlFor="roleId" className="text-sm font-medium">
-                Access Role
+                Access Role <span className="text-red-500">*</span>
               </Label>
               <Select
                 value={watch("roleId")}
@@ -306,8 +324,10 @@ export function UserModal({
             </div>
           )}
 
-          {/* Venue Assignment - Only show if userType is STAFF or ADMIN (staff management) */}
-          {(isStaffOnly || watch("userType") === UserType.STAFF) && (
+          {/* Venue Assignment - Only show for STAFF users, hide for ADMIN */}
+          {(isStaffOnly
+            ? watch("userType") === UserType.STAFF
+            : watch("userType") === UserType.STAFF) && (
             <div className="space-y-2">
               <Label htmlFor="assignedVenueIds" className="text-sm font-medium">
                 Assigned Venues

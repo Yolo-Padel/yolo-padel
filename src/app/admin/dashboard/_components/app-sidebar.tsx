@@ -120,12 +120,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const roleId = user?.roleId ?? "";
   const userType = user?.userType as UserType | undefined;
 
+  // Check if user is ADMIN for optimization
+  const isAdmin = userType === UserType.ADMIN;
+
   const { data: modulesData, isLoading: isModulesLoading } = useModules();
 
+  // Skip role permissions query for ADMIN users
   const { data: rolePermissions, isLoading: isRolePermissionsLoading } =
-    useRolePermissions(roleId, Boolean(roleId));
+    useRolePermissions(roleId, Boolean(roleId) && !isAdmin);
 
+  // Skip module key mapping for ADMIN users
   const moduleKeyMap = React.useMemo(() => {
+    if (isAdmin) return null;
+
     if (!modulesData?.modules?.length) {
       return null;
     }
@@ -134,9 +141,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       acc[module.key] = module.id;
       return acc;
     }, {});
-  }, [modulesData]);
+  }, [modulesData, isAdmin]);
 
+  // Skip allowed module IDs calculation for ADMIN users
   const allowedModuleIds = React.useMemo(() => {
+    if (isAdmin) return null;
+
     if (!rolePermissions) {
       return null;
     }
@@ -146,7 +156,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         .filter((permission) => permission.allowed)
         .map((permission) => permission.moduleId),
     );
-  }, [rolePermissions]);
+  }, [rolePermissions, isAdmin]);
 
   const userData = {
     name: profile?.fullName || "User",
@@ -163,8 +173,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       })
     : [];
 
-  const isMenuLoading =
-    isLoading || isModulesLoading || isRolePermissionsLoading;
+  // Simplified loading state for ADMIN users
+  const isMenuLoading = isAdmin
+    ? isLoading
+    : isLoading || isModulesLoading || isRolePermissionsLoading;
 
   return (
     <Sidebar collapsible="icon" {...props} className="bg-[#f9fafb]">

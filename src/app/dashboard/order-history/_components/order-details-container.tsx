@@ -158,7 +158,7 @@ export function OrderDetailsContainer({
                     <Badge
                       className={`rounded-md px-3 py-1 text-xs font-medium ${getBookingStatus(booking.status as BookingStatus)}`}
                     >
-                      {stringUtils.toTitleCase(booking.status)}
+                      {stringUtils.toTitleCase(stringUtils.getRoleDisplay(booking.status))}
                     </Badge>
                   </div>
 
