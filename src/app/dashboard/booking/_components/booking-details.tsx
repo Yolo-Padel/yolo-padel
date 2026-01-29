@@ -88,7 +88,7 @@ export function SeeBookingDetails({
           >
             <span className="text-xs">
               {stringUtils.toTitleCase(
-                bookingDetails?.status || BookingStatus.PENDING,
+                stringUtils.getRoleDisplay(bookingDetails?.status || BookingStatus.PENDING),
               )}
             </span>
           </Badge>

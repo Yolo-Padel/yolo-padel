@@ -84,7 +84,7 @@ function getStatusBadgeClass(status: BookingStatus): string {
     case BookingStatus.CANCELLED:
       return "bg-[#FFD5D5] text-[#AD1F1F]";
     case BookingStatus.NO_SHOW:
-      return "bg-[#FFF4D5] text-[#8B6F00]";
+      return "bg-[#E0E0E0] text-[#666666]";
     case BookingStatus.PENDING:
     default:
       return "bg-gray-200 text-gray-700";
@@ -160,7 +160,7 @@ export function BookingTable({
                   <Badge
                     className={`text-xs font-medium ${getStatusBadgeClass(b.status)}`}
                   >
-                    {stringUtils.toTitleCase(b.status)}
+                    {stringUtils.toTitleCase((stringUtils.getRoleDisplay(b.status)))}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
