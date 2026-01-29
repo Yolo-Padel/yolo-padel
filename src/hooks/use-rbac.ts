@@ -49,6 +49,7 @@ export type Module = {
   description: string | null;
   orderIndex: number;
   isActive: boolean;
+  isArchived: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
