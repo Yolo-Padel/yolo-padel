@@ -6,7 +6,14 @@ export const membershipService = {
   getMemberships: async (context: ServiceContext) => {
     const accessError = requirePermission(context, UserType.STAFF);
     if (accessError) return accessError;
-    const memberships = await prisma.membership.findMany();
+    const memberships = await prisma.membership.findMany({
+      where: {
+        isArchived: false,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
     return {
       success: true,
       data: memberships,
