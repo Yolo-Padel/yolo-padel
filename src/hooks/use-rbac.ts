@@ -49,6 +49,7 @@ export type Module = {
   description: string | null;
   orderIndex: number;
   isActive: boolean;
+  isArchived: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -359,7 +360,7 @@ export function useCreateRole() {
     mutationFn: createRoleApi,
     onSuccess: () => {
       // Invalidate roles query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ["rbac", "roles"] });
+      queryClient.resetQueries({ queryKey: ["rbac", "roles"] });
 
       // Show success toast
       toast.success("Role created successfully");

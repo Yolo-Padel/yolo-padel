@@ -4,7 +4,7 @@ import { ComingSoon } from "@/app/_components/coming-soon";
 
 export default function Home() {
   // Check if we're in production environment
-  const isProduction = process.env.ENVIRONMENT === "PRODUCTION";
+  const isPreProduction = process.env.ENVIRONMENT === "PRE_PRODUCTION";
 
   return (
     <>
@@ -21,7 +21,7 @@ export default function Home() {
         <div className="fixed inset-0 z-10 bg-black/20"></div>
 
         {/* Conditionally render based on environment */}
-        {isProduction ? (
+        {isPreProduction ? (
           <ComingSoon />
         ) : (
           <>

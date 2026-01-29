@@ -312,6 +312,7 @@ export const useManualBooking = () => {
       toast.success(data.message || "Manual booking created successfully!");
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
       queryClient.invalidateQueries({ queryKey: ["blockings"] });
+      queryClient.resetQueries({queryKey: ["admin-users",{"limit":10,"page":1,"userType":"USER_ONLY"}]})
     },
     onError: (error: Error) => {
       console.error("Manual booking error:", error);

@@ -294,7 +294,7 @@ export function BookingDetailModal({
                   className="flex-1 bg-brand text-brand-foreground hover:bg-brand/90"
                   onClick={onConfirmMarkAsCompleteBooking}
                 >
-                  Mark as Complete
+                  Check In
                 </Button>
               </div>
             )}
