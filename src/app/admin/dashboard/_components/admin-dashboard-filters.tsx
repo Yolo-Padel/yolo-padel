@@ -51,6 +51,8 @@ export function AdminDashboardFilters({
   const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>();
   // Use ref to persist custom mode across re-renders caused by URL sync
   const isCustomModeRef = useRef(false);
+  // Ref to track if we should open the date popover after select closes
+  const shouldOpenDatePopoverRef = useRef(false);
   const [, forceUpdate] = useState({});
 
   // Convert string dates to DateRange for calendar
@@ -155,9 +157,22 @@ export function AdminDashboardFilters({
       onEndDateChange(format(yesterday, "yyyy-MM-dd"));
       setIsDatePopoverOpen(false);
     } else if (value === "custom") {
-      // When custom is selected, set custom mode and open the popover
+      // When custom is selected, set custom mode and signal to open popover
       setIsCustomMode(true);
-      setIsDatePopoverOpen(true);
+      shouldOpenDatePopoverRef.current = true;
+      // Do NOT open popover here. Wait for Select onOpenChange(false).
+    }
+  };
+
+  // Handle Select open state change
+  const handleSelectOpenChange = (open: boolean) => {
+    // When Select closes and we have a pending open request
+    if (!open && shouldOpenDatePopoverRef.current) {
+      // Use small timeout to ensure Select close events have fully processed
+      setTimeout(() => {
+        setIsDatePopoverOpen(true);
+        shouldOpenDatePopoverRef.current = false;
+      }, 50);
     }
   };
 
@@ -256,7 +271,11 @@ export function AdminDashboardFilters({
           </PopoverContent>
         </Popover>
       )}
-      <Select value={dateFilter} onValueChange={handleDateFilterChange}>
+      <Select
+        value={dateFilter}
+        onValueChange={handleDateFilterChange}
+        onOpenChange={handleSelectOpenChange}
+      >
         <SelectTrigger>
           <SelectValue placeholder="All Time" />
         </SelectTrigger>
