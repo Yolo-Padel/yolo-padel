@@ -4,12 +4,14 @@ import BookingRescheduleEmail from "@/components/emails/booking-reschedule";
 import BookingCancelationEmail from "@/components/emails/booking-cancelation";
 import OrderConfirmationEmail from "@/components/emails/order-confirmation";
 import ManualBookingConfirmationEmail from "@/components/emails/manual-booking-confirmation";
+import PaymentInstructionsEmail from "@/components/emails/payment-instructions";
 import type {
   InvitationEmailData,
   BookingRescheduleEmailData,
   BookingCancelationEmailData,
   OrderConfirmationEmailData,
   ManualBookingConfirmationEmailData,
+  PaymentInstructionsEmailData,
 } from "../validations/send-email.validation";
 import { LoginWithMagicLinkData } from "../validations/auth.validation";
 import LoginWithMagicLink from "@/components/emails/login-with-magic-link";
@@ -253,6 +255,45 @@ export const brevoService = {
           error instanceof Error
             ? error.message
             : "Send magic link email error",
+      };
+    }
+  },
+  sendPaymentInstructionsEmail: async (data: PaymentInstructionsEmailData) => {
+    try {
+      const emailHtml = await render(
+        PaymentInstructionsEmail({
+          orderCode: data.orderCode,
+          customerName: data.customerName,
+          email: data.email,
+          totalAmount: data.totalAmount,
+          paymentUrl: data.paymentUrl,
+          expiresAt: data.expiresAt,
+          bookings: data.bookings,
+        }),
+      );
+
+      const response = await brevo.sendTransacEmail({
+        sender: {
+          email: EMAIL_CONFIG.FROM_EMAIL,
+          name: EMAIL_CONFIG.COMPANY_NAME,
+        },
+        to: [{ email: data.email, name: data.customerName }],
+        subject: `Complete Your Payment - Order ${data.orderCode}`,
+        htmlContent: emailHtml,
+      });
+      return {
+        success: true,
+        data: response,
+        message: "Payment instructions email sent successfully",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        data: null,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Send payment instructions email error",
       };
     }
   },

@@ -1,4 +1,20 @@
-import { Html, Head, Body, Container, Text } from "@react-email/components";
+import {
+  Html,
+  Head,
+  Body,
+  Container,
+  Text,
+  Button,
+} from "@react-email/components";
+
+function formatDate(dateInput: Date): string {
+  return dateInput.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 interface Booking {
   court: string;
@@ -19,122 +35,209 @@ export default function OrderConfirmationEmail({
   customerName,
   bookings,
 }: OrderConfirmationEmailProps) {
+  const displayName = customerName || "Padeler";
+
   return (
     <Html>
-      <Head>
-        <title>Order Confirmation</title>
-      </Head>
-      <Body className="bg-gray-100 font-sans">
-        <Container className="max-w-2xl mx-auto bg-white ">
-          <div className="text-center flex items-center justify-center bg-gray-900 text-white font-bold border-b border-gray-200 p-3 my-1">
-            <img
-              src="\paddle-racket.png"
-              width="40"
-              height="40"
-              style={{ margin: "0" }}
-            />
-            <Text className="p-2 text-2xl font-bold text-white">
-              Order Confirmation
-            </Text>
-          </div>
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <Text className="text-2xl font-bold text-gray-900 mb-5">
-              Halo {customerName}!
-            </Text>
-          </div>
-
-          {/* Content */}
-          <div className="flex flex-col items-left justify-center">
-            <Text className="text-base leading-6 text-gray-700 mb-1">
-              Your padel court booking is confirmed! Here are your booking
-              details :
-            </Text>
-
+      <Head />
+      <Body
+        style={{
+          margin: 0,
+          backgroundColor: "#f4f4f5",
+          fontFamily: "Helvetica, Arial, sans-serif",
+        }}
+      >
+        <Container
+          style={{
+            margin: "24px auto",
+            padding: "32px",
+            backgroundColor: "#ffffff",
+            maxWidth: "520px",
+            borderRadius: "16px",
+            border: "1px solid #e4e4e7",
+          }}
+        >
+          {/* Success Badge */}
+          <div
+            style={{
+              backgroundColor: "#dcfce7",
+              borderRadius: "8px",
+              padding: "12px 16px",
+              marginBottom: "24px",
+              textAlign: "center",
+            }}
+          >
             <Text
               style={{
-                fontSize: "16px",
-                fontWeight: "bold",
-                marginBottom: "10px",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#166534",
+                margin: 0,
               }}
             >
-              Order Code : {orderCode}
+              ✅ Payment Successful
             </Text>
+          </div>
 
-            {bookings.map((booking, index) => (
-              <div
-                key={index}
+          {/* Header */}
+          <Text
+            style={{
+              fontSize: "24px",
+              fontWeight: 700,
+              marginBottom: "4px",
+              color: "#09090b",
+            }}
+          >
+            See You on the Court!
+          </Text>
+          <Text
+            style={{ fontSize: "14px", color: "#71717a", marginBottom: "24px" }}
+          >
+            Order Code: <strong>{orderCode}</strong>
+          </Text>
+
+          {/* Greeting */}
+          <Text
+            style={{ fontSize: "16px", color: "#18181b", marginBottom: "16px" }}
+          >
+            Hi {displayName},
+          </Text>
+          <Text
+            style={{
+              fontSize: "14px",
+              color: "#3f3f46",
+              lineHeight: "22px",
+              marginBottom: "24px",
+            }}
+          >
+            Your payment has been confirmed and your booking is all set! Here
+            are your confirmed reservations:
+          </Text>
+
+          {/* Booking Cards */}
+          <Text
+            style={{
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "#09090b",
+              marginBottom: "12px",
+            }}
+          >
+            Your Bookings
+          </Text>
+
+          {bookings.map((booking, index) => (
+            <div
+              key={index}
+              style={{
+                backgroundColor: "#f9fafb",
+                borderRadius: "12px",
+                padding: "16px 20px",
+                marginBottom: "12px",
+                border: "1px solid #e4e4e7",
+              }}
+            >
+              <Text
                 style={{
-                  marginBottom: "20px",
-                  padding: "15px",
-                  backgroundColor: "#f9fafb",
-                  borderRadius: "8px",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  color: "#09090b",
+                  margin: "0 0 12px",
                 }}
               >
-                <ul
-                  style={{
-                    listStyleType: "none",
-                    padding: 0,
-                    fontSize: "16px",
-                    fontWeight: "bold",
-                  }}
-                >
-                  <li> Court : {booking.court}</li>
-                  <li> Date : {booking.date.toLocaleDateString()}</li>
-                  <li> Time : {booking.time}</li>
-                  <li> Booking Code: {booking.bookingCode}</li>
-                  <li> Location : {booking.location}</li>
-                </ul>
-              </div>
-            ))}
-
-            <Text className="text-base leading-6 text-gray-700 mb-4">
-              Please arrive 10 minutes before your session for check-in.
-              <br />
-              Thanks for choosing Yolo Padel — can't wait to see you on court!
-              <br />
-              Team Yolo Padel
-            </Text>
-
-            <div
-              style={{
-                borderTop: "1px solid #e5e7eb",
-                paddingTop: "20px",
-                marginTop: "20px",
-                textAlign: "center",
-              }}
-            >
-              <Text className="text-sm text-gray-600">
-                Need help? Contact us at support@yolo-padel.com
+                {booking.court}
               </Text>
-
-              <div style={{ margin: "15px 0" }}>
-                {/* Social Media Icons */}
-                <a
-                  href="https://instagram.com/yolo-padel"
-                  style={{ margin: "0 8px" }}
-                >
-                  Instagram
-                </a>
-                <a
-                  href="https://facebook.com/yolo-padel"
-                  style={{ margin: "0 8px" }}
-                >
-                  Facebook
-                </a>
-                <a
-                  href="https://twitter.com/yolo-padel"
-                  style={{ margin: "0 8px" }}
-                >
-                  Twitter
-                </a>
-              </div>
-
-              <Text className="text-xs text-gray-500">
-                © 2023 Yolo Padel. All rights reserved.
+              <Text
+                style={{
+                  fontSize: "13px",
+                  color: "#52525b",
+                  margin: "0 0 6px",
+                }}
+              >
+                <strong>Booking Code:</strong> {booking.bookingCode}
+              </Text>
+              <Text
+                style={{
+                  fontSize: "13px",
+                  color: "#52525b",
+                  margin: "0 0 6px",
+                }}
+              >
+                <strong>Location:</strong> {booking.location}
+              </Text>
+              <Text
+                style={{
+                  fontSize: "13px",
+                  color: "#52525b",
+                  margin: "0 0 6px",
+                }}
+              >
+                <strong>Date:</strong> {formatDate(booking.date)}
+              </Text>
+              <Text style={{ fontSize: "13px", color: "#52525b", margin: 0 }}>
+                <strong>Time:</strong> {booking.time}
               </Text>
             </div>
+          ))}
+
+          {/* Important Info */}
+          <div
+            style={{
+              backgroundColor: "#eff6ff",
+              borderLeft: "4px solid #3b82f6",
+              borderRadius: "8px",
+              padding: "12px 16px",
+              marginTop: "24px",
+              marginBottom: "24px",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: "13px",
+                color: "#1e40af",
+                margin: 0,
+                lineHeight: "20px",
+              }}
+            >
+              📋 <strong>Important:</strong> Please arrive 10 minutes before
+              your session for check-in. Bring your booking code for a smooth
+              entry.
+            </Text>
           </div>
+
+          {/* Divider */}
+          <div
+            style={{
+              borderTop: "1px solid #e4e4e7",
+              margin: "32px 0 24px",
+            }}
+          />
+
+          <Text style={{ fontSize: "13px", color: "#3f3f46", margin: 0 }}>
+            Thanks for choosing Yolo Padel!
+            <br />
+            <span style={{ color: "#a1a1aa" }}>Team Yolo Padel</span>
+          </Text>
+        </Container>
+
+        {/* Email Footer */}
+        <Container
+          style={{
+            maxWidth: "520px",
+            margin: "0 auto",
+            padding: "16px 32px",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: "12px",
+              color: "#a1a1aa",
+              textAlign: "center",
+              margin: 0,
+            }}
+          >
+            © {new Date().getFullYear()} Yolo Padel. All rights reserved.
+          </Text>
         </Container>
       </Body>
     </Html>

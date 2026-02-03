@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useAdminBookingDashboard } from "@/hooks/use-booking";
 import { formatCurrency } from "@/lib/order-utils";
 import { formatTimeRange } from "@/lib/time-slots-formatter";
+import { getBookingSourceDisplayLabel } from "@/lib/format/booking-source";
 import { BookingStatus } from "@/types/prisma";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookingWithRelations } from "../booking/_components/booking-table";
@@ -121,9 +122,17 @@ function BookingCard({
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium text-muted-foreground">
-            {booking.bookingCode}
-          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-medium text-muted-foreground">
+              {booking.bookingCode}
+            </p>
+            <Badge
+              variant="secondary"
+              className="text-xs font-normal text-muted-foreground border"
+            >
+              {getBookingSourceDisplayLabel(booking.source)}
+            </Badge>
+          </div>
           <p className="text-base font-semibold text-foreground">
             {booking.customerName} • {booking.venueName} • {booking.courtName}
           </p>
