@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createOrder, getOrdersByUserId } from "@/lib/services/order.service";
+import {
+  createOrder,
+  getOrdersByUserId,
+  sendPaymentInstructionsEmailForOrder,
+} from "@/lib/services/order.service";
+import { createXenditInvoiceForOrder } from "@/lib/services/xendit-payment.service";
 import {
   createOrderSchema,
   getUserOrdersSchema,
 } from "@/lib/validations/order.validation";
 import { verifyAuth } from "@/lib/auth-utils";
 import { createServiceContext } from "@/types/service-context";
+
+const XENDIT_INVOICE_CHANNEL = "XENDIT_INVOICE";
 
 /**
  * POST /api/order
@@ -89,19 +96,56 @@ export async function POST(request: NextRequest) {
           price: booking.price,
         })),
         channelName: data.channelName,
-        // Fee breakdown fields (default to 0 if not provided)
         taxAmount: data.taxAmount,
         bookingFee: data.bookingFee,
       },
       serviceContext,
     );
 
-    // Response includes fee breakdown per Requirements 1.3, 2.3, 3.3
+    let paymentUrl: string | null = null;
+
+    if (data.channelName === XENDIT_INVOICE_CHANNEL && order.payment?.id) {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        request.nextUrl.origin ||
+        "http://localhost:3000";
+      const successRedirectUrl = `${baseUrl}/dashboard/booking?paymentStatus=success&orderId=${order.id}&paymentId=${order.payment.id}`;
+      const failureRedirectUrl = `${baseUrl}/dashboard/booking?paymentStatus=failed&orderId=${order.id}&paymentId=${order.payment.id}&reason=failed`;
+
+      const invoiceResult = await createXenditInvoiceForOrder(order.id, {
+        externalId: order.orderCode,
+        amount: order.totalAmount,
+        payerEmail: data.payerEmail ?? user.email,
+        description: `Order ${order.orderCode}`,
+        invoiceDuration: 900,
+        successRedirectUrl,
+        failureRedirectUrl,
+        items: [
+          {
+            name: `Order ${order.orderCode}`,
+            price: order.totalAmount,
+            quantity: 1,
+          },
+        ],
+      });
+
+      if (invoiceResult.success && invoiceResult.data?.invoiceUrl) {
+        paymentUrl = invoiceResult.data.invoiceUrl;
+        await sendPaymentInstructionsEmailForOrder(order.id);
+      }
+    }
+
+    const responseData = { ...order, ...(paymentUrl && { paymentUrl }) };
+
     return NextResponse.json(
       {
         success: true,
-        message: "Order created successfully",
-        data: order,
+        message: paymentUrl
+          ? "Order created successfully"
+          : data.channelName === XENDIT_INVOICE_CHANNEL
+            ? "Order created; payment link could not be created."
+            : "Order created successfully",
+        data: responseData,
       },
       { status: 201 },
     );

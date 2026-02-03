@@ -4,12 +4,14 @@ import BookingRescheduleEmail from "@/components/emails/booking-reschedule";
 import BookingCancelationEmail from "@/components/emails/booking-cancelation";
 import OrderConfirmationEmail from "@/components/emails/order-confirmation";
 import ManualBookingConfirmationEmail from "@/components/emails/manual-booking-confirmation";
+import PaymentInstructionsEmail from "@/components/emails/payment-instructions";
 import type {
   InvitationEmailData,
   BookingRescheduleEmailData,
   BookingCancelationEmailData,
   OrderConfirmationEmailData,
   ManualBookingConfirmationEmailData,
+  PaymentInstructionsEmailData,
 } from "../validations/send-email.validation";
 import { LoginWithMagicLinkData } from "../validations/auth.validation";
 import LoginWithMagicLink from "@/components/emails/login-with-magic-link";
@@ -253,6 +255,74 @@ export const brevoService = {
           error instanceof Error
             ? error.message
             : "Send magic link email error",
+      };
+    }
+  },
+  sendPaymentInstructionsEmail: async (
+    data: PaymentInstructionsEmailData,
+  ) => {
+    console.log("[BREVO] Starting sendPaymentInstructionsEmail...");
+    console.log("[BREVO] Email data:", {
+      orderCode: data.orderCode,
+      email: data.email,
+      customerName: data.customerName,
+      totalAmount: data.totalAmount,
+      bookingsCount: data.bookings.length,
+      expiresAt: data.expiresAt,
+    });
+
+    try {
+      console.log("[BREVO] Rendering email template...");
+      const emailHtml = await render(
+        PaymentInstructionsEmail({
+          orderCode: data.orderCode,
+          customerName: data.customerName,
+          email: data.email,
+          totalAmount: data.totalAmount,
+          paymentUrl: data.paymentUrl,
+          expiresAt: data.expiresAt,
+          bookings: data.bookings,
+        }),
+      );
+
+      console.log("[BREVO] Email template rendered successfully");
+      console.log("[BREVO] Sending via Brevo API...");
+
+      const response = await brevo.sendTransacEmail({
+        sender: {
+          email: EMAIL_CONFIG.FROM_EMAIL,
+          name: EMAIL_CONFIG.COMPANY_NAME,
+        },
+        to: [{ email: data.email, name: data.customerName }],
+        subject: `Complete Your Payment - Order ${data.orderCode}`,
+        htmlContent: emailHtml,
+      });
+
+      console.log("[BREVO] ✅ Email sent successfully:", {
+        messageId: (response as any).messageId || response.body?.messageId || "unknown",
+        orderCode: data.orderCode,
+      });
+
+      return {
+        success: true,
+        data: response,
+        message: "Payment instructions email sent successfully",
+      };
+    } catch (error) {
+      console.error("[BREVO] ❌ Send payment instructions email error:", error);
+      console.error("[BREVO] Error details:", {
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : "No stack trace",
+        response: (error as any).response?.data || "No response data",
+      });
+
+      return {
+        success: false,
+        data: null,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Send payment instructions email error",
       };
     }
   },

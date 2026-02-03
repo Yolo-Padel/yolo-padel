@@ -10,18 +10,6 @@ export const invitationEmailSchema = z.object({
   invitationUrl: z.string().url("Invalid URL format"),
 });
 
-export const resetPasswordEmailSchema = z.object({
-  email: emailSchema,
-  customerName: z.string().min(1, "Customer name is required"),
-  resetUrl: z.string().url("Invalid URL format"),
-});
-
-export const confirmationEmailSchema = z.object({
-  email: emailSchema,
-  userName: z.string().min(1, "User name is required"),
-  confirmationUrl: z.string().url("Invalid URL format"),
-});
-
 const bookingSchema = z.object({
   court: z.string().min(1, "Court name is required"),
   date: z.string().refine(
@@ -31,7 +19,7 @@ const bookingSchema = z.object({
     },
     {
       message: "Invalid date format",
-    }
+    },
   ),
   time: z.string().min(1, "Time is required"),
   bookingCode: z.string().min(1, "Booking code is required"),
@@ -51,7 +39,7 @@ const bookingEmailBaseSchema = z.object({
     },
     {
       message: "Invalid date format",
-    }
+    },
   ),
   time: z.string().min(1, "Time is required"),
   bookingCode: z.string().min(1, "Booking code is required"),
@@ -78,7 +66,7 @@ const timeSchema = z
   .string()
   .regex(
     /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
-    "Invalid time format (expected HH:MM)"
+    "Invalid time format (expected HH:MM)",
   );
 
 export const manualBookingConfirmationEmailSchema = z.object({
@@ -93,22 +81,30 @@ export const manualBookingConfirmationEmailSchema = z.object({
     },
     {
       message: "Invalid date format",
-    }
+    },
   ),
   startTime: timeSchema,
   endTime: z
     .string()
     .regex(
       /^(?:([0-1]?[0-9]|2[0-3]):[0-5][0-9]|24:00)$/,
-      "Invalid end time format"
+      "Invalid end time format",
     ),
   bookingCode: z.string().min(1, "Booking code is required"),
   loginUrl: z.string().url("Invalid login URL"),
 });
 
+export const paymentInstructionsEmailSchema = z.object({
+  orderCode: z.string().min(1, "Order code is required"),
+  email: emailSchema,
+  customerName: z.string().min(1, "Customer name is required"),
+  totalAmount: z.number().positive("Total amount must be positive"),
+  paymentUrl: z.string().url("Invalid payment URL"),
+  expiresAt: z.date(),
+  bookings: z.array(bookingSchema).min(1, "At least one booking is required"),
+});
+
 export type InvitationEmailData = z.infer<typeof invitationEmailSchema>;
-export type ResetPasswordEmailData = z.infer<typeof resetPasswordEmailSchema>;
-export type ConfirmationEmailData = z.infer<typeof confirmationEmailSchema>;
 export type BookingRescheduleEmailData = z.infer<
   typeof bookingRescheduleEmailSchema
 >;
@@ -120,4 +116,7 @@ export type OrderConfirmationEmailData = z.infer<
 >;
 export type ManualBookingConfirmationEmailData = z.infer<
   typeof manualBookingConfirmationEmailSchema
+>;
+export type PaymentInstructionsEmailData = z.infer<
+  typeof paymentInstructionsEmailSchema
 >;

@@ -1,5 +1,14 @@
 import { Html, Head, Body, Container, Text } from "@react-email/components";
 
+function formatDate(dateInput: Date): string {
+  return dateInput.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 interface BookingCancelationEmailProps {
   customerName?: string;
   court: string;
@@ -19,108 +28,185 @@ export default function BookingCancelationEmail({
   location,
   status,
 }: BookingCancelationEmailProps) {
+  const displayName = customerName || "Padeler";
+
   return (
     <Html>
-      <Head>
-        <title>Booking Cancelation</title>
-      </Head>
-      <Body className="bg-gray-100 font-sans">
-        <Container className="max-w-2xl mx-auto bg-white ">
-          <div className="text-center flex items-center justify-center bg-gray-900 text-white font-bold border-b border-gray-200 p-3 my-1">
-            <img
-              src="\paddle-racket.png"
-              width="40"
-              height="40"
-              style={{ margin: "0" }}
-            />
-            <Text className="p-2 text-2xl font-bold text-white">
-              Booking Cancellation Notice
-            </Text>
-          </div>
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <Text className="text-2xl font-bold text-gray-900 mb-5">
-              Hi {customerName ?? "there"}!
-            </Text>
-          </div>
-
-          {/* Content */}
-          <div className="flex flex-col items-left justify-center">
-            <Text className="text-base leading-6 text-gray-700 mb-1">
-              We\'re letting you know that this booking has been cancelled
-              automatically because payment was not completed within the
-              required time window.
-            </Text>
-
-            <ul
+      <Head />
+      <Body
+        style={{
+          margin: 0,
+          backgroundColor: "#f4f4f5",
+          fontFamily: "Helvetica, Arial, sans-serif",
+        }}
+      >
+        <Container
+          style={{
+            margin: "24px auto",
+            padding: "32px",
+            backgroundColor: "#ffffff",
+            maxWidth: "520px",
+            borderRadius: "16px",
+            border: "1px solid #e4e4e7",
+          }}
+        >
+          {/* Status Badge */}
+          <div
+            style={{
+              backgroundColor: "#fef2f2",
+              borderRadius: "8px",
+              padding: "12px 16px",
+              marginBottom: "24px",
+              textAlign: "center",
+            }}
+          >
+            <Text
               style={{
-                listStyleType: "none",
-                padding: 1,
-                fontSize: "16px",
-                fontWeight: "bold",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#b91c1c",
+                margin: 0,
               }}
             >
-              <li>Court&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {court}</li>
-              <li>
-                Date&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:{" "}
-                {date.toLocaleDateString()}
-              </li>
-              <li>Time&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {time}</li>
-              <li>Booking Code:&nbsp; {bookingCode}</li>
-              <li>Location&nbsp;: {location}</li>
-              <li>Status&nbsp;&nbsp;&nbsp;&nbsp;: {status || "Expired"}</li>
-            </ul>
-
-            <Text className="text-base leading-6 text-gray-700 mb-4">
-              If you still need a slot, feel free to make a new booking and
-              complete the payment before the expiry time. We look forward to
-              seeing you back on court soon!
-              <br />
-              <br />
-              Thanks for choosing Yolo Padel 💚
-              <br />
-              Team Yolo Padel
+              Booking Cancelled
             </Text>
+          </div>
 
-            <div
+          <Text
+            style={{
+              fontSize: "24px",
+              fontWeight: 700,
+              marginBottom: "4px",
+              color: "#09090b",
+            }}
+          >
+            Booking Cancellation Notice
+          </Text>
+          <Text
+            style={{ fontSize: "14px", color: "#71717a", marginBottom: "24px" }}
+          >
+            Order / booking was not paid in time
+          </Text>
+
+          <Text
+            style={{ fontSize: "16px", color: "#18181b", marginBottom: "16px" }}
+          >
+            Hi {displayName},
+          </Text>
+          <Text
+            style={{
+              fontSize: "14px",
+              color: "#3f3f46",
+              lineHeight: "22px",
+              marginBottom: "24px",
+            }}
+          >
+            This booking has been cancelled because payment was not completed
+            within the required time. If you still need a slot, you can make a
+            new booking and complete the payment before the expiry time.
+          </Text>
+
+          <Text
+            style={{
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "#09090b",
+              marginBottom: "12px",
+            }}
+          >
+            Cancelled Booking
+          </Text>
+          <div
+            style={{
+              backgroundColor: "#f9fafb",
+              borderRadius: "12px",
+              padding: "16px 20px",
+              marginBottom: "12px",
+              border: "1px solid #e4e4e7",
+            }}
+          >
+            <Text
               style={{
-                borderTop: "1px solid #e5e7eb",
-                paddingTop: "20px",
-                marginTop: "20px",
-                textAlign: "center",
+                fontSize: "15px",
+                fontWeight: 600,
+                color: "#09090b",
+                margin: "0 0 12px",
               }}
             >
-              <Text className="text-sm text-gray-600">
-                Need help? Contact us at support@yolo-padel.com
-              </Text>
-
-              <div style={{ margin: "15px 0" }}>
-                {/* Social Media Icons */}
-                <a
-                  href="https://instagram.com/yolo-padel"
-                  style={{ margin: "0 8px" }}
-                >
-                  Instagram
-                </a>
-                <a
-                  href="https://facebook.com/yolo-padel"
-                  style={{ margin: "0 8px" }}
-                >
-                  Facebook
-                </a>
-                <a
-                  href="https://twitter.com/yolo-padel"
-                  style={{ margin: "0 8px" }}
-                >
-                  Twitter
-                </a>
-              </div>
-
-              <Text className="text-xs text-gray-500">
-                © 2023 Yolo Padel. All rights reserved.
-              </Text>
-            </div>
+              {court}
+            </Text>
+            <Text
+              style={{
+                fontSize: "13px",
+                color: "#52525b",
+                margin: "0 0 6px",
+              }}
+            >
+              <strong>Booking Code:</strong> {bookingCode}
+            </Text>
+            <Text
+              style={{
+                fontSize: "13px",
+                color: "#52525b",
+                margin: "0 0 6px",
+              }}
+            >
+              <strong>Location:</strong> {location}
+            </Text>
+            <Text
+              style={{
+                fontSize: "13px",
+                color: "#52525b",
+                margin: "0 0 6px",
+              }}
+            >
+              <strong>Date:</strong> {formatDate(date)}
+            </Text>
+            <Text style={{ fontSize: "13px", color: "#52525b", margin: 0 }}>
+              <strong>Time:</strong> {time} · <strong>Status:</strong>{" "}
+              {status || "Expired"}
+            </Text>
           </div>
+
+          <div
+            style={{
+              borderTop: "1px solid #e4e4e7",
+              margin: "32px 0 24px",
+            }}
+          />
+          <Text
+            style={{
+              fontSize: "13px",
+              color: "#71717a",
+              lineHeight: "20px",
+              marginBottom: "12px",
+            }}
+          >
+            Need help? Reply to this email or contact support@yolo-padel.com
+          </Text>
+          <Text style={{ fontSize: "13px", color: "#a1a1aa", margin: 0 }}>
+            Thanks for choosing Yolo Padel!
+            <br />
+            <span style={{ color: "#a1a1aa" }}>Team Yolo Padel</span>
+          </Text>
+        </Container>
+        <Container
+          style={{
+            maxWidth: "520px",
+            margin: "0 auto",
+            padding: "16px 32px",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: "12px",
+              color: "#a1a1aa",
+              textAlign: "center",
+              margin: 0,
+            }}
+          >
+            © {new Date().getFullYear()} Yolo Padel. All rights reserved.
+          </Text>
         </Container>
       </Body>
     </Html>

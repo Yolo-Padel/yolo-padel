@@ -29,16 +29,28 @@ export const createOrderSchema = z.object({
             },
             {
               message: "Invalid time slot format. Expected: HH:mm-HH:mm",
-            }
+            },
           ),
         price: z.number().int().positive("Price must be a positive number"),
-      })
+      }),
     )
     .min(1, "At least one booking is required"),
   channelName: z.string().min(1, "Payment channel is required"),
   // Fee breakdown fields (optional, default to 0 per Requirements 1.2, 2.2)
-  taxAmount: z.number().int().nonnegative("Tax amount must be non-negative").optional().default(0),
-  bookingFee: z.number().int().nonnegative("Booking fee must be non-negative").optional().default(0),
+  taxAmount: z
+    .number()
+    .int()
+    .nonnegative("Tax amount must be non-negative")
+    .optional()
+    .default(0),
+  bookingFee: z
+    .number()
+    .int()
+    .nonnegative("Booking fee must be non-negative")
+    .optional()
+    .default(0),
+  // Optional payer email (e.g. for guest checkout or Xendit invoice)
+  payerEmail: z.string().email("Invalid email").optional(),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

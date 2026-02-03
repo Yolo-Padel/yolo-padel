@@ -3,10 +3,7 @@ import {
   Head,
   Body,
   Container,
-  Section,
   Text,
-  Link,
-  Hr,
   Button,
 } from "@react-email/components";
 
@@ -21,79 +18,146 @@ export default function LoginWithMagicLink({
   email,
   magicLinkUrl,
 }: LoginWithMagicLinkProps) {
+  const displayName = userName || email;
+
   return (
     <Html>
-      <Head>
-        <title>Login to Yolo Padel - Magic Link</title>
-      </Head>
-      <Body className="bg-slate-100 font-sans">
-        <Container className="bg-white mx-auto py-5 pb-12 mb-16 max-w-2xl">
-          {/* Header */}
-          <Section className="px-6 py-8 text-center bg-gray-900">
-            <Text className="text-2xl font-bold text-white m-0">
-              Yolo Padel
-            </Text>
-          </Section>
+      <Head />
+      <Body
+        style={{
+          margin: 0,
+          backgroundColor: "#f4f4f5",
+          fontFamily: "Helvetica, Arial, sans-serif",
+        }}
+      >
+        <Container
+          style={{
+            margin: "24px auto",
+            padding: "32px",
+            backgroundColor: "#ffffff",
+            maxWidth: "520px",
+            borderRadius: "16px",
+            border: "1px solid #e4e4e7",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: "24px",
+              fontWeight: 700,
+              marginBottom: "4px",
+              color: "#09090b",
+            }}
+          >
+            Sign in to Yolo Padel
+          </Text>
+          <Text
+            style={{ fontSize: "14px", color: "#71717a", marginBottom: "24px" }}
+          >
+            One-click magic link
+          </Text>
 
-          {/* Content */}
-          <Section className="px-6 py-8">
-            <Text className="text-2xl font-bold text-gray-900 mb-5">
-              Hello {userName || email}!
-            </Text>
+          <Text
+            style={{ fontSize: "16px", color: "#18181b", marginBottom: "16px" }}
+          >
+            Hi {displayName},
+          </Text>
+          <Text
+            style={{
+              fontSize: "14px",
+              color: "#3f3f46",
+              lineHeight: "22px",
+              marginBottom: "20px",
+            }}
+          >
+            You requested to sign in to your Yolo Padel account. Click the
+            button below to access your account without entering a password.
+          </Text>
 
-            <Text className="text-base leading-6 text-gray-700 mb-4">
-              You requested to login to your Yolo Padel account. Click the button 
-              below to securely access your account without entering a password.
-            </Text>
+          <div style={{ textAlign: "center", marginBottom: "24px" }}>
+            <Button
+              href={magicLinkUrl}
+              style={{
+                backgroundColor: "#111827",
+                color: "#ffffff",
+                padding: "14px 32px",
+                borderRadius: "8px",
+                textDecoration: "none",
+                fontSize: "15px",
+                fontWeight: 600,
+                display: "inline-block",
+              }}
+            >
+              Sign in to Yolo Padel
+            </Button>
+          </div>
 
-            <Text className="text-base leading-6 text-gray-700 mb-4">
-              This magic link will automatically log you in and is valid for the 
-              next 15 minutes for security purposes.
-            </Text>
-
-            <Section className="text-center my-8">
-              <Button
-                className="bg-emerald-500 rounded-lg text-white text-base font-bold no-underline text-center inline-block px-6 py-3 border-0"
-                href={magicLinkUrl}
-              >
-                Login to Yolo Padel
-              </Button>
-            </Section>
-
-            <Text className="text-base leading-6 text-gray-700 mb-4">
-              Or copy and paste this link into your browser:
-            </Text>
-
-            <Text className="text-sm text-gray-500 break-all mb-4">
+          <Text
+            style={{
+              fontSize: "13px",
+              color: "#71717a",
+              lineHeight: "20px",
+              marginBottom: "24px",
+            }}
+          >
+            Or copy and paste this link into your browser:
+            <br />
+            <span style={{ wordBreak: "break-all", color: "#3b82f6" }}>
               {magicLinkUrl}
-            </Text>
+            </span>
+          </Text>
 
-            <Text className="text-base leading-6 text-gray-700 mb-4">
-              <strong>Security Notice:</strong> This link will expire in 15 minutes 
-              and can only be used once. If you didn't request this login link, 
-              please ignore this email and your account remains secure.
+          <div
+            style={{
+              backgroundColor: "#eff6ff",
+              borderLeft: "4px solid #3b82f6",
+              borderRadius: "8px",
+              padding: "12px 16px",
+              marginBottom: "24px",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: "13px",
+                color: "#1e40af",
+                margin: 0,
+                lineHeight: "20px",
+              }}
+            >
+              🔒 This link expires in 15 minutes and can only be used once. If
+              you didn&apos;t request it, ignore this email — your account
+              remains secure.
             </Text>
+          </div>
 
-            <Text className="text-base text-gray-700 mt-8">
-              Best regards,
-              <br />
-              Yolo Padel Team
-            </Text>
-          </Section>
-
-          {/* Footer */}
-          <Hr className="border-gray-200 my-5" />
-          <Section className="px-6 text-center">
-            <Text className="text-gray-500 text-xs leading-4 my-1">
-              © 2024 Yolo Padel. All rights reserved.
-            </Text>
-            <Text className="text-gray-500 text-xs leading-4 my-1">
-              If you don't want to receive these emails anymore,{" "}
-              <Link href="#" className="text-blue-600 underline">
-                unsubscribe here
-              </Link>
-            </Text>
-          </Section>
+          <div
+            style={{
+              borderTop: "1px solid #e4e4e7",
+              margin: "32px 0 24px",
+            }}
+          />
+          <Text style={{ fontSize: "13px", color: "#a1a1aa", margin: 0 }}>
+            Best regards,
+            <br />
+            Yolo Padel Team
+          </Text>
+        </Container>
+        <Container
+          style={{
+            maxWidth: "520px",
+            margin: "0 auto",
+            padding: "16px 32px",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: "12px",
+              color: "#a1a1aa",
+              textAlign: "center",
+              margin: 0,
+            }}
+          >
+            © {new Date().getFullYear()} Yolo Padel. All rights reserved.
+          </Text>
         </Container>
       </Body>
     </Html>
