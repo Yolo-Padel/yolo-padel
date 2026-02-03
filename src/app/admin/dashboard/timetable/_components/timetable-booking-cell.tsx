@@ -7,6 +7,7 @@ import {
 import { BOOKING_COLORS } from "@/constants/timetable";
 import type { Booking, Court } from "@/components/timetable-types";
 import { BookingStatus } from "@/types/prisma";
+import { getBookingSourceDisplayLabel } from "@/lib/format/booking-source";
 
 type TimetableBookingCellProps = {
   court: Court;
@@ -50,7 +51,7 @@ export function TimetableBookingCell({
   // Check if court is open for this time slot
   const isCourtOpen = isTimeSlotInOperatingHours(
     timeSlot,
-    court.operatingHours?.fullOperatingHours
+    court.operatingHours?.fullOperatingHours,
   );
 
   // Check if the selected date/time slot is in the past
@@ -58,12 +59,12 @@ export function TimetableBookingCell({
   const today = new Date(
     now.getFullYear(),
     now.getMonth(),
-    now.getDate()
+    now.getDate(),
   ).getTime();
   const selectedDay = new Date(
     selectedDate.getFullYear(),
     selectedDate.getMonth(),
-    selectedDate.getDate()
+    selectedDate.getDate(),
   ).getTime();
 
   const isPastDate = selectedDay < today;
@@ -122,7 +123,7 @@ export function TimetableBookingCell({
         isDragPreview &&
           !isBooked &&
           !isDisabledForStyling &&
-          "bg-primary/10 border-primary/60 ring-1 ring-primary/40"
+          "bg-primary/10 border-primary/60 ring-1 ring-primary/40",
       )}
       onClick={() => {
         // Allow clicking on bookings even if they're in the past
@@ -179,6 +180,9 @@ export function TimetableBookingCell({
             {formatTimeRange(booking.timeSlots)}
           </div>
           <div className="text-xs">{court.name}</div>
+          <div className="text-[10px] text-muted-foreground">
+            {getBookingSourceDisplayLabel(booking.source)}
+          </div>
         </div>
       ) : (
         <span
@@ -186,7 +190,7 @@ export function TimetableBookingCell({
             "p-2",
             isDisabledForStyling
               ? "text-muted-foreground/50"
-              : "text-muted-foreground"
+              : "text-muted-foreground",
           )}
         >
           {isDisabledForStyling ? "Closed" : "-"}

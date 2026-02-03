@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { stringUtils } from "@/lib/format/string";
+import { getBookingSourceDisplayLabel } from "@/lib/format/booking-source";
 import { BookingStatus, PaymentStatus } from "@/types/prisma";
 import { formatTimeRange } from "@/components/timetable-utils";
 import { useCountdown } from "@/hooks/use-countdown";
@@ -235,6 +236,12 @@ export function BookingDetailModal({
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Duration</span>
                 <span className="font-medium">{booking.duration} hrs</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Booking Source</span>
+                <span className="font-medium">
+                  {getBookingSourceDisplayLabel(booking.source)}
+                </span>
               </div>
             </div>
           </div>
