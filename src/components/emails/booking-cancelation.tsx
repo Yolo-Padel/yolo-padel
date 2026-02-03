@@ -174,16 +174,6 @@ export default function BookingCancelationEmail({
               margin: "32px 0 24px",
             }}
           />
-          <Text
-            style={{
-              fontSize: "13px",
-              color: "#71717a",
-              lineHeight: "20px",
-              marginBottom: "12px",
-            }}
-          >
-            Need help? Reply to this email or contact support@yolo-padel.com
-          </Text>
           <Text style={{ fontSize: "13px", color: "#a1a1aa", margin: 0 }}>
             Thanks for choosing Yolo Padel!
             <br />

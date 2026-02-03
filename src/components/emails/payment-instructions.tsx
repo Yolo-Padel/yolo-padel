@@ -254,19 +254,6 @@ export default function PaymentInstructionsEmail({
             }}
           />
 
-          {/* Footer */}
-          <Text
-            style={{
-              fontSize: "13px",
-              color: "#71717a",
-              lineHeight: "20px",
-              marginBottom: "12px",
-            }}
-          >
-            Having trouble with payment? Reply to this email and our team will
-            assist you.
-          </Text>
-
           <Text style={{ fontSize: "13px", color: "#a1a1aa", margin: 0 }}>
             Cheers,
             <br />

@@ -258,21 +258,8 @@ export const brevoService = {
       };
     }
   },
-  sendPaymentInstructionsEmail: async (
-    data: PaymentInstructionsEmailData,
-  ) => {
-    console.log("[BREVO] Starting sendPaymentInstructionsEmail...");
-    console.log("[BREVO] Email data:", {
-      orderCode: data.orderCode,
-      email: data.email,
-      customerName: data.customerName,
-      totalAmount: data.totalAmount,
-      bookingsCount: data.bookings.length,
-      expiresAt: data.expiresAt,
-    });
-
+  sendPaymentInstructionsEmail: async (data: PaymentInstructionsEmailData) => {
     try {
-      console.log("[BREVO] Rendering email template...");
       const emailHtml = await render(
         PaymentInstructionsEmail({
           orderCode: data.orderCode,
@@ -285,9 +272,6 @@ export const brevoService = {
         }),
       );
 
-      console.log("[BREVO] Email template rendered successfully");
-      console.log("[BREVO] Sending via Brevo API...");
-
       const response = await brevo.sendTransacEmail({
         sender: {
           email: EMAIL_CONFIG.FROM_EMAIL,
@@ -297,25 +281,12 @@ export const brevoService = {
         subject: `Complete Your Payment - Order ${data.orderCode}`,
         htmlContent: emailHtml,
       });
-
-      console.log("[BREVO] ✅ Email sent successfully:", {
-        messageId: (response as any).messageId || response.body?.messageId || "unknown",
-        orderCode: data.orderCode,
-      });
-
       return {
         success: true,
         data: response,
         message: "Payment instructions email sent successfully",
       };
     } catch (error) {
-      console.error("[BREVO] ❌ Send payment instructions email error:", error);
-      console.error("[BREVO] Error details:", {
-        message: error instanceof Error ? error.message : "Unknown error",
-        stack: error instanceof Error ? error.stack : "No stack trace",
-        response: (error as any).response?.data || "No response data",
-      });
-
       return {
         success: false,
         data: null,

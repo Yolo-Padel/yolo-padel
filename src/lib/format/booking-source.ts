@@ -5,9 +5,10 @@
 export function getBookingSourceDisplayLabel(
   source: string | null | undefined,
 ): string {
-  if (source == null || source === "") return "—";
+  const trimmed = source?.trim();
+  if (!trimmed) return "—";
 
-  const normalized = source.trim().toUpperCase();
+  const normalized = trimmed.toUpperCase();
 
   switch (normalized) {
     case "ADMIN_MANUAL":

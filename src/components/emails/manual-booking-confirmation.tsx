@@ -164,18 +164,6 @@ export default function ManualBookingConfirmationEmail({
             </Button>
           </div>
 
-          <Text
-            style={{
-              fontSize: "13px",
-              color: "#71717a",
-              lineHeight: "20px",
-              marginBottom: "12px",
-            }}
-          >
-            Need help or want to update your booking? Just reply to this email
-            and our team will assist you shortly.
-          </Text>
-
           <Text style={{ fontSize: "13px", color: "#a1a1aa", margin: 0 }}>
             Cheers,
             <br />

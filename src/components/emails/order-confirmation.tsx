@@ -213,19 +213,6 @@ export default function OrderConfirmationEmail({
             }}
           />
 
-          {/* Footer */}
-          <Text
-            style={{
-              fontSize: "13px",
-              color: "#71717a",
-              lineHeight: "20px",
-              marginBottom: "12px",
-            }}
-          >
-            Need to reschedule or have questions? Reply to this email and our
-            team will help you out.
-          </Text>
-
           <Text style={{ fontSize: "13px", color: "#3f3f46", margin: 0 }}>
             Thanks for choosing Yolo Padel!
             <br />

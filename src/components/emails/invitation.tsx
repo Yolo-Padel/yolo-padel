@@ -22,11 +22,20 @@ export default function Invitation({
   userType,
 }: InvitationProps) {
   const displayName = userName || email;
-  const roleLabel = userType === UserType.STAFF ? "staff member" : "user";
+
+  const roleLabel =
+    userType === UserType.ADMIN
+      ? "admin"
+      : userType === UserType.STAFF
+        ? "staff member"
+        : "user";
+
   const roleDescription =
-    userType === UserType.STAFF
-      ? "manage courts, bookings, users, and other administrative functions."
-      : "book courts, view your bookings, and use other user features.";
+    userType === UserType.ADMIN
+      ? "manage venues, courts, bookings, users, and full platform settings."
+      : userType === UserType.STAFF
+        ? "manage courts, bookings, users, and other administrative functions."
+        : "book courts, view your bookings, and use other user features.";
 
   return (
     <Html>
