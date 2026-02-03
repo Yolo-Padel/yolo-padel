@@ -17,6 +17,7 @@ import { generatePageNumbers } from "@/lib/pagination-utils";
 import { BookingStatus } from "@/types/prisma";
 import { formatTimeRange } from "@/lib/time-slots-formatter";
 import { stringUtils } from "@/lib/format/string";
+import { getBookingSourceDisplayLabel } from "@/lib/format/booking-source";
 import { cn } from "@/lib/utils";
 
 export type BookingWithRelations = {
@@ -108,6 +109,7 @@ export function BookingTable({
         <TableHeader>
           <TableRow>
             <TableHead className="h-11">Booking Code</TableHead>
+            <TableHead className="h-11">Source</TableHead>
             <TableHead className="h-11">Customer</TableHead>
             <TableHead className="h-11">Date</TableHead>
             <TableHead className="h-11">Time</TableHead>
@@ -136,6 +138,9 @@ export function BookingTable({
                     </span>
                   </div>
                 </TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {getBookingSourceDisplayLabel(b.source)}
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar>
@@ -160,7 +165,9 @@ export function BookingTable({
                   <Badge
                     className={`text-xs font-medium ${getStatusBadgeClass(b.status)}`}
                   >
-                    {stringUtils.toTitleCase((stringUtils.getRoleDisplay(b.status)))}
+                    {stringUtils.toTitleCase(
+                      stringUtils.getRoleDisplay(b.status),
+                    )}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
@@ -179,7 +186,7 @@ export function BookingTable({
         </TableBody>
         <TableFooter className="bg-transparent">
           <TableRow>
-            <TableCell colSpan={6} className="p-4">
+            <TableCell colSpan={7} className="p-4">
               <div className="flex items-center justify-between">
                 <Button
                   variant="outline"

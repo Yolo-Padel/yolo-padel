@@ -164,22 +164,28 @@ export default function ManualBookingConfirmationEmail({
             </Button>
           </div>
 
-          <Text
-            style={{
-              fontSize: "13px",
-              color: "#71717a",
-              lineHeight: "20px",
-              marginBottom: "12px",
-            }}
-          >
-            Need help or want to update your booking? Just reply to this email
-            and our team will assist you shortly.
-          </Text>
-
-          <Text style={{ fontSize: "13px", color: "#a1a1aa" }}>
+          <Text style={{ fontSize: "13px", color: "#a1a1aa", margin: 0 }}>
             Cheers,
             <br />
             Yolo Padel Team
+          </Text>
+        </Container>
+        <Container
+          style={{
+            maxWidth: "520px",
+            margin: "0 auto",
+            padding: "16px 32px",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: "12px",
+              color: "#a1a1aa",
+              textAlign: "center",
+              margin: 0,
+            }}
+          >
+            © {new Date().getFullYear()} Yolo Padel. All rights reserved.
           </Text>
         </Container>
       </Body>

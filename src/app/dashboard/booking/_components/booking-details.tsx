@@ -9,6 +9,7 @@ import { Info, X, Clock } from "lucide-react";
   /*Import Modal*/
 }
 import { stringUtils } from "@/lib/format/string";
+import { getBookingSourceDisplayLabel } from "@/lib/format/booking-source";
 import { BookingStatus } from "@/types/prisma";
 import { useCountdown } from "@/hooks/use-countdown";
 import {
@@ -88,7 +89,9 @@ export function SeeBookingDetails({
           >
             <span className="text-xs">
               {stringUtils.toTitleCase(
-                stringUtils.getRoleDisplay(bookingDetails?.status || BookingStatus.PENDING),
+                stringUtils.getRoleDisplay(
+                  bookingDetails?.status || BookingStatus.PENDING,
+                ),
               )}
             </span>
           </Badge>
@@ -137,6 +140,11 @@ export function SeeBookingDetails({
           <div>Duration</div>
           <div className="font-medium text-foreground min-w-0">
             {bookingDetails?.duration || "-"}
+          </div>
+
+          <div>Booking Source</div>
+          <div className="font-medium text-foreground min-w-0">
+            {getBookingSourceDisplayLabel(bookingDetails?.source)}
           </div>
 
           {shouldShowCountdown && (

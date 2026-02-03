@@ -19,6 +19,7 @@ import {
 import { ACTION_TYPES } from "@/types/action";
 import { ENTITY_TYPES } from "@/types/entity";
 import { ServiceContext } from "@/types/service-context";
+import { brevoService } from "./brevo.service";
 
 /**
  * Options for filtering orders in admin dashboard
@@ -358,6 +359,123 @@ export async function createOrder(
   });
 
   return order;
+}
+
+/**
+ * Helper function to format time range from time slots
+ */
+function formatTimeRange(
+  timeSlots?: Array<{ openHour: string; closeHour: string }>,
+): string {
+  if (!timeSlots || timeSlots.length === 0) {
+    return "N/A";
+  }
+  const first = timeSlots[0];
+  const last = timeSlots[timeSlots.length - 1];
+  return `${first.openHour} - ${last.closeHour}`;
+}
+
+/**
+ * Helper function to get location label from court
+ */
+function getLocationLabel(court: {
+  name: string;
+  venue: { name: string };
+}): string {
+  return `${court.venue.name} • ${court.name}`;
+}
+
+/**
+ * Send payment instructions email for an order (after payment URL is available).
+ * Fetches full order with user, bookings, and payment; sends email if all required data is present.
+ * Non-blocking: logs errors but does not throw.
+ */
+export async function sendPaymentInstructionsEmailForOrder(
+  orderId: string,
+): Promise<void> {
+  try {
+    const fullOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        user: {
+          select: {
+            email: true,
+            profile: {
+              select: { fullName: true },
+            },
+          },
+        },
+        bookings: {
+          include: {
+            court: {
+              select: {
+                name: true,
+                venue: {
+                  select: { name: true },
+                },
+              },
+            },
+            timeSlots: {
+              select: { openHour: true, closeHour: true },
+            },
+          },
+        },
+        payment: {
+          select: { paymentUrl: true, expiredAt: true },
+        },
+      },
+    });
+
+    if (
+      !fullOrder?.user?.email ||
+      !fullOrder.payment?.paymentUrl ||
+      !fullOrder.payment?.expiredAt
+    ) {
+      console.warn(
+        "[ORDER] Skipping payment instructions email - missing data:",
+        {
+          orderId,
+          hasEmail: !!fullOrder?.user?.email,
+          hasPaymentUrl: !!fullOrder?.payment?.paymentUrl,
+          hasExpiredAt: !!fullOrder?.payment?.expiredAt,
+        },
+      );
+      return;
+    }
+
+    const emailPayload = {
+      orderCode: fullOrder.orderCode,
+      email: fullOrder.user.email,
+      customerName: fullOrder.user.profile?.fullName || fullOrder.user.email,
+      totalAmount: fullOrder.totalAmount,
+      paymentUrl: fullOrder.payment.paymentUrl,
+      expiresAt: fullOrder.payment.expiredAt,
+      bookings: fullOrder.bookings.map((booking) => ({
+        court: booking.court.name,
+        date: booking.bookingDate.toISOString(),
+        time: formatTimeRange(booking.timeSlots),
+        location: getLocationLabel(booking.court),
+        bookingCode: booking.bookingCode,
+      })),
+    };
+
+    const emailResult =
+      await brevoService.sendPaymentInstructionsEmail(emailPayload);
+
+    if (!emailResult.success) {
+      console.error(
+        "[ORDER] Failed to send payment instructions email:",
+        emailResult.message,
+      );
+    } else {
+      console.log(
+        "[ORDER] Payment instructions email sent successfully:",
+        fullOrder.orderCode,
+      );
+    }
+  } catch (error) {
+    console.error("[ORDER] Error sending payment instructions email:", error);
+  }
 }
 
 /**

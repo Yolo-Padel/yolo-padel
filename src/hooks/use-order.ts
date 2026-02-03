@@ -14,9 +14,10 @@ export type CreateOrderInput = {
     price: number;
   }>;
   channelName: string;
-  // Fee breakdown fields (Requirements 4.1)
-  taxAmount?: number;   // Tax portion in smallest currency unit (e.g., Rupiah)
-  bookingFee?: number;  // Service/platform fee in smallest currency unit
+  taxAmount?: number;
+  bookingFee?: number;
+  /** Optional payer email (e.g. for guest checkout or Xendit invoice) */
+  payerEmail?: string;
 };
 
 export type Order = {
@@ -26,6 +27,8 @@ export type Order = {
   status: OrderStatus;
   createdAt: string;
   updatedAt: string;
+  /** Set when order is created with Xendit invoice (single-flow) */
+  paymentUrl?: string | null;
   user?: {
     id: string;
     email: string;
@@ -62,8 +65,8 @@ export type Order = {
     id: string;
     channelName: string;
     amount: number;
-    taxAmount: number;    // Fee breakdown field (Requirements 1.3, 2.3)
-    bookingFee: number;   // Fee breakdown field (Requirements 1.3, 2.3)
+    taxAmount: number; // Fee breakdown field (Requirements 1.3, 2.3)
+    bookingFee: number; // Fee breakdown field (Requirements 1.3, 2.3)
     status: PaymentStatus;
     paymentDate: string | null;
     paymentUrl: string;
@@ -188,7 +191,7 @@ async function getAdminOrdersApi(options: UseAdminOrdersOptions = {}): Promise<{
 
 async function updateOrderStatusApi(
   orderId: string,
-  status: OrderStatus
+  status: OrderStatus,
 ): Promise<Order> {
   const response = await fetch(`/api/order/${orderId}`, {
     method: "PATCH",

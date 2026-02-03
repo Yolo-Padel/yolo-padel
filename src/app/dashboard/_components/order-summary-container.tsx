@@ -121,77 +121,34 @@ export function OrderSummaryContainer({
     }));
 
     // Create order with fee breakdown (Requirements 4.1, 4.2, 4.3)
-    // Use Math.round() to ensure integer values for database storage
+    // Backend creates Xendit invoice when channel is XENDIT_INVOICE and returns paymentUrl
     createOrder(
       {
         bookings,
         channelName: DEFAULT_PAYMENT_CHANNEL,
         taxAmount: Math.round(taxAmount),
         bookingFee: Math.round(bookingFeeAmount),
+        payerEmail: guestEmail || undefined,
       },
       {
-        onSuccess: async (order) => {
-          try {
-            // After order created, create Xendit payment
-            const paymentEndpoint = `/api/order/${order.id}/xendit/invoice`;
-
-            const requestBody = {
-              externalId: order.orderCode,
-              amount: courtFeesTotal,
-              description: `Order ${order.orderCode}`,
-              payerEmail: guestEmail || undefined,
-            };
-
-            const xenditResponse = await fetch(paymentEndpoint, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              credentials: "include",
-              body: JSON.stringify(requestBody),
-            });
-
-            if (!xenditResponse.ok) {
-              const errorData = await xenditResponse.json();
-              throw new Error(
-                errorData.message || "Failed to create Xendit payment",
+        onSuccess: (order) => {
+          if (order.paymentUrl) {
+            window.location.href = order.paymentUrl;
+            if (onClearBookings) onClearBookings();
+          } else {
+            setIsProcessing(false);
+            if (DEFAULT_PAYMENT_CHANNEL === "XENDIT_INVOICE") {
+              toast.warning(
+                "Order created. Payment link could not be generated. Please try again from your orders.",
               );
             }
-
-            const xenditData = await xenditResponse.json();
-            const invoiceUrl =
-              xenditData?.data?.xenditInvoice?.invoiceUrl || null;
-
-            if (invoiceUrl) {
-              window.location.href = invoiceUrl;
-            } else {
-              toast.info("Invoice URL not available.");
-            }
-
-            if (onClearBookings) {
-              onClearBookings();
-            }
-          } catch (error) {
-            console.error("Xendit payment creation error:", error);
-            setIsProcessing(false);
-            toast.error(
-              error instanceof Error
-                ? error.message
-                : "Failed to create Xendit payment",
-            );
-            // Rollback: clear bookings on error
-            if (onClearBookings) {
-              onClearBookings();
-            }
+            if (onClearBookings) onClearBookings();
           }
         },
         onError: (error) => {
           setIsProcessing(false);
           toast.error(error.message || "Failed to create order");
-          // Rollback: clear bookings on error
-          if (onClearBookings) {
-            onClearBookings();
-          }
+          if (onClearBookings) onClearBookings();
         },
       },
     );
