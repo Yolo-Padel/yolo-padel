@@ -2,10 +2,10 @@ import { AppSidebar } from "@/app/admin/dashboard/_components/app-sidebar";
 import {
   SidebarInset,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
+import { CopyrightFooter } from "@/components/copyright-footer";
 
 export default function AdminDashboardLayout({
   children,
@@ -15,7 +15,7 @@ export default function AdminDashboardLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="overflow-hidden">
+      <SidebarInset className="flex flex-col overflow-hidden">
         <Suspense
           fallback={
             <div className="h-full w-full flex items-center justify-center">
@@ -27,6 +27,7 @@ export default function AdminDashboardLayout({
             {children}
           </div>
         </Suspense>
+        <CopyrightFooter variant="brand" />
       </SidebarInset>
     </SidebarProvider>
   );
