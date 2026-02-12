@@ -5,8 +5,14 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
 
-export default function GlobalHeader() {
+interface GlobalHeaderProps {
+  /** When true, hides the auth/dashboard CTA button on the right. */
+  hideAuthCta?: boolean;
+}
+
+export default function GlobalHeader({ hideAuthCta = false }: GlobalHeaderProps) {
   const { isLoading, isAuthenticated } = useAuth();
+
   return (
     <header className="relative z-30 w-full">
       <div className="lg:max-w-[1200px] mx-auto p-6 lg:p-0 lg:pt-6">
@@ -19,15 +25,17 @@ export default function GlobalHeader() {
             height={38}
           />
 
-          {/* Join Membership Button */}
-          {isAuthenticated && !isLoading ? (
-            <Button asChild className="bg-primary hover:bg-primary/90 gap-2">
-              <Link href="/dashboard/booking">Go to Dashboard</Link>
-            </Button>
-          ) : (
-            <Button asChild className="bg-primary hover:bg-primary/90 gap-2">
-              <Link href="/auth">Login</Link>
-            </Button>
+          {/* Auth / dashboard CTA (hidden when requested, e.g. in PRE_PRODUCTION) */}
+          {!hideAuthCta && (
+            isAuthenticated && !isLoading ? (
+              <Button asChild className="bg-primary hover:bg-primary/90 gap-2">
+                <Link href="/dashboard/booking">Go to Dashboard</Link>
+              </Button>
+            ) : (
+              <Button asChild className="bg-primary hover:bg-primary/90 gap-2">
+                <Link href="/auth">Login</Link>
+              </Button>
+            )
           )}
         </div>
       </div>
