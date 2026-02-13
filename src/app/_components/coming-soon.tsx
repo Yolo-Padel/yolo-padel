@@ -18,15 +18,20 @@ export function ComingSoon() {
             className="px-4 py-2 text-sm font-medium bg-white/10 border-white/30 text-white hover:bg-white/20 transition-colors backdrop-blur-md"
           >
             <Zap className="w-4 h-4 mr-2" />
-            Coming Soon
+            Unveiling Soon
           </Badge>
         </div>
 
         {/* Main Heading */}
-        <div className="animate-fade-in-up delay-200 space-y-6">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
-            <span className="text-primary">Yolo Padel</span>
-          </h1>
+        <div className="animate-fade-in-up delay-200 space-y-3">
+          <div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
+              <span className="text-primary">Yolo Padel</span>
+            </h1>
+            <p className="text-primary text-xl sm:text-2xl max-w-2xl mx-auto">
+              A place to connect with sports and endless Padel fun.
+            </p>
+          </div>
           <p className="text-xl sm:text-2xl text-white/90 max-w-2xl mx-auto leading-relaxed">
             We're launching soon. Stay tuned for updates.
           </p>
