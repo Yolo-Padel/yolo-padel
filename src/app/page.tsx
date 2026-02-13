@@ -29,7 +29,7 @@ export default function Home() {
       </section>
       {/* Flexible footer at the end of the page. */}
       <footer>
-        <CopyrightFooter variant="primary" />
+        <CopyrightFooter variant="brand" />
       </footer>
     </main>
   );

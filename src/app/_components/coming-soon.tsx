@@ -28,7 +28,7 @@ export function ComingSoon() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
               <span className="text-primary">Yolo Padel</span>
             </h1>
-            <p className="text-primary text-xl sm:text-2xl max-w-2xl mx-auto">
+            <p className="text-primary text-xl sm:text-2xl max-w-2xl mx-auto font-bold">
               A place to connect with sports and endless Padel fun.
             </p>
           </div>

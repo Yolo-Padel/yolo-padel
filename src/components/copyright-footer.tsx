@@ -15,7 +15,7 @@ export function CopyrightFooter({ variant = "default" }: CopyrightFooterProps) {
           ? "py-3 text-center text-sm font-bold text-brand-foreground bg-brand"
           : isPrimary
             ? "py-3 text-center text-sm font-bold text-primary-foreground bg-primary"
-            : "py-3 text-center text-sm text-muted-foreground"
+            : "py-3 text-center text-sm text-brand font-bold"
       }
     >
       © PT Pluit Delapan Arena. All Rights Reserved.

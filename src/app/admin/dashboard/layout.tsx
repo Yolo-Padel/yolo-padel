@@ -1,8 +1,5 @@
 import { AppSidebar } from "@/app/admin/dashboard/_components/app-sidebar";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import { CopyrightFooter } from "@/components/copyright-footer";
@@ -27,7 +24,7 @@ export default function AdminDashboardLayout({
             {children}
           </div>
         </Suspense>
-        <CopyrightFooter variant="brand" />
+        <CopyrightFooter />
       </SidebarInset>
     </SidebarProvider>
   );
