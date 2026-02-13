@@ -23,7 +23,7 @@ export default function DashboardLayout({
             <Header />
           </div>
           <div className="flex flex-1 flex-col gap-4 p-6 pt-0">{children}</div>
-          <CopyrightFooter variant="brand" />
+          <CopyrightFooter />
         </SidebarInset>
       </SidebarProvider>
     </Suspense>
