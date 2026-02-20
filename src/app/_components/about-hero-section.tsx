@@ -2,6 +2,8 @@
  * About Hero Section - Two-column layout with breadcrumb, heading, description, and image
  */
 
+import Link from "next/link";
+
 export function AboutHeroSection() {
   return (
     <section
@@ -16,9 +18,9 @@ export function AboutHeroSection() {
         <nav aria-label="Breadcrumb" className="mb-8">
           <ol className="flex items-center gap-2 text-sm text-muted-foreground">
             <li>
-              <a href="/" className="hover:text-foreground transition-colors">
+              <Link href="/" className="hover:text-foreground transition-colors">
                 🏠 Home
-              </a>
+              </Link>
             </li>
             <li>/</li>
             <li className="text-primary font-medium">About</li>
