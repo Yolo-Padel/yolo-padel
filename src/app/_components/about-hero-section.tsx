@@ -53,7 +53,7 @@ export function AboutHeroSection() {
 
           {/* Right column - Image */}
           <div className="relative">
-            <div className="relative aspect-[3/3] w-full overflow-hidden rounded-2xl shadow-2xl">
+            <div className="relative h-[600px] w-full overflow-hidden rounded-2xl shadow-2xl">
               <img
                 src="/hero.jpg"
                 alt="Happy family enjoying wellness activities"
