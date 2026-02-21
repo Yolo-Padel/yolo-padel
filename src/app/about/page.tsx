@@ -8,12 +8,14 @@ export const metadata = {
     "YOLO is a premium lifestyle hub—your third place beyond home and work. Exclusive courts, community, and where culture and capital meet.",
 };
 
+const isPreProduction = process.env.ENVIRONMENT === "PRE_PRODUCTION";
+
 export default function AboutPage() {
   return (
     <main className="flex min-h-screen flex-col bg-background">
       {/* Hero section with new layout */}
       <section className="relative flex min-h-screen w-full flex-col overflow-hidden">
-        <GlobalHeader coloredBackground={false} hideAuthCta={true} />
+        <GlobalHeader coloredBackground={false} hideAuthCta={isPreProduction} />
         <AboutHeroSection />
       </section>
       <footer>
